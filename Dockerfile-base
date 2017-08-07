@@ -20,6 +20,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   gettext \
   libpcre3 \
   libpq5 \
+  gdal-bin \
+  libgeos-c1 \
+  libproj-dev \
   mime-support \
   unixodbc \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

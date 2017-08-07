@@ -45,7 +45,7 @@ MANAGERS = ADMINS
 
 # anymail email
 DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'No Reply <no-reply@mg.ccgapps.com.au>')
-EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[BPA Metadata] ')
+EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[BPA OTU] ')
 SERVER_EMAIL = env.get('DJANGO_SERVER_EMAIL', DEFAULT_FROM_EMAIL)
 # default to anymail/mailgun, but if the API key is not set, fall back to console
 EMAIL_BACKEND = env.get('DJANGO_EMAIL_BACKEND', 'anymail.backends.mailgun.MailgunBackend')
@@ -54,9 +54,6 @@ ANYMAIL = {
     "MAILGUN_SENDER_DOMAIN": env.get('DJANGO_MAILGUN_SERVER_NAME', '')
 }
 
-
-# list of emails to send BASE access requests to
-BASE_REQUEST_LIST = env.getlist('BASE_REQUEST_LIST', ['bpa_base_request@mg.ccgapps.com.au'])
 
 ALLOWED_HOSTS = env.getlist("allowed_hosts", ["*"])
 
@@ -110,8 +107,6 @@ DATE_INPUT_FORMATS = ('%Y-%m-%d', '%d/%m/%Y', '%d/%m/%y', '%d %m %Y', '%d %m %y'
 DATE_FORMAT = "d-m-Y"
 SHORT_DATE_FORMAT = "d/m/Y"
 
-AUTH_USER_MODEL = 'bpaauth.BPAUser'
-
 # used by maps when plotting sample location
 GIS_SOURCE_RID = 4326
 GIS_TARGET_RID = 3857
@@ -141,98 +136,6 @@ LEAFLET_CONFIG = {
     ],
     'MINIMAP': True,
     'RESET_VIEW': False
-}
-
-SUIT_CONFIG = {
-    'LIST_PER_PAGE': 50,
-    'SHOW_REQUIRED_ASTERISK': True,
-    'ADMIN_NAME': 'Bioplatforms Australia Metadata',
-    'MENU':
-    ({'app': 'common',
-      'label': 'Common', },
-     {'app': 'melanoma',
-      'label': 'Melanoma',
-      'models': ('melanomasample', 'melanomasequencefile', 'array', 'melanomaprotocol', 'melanomarun', 'tumorstage')},
-     # GBR
-     {'app': 'gbr',
-      'label': 'Great Barrier Reef',
-      'models': ('gbrsample',
-                 'gbrsequencefile',
-                 'collectionsite',
-                 'collectionevent',
-                 'gbrrun',
-                 'gbrprotocol', )},
-     '-',
-     # barcode
-     {'app': 'barcode',
-      'label': 'Barcode',
-      'models': ('sheet', )},
-     '-',
-     # Wheat Pathogens Genome
-     {'app': 'wheat_pathogens',
-      'label': 'Wheat Pathogens Genome',
-      'models': ('pathogensample', 'pathogensequencefile', 'pathogenrun', 'pathogenprotocol')},
-     # Wheat Pathogens Transcript
-     {'app': 'wheat_pathogens_transcript',
-      'label': 'Wheat Pathogens Transcript',
-      'models': ('wheatpathogentranscriptsample', 'wheatpathogentranscriptsequencefile', 'wheatpathogentranscriptrun',
-                 'wheatpathogentranscriptprotocol')},
-     # Wheat Cultivars
-     {'app': 'wheat_cultivars',
-      'label': 'Wheat Cultivars',
-      'models': ('cultivarsample', 'cultivarsequencefile', 'cultivarrun', 'cultivarprotocol')},
-     '-',
-     # Base
-     {'app': 'base_metagenomics',
-      'label': 'BASE Metagenomics', },
-     {'app': 'base_amplicon',
-      'label': 'BASE Amplicons', },
-     {'app': 'base_vocabulary',
-      'label': 'BASE Vocabulary', },
-     {'app': 'base_contextual',
-      'label': 'BASE Contextual', },
-     {'app': 'base_otu',
-      'label': 'BASE OTU', },
-     {'app': 'base_454',
-      'label': 'BASE 454', },
-     '-',
-     # Marine Microbes
-     {'app': 'marine_microbes',
-      'label': 'Marine Microbes',
-      'models': ('mmsite',
-                 'coastalcontextual',
-                 'openwatercontextual',
-                 'seaweedcontextual',
-                 'seagrasscontextual',
-                 'coralcontextual',
-                 'sedimentcontextual',
-                 'spongecontextual',
-                 'metagenomicstrack',
-                 'metatranscriptometrack',
-                 'amplicona16strack',
-                 'amplicon16strack',
-                 'amplicon18strack')},
-     '-',
-     {'app': 'stemcell',
-      'label': 'Stem Cells',
-      'models': ('GenomicsPacBioTrack',
-                 'GenomicsMiSeqTrack',
-                 'TranscriptomicsHiSeqTrack',
-                 'MetabolomicsLCMSTrack',
-                 'ProteomicsMS1QuantificationTrack',
-                 'ProteomicsSwathMSTrack')},
-     '-',
-     {'app': 'sepsis',
-      'label': 'Antibiotic Resistant Sepsis Pathogens',
-      'models': ('MetabolomicTrack',
-                 )},
-     '-',
-     {'app': 'bpaauth',
-      'label': 'Users',
-      'icon': 'icon-user',
-      'models': ('bpaauth.bpauser', 'auth.group')},
-     # {'label': 'Users', 'url': 'bpaauth.bpauser', 'icon': 'icon-user'},
-     )
 }
 
 SITE_ID = 1
@@ -287,7 +190,6 @@ INSTALLED_APPS = ('bpaotu',
                   'django_extensions',
                   'django.contrib.admin',
                   'django.contrib.admindocs',
-                  # 'django.contrib.gis',
                   'bootstrap3',
                   )
 

@@ -11,3 +11,4 @@ media/
 .ropeproject
 .vscode
 build
+data/
