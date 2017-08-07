@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% load static from staticfiles %}
+{% block title %}Search Results {% endblock %}
+{% block content %}
+
+<div class="container-fluid">
+
+    <form id="search_form" action="" class="form-inline" role="form" method="post">
+        {% csrf_token %}
+        <div class="row">
+
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    Use this facililty to search BASE data for samples of interest
+                </div>
+            </div>
+
+
+            <div class="col-md-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        Filter on Taxonomy
+                        <input class="form-control" type="button" id="clear_taxonomic_filters" value="Clear">
+                    </div>
+
+                    <div id="taxonomic_filter_panel" class="panel-body">
+                        <table id="taxonomic_filter_table" class="table table-bordered table-striped table-condensed">
+                            <thead>
+                                <th>Level</th>
+                                <th>Value</th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td width="10%">Kingdom</td>
+                                    <td><select class="form-control" id="kingdom" name="kingdom">
+                                            <option value="">---</option>
+                                            <option value="Bacteria">Bacteria</option>
+                                            <option value="Fungi">Fungi</option>
+                                            <option value="Archaea">Archaea</option>
+                                            <option value="Eukaryota">Eukaryota</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Phylum</td>
+                                    <td>
+                                        <select class="form-control" id="phylum" name="phylum"> </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Class</td>
+                                    <td>
+                                        <select class="form-control" id="otu_class" name="otu_class"> </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Order</td>
+                                    <td>
+                                        <select class="form-control" id="order" name="order"> </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Family</td>
+                                    <td>
+                                        <select class="form-control" id="family" name="family"> </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Genus</td>
+                                    <td>
+                                        <select class="form-control" id="genus" name="genus"> </select>
+                                </tr>
+                                <tr>
+                                    <td>Species</td>
+                                    <td>
+                                        <select class="form-control" id="species" name="species"> </select>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="spinner" class="spinner"></div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <input class="form-control"
+                               type="checkbox"
+                               id="enable_contextual_filters">
+                        Enable Contextual Filters ?
+                        <input type="hidden" name="search_all" value="search_all" id="search_all">
+                    </div>
+                    <div id="contextual_filter_panel" class="panel-body" style="display: none;">
+                        <p>
+                        <button type="button" class="form-control btn btn-default" id="add_search_term">
+                            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                        </button>
+
+                        <button type="button" class="form-control btn btn-default" id="remove_search_term">
+                            <span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
+                        </button>
+
+                        Find samples with
+                        <input name="search_operator"
+                               class="form-control"
+                               type="radio"
+                               id="op_and"
+                               value="and"
+                               checked="checked"> All or
+                        </input>
+                        <input class="form-control"
+                               name="search_operator"
+                               type="radio"
+                               id="op_or"
+                               value="or"> Any of the matching fields added below:
+                        </input>
+                        </p>
+                        <table name="search_type_anchor" id="search_terms" class="table table-bordered table-striped">
+                            <thead align="left">
+                                <tr>
+                                    <th>
+                                        <a href="#search_type_anchor"
+                                           role="button"
+                                           class="btn popovers"
+                                           data-toggle="popover"
+                                           title="Search Values"
+                                           data-trigger="focus"
+                                           data-content="Searches may comprise single values or ranges of values.  For example, samples could be filtered by pH 4 - 8, or by pH 4">
+                                            <span class="glyphicon glyphicon-info-sign"></span>
+                                            Search Type
+                                        </a>
+                                    </th>
+                                    <th>Field</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td width="20%">
+                                        <p>
+                                        <input class="form-control"
+                                               name="search_type0"
+                                               type="radio"
+                                               id="field0"
+                                               value="field"
+                                               checked="checked">Single
+                                        </input>
+                                        <input class="form-control"
+                                               name="search_type0"
+                                               type="radio"
+                                               id="range0"
+                                               value="range">Range
+                                        </input>
+                                        </p>
+                                    </td>
+
+                                    <td width="25%">
+                                        <select class="form-control" id="search_field0" name="search_field0"> </select>
+                                    </td>
+
+                                    <td width="55%">
+                                        <select class="form-control" id="search_standardised_value0"
+                                                                     name="search_standardised_value0">
+                                        </select>
+                                        <input class="form-control" id="search_range_min0" name="search_range_min0" type=text>
+                                        <input class="form-control" id="search_range_max0" name="search_range_max0" type=text>
+                                        <input class="form-control" id="search_value0" name="search_value0" type=text>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="validation" class="alert alert-danger"><span>Validation Errors Go Here</span></div>
+            </div>
+        </div>
+    </form>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <button type="button" class="btn btn-default btn-block" id="search_button">
+                    <span class="glyphicon glyphicon-search" aria-hidden="true"></span> Search
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <a href="#search_results"
+                       role="button"
+                       class="btn popovers"
+                       data-toggle="popover"
+                       title="Search Results"
+                       data-trigger="focus"
+                       data-content="Export an OTU abundance table, OTU taxonomy and representative OTU sequences for samples filling filtered search.">
+                        <span class="glyphicon glyphicon-info-sign"></span>
+                    </a>
+                    <button type="button" class="btn btn-default " id="export_button">
+                        <span class="glyphicon glyphicon-download" aria-hidden="true"></span> Export Search Results
+                    </button>
+                    To sort by multiple columns, press and hold the Shift key.
+                </div>
+                <table id="results" class="table" width="100%">
+                    <thead>
+                        <tr>
+                            <th>BPA ID</th>
+                            <th><span class="glyphicon glyphicon-picture"></span> Sample Context</th>
+                            <th>Chemical Analysis</th>
+                            <th>Amplicon</th>
+                            <th>Metagenomics</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <th>BPA ID</th>
+                            <th><span class="glyphicon glyphicon-picture"></span> Sample Context</th>
+                            <th>Chemical Analysis</th>
+                            <th>Amplicon</th>
+                            <th>Metagenomics</th>
+                        </tr>
+                    </tfoot>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

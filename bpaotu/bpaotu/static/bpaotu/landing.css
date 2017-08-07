@@ -1,0 +1,39 @@
+.resized {
+    width: 120px;
+    height: 120px;
+}
+.content-div {
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+.landing_header img {
+    float: left;
+}
+
+.landing_header h1 {
+    position: relative;
+    top: 18px;
+    left: 10px;
+}
+.landing_header h3 {
+    position: relative;
+    top: 10px;
+    left: 10px;
+}
+td .glyphicon {
+    font-size: 1.5em;
+}
+.table {
+    border-bottom:0px !important;
+}
+.table th, .table td {
+    border: 1px !important;
+}
+.fixed-table-container {
+    border:1px !important;
+}
+
+.in-table-header {
+  text-align: center;
+}

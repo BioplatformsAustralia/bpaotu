@@ -2,6 +2,7 @@
 # Django settings for bpa metadata project.
 
 import os
+import sys
 
 
 from ccg_django_utils.conf import EnvConfig
@@ -19,8 +20,6 @@ WEBAPP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # a directory that will be writable by the webserver, for storing various files...
 WRITABLE_DIRECTORY = env.get("writable_directory", "/tmp")
 
-TEMPLATE_DIRS = (os.path.join(WEBAPP_ROOT, 'bpaotu', 'templates'), )
-
 SECRET_KEY = env.get("secret_key", "change-it")
 
 # Default SSL on and forced, turn off if necessary
@@ -29,7 +28,6 @@ SSL_ENABLED = PRODUCTION
 SSL_FORCE = PRODUCTION
 
 DEBUG = env.get("debug", not PRODUCTION)
-TEMPLATE_DEBUG = DEBUG
 
 # django-secure
 SECURE_SSL_REDIRECT = env.get("secure_ssl_redirect", PRODUCTION)
@@ -151,16 +149,7 @@ MEDIA_URL = ''
 # These may be overridden, but it would be nice to stick to this convention
 STATIC_ROOT = env.get('static_root', os.path.join(WEBAPP_ROOT, 'static'))
 STATIC_URL = '{0}/static/'.format(SCRIPT_NAME)
-
-# List of finder classes that know how to find static files in
-# various locations.
-STATICFILES_FINDERS = ('django.contrib.staticfiles.finders.FileSystemFinder',
-                       'django.contrib.staticfiles.finders.AppDirectoriesFinder', )
-
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = ('django.template.loaders.filesystem.Loader',
-                    'django.template.loaders.app_directories.Loader',
-                    'admin_tools.template_loaders.Loader', )
+STATIC_SERVER_PATH = STATIC_ROOT
 
 MIDDLEWARE_CLASSES = ('django.middleware.security.SecurityMiddleware',
                       'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -172,9 +161,31 @@ MIDDLEWARE_CLASSES = ('django.middleware.security.SecurityMiddleware',
                       'django.middleware.locale.LocaleMiddleware',
                       )
 
-TEMPLATE_CONTEXT_PROCESSORS = ('django.core.context_processors.request',
-                               'django.contrib.auth.context_processors.auth',
-                               'django.core.context_processors.static', )
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(WEBAPP_ROOT, 'bpaotu', 'templates')],
+        "APP_DIRS": False,
+        "OPTIONS": {
+            "context_processors": [
+                "django.contrib.auth.context_processors.auth",
+                "django.template.context_processors.debug",
+                "django.template.context_processors.i18n",
+                "django.template.context_processors.media",
+                "django.template.context_processors.request",
+                "django.template.context_processors.static",
+                "django.template.context_processors.tz",
+                "django.contrib.messages.context_processors.messages"
+            ],
+            "debug": DEBUG,
+            "loaders": [
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+                ]
+        },
+    },
+]
+
 
 ROOT_URLCONF = 'bpaotu.urls'
 

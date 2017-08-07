@@ -1,5 +1,5 @@
-from django.shortcuts import render
+from django.views.generic import TemplateView
 
 
-def landing(request):
-    render("test")
+class OTUSearch(TemplateView):
+    template_name = 'bpaotu/search_results.html'

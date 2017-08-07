@@ -1,0 +1,68 @@
+/* Sticky footer styles */
+html,
+body {
+    height: 100%;
+    /* The html and body elements cannot have any padding or margin. */
+}
+
+/* Wrapper for page content to push down footer */
+#wrap {
+    min-height: 100%;
+    height: auto;
+    /* Negative indent footer by its height */
+    margin: 0 auto -84px;
+    /* Pad bottom by footer height */
+    padding: 0 0 84px;
+}
+
+.site-footer {
+    color: rgb(230,230,230);
+    background-color: #1e73be;
+}
+
+.site-footer a {
+    color: rgb(255,255,255);
+}
+
+.span4 {
+    float: left;
+    width: 240px;
+    margin-left: 20px;
+    padding: 7px 0;
+}
+
+/* Scaling down the footer logo a bit */
+#ncris-img {
+    height: 70px;
+    width: auto;
+}
+
+/* Custom page CSS */
+/* Not required for template or sticky footer method. */
+
+.container {
+    width: auto;
+    max-width: 680px;
+    padding: 0 15px;
+}
+
+.navbar > .container {
+    padding: 15px;
+}
+
+.container .credit {
+    margin: 20px 0;
+}
+
+.md5 {
+    font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+}
+
+#popover-target label {
+    margin: 0 5px;
+    display: block;
+}
+
+#popover-target input {
+    margin-right: 5px;
+}
