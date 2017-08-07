@@ -277,7 +277,6 @@ ROOT_URLCONF = 'bpaotu.urls'
 
 INSTALLED_APPS = ('bpaotu',
                   'suit',
-                  'crispy_forms',
                   'django.contrib.auth',
                   'django.contrib.contenttypes',
                   'django.contrib.sessions',
@@ -289,39 +288,7 @@ INSTALLED_APPS = ('bpaotu',
                   'django.contrib.admin',
                   'django.contrib.admindocs',
                   # 'django.contrib.gis',
-                  'localflavor',
-                  'mptt',
-                  'apps.bpaauth',
-                  'apps.common',
-                  # base suit
-                  'apps.base',
-                  'apps.base_metagenomics',
-                  'apps.base_vocabulary',
-                  'apps.base_contextual',
-                  'apps.base_amplicon',
-                  'apps.base_otu',
-                  'apps.base_454',
-                  'apps.marine_microbes',
-                  # wheat suit
-                  'apps.wheat_pathogens',
-                  'apps.wheat_pathogens_transcript',
-                  'apps.wheat_cultivars',
-                  'apps.melanoma',
-                  'apps.gbr',
-                  'apps.gbr_amplicon',
-                  'apps.barcode',
-                  'apps.stemcell',
-                  'apps.sepsis',
-                  'tinymce',
                   'bootstrap3',
-                  'django_bootstrap_breadcrumbs',
-                  'rest_framework',
-                  'rest_framework_swagger',
-                  'explorer',
-                  'leaflet',
-                  'import_export',
-                  'anymail',
-                  'revproxy',
                   )
 
 # #
@@ -482,8 +449,6 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 DOWNLOADS_CHECKER_USER = env.get('downloads_checker_user', 'downloads_checker')
 DOWNLOADS_CHECKER_PASS = env.get('downloads_checker_pass', 'ch3ck3r')
 DOWNLOADS_CHECKER_SLEEP = env.get('downloads_checker_sleep', 0.0)
-
-CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 # sql explorer
 EXPLORER_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'No Reply <no-reply@mg.ccgapps.com.au>')

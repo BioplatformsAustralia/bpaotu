@@ -18,3 +18,4 @@ xlsxwriter==0.9.2
 openpyxl==2.3.5
 SQLAlchemy==1.1.13
 colorlog==2.7.0
+django-bootstrap3==9.0.0
