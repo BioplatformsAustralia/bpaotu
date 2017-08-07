@@ -1,0 +1,52 @@
+version: '2'
+services:
+
+    # data only container pattern
+    datadev:
+      image: debian:jessie
+      volumes:
+        - .:/app
+        - ./data/dev:/data
+
+    db:
+      image: mdillon/postgis:9.5
+      environment:
+        - POSTGRES_USER=webapp
+        - POSTGRES_PASSWORD=webapp
+      ports:
+        - "5432"
+    
+    cache:
+      image: redis:3-alpine
+
+    nginx:
+      image: muccg/nginx-uwsgi:1.10
+      ports:
+        - "8443:443"
+        - "8080:80"
+      volumes:
+        - ./data/nginx:/data
+
+    runserver:
+      image: muccg/bpaotu-dev
+      environment:
+        - DJANGO_MAILGUN_API_KEY
+        - DJANGO_MAILGUN_SERVER_NAME
+        - WAIT_FOR_DB=1
+        - WAIT_FOR_CACHE=1
+
+    uwsgi:
+      image: muccg/bpaotu-dev
+      command: uwsgi_local
+      environment:
+        - DJANGO_MAILGUN_API_KEY
+        - DJANGO_MAILGUN_SERVER_NAME
+        - WAIT_FOR_DB=1
+        - WAIT_FOR_CACHE=1
+        - WAIT_FOR_RUNSERVER=1
+        # note: important to wait for runserver in dev as both will attempt to syncdb etc
+      ports:
+        - "9000:9000"
+        - "9001:9001"
+        - "9100:9100"
+        - "9101:9101"

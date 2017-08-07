@@ -1,0 +1,47 @@
+# data only container pattern
+data:
+  image: debian:jessie
+  volumes:
+    - .:/app
+    - ./data/dev:/data
+
+db:
+  image: mdillon/postgis:9.5
+  environment:
+    - POSTGRES_USER=webapp
+    - POSTGRES_PASSWORD=webapp
+  ports:
+    - 5432
+
+cache:
+  image: redis:3-alpine
+
+nginx:
+  image: muccg/nginx-uwsgi:1.7
+  links:
+    - uwsgi
+  ports:
+    - "8443:443"
+
+uwsgi:
+  image: bpaotu_runserver
+  command: uwsgi
+  environment:
+    - DJANGO_SETTINGS_MODULE=bpam.settings
+    - DBUSER=webapp
+    - WAIT_FOR_DB=1
+    - WAIT_FOR_CACHE=1
+    - WAIT_FOR_RUNSERVER=1
+    - DJANGO_MAILGUN_API_KEY=${DJANGO_MAILGUN_API_KEY}
+    - DJANGO_MAILGUN_SERVER_NAME=${DJANGO_MAILGUN_SERVER_NAME}
+  volumes_from:
+    - data
+  ports:
+    - "9000:9000"
+    - "9001:9001"
+    - "9100:9100"
+    - "9101:9101"
+  links:
+    - db
+    - cache
+    - runserver
