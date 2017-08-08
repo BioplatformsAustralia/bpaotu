@@ -83,9 +83,11 @@ class DataImporter:
             instance = db_class(value=val)
             self._session.add(instance)
         self._session.commit()
-        return dict((t.id, t.value) for t in self._session.query(db_class).all())
+        return dict((t.value, t.id) for t in self._session.query(db_class).all())
 
     def load_taxonomies(self):
+        # load each taxnomy file. note that not all files
+        # have all of the columns
         rows = []
         for fname in glob(self._import_base + '/*.taxonomy'):
             rows += self._read_taxonomy_file(fname)
@@ -98,11 +100,27 @@ class DataImporter:
             'genus': OTUGenus,
             'species': OTUSpecies
         }
+        # import the ontologies, and build a mapping from
+        # permitted values into IDs in those ontologies
         mappings = {}
         for field, db_class in ontologies.items():
+            self._session.query(db_class).delete()
             vals = set()
             for row in rows:
                 if field in row:
                     vals.add(row[field])
             mappings[field] = self._build_ontology(db_class, vals)
-        print(len(rows))
+
+        def _make_otus():
+            for row in rows:
+                attrs = {}
+                for field in ontologies:
+                    if field not in row:
+                        continue
+                    attrs[field + '_id'] = mappings[field][row[field]]
+                yield OTU(code=row['OTUId'], **attrs)
+
+        # import the OTU rows, applying onotology mappings
+        self._session.query(OTU).delete()
+        self._session.bulk_save_objects(_make_otus())
+        self._session.commit()
