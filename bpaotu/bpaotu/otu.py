@@ -216,7 +216,7 @@ class SampleOTU(SchemaMixin, Base):
     __tablename__ = 'sample_otu'
     sample_id = Column(Integer, ForeignKey(SCHEMA + '.sample_context.id'), primary_key=True)
     otu_id = Column(Integer, ForeignKey(SCHEMA + '.otu.id'), primary_key=True)
-    count = Column(Integer)
+    count = Column(Integer, nullable=False)
 
 
 def make_engine():
