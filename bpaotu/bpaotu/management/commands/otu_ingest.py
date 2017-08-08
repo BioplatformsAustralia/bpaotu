@@ -8,3 +8,4 @@ class Command(BaseCommand):
         importer = DataImporter('/data/otu')
         importer.load_contextual_metadata()
         importer.load_taxonomies()
+        importer.load_otu()

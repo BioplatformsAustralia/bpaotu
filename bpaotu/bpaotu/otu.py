@@ -1,18 +1,34 @@
+import csv
+import logging
+import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float
+from sqlalchemy.schema import CreateSchema, DropSchema
 from django.conf import settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, relationship
 from glob import glob
-from csv import DictReader
 from .contextual import contextual_rows
 from collections import defaultdict
 
 
+logger = logging.getLogger("rainbow")
 Base = declarative_base()
+SCHEMA = 'otu'
 
 
-class OntologyMixin():
+class SchemaMixin():
+    """
+    we use a specific schema (rather than the public schema) so that the import
+    can be easily re-run, simply by deleting the schema. this also keeps
+    SQLAlchemy tables out of the way of Django tables, and vice-versa
+    """
+    __table_args__ = {
+        "schema": SCHEMA
+    }
+
+
+class OntologyMixin(SchemaMixin):
     id = Column(Integer, primary_key=True)
     value = Column(String, unique=True)
 
@@ -29,7 +45,7 @@ class OntologyMixin():
 
 
 def ontology_fkey(nm):
-    return Column(Integer, ForeignKey(OntologyMixin.make_tablename(nm) + '.id'))
+    return Column(Integer, ForeignKey(SCHEMA + '.' + OntologyMixin.make_tablename(nm) + '.id'))
 
 
 class OTUKingdom(OntologyMixin, Base):
@@ -60,7 +76,7 @@ class OTUSpecies(OntologyMixin, Base):
     pass
 
 
-class OTU(Base):
+class OTU(SchemaMixin, Base):
     __tablename__ = 'otu'
     id = Column(Integer, primary_key=True)
     code = Column(String(length=21))  # current max length of OTU code
@@ -119,7 +135,7 @@ class SampleColor(OntologyMixin, Base):
     pass
 
 
-class SampleContext(Base):
+class SampleContext(SchemaMixin, Base):
     __tablename__ = 'sample_context'
     id = Column(Integer, primary_key=True)  # NB: we use the final component of the BPA ID here
     date_sampled = Column(Date)
@@ -188,6 +204,13 @@ class SampleContext(Base):
     color_id = ontology_fkey('SampleColor')
 
 
+class SampleOTU(SchemaMixin, Base):
+    __tablename__ = 'sample_otu'
+    sample_id = Column(Integer, ForeignKey(SCHEMA + '.sample_context.id'), primary_key=True)
+    otu_id = Column(Integer, ForeignKey(SCHEMA + '.otu.id'), primary_key=True)
+    count = Column(Integer)
+
+
 def make_engine():
     conf = settings.DATABASES['default']
     engine_string = 'postgres://%(USER)s:%(PASSWORD)s@%(HOST)s:%(PORT)s/%(NAME)s' % (conf)
@@ -200,12 +223,18 @@ class DataImporter:
         Session = sessionmaker(bind=self._engine)
         self._session = Session()
         self._import_base = import_base
+        try:
+            self._session.execute(DropSchema(SCHEMA, cascade=True))
+        except sqlalchemy.exc.ProgrammingError:
+            self._session.invalidate()
+        self._session.execute(CreateSchema(SCHEMA))
+        self._session.commit()
         Base.metadata.create_all(self._engine)
 
-    def _read_taxonomy_file(self, fname):
+    def _read_tab_file(self, fname):
         with open(fname) as fd:
-            reader = DictReader(fd, dialect="excel-tab")
-            return list(reader)
+            reader = csv.DictReader(fd, dialect="excel-tab")
+            yield from reader
 
     def _build_ontology(self, db_class, vals):
         for val in vals:
@@ -223,7 +252,6 @@ class DataImporter:
 
         mappings = {}
         for db_class, fields in by_class.items():
-            self._session.query(db_class).delete()
             vals = set()
             for row in rows:
                 for field in fields:
@@ -235,13 +263,13 @@ class DataImporter:
         return mappings
 
     def load_taxonomies(self):
-        self._session.query(OTU).delete()
+        logger.warning("loading taxonomies")
 
         # load each taxnomy file. note that not all files
         # have all of the columns
         rows = []
         for fname in glob(self._import_base + '/*.taxonomy'):
-            rows += self._read_taxonomy_file(fname)
+            rows += list(self._read_tab_file(fname))
         ontologies = {
             'kingdom': OTUKingdom,
             'phylum': OTUPhylum,
@@ -266,7 +294,7 @@ class DataImporter:
         self._session.commit()
 
     def load_contextual_metadata(self):
-        self._session.query(SampleContext).delete()
+        logger.warning("loading contextual metadata")
         ontologies = {
             'horizon_classification': SampleHorizonClassification,
             'soil_sample_storage_method': SampleStorageMethod,
@@ -304,3 +332,50 @@ class DataImporter:
         mappings = self._load_ontology(ontologies, rows)
         self._session.bulk_save_objects(_make_context())
         self._session.commit()
+
+    def load_otu(self):
+        otu_lookup = dict(self._session.query(OTU.code, OTU.id))
+
+        def _missing_bpa_ids(fname):
+            have_bpaids = set([t[0] for t in self._session.query(SampleContext.id)])
+            with open(fname, 'r') as fd:
+                reader = csv.reader(fd, dialect='excel-tab')
+                header = next(reader)
+                bpa_ids = [int(t.split('/')[-1]) for t in header[1:]]
+                for bpa_id in bpa_ids:
+                    if bpa_id not in have_bpaids:
+                        yield bpa_id
+
+        def _make_otus(fname):
+            # note: (for now) we have to cope with duplicate columns in the input files.
+            # we just make sure they don't clash, and this can be reported to CSIRO
+            with open(fname, 'r') as fd:
+                reader = csv.reader(fd, dialect='excel-tab')
+                header = next(reader)
+                bpa_ids = [int(t.split('/')[-1]) for t in header[1:]]
+                for row in reader:
+                    otu_id = otu_lookup[row[0]]
+                    to_make = {}
+                    for bpa_id, count in zip(bpa_ids, row[1:]):
+                        if count == '' or count == '0' or count == '0.0':
+                            continue
+                        count = int(float(count))
+                        if bpa_id in to_make and to_make[bpa_id] != count:
+                            raise Exception("conflicting OTU data, abort.")
+                        to_make[bpa_id] = count
+                    for bpa_id, count in to_make.items():
+                        yield SampleOTU(sample_id=bpa_id, otu_id=otu_id, count=int(count))
+
+        missing_bpa_ids = set()
+        for fname in glob(self._import_base + '/*.txt'):
+            logger.warning("first pass, reading from: %s" % (fname))
+            missing_bpa_ids |= set(_missing_bpa_ids(fname))
+        logger.warning("creating empty context for BPA IDs: %s" % (missing_bpa_ids))
+        self._session.bulk_save_objects(SampleContext(id=t) for t in missing_bpa_ids)
+        self._session.commit()
+
+        for fname in glob(self._import_base + '/*.txt'):
+            logger.warning("second pass, reading from: %s" % (fname))
+            self._session.bulk_save_objects(_make_otus(fname))
+            self._session.commit()
+
