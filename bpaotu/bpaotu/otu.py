@@ -4,6 +4,7 @@ import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float
 from sqlalchemy.schema import CreateSchema, DropSchema
+from itertools import zip_longest
 from django.conf import settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, relationship
@@ -15,6 +16,13 @@ from collections import defaultdict
 logger = logging.getLogger("rainbow")
 Base = declarative_base()
 SCHEMA = 'otu'
+
+
+# from itertools recipes
+def grouper(iterable, n):
+    "Collect data into fixed-length chunks or blocks"
+    args = [iter(iterable)] * n
+    return zip_longest(*args)
 
 
 class SchemaMixin():
@@ -374,8 +382,10 @@ class DataImporter:
         self._session.bulk_save_objects(SampleContext(id=t) for t in missing_bpa_ids)
         self._session.commit()
 
+        commit_size = 100000
         for fname in glob(self._import_base + '/*.txt'):
             logger.warning("second pass, reading from: %s" % (fname))
-            self._session.bulk_save_objects(_make_otus(fname))
-            self._session.commit()
-
+            for commit_block in grouper(_make_otus(fname), commit_size):
+                logger.warning("commiting block of ~ %d objects" % (commit_size))
+                self._session.bulk_save_objects(filter(None, commit_block))
+                self._session.commit()
