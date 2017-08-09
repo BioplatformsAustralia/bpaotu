@@ -61,7 +61,7 @@ $(document).ready(function() {
     };
 
     var setup_taxonomic = function() {
-        // hook up all our events
+        // hook up all of our events
         $.each(taxonomy_hierarchy, function(idx, s) {
             $(taxonomy_selector(s)).on('change', function() {
                 taxonomy_refresh();
@@ -76,6 +76,31 @@ $(document).ready(function() {
         // get initial selections
         taxonomy_refresh();
     };
+
+    var add_contextual_filter = function() {
+
+    };
+
+    var setup_contextual = function() {
+        // hook up all of our events
+        $("#add_contextual_filter").click(function() {
+            add_contextual_filter();
+        });
+        $("#clear_contextual_filters").click(function() {
+            console.log("clear");
+
+        });
+
+        // get configuration of the various filters
+        $.ajax({
+            method: 'GET',
+            dataType: 'json',
+            url: window.otu_search_config['contextual_endpoint'],
+        }).done(function(result) {
+            window.contextual_config = result;
+        });
+    };
+
 
     var setup_csrf = function() {
         var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
@@ -94,4 +119,5 @@ $(document).ready(function() {
 
     setup_csrf();
     setup_taxonomic();
+    setup_contextual();
 });

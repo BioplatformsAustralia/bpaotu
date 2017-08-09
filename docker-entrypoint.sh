@@ -160,8 +160,12 @@ function _runserver() {
 
     info "RUNSERVER_OPTS is ${RUNSERVER_OPTS}"
     set -x
-    # shellcheck disable=SC2086
-    exec django-admin.py ${RUNSERVER_OPTS}
+    while true; do
+        # shellcheck disable=SC2086
+        django-admin.py ${RUNSERVER_OPTS}
+        echo "oh no, runserver crashed: $!"
+        sleep 5
+    done
 }
 
 

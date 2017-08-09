@@ -53,7 +53,9 @@ class OntologyMixin(SchemaMixin):
 
 
 def ontology_fkey(nm):
-    return Column(Integer, ForeignKey(SCHEMA + '.' + OntologyMixin.make_tablename(nm) + '.id'))
+    column = Column(Integer, ForeignKey(SCHEMA + '.' + OntologyMixin.make_tablename(nm) + '.id'))
+    column.ontology_name = nm
+    return column
 
 
 class OTUKingdom(OntologyMixin, Base):
