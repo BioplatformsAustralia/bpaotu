@@ -77,8 +77,22 @@ $(document).ready(function() {
         taxonomy_refresh();
     };
 
-    var add_contextual_filter = function() {
+    // this is populated via an ajax call, and specifies the
+    // contextual metadata fields and their types
+    var contextual_config = null;
 
+    var add_contextual_filter = function() {
+        if (!contextual_config) {
+            // initial config not loaded yet
+            return;
+        }
+        var d = $([
+            '<div class="row">',
+            '<div class="col-md-2"><button class="form-control" type="button"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span> Remove</button>',
+            '</div>'
+        ].join("\n"));
+        $("#contextual_filters_target").append(d);
+        console.log(contextual_config);
     };
 
     var setup_contextual = function() {
@@ -97,7 +111,7 @@ $(document).ready(function() {
             dataType: 'json',
             url: window.otu_search_config['contextual_endpoint'],
         }).done(function(result) {
-            window.contextual_config = result;
+            contextual_config = result;
         });
     };
 
