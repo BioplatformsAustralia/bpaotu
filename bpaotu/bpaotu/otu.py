@@ -246,6 +246,8 @@ class TaxonomyOptions:
         state should be a list of integer IDs for the relevent model, in the order of
         TaxonomyOptions.hierarchy. a value of None indicates there is no selection.
         """
+
+        assert(type(state) is list)
         assert(len(state) == len(TaxonomyOptions.hierarchy))
 
         def drop_id(attr):
@@ -255,19 +257,30 @@ class TaxonomyOptions:
         # scan through in order and find our target, by finding the first invalid selection
         target_attr = None
         target_class = None
+        # this query is built up over time, and validates the hierarchy provided to us
+        q = self._session.query(OTU.kingdom_id).group_by(OTU.kingdom_id)
         for idx, ((otu_attr, ontology_class), value) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
-            # TODO: verify value makes sense
+            valid = True
             if value is None:
+                valid = False
+            else:
+                q = q.filter(getattr(OTU, otu_attr) == value)
+                valid = q.count() > 0
+            if not valid:
                 target_attr = otu_attr
                 target_class = ontology_class
                 break
 
-        # the drop-downs to be reset as a result of this choice
+        # the targets to be reset as a result of this choice
         clear = [drop_id(attr) for attr, _ in TaxonomyOptions.hierarchy[idx:]]
+
+        # clear invalidated part of the state
+        state = state[:idx] + [None] * (len(TaxonomyOptions.hierarchy) - idx)
 
         # no completion: we have a complete hierarchy
         if target_attr is None:
             return {}
+
         # build up a query of the OTUs for our target attribute
         q = self._session.query(getattr(OTU, target_attr), target_class.value).group_by(getattr(OTU, target_attr), target_class.value).order_by(target_class.value)
         for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, state):

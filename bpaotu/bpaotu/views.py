@@ -30,10 +30,8 @@ def taxonomy_options(request):
     selected = list(map(
         int_if_not_already_none,
         json.loads(request.GET['selected'])))
-    logger.critical(selected)
     options = TaxonomyOptions()
     possibilities = options.possibilities(selected)
-    logger.critical(possibilities)
     return JsonResponse({
         'possibilities': possibilities
     })
