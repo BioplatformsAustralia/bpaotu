@@ -10,7 +10,7 @@ $(document).ready(function() {
         "genus",
         "species"
     ];
-    var blank_option = {'text': '----', 'value': 'null'};
+    var blank_option = {'text': '----', 'value': null};
 
     var set_options = function(target, options) {
         target.empty();
@@ -60,8 +60,14 @@ $(document).ready(function() {
         });
     };
 
-    var bootstrap_taxonomic = function() {
-        // bootstrap the taxonomic search function
+    var setup_taxonomic = function() {
+        // hook up all our events
+        $.each(taxonomy_hierarchy, function(idx, s) {
+            $(taxonomy_selector(s)).on('change', function() {
+                taxonomy_refresh();
+            });
+        });
+        // get initial selections
         taxonomy_refresh();
     };
 
@@ -82,5 +88,5 @@ $(document).ready(function() {
     };
 
     setup_csrf();
-    bootstrap_taxonomic();
+    setup_taxonomic();
 });

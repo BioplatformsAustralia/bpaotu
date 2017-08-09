@@ -23,15 +23,17 @@ def taxonomy_options(request):
         return HttpResponseBadRequest()
 
     def int_if_not_already_none(v):
-        if v is None:
-            return v
+        if v is None or v == '':
+            return None
         return int(v)
 
     selected = list(map(
         int_if_not_already_none,
         json.loads(request.GET['selected'])))
+    logger.critical(selected)
     options = TaxonomyOptions()
     possibilities = options.possibilities(selected)
+    logger.critical(possibilities)
     return JsonResponse({
         'possibilities': possibilities
     })
