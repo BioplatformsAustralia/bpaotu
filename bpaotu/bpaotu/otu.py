@@ -225,6 +225,54 @@ def make_engine():
     return create_engine(engine_string)
 
 
+class TaxonomyOptions:
+    hierarchy = [
+        ('kingdom_id', OTUKingdom),
+        ('phylum_id', OTUPhylum),
+        ('class_id', OTUClass),
+        ('order_id', OTUOrder),
+        ('family_id', OTUFamily),
+        ('genus_id', OTUGenus),
+        ('species_id', OTUSpecies),
+    ]
+
+    def __init__(self):
+        self._engine = make_engine()
+        Session = sessionmaker(bind=self._engine)
+        self._session = Session()
+
+    def possibilities(self, state):
+        """
+        state should be a list of integer IDs for the relevent model, in the order of
+        TaxonomyOptions.hierarchy. a value of None indicates there is no selection.
+        """
+        assert(len(state) == len(TaxonomyOptions.hierarchy))
+
+        # scan through in order and find our target
+        target_attr = None
+        target_class = None
+        for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, state):
+            if value is None:
+                target_attr = otu_attr
+                target_class = ontology_class
+                break
+        # no completion: we have a complete hierarchy
+        if target_attr is None:
+            return []
+        # build up a query of the OTUs for our target attribute
+        q = self._session.query(getattr(OTU, target_attr), target_class.value).group_by(getattr(OTU, target_attr), target_class.value).order_by(target_class.value)
+        for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, state):
+            if value is None:
+                break
+            q = q.filter(getattr(OTU, otu_attr) == value)
+        q = q.join(target_class)
+        possibilities = q.all()
+        return {
+            'attr': target_attr,
+            'possibilities': possibilities
+        }
+
+
 class DataImporter:
     def __init__(self, import_base):
         self._engine = make_engine()

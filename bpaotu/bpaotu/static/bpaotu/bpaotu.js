@@ -10,17 +10,23 @@ $(document).ready(function() {
     ];
 
     var taxonomy_selector = function(s) {
-        return '#taxonomy_' + s;
+        return '#' + s + '_id';
     };
 
     var taxonomy_refresh = function() {
-        var state = _.zipObject(taxonomy_hierarchy, _.map(taxonomy_hierarchy, function(s) {
+        var state = _.map(taxonomy_hierarchy, function(s) {
             return $(taxonomy_selector(s)).val();
-        }));
-        $.getJSON(window.otu_search_config['taxonomy_endpoint'], state)
-            .done(function(data) {
-                console.log(data);
-            });
+        });
+        $.ajax({
+            method: 'GET',
+            dataType: 'json',
+            url: window.otu_search_config['taxonomy_endpoint'],
+            data: {
+                'selected': JSON.stringify(state)
+            }
+        }).done(function(result) {
+            console.log(result);
+        });
     };
 
     var bootstrap_taxonomic = function() {
@@ -28,5 +34,22 @@ $(document).ready(function() {
         taxonomy_refresh();
     };
 
+    var setup_csrf = function() {
+        var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    console.log('set the header', csrftoken);
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+    };
+
+    setup_csrf();
     bootstrap_taxonomic();
 });

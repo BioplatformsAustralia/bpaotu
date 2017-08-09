@@ -3,8 +3,9 @@
 {% block title %}OTU Search{% endblock %}
 {% block content %}
 
+{% csrf_token %}
+
 <div class="container-fluid">
-        {% csrf_token %}
         <div class="row">
             
             <div class="col-md-12">
@@ -182,7 +183,7 @@
 
 <script>
     window.otu_search_config = {
-        'taxonomy_endpoint': "{% url 'taxonomy_options' %}"
+        'taxonomy_endpoint': "{% url 'taxonomy_options' %}",
     };
     $(function () {
         $('[data-toggle="tooltip"]').tooltip()
