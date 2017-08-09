@@ -4,8 +4,6 @@
 {% block content %}
 
 <div class="container-fluid">
-    
-    <form id="search_form" action="" class="form-inline" role="form" method="post">
         {% csrf_token %}
         <div class="row">
             
@@ -33,48 +31,47 @@
                                 <tr>
                                     <td width="10%">Kingdom</td>
                                     <td>
-                                        <select class="form-control" id="kingdom" name="kingdom"></select>
+                                        <select class="form-control" id="taxonomy_kingdom"></select>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>Phylum</td>
                                     <td>
-                                        <select class="form-control" id="phylum" name="phylum"></select>
+                                        <select class="form-control" id="taxonomy_phylum"></select>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>Class</td>
                                     <td>
-                                        <select class="form-control" id="otu_class" name="otu_class"></select>
+                                        <select class="form-control" id="taxonomy_class"></select>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>Order</td>
                                     <td>
-                                        <select class="form-control" id="order" name="order"></select>
+                                        <select class="form-control" id="taxonomy_order"></select>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>Family</td>
                                     <td>
-                                        <select class="form-control" id="family" name="family"></select>
+                                        <select class="form-control" id="taxonomy_family"></select>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>Genus</td>
                                     <td>
-                                        <select class="form-control" id="genus" name="genus"></select>
+                                        <select class="form-control" id="taxonomy_genus"></select>
                                     </tr>
                                     <tr>
                                         <td>Species</td>
                                         <td>
-                                            <select class="form-control" id="species" name="species"></select>
+                                            <select class="form-control" id="taxonomy_species"></select>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <div id="spinner" class="spinner"></div>
                     </div>
                 </div>
                 
@@ -135,7 +132,6 @@
                 <div id="validation" class="alert alert-danger"><span>Validation Errors Go Here</span></div>
             </div>
         </div>
-    </form>
     
     <div class="row">
         <div class="col-md-12">
