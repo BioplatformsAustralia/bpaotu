@@ -67,6 +67,12 @@ $(document).ready(function() {
                 taxonomy_refresh();
             });
         });
+        $("#clear_taxonomic_filters").click(function () {
+            $.each(taxonomy_hierarchy, function(idx, s) {
+                $(taxonomy_selector(s)).val(null);
+            });
+            taxonomy_refresh();
+        });
         // get initial selections
         taxonomy_refresh();
     };
@@ -80,7 +86,6 @@ $(document).ready(function() {
         $.ajaxSetup({
             beforeSend: function(xhr, settings) {
                 if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                    console.log('set the header', csrftoken);
                     xhr.setRequestHeader("X-CSRFToken", csrftoken);
                 }
             }
