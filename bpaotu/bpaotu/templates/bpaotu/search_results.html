@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static from staticfiles %}
-{% block title %}Search Results {% endblock %}
+{% block title %}OTU Search{% endblock %}
 {% block content %}
 
 <div class="container-fluid">
@@ -179,5 +179,16 @@
         </div>
     </div>
 </div>
+
+<script>
+    window.otu_search_config = {
+        'taxonomy_endpoint': "{% url 'taxonomy_options' %}"
+    };
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+            $('[data-toggle="popover"]').popover({html:true})
+    })
+</script>
+
 
 {% endblock %}
