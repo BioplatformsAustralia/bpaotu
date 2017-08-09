@@ -1,3 +1,5 @@
+"use strict";
+
 $(document).ready(function() {
     var taxonomy_hierarchy = [
         "kingdom",
@@ -8,10 +10,39 @@ $(document).ready(function() {
         "genus",
         "species"
     ];
+    var blank_option = {'text': '----', 'value': 'null'};
+
+    var set_options = function(target, options) {
+        target.empty();
+        $.each(options, function(index, option) {
+            $('<option/>').val(option.value).text(option.text).appendTo(target);
+        });
+    }
 
     var taxonomy_selector = function(s) {
-        return '#' + s + '_id';
+        return '#taxonomy_' + s;
     };
+
+    var taxonomy_set_possibilities = function(result) {
+        // first, we clear any drop-downs invalidated by this
+        // new information
+        _.each(result['clear'], function(s) {
+            var target = $(taxonomy_selector(s));
+            set_options(target, [blank_option]);
+        });
+        // then set possibilities for the target we've been given
+        var new_options = result['new_options'];
+        if (!new_options) {
+            return;
+        }
+        var target = $(taxonomy_selector(new_options['target']));
+        set_options(target, [blank_option].concat(_.map(new_options['possibilities'], function(val) {
+            return {
+                'value': val[0],
+                'text': val[1]
+            }
+        })));
+    }
 
     var taxonomy_refresh = function() {
         var state = _.map(taxonomy_hierarchy, function(s) {
@@ -25,7 +56,7 @@ $(document).ready(function() {
                 'selected': JSON.stringify(state)
             }
         }).done(function(result) {
-            console.log(result);
+            taxonomy_set_possibilities(result['possibilities']);
         });
     };
 

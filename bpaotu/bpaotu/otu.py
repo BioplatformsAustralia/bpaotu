@@ -248,17 +248,26 @@ class TaxonomyOptions:
         """
         assert(len(state) == len(TaxonomyOptions.hierarchy))
 
-        # scan through in order and find our target
+        def drop_id(attr):
+            "return without `_id`"
+            return attr[:-3]
+
+        # scan through in order and find our target, by finding the first invalid selection
         target_attr = None
         target_class = None
-        for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, state):
+        for idx, ((otu_attr, ontology_class), value) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
+            # TODO: verify value makes sense
             if value is None:
                 target_attr = otu_attr
                 target_class = ontology_class
                 break
+
+        # the drop-downs to be reset as a result of this choice
+        clear = [drop_id(attr) for attr, _ in TaxonomyOptions.hierarchy[idx:]]
+
         # no completion: we have a complete hierarchy
         if target_attr is None:
-            return []
+            return {}
         # build up a query of the OTUs for our target attribute
         q = self._session.query(getattr(OTU, target_attr), target_class.value).group_by(getattr(OTU, target_attr), target_class.value).order_by(target_class.value)
         for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, state):
@@ -268,8 +277,11 @@ class TaxonomyOptions:
         q = q.join(target_class)
         possibilities = q.all()
         return {
-            'attr': target_attr,
-            'possibilities': possibilities
+            'new_options': {
+                'target': drop_id(target_attr),
+                'possibilities': possibilities,
+            },
+            'clear': clear
         }
 
 
