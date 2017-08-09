@@ -52,9 +52,12 @@ class OntologyMixin(SchemaMixin):
         return "<%s(%s)>" % (type(self).__name__, self.value)
 
 
-def ontology_fkey(nm):
+def ontology_fkey(ontology_class):
+    nm = ontology_class.__name__
     column = Column(Integer, ForeignKey(SCHEMA + '.' + OntologyMixin.make_tablename(nm) + '.id'))
-    column.ontology_name = nm
+    # stash this here for introspection later: saves a lot of manual
+    # work with sqlalchemy's relationship() stuff
+    column.ontology_class = ontology_class
     return column
 
 
@@ -90,13 +93,13 @@ class OTU(SchemaMixin, Base):
     __tablename__ = 'otu'
     id = Column(Integer, primary_key=True)
     code = Column(String(length=21))  # current max length of OTU code
-    kingdom_id = ontology_fkey('OTUKingdom')
-    phylum_id = ontology_fkey('OTUPhylum')
-    class_id = ontology_fkey('OTUClass')
-    order_id = ontology_fkey('OTUOrder')
-    family_id = ontology_fkey('OTUFamily')
-    genus_id = ontology_fkey('OTUGenus')
-    species_id = ontology_fkey('OTUSpecies')
+    kingdom_id = ontology_fkey(OTUKingdom)
+    phylum_id = ontology_fkey(OTUPhylum)
+    class_id = ontology_fkey(OTUClass)
+    order_id = ontology_fkey(OTUOrder)
+    family_id = ontology_fkey(OTUFamily)
+    genus_id = ontology_fkey(OTUGenus)
+    species_id = ontology_fkey(OTUSpecies)
     kingdom = relationship(OTUKingdom)
     phylum = relationship(OTUPhylum)
     klass = relationship(OTUClass)
@@ -200,18 +203,18 @@ class SampleContext(SchemaMixin, Base):
     exc_sodium = Column(Float)
     boron_hot_cacl2 = Column(Float)
     #
-    horizon_classification_id = ontology_fkey('SampleHorizonClassification')
-    soil_sample_storage_method_id = ontology_fkey('SampleStorageMethod')
-    broad_land_use_id = ontology_fkey('SampleLandUse')
-    detailed_land_use_id = ontology_fkey('SampleLandUse')
-    general_ecological_zone_id = ontology_fkey('SampleEcologicalZone')
-    vegetation_type_id = ontology_fkey('SampleVegetationType')
-    profile_position_id = ontology_fkey('SampleProfilePosition')
-    australian_soil_classification_id = ontology_fkey('SampleAustralianSoilClassification')
-    fao_soil_classification_id = ontology_fkey('SampleFAOSoilClassification')
-    immediate_previous_land_use_id = ontology_fkey('SampleLandUse')
-    tillage_id = ontology_fkey('SampleTillage')
-    color_id = ontology_fkey('SampleColor')
+    horizon_classification_id = ontology_fkey(SampleHorizonClassification)
+    soil_sample_storage_method_id = ontology_fkey(SampleStorageMethod)
+    broad_land_use_id = ontology_fkey(SampleLandUse)
+    detailed_land_use_id = ontology_fkey(SampleLandUse)
+    general_ecological_zone_id = ontology_fkey(SampleEcologicalZone)
+    vegetation_type_id = ontology_fkey(SampleVegetationType)
+    profile_position_id = ontology_fkey(SampleProfilePosition)
+    australian_soil_classification_id = ontology_fkey(SampleAustralianSoilClassification)
+    fao_soil_classification_id = ontology_fkey(SampleFAOSoilClassification)
+    immediate_previous_land_use_id = ontology_fkey(SampleLandUse)
+    tillage_id = ontology_fkey(SampleTillage)
+    color_id = ontology_fkey(SampleColor)
 
 
 class SampleOTU(SchemaMixin, Base):
@@ -298,6 +301,18 @@ class TaxonomyOptions:
             },
             'clear': clear
         }
+
+
+class OntologyInfo:
+    def __init__(self):
+        self._engine = make_engine()
+        Session = sessionmaker(bind=self._engine)
+        self._session = Session()
+
+    def get_values(self, ontology_class):
+        vals = self._session.query(ontology_class.id, ontology_class.value).all()
+        vals.sort(key=lambda v: v[1])
+        return vals
 
 
 class DataImporter:

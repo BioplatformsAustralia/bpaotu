@@ -5,8 +5,10 @@ from collections import defaultdict
 from django.views.decorators.http import require_http_methods
 from django.views.generic import TemplateView
 from django.http import JsonResponse
-from .otu import TaxonomyOptions
-from .otu import SampleContext
+from .otu import (
+    SampleContext,
+    TaxonomyOptions,
+    OntologyInfo)
 
 
 logger = logging.getLogger("rainbow")
@@ -44,13 +46,16 @@ def contextual_fields(request):
     """
     fields_by_type = defaultdict(list)
 
+    ontology_classes = {}
+
     # group together columns by their type. note special case
     # handling for our ontology linkage columns
     for column in SampleContext.__table__.columns:
         if column.name == 'id':
             continue
-        if hasattr(column, "ontology_name"):
+        if hasattr(column, "ontology_class"):
             ty = '_ontology'
+            ontology_classes[column.name] = column.ontology_class
         else:
             ty = str(column.type)
         fields_by_type[ty].append(column.name)
@@ -71,13 +76,16 @@ def contextual_fields(request):
             'type': 'string',
             'name': field_name
         })
+    info = OntologyInfo()
     for field_name in fields_by_type['_ontology']:
+        ontology_class = ontology_classes[field_name]
         definitions.append({
             'type': 'ontology',
             'name': field_name,
-            'values': []
+            'values': info.get_values(ontology_class)
         })
     definitions.sort(key=lambda x: x['name'])
+
 
     return JsonResponse({
         'definitions': definitions
