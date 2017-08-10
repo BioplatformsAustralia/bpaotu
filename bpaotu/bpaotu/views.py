@@ -174,7 +174,6 @@ def otu_search(request):
     query = SampleQuery()
     subq = query.build_taxonomy_subquery(taxonomy_filter)
     result_count, results = query.contextual_query(subq, length, start)
-    logger.critical([result_count, results])
 
     res = {
         'draw': draw,
