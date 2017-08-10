@@ -227,7 +227,7 @@ class SampleOTU(SchemaMixin, Base):
 def make_engine():
     conf = settings.DATABASES['default']
     engine_string = 'postgres://%(USER)s:%(PASSWORD)s@%(HOST)s:%(PORT)s/%(NAME)s' % (conf)
-    return create_engine(engine_string, echo=True)
+    return create_engine(engine_string)
 
 
 class TaxonomyOptions:
@@ -318,7 +318,7 @@ class SampleQuery:
         Session = sessionmaker(bind=self._engine)
         self._session = Session()
 
-    def build_taxonomy_query(self, taxonomy_filter):
+    def build_taxonomy_subquery(self, taxonomy_filter):
         """
         return the BPA IDs (as ints) which have a non-zero OTU count for OTUs
         matching the taxonomy filter
@@ -330,10 +330,21 @@ class SampleQuery:
             q = q.filter(getattr(OTU, otu_attr) == value)
         return q
 
-    def build_contextual_query(self, taxonomy_subquery):
-        q = self._session.query(SampleContext.id).filter(SampleContext.id.in_(taxonomy_subquery)).order_by(SampleContext.id)
-        # TODO: contextually filter
-        return q
+    def contextual_query(self, taxonomy_subquery, limit, offset):
+        """
+        run a contextual query, returning the BPA IDs which match.
+        applies the passed taxonomy_subquery to apply taxonomy filters.
+
+        paging support: applies limit and offset, and returns (count, [bpa_id, ...])
+        """
+        # we use a window function here, to get count() over the whole query without having to 
+        # run it twice
+        q = self._session.query(SampleContext.id, sqlalchemy.func.count().over()).filter(SampleContext.id.in_(taxonomy_subquery)).order_by(SampleContext.id).limit(limit).offset(offset)
+        res = q.all()
+        if not res:
+            return []
+        count = res[0][1]
+        return count, [t[0] for t in res]
 
 
 class DataImporter:

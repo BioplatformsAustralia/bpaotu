@@ -165,23 +165,21 @@ def otu_search(request):
     start = _int_get_param('start')
     length = _int_get_param('length')
 
-    column_definitions = _extract_column_definitions(request)
-    ordering = _extract_ordering(request)
+    # column_definitions = _extract_column_definitions(request)
+    # ordering = _extract_ordering(request)
 
     otu_query = json.loads(request.POST['otu_query'])
     taxonomy_filter = clean_taxonomy_filter(otu_query['taxonomy_filters'])
 
     query = SampleQuery()
-    subq = query.build_taxonomy_query(taxonomy_filter)
-    q = query.build_contextual_query(subq)
-    size = q.count()
-
-    results = q.limit(length).offset(start).all()
+    subq = query.build_taxonomy_subquery(taxonomy_filter)
+    result_count, results = query.contextual_query(subq, length, start)
+    logger.critical([result_count, results])
 
     res = {
         'draw': draw,
-        'data': [{"bpa_id": t} for (t,) in results],
-        'recordsTotal': size,
-        'recordsFiltered': size,
+        'data': [{"bpa_id": t} for t in results],
+        'recordsTotal': result_count,
+        'recordsFiltered': result_count,
     }
     return JsonResponse(res)
