@@ -59,6 +59,12 @@ def contextual_fields(request):
         else:
             ty = str(column.type)
         fields_by_type[ty].append(column.name)
+    
+    def display_name(s):
+        """
+        a bit of a bodge, just replace '_' with ' ' and upper-case
+        """
+        return ' '.join(((t[0].upper() + t[1:]) for t in s.split('_')))
 
     definitions = []
     for field_name in fields_by_type['DATE']:
@@ -84,8 +90,9 @@ def contextual_fields(request):
             'name': field_name,
             'values': info.get_values(ontology_class)
         })
+    for defn in definitions:
+        defn['display_name'] = display_name(defn['name'])
     definitions.sort(key=lambda x: x['name'])
-
 
     return JsonResponse({
         'definitions': definitions

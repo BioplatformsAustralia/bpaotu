@@ -80,19 +80,50 @@ $(document).ready(function() {
     // this is populated via an ajax call, and specifies the
     // contextual metadata fields and their types
     var contextual_config = null;
+    var next_contextual_filter_id = 1;
+
+    var update_contextual_controls = function() {
+        var filters = $("#contextual_filters_target > div");
+        var target = $("#no_contextual_filters");
+        if (filters.length > 0) {
+            target.hide()
+        } else {
+            target.show()
+        }
+        var target = $("#contextual_filters_mode_para");
+        if (filters.length > 1) {
+            target.show()
+        } else {
+            target.hide()
+        }
+    };
 
     var add_contextual_filter = function() {
         if (!contextual_config) {
             // initial config not loaded yet
             return;
         }
+        var new_filter_id = 'contextual-filter-' + next_contextual_filter_id;
+        next_contextual_filter_id += 1;
         var d = $([
-            '<div class="row">',
-            '<div class="col-md-2"><button class="form-control" type="button"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span> Remove</button>',
+            '<div class="row" id="' + new_filter_id + '">',
+            '<div class="col-md-2"><button class="form-control" type="button"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button></div>',
+            '<div class="col-md-4"><select class="form-control"></select></div>',
             '</div>'
         ].join("\n"));
         $("#contextual_filters_target").append(d);
-        console.log(contextual_config);
+        var select_box = $('#' + new_filter_id + " select");
+        set_options(select_box, [blank_option].concat(_.map(contextual_config['definitions'], function(val) {
+            return {
+                'value': val['name'],
+                'text': val['display_name']
+            }
+        })));
+        $('#' + new_filter_id + ' button').click(function() {
+            $('#' + new_filter_id).remove();
+            update_contextual_controls();
+        });
+        update_contextual_controls();
     };
 
     var setup_contextual = function() {
@@ -101,8 +132,8 @@ $(document).ready(function() {
             add_contextual_filter();
         });
         $("#clear_contextual_filters").click(function() {
-            console.log("clear");
-
+            $("#contextual_filters_target").empty();
+            update_contextual_controls();
         });
 
         // get configuration of the various filters
@@ -113,6 +144,7 @@ $(document).ready(function() {
         }).done(function(result) {
             contextual_config = result;
         });
+        update_contextual_controls();
     };
 
 
