@@ -109,6 +109,7 @@ $(document).ready(function() {
             '<div class="row" id="' + new_filter_id + '">',
             '<div class="col-md-2"><button class="form-control" type="button"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button></div>',
             '<div class="col-md-4"><select class="form-control"></select></div>',
+            '<div class="col-md-6 contextual-entry"></div>',
             '</div>'
         ].join("\n"));
         $("#contextual_filters_target").append(d);
@@ -119,6 +120,49 @@ $(document).ready(function() {
                 'text': val['display_name']
             }
         })));
+        select_box.on('change', function() {
+            var target = $('#' + new_filter_id + " .contextual-entry");
+            target.empty();
+
+            var defn_name = select_box.val();
+            var defn = _.find(contextual_config['definitions'], {'name': defn_name});
+            var defn_type = defn['type'];
+
+            var widget;
+            if (defn_type == 'date') {
+                widget = $([
+                    '<div class="row">',
+                    '<div class="col-md-5"><input class="form-control cval_from" /></div>',
+                    '<div class="col-md-2 form-label">-</div>',
+                    '<div class="col-md-5"><input class="form-control cval_to" /></div>',
+                    '</div>'
+                ].join("\n"));
+            } else if (defn_type == 'float') {
+                widget = $([
+                    '<div class="row">',
+                    '<div class="col-md-5"><input class="form-control cval_from" /></div>',
+                    '<div class="col-md-2 form-label">-</div>',
+                    '<div class="col-md-5"><input class="form-control cval_to" /></div>',
+                    '</div>'
+                ].join("\n"));
+            } else if (defn_type == 'string') {
+                widget = $([
+                    '<div class="row">',
+                    '<div class="col-md-4 form-label">Text contains:</div>',
+                    '<div class="col-md-8"><input class="form-control cval_contains" /></div>',
+                    '</div>'
+                ].join("\n"));
+            } else if (defn_type == 'ontology') {
+                widget = $('<select class="form-control cval_select"></select>');
+                set_options(widget, _.map(defn['values'], function(val) {
+                    return {
+                        'value': val[0],
+                        'text': val[1]
+                    }
+                }));
+            }
+            target.append(widget);
+        });
         $('#' + new_filter_id + ' button').click(function() {
             $('#' + new_filter_id).remove();
             update_contextual_controls();

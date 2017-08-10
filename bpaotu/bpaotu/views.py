@@ -59,11 +59,14 @@ def contextual_fields(request):
         else:
             ty = str(column.type)
         fields_by_type[ty].append(column.name)
-    
+
     def display_name(s):
         """
         a bit of a bodge, just replace '_' with ' ' and upper-case
+        drop _id if it's there
         """
+        if s.endswith('_id'):
+            s = s[:-3]
         return ' '.join(((t[0].upper() + t[1:]) for t in s.split('_')))
 
     definitions = []
