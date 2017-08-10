@@ -44,16 +44,19 @@ $(document).ready(function() {
         })));
     }
 
-    var taxonomy_refresh = function() {
-        var state = _.map(taxonomy_hierarchy, function(s) {
+    var taxonomy_get_state = function() {
+        return _.map(taxonomy_hierarchy, function(s) {
             return $(taxonomy_selector(s)).val();
         });
+    };
+
+    var taxonomy_refresh = function() {
         $.ajax({
             method: 'GET',
             dataType: 'json',
             url: window.otu_search_config['taxonomy_endpoint'],
             data: {
-                'selected': JSON.stringify(state)
+                'selected': JSON.stringify(taxonomy_get_state())
             }
         }).done(function(result) {
             taxonomy_set_possibilities(result['possibilities']);
@@ -108,7 +111,7 @@ $(document).ready(function() {
         var d = $([
             '<div class="row" id="' + new_filter_id + '">',
             '<div class="col-md-2"><button class="form-control" type="button"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button></div>',
-            '<div class="col-md-4"><select class="form-control"></select></div>',
+            '<div class="col-md-4"><select class="form-control contextual-item"></select></div>',
             '<div class="col-md-6 contextual-entry"></div>',
             '</div>'
         ].join("\n"));
@@ -191,6 +194,46 @@ $(document).ready(function() {
         update_contextual_controls();
     };
 
+    var marshal_contextual_filters = function() {
+        var filter_state = _.map($("#contextual_filters_target > div"), function(target) {
+            var marshal_input = function(selector, obj_name) {
+                var matches = $(selector, target);
+                if (matches.length == 1) {
+                    obj[obj_name] = matches.val();
+                }
+            }
+            var obj = {};
+            obj['field'] = $(".contextual-item", target).val();
+            marshal_input('.cval_from', 'from');
+            marshal_input('.cval_to', 'to');
+            marshal_input('.cval_contains', 'contains');
+            marshal_input('.cval_select', 'is');
+            return obj;
+        });
+        return {
+            'filters': filter_state,
+            'mode': $('#contextual_filters_mode').val()
+        };
+        return state;
+    };
+
+    var marshal_taxonomy_filters = function() {
+        return taxonomy_get_state();
+    };
+
+    var search = function() {
+        var query_obj = {
+            'taxonomy_filters': marshal_taxonomy_filters(),
+            'contextual_filters': marshal_contextual_filters(),
+        };
+        console.log(query_obj);
+    };
+
+    var setup_search = function() {
+        $("#search_button").click(function() {
+            search();
+        });
+    };
 
     var setup_csrf = function() {
         var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
@@ -210,4 +253,5 @@ $(document).ready(function() {
     setup_csrf();
     setup_taxonomic();
     setup_contextual();
+    setup_search();
 });
