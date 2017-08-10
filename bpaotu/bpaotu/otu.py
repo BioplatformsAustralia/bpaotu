@@ -227,7 +227,7 @@ class SampleOTU(SchemaMixin, Base):
 def make_engine():
     conf = settings.DATABASES['default']
     engine_string = 'postgres://%(USER)s:%(PASSWORD)s@%(HOST)s:%(PORT)s/%(NAME)s' % (conf)
-    return create_engine(engine_string)
+    return create_engine(engine_string, echo=True)
 
 
 class TaxonomyOptions:
@@ -328,6 +328,11 @@ class SampleQuery:
             if value is None:
                 break
             q = q.filter(getattr(OTU, otu_attr) == value)
+        return q
+
+    def build_contextual_query(self, taxonomy_subquery):
+        q = self._session.query(SampleContext.id).filter(SampleContext.id.in_(taxonomy_subquery)).order_by(SampleContext.id)
+        # TODO: contextually filter
         return q
 
 

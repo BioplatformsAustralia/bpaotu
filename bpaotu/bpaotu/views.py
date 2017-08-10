@@ -173,28 +173,15 @@ def otu_search(request):
 
     query = SampleQuery()
     subq = query.build_taxonomy_query(taxonomy_filter)
-    logger.critical(subq)
-    logger.critical(subq.count())
+    q = query.build_contextual_query(subq)
+    size = q.count()
 
-    logger.critical(otu_query)
-    logger.critical(taxonomy_filter)
-    logger.critical('draw=%s, start=%s, length=%s, column_definitions=%s, ordering=%s' % (draw, start, length, column_definitions, ordering))
-    logger.critical(request.POST)
+    results = q.limit(length).offset(start).all()
 
-    return JsonResponse({
+    res = {
         'draw': draw,
-        'data': [{
-            "DT_RowId": "row_3",
-            "DT_RowData": {
-                "pkey": 3
-            },
-            "bpa_id": "102.0.022.2",
-            "last_name": "Ramos",
-            "position": "System Architect",
-            "office": "London",
-            "start_date": "9th Oct 09",
-            "salary": "$2,875"
-        }],
-        'recordsTotal': 1,
-        'recordsFiltered': 1,
-    })
+        'data': [{"bpa_id": t} for (t,) in results],
+        'recordsTotal': size,
+        'recordsFiltered': size,
+    }
+    return JsonResponse(res)
