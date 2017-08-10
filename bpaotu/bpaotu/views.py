@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from collections import defaultdict
 
 from django.views.decorators.http import require_http_methods
@@ -10,8 +11,10 @@ from .otu import (
     TaxonomyOptions,
     OntologyInfo)
 
-
 logger = logging.getLogger("rainbow")
+# See datatables.net serverSide documentation for details
+ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
+COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
 
 
 class OTUSearch(TemplateView):
@@ -102,6 +105,35 @@ def contextual_fields(request):
     })
 
 
+def _extract_column_definitions(request):
+    columns = []
+    for k in request.GET:
+        match = COLUMN_PATTERN.match(k)
+        if match is not None:
+            index = int(match.groups()[0])
+            attr = match.groups()[1]
+            for i in range(index - len(columns) + 1):
+                columns.append({})
+            columns[index][attr] = request.GET.get(k)
+    return columns
+
+
+def _extract_ordering(request):
+    ordering = []
+    for k in request.GET:
+        match = ORDERING_PATTERN.match(k)
+        if match is not None:
+            index = int(match.groups()[0])
+            attr = match.groups()[1]
+            for i in range(index - len(ordering) + 1):
+                ordering.append({})
+            value = request.GET.get(k)
+            if attr == 'column':
+                value = int(value)
+            ordering[index][attr] = value
+    return ordering
+
+
 # technically we should be using GET, but the specification
 # of the query (plus the datatables params) is large: so we
 # avoid the issues of long URLs by simply POSTing the query
@@ -111,7 +143,40 @@ def otu_search(request):
     private API: return the available fields, and their types, so that
     the contextual filtering UI can be built
     """
+
+    def _int_get_param(param_name):
+        param = request.POST.get(param_name)
+        try:
+            return int(param) if param is not None else None
+        except ValueError:
+            return None
+
+    draw = _int_get_param('draw')
+    start = _int_get_param('start')
+    length = _int_get_param('length')
+
+    column_definitions = _extract_column_definitions(request)
+    ordering = _extract_ordering(request)
+
+    logger.critical('draw=%s, start=%s, length=%s, column_definitions=%s, ordering=%s' % (draw, start, length, column_definitions, ordering))
     logger.critical(request.POST)
-    logger.critical(request.body)
+    otu_query = json.loads(request.POST['otu_query'])
+    logger.critical(otu_query)
+
     return JsonResponse({
+        'draw': draw,
+        'data': [{
+            "DT_RowId": "row_3",
+            "DT_RowData": {
+                "pkey": 3
+            },
+            "bpa_id": "102.0.022.2",
+            "last_name": "Ramos",
+            "position": "System Architect",
+            "office": "London",
+            "start_date": "9th Oct 09",
+            "salary": "$2,875"
+        }],
+        'recordsTotal': 1,
+        'recordsFiltered': 1,
     })

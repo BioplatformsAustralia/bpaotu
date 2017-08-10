@@ -247,7 +247,7 @@ $(document).ready(function() {
             'taxonomy_filters': marshal_taxonomy_filters(),
             'contextual_filters': marshal_contextual_filters(),
         };
-        data['otu_query'] = query_obj;
+        data['otu_query'] = JSON.stringify(query_obj);
         return data;
     };
 
@@ -259,7 +259,10 @@ $(document).ready(function() {
                 'url': window.otu_search_config['search_endpoint'],
                 'type': 'POST',
                 'data': set_search_data
-            }
+            },
+            columns: [
+              { 'data': 'bpa_id' , 'defaultContent': ''},
+            ]
         });
     };
 
