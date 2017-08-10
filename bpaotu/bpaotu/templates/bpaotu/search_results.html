@@ -166,12 +166,14 @@
         </div>
     </div>
 </div>
+
 </div>
 
 <script>
     window.otu_search_config = {
         'taxonomy_endpoint': "{% url 'taxonomy_options' %}",
         'contextual_endpoint': "{% url 'contextual_fields' %}",
+        'search_endpoint': "{% url 'otu_search' %}",
     };
     $(function () {
         $('[data-toggle="tooltip"]').tooltip()

@@ -10,4 +10,5 @@ urlpatterns = [
     url(r'^$', views.OTUSearch.as_view()),
     url(r'^private/api/v1/taxonomy-options$', views.taxonomy_options, name="taxonomy_options"),
     url(r'^private/api/v1/contextual-fields$', views.contextual_fields, name="contextual_fields"),
+    url(r'^private/api/v1/search$', views.otu_search, name="otu_search"),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

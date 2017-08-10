@@ -100,3 +100,18 @@ def contextual_fields(request):
     return JsonResponse({
         'definitions': definitions
     })
+
+
+# technically we should be using GET, but the specification
+# of the query (plus the datatables params) is large: so we
+# avoid the issues of long URLs by simply POSTing the query
+@require_http_methods(["POST"])
+def otu_search(request):
+    """
+    private API: return the available fields, and their types, so that
+    the contextual filtering UI can be built
+    """
+    logger.critical(request.POST)
+    logger.critical(request.body)
+    return JsonResponse({
+    })

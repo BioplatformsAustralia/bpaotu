@@ -11,6 +11,11 @@ $(document).ready(function() {
         "species"
     ];
     var blank_option = {'text': '----', 'value': null};
+    // this is populated via an ajax call, and specifies the
+    // contextual metadata fields and their types
+    var contextual_config;
+    var next_contextual_filter_id = 1;
+    var datatable;
 
     var set_options = function(target, options) {
         target.empty();
@@ -79,11 +84,6 @@ $(document).ready(function() {
         // get initial selections
         taxonomy_refresh();
     };
-
-    // this is populated via an ajax call, and specifies the
-    // contextual metadata fields and their types
-    var contextual_config = null;
-    var next_contextual_filter_id = 1;
 
     var update_contextual_controls = function() {
         var filters = $("#contextual_filters_target > div");
@@ -221,17 +221,9 @@ $(document).ready(function() {
         return taxonomy_get_state();
     };
 
-    var search = function() {
-        var query_obj = {
-            'taxonomy_filters': marshal_taxonomy_filters(),
-            'contextual_filters': marshal_contextual_filters(),
-        };
-        console.log(query_obj);
-    };
-
     var setup_search = function() {
         $("#search_button").click(function() {
-            search();
+            datatable.ajax.reload();
         });
     };
 
@@ -250,8 +242,30 @@ $(document).ready(function() {
         });
     };
 
+    var set_search_data = function(data, settings) {
+        var query_obj = {
+            'taxonomy_filters': marshal_taxonomy_filters(),
+            'contextual_filters': marshal_contextual_filters(),
+        };
+        data['otu_query'] = query_obj;
+        return data;
+    };
+
+    var setup_datatables = function() {
+        datatable = $("#results").DataTable({
+            'processing': true,
+            'serverSide': true,
+            'ajax': {
+                'url': window.otu_search_config['search_endpoint'],
+                'type': 'POST',
+                'data': set_search_data
+            }
+        });
+    };
+
     setup_csrf();
     setup_taxonomic();
     setup_contextual();
     setup_search();
+    setup_datatables();
 });
