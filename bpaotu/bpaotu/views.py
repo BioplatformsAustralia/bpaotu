@@ -9,7 +9,8 @@ from django.http import JsonResponse
 from .otu import (
     SampleContext,
     TaxonomyOptions,
-    OntologyInfo)
+    OntologyInfo,
+    SampleQuery)
 
 logger = logging.getLogger("rainbow")
 # See datatables.net serverSide documentation for details
@@ -21,20 +22,29 @@ class OTUSearch(TemplateView):
     template_name = 'bpaotu/search_results.html'
 
 
-@require_http_methods(["GET"])
-def taxonomy_options(request):
+def clean_taxonomy_filter(state_vector):
     """
-    private API: given taxonomy constraints, return the possible options
+    take a taxonomy filter (a list of phylum, kingdom, ...) and clean it
+    so that it is a simple list of ints or None of the correct length.
     """
     def int_if_not_already_none(v):
         if v is None or v == '':
             return None
         return int(v)
 
-    selected = list(map(
+    assert(len(state_vector) == len(TaxonomyOptions.hierarchy))
+    return list(map(
         int_if_not_already_none,
-        json.loads(request.GET['selected'])))
+        state_vector))
+
+
+@require_http_methods(["GET"])
+def taxonomy_options(request):
+    """
+    private API: given taxonomy constraints, return the possible options
+    """
     options = TaxonomyOptions()
+    selected = clean_taxonomy_filter(json.loads(request.GET['selected']))
     possibilities = options.possibilities(selected)
     return JsonResponse({
         'possibilities': possibilities
@@ -158,10 +168,18 @@ def otu_search(request):
     column_definitions = _extract_column_definitions(request)
     ordering = _extract_ordering(request)
 
+    otu_query = json.loads(request.POST['otu_query'])
+    taxonomy_filter = clean_taxonomy_filter(otu_query['taxonomy_filters'])
+
+    query = SampleQuery()
+    subq = query.build_taxonomy_query(taxonomy_filter)
+    logger.critical(subq)
+    logger.critical(subq.count())
+
+    logger.critical(otu_query)
+    logger.critical(taxonomy_filter)
     logger.critical('draw=%s, start=%s, length=%s, column_definitions=%s, ordering=%s' % (draw, start, length, column_definitions, ordering))
     logger.critical(request.POST)
-    otu_query = json.loads(request.POST['otu_query'])
-    logger.critical(otu_query)
 
     return JsonResponse({
         'draw': draw,

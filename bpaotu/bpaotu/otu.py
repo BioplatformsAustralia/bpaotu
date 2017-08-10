@@ -252,9 +252,6 @@ class TaxonomyOptions:
         TaxonomyOptions.hierarchy. a value of None indicates there is no selection.
         """
 
-        assert(type(state) is list)
-        assert(len(state) == len(TaxonomyOptions.hierarchy))
-
         def drop_id(attr):
             "return without `_id`"
             return attr[:-3]
@@ -313,6 +310,25 @@ class OntologyInfo:
         vals = self._session.query(ontology_class.id, ontology_class.value).all()
         vals.sort(key=lambda v: v[1])
         return vals
+
+
+class SampleQuery:
+    def __init__(self):
+        self._engine = make_engine()
+        Session = sessionmaker(bind=self._engine)
+        self._session = Session()
+
+    def build_taxonomy_query(self, taxonomy_filter):
+        """
+        return the BPA IDs (as ints) which have a non-zero OTU count for OTUs
+        matching the taxonomy filter
+        """
+        q = self._session.query(SampleOTU.sample_id).distinct().join(OTU)
+        for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, taxonomy_filter):
+            if value is None:
+                break
+            q = q.filter(getattr(OTU, otu_attr) == value)
+        return q
 
 
 class DataImporter:
