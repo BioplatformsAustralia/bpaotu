@@ -323,6 +323,9 @@ class SampleQuery:
         return the BPA IDs (as ints) which have a non-zero OTU count for OTUs
         matching the taxonomy filter
         """
+        # shortcut: if we don't have any filters, don't produce a subquery
+        if taxonomy_filter[0] is None:
+            return None
         q = self._session.query(SampleOTU.sample_id).distinct().join(OTU)
         for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, taxonomy_filter):
             if value is None:
@@ -339,7 +342,10 @@ class SampleQuery:
         """
         # we use a window function here, to get count() over the whole query without having to 
         # run it twice
-        q = self._session.query(SampleContext.id, sqlalchemy.func.count().over()).filter(SampleContext.id.in_(taxonomy_subquery)).order_by(SampleContext.id).limit(limit).offset(offset)
+        q = self._session.query(SampleContext.id, sqlalchemy.func.count().over())
+        if taxonomy_subquery is not None:
+            q = q.filter(SampleContext.id.in_(taxonomy_subquery))
+        q = q.order_by(SampleContext.id).limit(limit).offset(offset)
         res = q.all()
         if not res:
             return []
