@@ -238,3 +238,8 @@ def otu_search(request):
             'recordsFiltered': result_count,
         })
     return JsonResponse(res)
+
+
+@require_http_methods(["GET"])
+def otu_search(request):
+    return JsonResponse({})

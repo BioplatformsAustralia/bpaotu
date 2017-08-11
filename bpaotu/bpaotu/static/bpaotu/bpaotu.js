@@ -242,12 +242,15 @@ $(document).ready(function() {
         });
     };
 
-    var set_search_data = function(data, settings) {
-        var query_obj = {
+    var describe_search = function() {
+        return {
             'taxonomy_filters': marshal_taxonomy_filters(),
             'contextual_filters': marshal_contextual_filters(),
         };
-        data['otu_query'] = JSON.stringify(query_obj);
+    }
+
+    var set_search_data = function(data, settings) {
+        data['otu_query'] = JSON.stringify(describe_search());
         return data;
     };
 
@@ -285,10 +288,20 @@ $(document).ready(function() {
         });
     };
 
+    var setup_export = function() {
+        var target = $("#export_button");
+        target.click(function() {
+            var params = describe_search()
+            var target_url = window.otu_search_config['export_endpoint'] + '?' + $.param(params);
+            window.open(target_url);
+        });
+    };
+
     setup_csrf();
     setup_taxonomic();
     setup_contextual();
     setup_search();
     setup_datatables();
+    setup_export();
     set_errors(null);
 });
