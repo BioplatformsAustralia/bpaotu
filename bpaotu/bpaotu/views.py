@@ -1,4 +1,5 @@
 import re
+import csv
 import json
 import logging
 import zipfile
@@ -8,7 +9,7 @@ from collections import defaultdict
 from django.views.decorators.http import require_http_methods
 from django.views.generic import TemplateView
 from django.http import JsonResponse, HttpResponse
-from io import BytesIO
+from io import BytesIO, StringIO
 import traceback
 from .otu import (
     SampleContext,
@@ -25,6 +26,16 @@ logger = logging.getLogger("rainbow")
 # See datatables.net serverSide documentation for details
 ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
+
+
+def display_name(field_name):
+    """
+    a bit of a bodge, just replace '_' with ' ' and upper-case
+    drop _id if it's there
+    """
+    if field_name.endswith('_id'):
+        field_name = field_name[:-3]
+    return ' '.join(((t[0].upper() + t[1:]) for t in field_name.split('_')))
 
 
 class OTUSearch(TemplateView):
@@ -81,15 +92,6 @@ def contextual_fields(request):
         else:
             ty = str(column.type)
         fields_by_type[ty].append(column.name)
-
-    def display_name(s):
-        """
-        a bit of a bodge, just replace '_' with ' ' and upper-case
-        drop _id if it's there
-        """
-        if s.endswith('_id'):
-            s = s[:-3]
-        return ' '.join(((t[0].upper() + t[1:]) for t in s.split('_')))
 
     definitions = []
     for field_name in fields_by_type['DATE']:
@@ -251,6 +253,39 @@ def otu_search(request):
     return JsonResponse(res)
 
 
+def contextual_csv(samples):
+    info = OntologyInfo()
+
+    def make_ontology_export(ontology_cls):
+        values = dict(info.get_values(ontology_cls))
+        return lambda x: values[x]
+
+    def str_none_blank(v):
+        if v is None:
+            return ''
+        return str(v)
+
+    csv_fd = StringIO()
+    w = csv.writer(csv_fd)
+    fields = []
+    heading = []
+    write_fns = []
+    for column in SampleContext.__table__.columns:
+        fields.append(column.name)
+        if column.name == 'id':
+            heading.append('BPA ID')
+        else:
+            heading.append(display_name(column.name))
+        if hasattr(column, "ontology_class"):
+            write_fns.append(make_ontology_export(column.ontology_class))
+        else:
+            write_fns.append(str_none_blank)
+    w.writerow(heading)
+    for sample in samples:
+        w.writerow(f(getattr(sample, field)) for (field, f) in zip(fields, write_fns))
+    return csv_fd.getvalue()
+
+
 @require_http_methods(["GET"])
 def otu_export(request):
     """
@@ -264,12 +299,11 @@ def otu_export(request):
 
     contextual_filter, taxonomy_filter, errors = param_to_filters(request.GET['q'])
     query = SampleQuery(contextual_filter, taxonomy_filter)
-    results = query.matching_samples()
-    logger.critical(results)
 
     zip_fd = BytesIO()
     with zipfile.ZipFile(zip_fd, mode='w', compression=zipfile.ZIP_DEFLATED) as zf:
         zf.writestr('README.txt', 'hello world')
+        zf.writestr('contextual.csv', contextual_csv(query.matching_samples()))
 
     zip_fd.flush()
     zip_fd.seek(0)
@@ -277,4 +311,4 @@ def otu_export(request):
     response = HttpResponse(zip_fd, content_type='application/zip')
     filename = "BPASearchResultsExport.zip"
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
-    return HttpResponse(response)
+    return response
