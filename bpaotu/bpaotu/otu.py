@@ -2,6 +2,7 @@ import csv
 import logging
 import datetime
 import sqlalchemy
+from django.core.cache import caches
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float
 from sqlalchemy.schema import CreateSchema, DropSchema
@@ -9,6 +10,7 @@ from itertools import zip_longest, chain
 from django.conf import settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, relationship
+from hashlib import sha256
 from glob import glob
 from .contextual import contextual_rows
 from collections import defaultdict
@@ -327,8 +329,16 @@ class SampleQuery:
         self._contextual_filter = contextual_filter
 
     def get_results(self, start, length):
-        subq = self._build_taxonomy_subquery()
-        result_count, all_results = self._contextual_query(subq)
+        # repr() completely describes the taxonomical and contextual filters
+        cache = caches['search_results']
+        hash_str = 'SampleQuery:get_results:' + repr(self._taxonomy_filter) + ':' + repr(self._contextual_filter)
+        key = sha256(hash_str.encode('utf8')).hexdigest()
+        result = cache.get(key)
+        if result is None:
+            subq = self._build_taxonomy_subquery()
+            result = self._contextual_query(subq)
+            cache.set(key, result)
+        result_count, all_results = result
         return result_count, all_results[start:start + length]
 
     def _build_taxonomy_subquery(self):
@@ -375,8 +385,12 @@ class ContextualFilter:
     }
 
     def __init__(self, mode):
-        self.mode = ContextualFilter.mode_operators[mode]
+        self.mode = mode
+        self.mode_func = ContextualFilter.mode_operators[self.mode]
         self.terms = []
+
+    def __repr__(self):
+        return '<ContextualFilter(%s,[%s]>' % (self.mode, ','.join(repr(t) for t in self.terms))
 
     def add_term(self, term):
         self.terms.append(term)
@@ -389,7 +403,7 @@ class ContextualFilter:
         # combine into a single expression using our mode,
         # then filter the query
         return q.filter(
-            self.mode(
+            self.mode_func(
                 *(chain(*(t.get_conditions() for t in self.terms)))))
 
 
@@ -407,6 +421,9 @@ class ContextualFilterTermFloat(ContextualFilterTerm):
         self.val_from = val_from
         self.val_to = val_to
 
+    def __repr__(self):
+        return '<TermFloat(%s,%s,%s)>' % (self.field_name, self.val_from, self.val_to)
+
     def get_conditions(self):
         return [
             self.field >= self.val_from,
@@ -422,6 +439,9 @@ class ContextualFilterTermDate(ContextualFilterTerm):
         self.val_from = val_from
         self.val_to = val_to
 
+    def __repr__(self):
+        return '<TermDate(%s,%s,%s)>' % (self.field_name, self.val_from, self.val_to)
+
     def get_conditions(self):
         return [
             self.field >= self.val_from,
@@ -435,6 +455,9 @@ class ContextualFilterTermString(ContextualFilterTerm):
         assert(type(val_contains) is str)
         self.val_contains = val_contains
 
+    def __repr__(self):
+        return '<TermString(%s,%s)>' % (self.field_name, self.val_contains)
+
     def get_conditions(self):
         return [
             self.field.icontains(self.val_contains)
@@ -446,6 +469,9 @@ class ContextualFilterTermOntology(ContextualFilterTerm):
         super(ContextualFilterTermOntology, self).__init__(field_name)
         assert(type(val_is) is int)
         self.val_is = val_is
+
+    def __repr__(self):
+        return '<TermOntology(%s,%s)>' % (self.field_name, self.val_is)
 
     def get_conditions(self):
         return [

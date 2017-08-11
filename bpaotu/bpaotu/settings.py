@@ -342,7 +342,7 @@ CACHES = {
     }
 
 }
-CACHES['big_objects'] = CACHES['default']
+CACHES['search_results'] = CACHES['default']
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
 CHMOD_USER = env.get("repo_user", "apache")
