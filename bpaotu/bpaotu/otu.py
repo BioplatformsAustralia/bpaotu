@@ -329,7 +329,6 @@ class SampleQuery:
     def get_results(self, start, length):
         subq = self._build_taxonomy_subquery()
         result_count, all_results = self._contextual_query(subq)
-        logger.critical(['get_results', result_count, len(all_results)])
         return result_count, all_results[start:start + length]
 
     def _build_taxonomy_subquery(self):
@@ -354,7 +353,7 @@ class SampleQuery:
 
         paging support: applies limit and offset, and returns (count, [bpa_id, ...])
         """
-        # we use a window function here, to get count() over the whole query without having to 
+        # we use a window function here, to get count() over the whole query without having to
         # run it twice
         q = self._session.query(SampleContext.id, sqlalchemy.func.count().over())
         if taxonomy_subquery is not None:

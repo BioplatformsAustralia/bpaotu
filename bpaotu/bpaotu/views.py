@@ -189,7 +189,7 @@ def otu_search(request):
 
     otu_query = json.loads(request.POST['otu_query'])
     taxonomy_filter = clean_taxonomy_filter(otu_query['taxonomy_filters'])
-    
+
     context_spec = otu_query['contextual_filters']
     contextual_filter = ContextualFilter(context_spec['mode'])
 
