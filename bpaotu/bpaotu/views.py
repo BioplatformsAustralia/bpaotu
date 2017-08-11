@@ -300,6 +300,8 @@ def otu_export(request):
     contextual_filter, taxonomy_filter, errors = param_to_filters(request.GET['q'])
     query = SampleQuery(contextual_filter, taxonomy_filter)
 
+    result = query.matching_sample_otus()
+
     zip_fd = BytesIO()
     with zipfile.ZipFile(zip_fd, mode='w', compression=zipfile.ZIP_DEFLATED) as zf:
         zf.writestr('README.txt', 'hello world')

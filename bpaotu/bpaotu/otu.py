@@ -110,6 +110,9 @@ class OTU(SchemaMixin, Base):
     family = relationship(OTUFamily)
     species = relationship(OTUSpecies)
 
+    def __repr__(self):
+        return "<OTU(%d)>" % (self.id)
+
 
 class SampleHorizonClassification(OntologyMixin, Base):
     pass
@@ -219,12 +222,19 @@ class SampleContext(SchemaMixin, Base):
     tillage_id = ontology_fkey(SampleTillage)
     color_id = ontology_fkey(SampleColor)
 
+    def __repr__(self):
+        return "<SampleContext(%d)>" % (self.id)
+
+
 
 class SampleOTU(SchemaMixin, Base):
     __tablename__ = 'sample_otu'
     sample_id = Column(Integer, ForeignKey(SCHEMA + '.sample_context.id'), primary_key=True)
     otu_id = Column(Integer, ForeignKey(SCHEMA + '.otu.id'), primary_key=True)
     count = Column(Integer, nullable=False)
+
+    def __repr__(self):
+        return "<SampleOTU(%d,%d,%d)>" % (self.sample_id, self.otu_id, self.count)
 
 
 def make_engine():
@@ -334,8 +344,11 @@ class SampleQuery:
         key = sha256(hash_str.encode('utf8')).hexdigest()
         result = cache.get(key)
         if not result:
+            logger.critical('cache miss: ' + hash_str)
             result = q.all()
             cache.set(key, result)
+        else:
+            logger.critical('cache hit: ' + hash_str)
         return result
 
     def matching_sample_ids(self):
@@ -345,21 +358,21 @@ class SampleQuery:
         return self._q_all_cached('matching_sample_ids', q)
 
     def matching_samples(self):
-        def _run_query():
-            q = self._session.query(SampleContext)
-            subq = self._build_taxonomy_subquery()
-            q = self._apply_filters(q, subq).order_by(SampleContext.id)
-            return q.all()
+        q = self._session.query(SampleContext)
+        subq = self._build_taxonomy_subquery()
+        q = self._apply_filters(q, subq).order_by(SampleContext.id)
+        return self._q_all_cached('matching_samples', q)
 
-        # repr() completely describes the taxonomical and contextual filters
-        cache = caches['search_results']
-        hash_str = 'SampleQuery:matching_sample_ids:' + repr(self._taxonomy_filter) + ':' + repr(self._contextual_filter)
-        key = sha256(hash_str.encode('utf8')).hexdigest()
-        result = cache.get(key)
-        if result is None:
-            result = _run_query()
-            cache.set(key, result)
-        return result
+    def matching_sample_otus(self):
+        # we do a cross-join, but convert to an inner-join with
+        # filters. as SampleContext is in the main query, the
+        # machinery for filtering above will just work
+        q = self._session.query(OTU, SampleOTU, SampleContext) \
+            .filter(OTU.id == SampleOTU.otu_id) \
+            .filter(SampleContext.id == SampleOTU.sample_id)
+        subq = self._build_taxonomy_subquery()
+        q = self._apply_filters(q, subq).order_by(SampleContext.id)
+        return self._q_all_cached('matching_sample_otus', q)
 
     def _build_taxonomy_subquery(self):
         """
