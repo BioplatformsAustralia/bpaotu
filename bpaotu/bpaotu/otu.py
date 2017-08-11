@@ -5,7 +5,7 @@ import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float
 from sqlalchemy.schema import CreateSchema, DropSchema
-from itertools import zip_longest
+from itertools import zip_longest, chain
 from django.conf import settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, relationship
@@ -319,27 +319,35 @@ class SampleQuery:
     contextual filters
     """
 
-    def __init__(self):
+    def __init__(self, contextual_filter, taxonomy_filter):
         self._engine = make_engine()
         Session = sessionmaker(bind=self._engine)
         self._session = Session()
+        self._taxonomy_filter = taxonomy_filter
+        self._contextual_filter = contextual_filter
 
-    def build_taxonomy_subquery(self, taxonomy_filter):
+    def get_results(self, start, length):
+        subq = self._build_taxonomy_subquery()
+        result_count, all_results = self._contextual_query(subq)
+        logger.critical(['get_results', result_count, len(all_results)])
+        return result_count, all_results[start:start + length]
+
+    def _build_taxonomy_subquery(self):
         """
         return the BPA IDs (as ints) which have a non-zero OTU count for OTUs
         matching the taxonomy filter
         """
         # shortcut: if we don't have any filters, don't produce a subquery
-        if taxonomy_filter[0] is None:
+        if self._taxonomy_filter[0] is None:
             return None
         q = self._session.query(SampleOTU.sample_id).distinct().join(OTU)
-        for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, taxonomy_filter):
+        for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter):
             if value is None:
                 break
             q = q.filter(getattr(OTU, otu_attr) == value)
         return q
 
-    def contextual_query(self, taxonomy_subquery, limit, offset):
+    def _contextual_query(self, taxonomy_subquery):
         """
         run a contextual query, returning the BPA IDs which match.
         applies the passed taxonomy_subquery to apply taxonomy filters.
@@ -351,7 +359,9 @@ class SampleQuery:
         q = self._session.query(SampleContext.id, sqlalchemy.func.count().over())
         if taxonomy_subquery is not None:
             q = q.filter(SampleContext.id.in_(taxonomy_subquery))
-        q = q.order_by(SampleContext.id).limit(limit).offset(offset)
+        # apply contextual filter terms
+        q = self._contextual_filter.apply(q)
+        q = q.order_by(SampleContext.id)
         res = q.all()
         if not res:
             return []
@@ -360,49 +370,85 @@ class SampleQuery:
 
 
 class ContextualFilter:
+    mode_operators = {
+        'or': sqlalchemy.or_,
+        'and': sqlalchemy.and_,
+    }
+
     def __init__(self, mode):
-        assert(mode == 'or' or mode == 'and')
-        self.mode = mode
+        self.mode = ContextualFilter.mode_operators[mode]
         self.terms = []
-    
+
     def add_term(self, term):
         self.terms.append(term)
 
+    def apply(self, q):
+        """
+        return q with contextual filter terms applied to it
+        """
+        return q.filter(
+            self.mode(
+                *(chain(*(t.get_conditions() for t in self.terms)))))
+
 
 class ContextualFilterTerm:
-    pass
+    def __init__(self, field_name):
+        self.field_name = field_name
+        self.field = getattr(SampleContext, self.field_name)
 
 
 class ContextualFilterTermFloat(ContextualFilterTerm):
     def __init__(self, field_name, val_from, val_to):
+        super(ContextualFilterTermFloat, self).__init__(field_name)
         assert(type(val_from) is float)
         assert(type(val_to) is float)
-        self.field_name = field_name
         self.val_from = val_from
         self.val_to = val_to
+
+    def get_conditions(self):
+        return [
+            self.field >= self.val_from,
+            self.field <= self.val_to
+        ]
 
 
 class ContextualFilterTermDate(ContextualFilterTerm):
     def __init__(self, field_name, val_from, val_to):
+        super(ContextualFilterTermDate, self).__init__(field_name)
         assert(type(val_from) is datetime.date)
         assert(type(val_to) is datetime.date)
-        self.field_name = field_name
         self.val_from = val_from
         self.val_to = val_to
+
+    def get_conditions(self):
+        return [
+            self.field >= self.val_from,
+            self.field <= self.val_to
+        ]
 
 
 class ContextualFilterTermString(ContextualFilterTerm):
     def __init__(self, field_name, val_contains):
+        super(ContextualFilterTermString, self).__init__(field_name)
         assert(type(val_contains) is str)
-        self.field_name = field_name
         self.val_contains = val_contains
+
+    def get_conditions(self):
+        return [
+            self.field.icontains(self.val_contains)
+        ]
 
 
 class ContextualFilterTermOntology(ContextualFilterTerm):
     def __init__(self, field_name, val_is):
+        super(ContextualFilterTermOntology, self).__init__(field_name)
         assert(type(val_is) is int)
-        self.field_name = field_name
         self.val_is = val_is
+
+    def get_conditions(self):
+        return [
+            self.field == self.val_is
+        ]
 
 
 class DataImporter:

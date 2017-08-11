@@ -199,7 +199,6 @@ def otu_search(request):
         field_name = filter_spec['field']
         column = SampleContext.__table__.columns[field_name]
         typ = str(column.type)
-        logger.critical([filter_spec, typ])
         try:
             if hasattr(column, 'ontology_class'):
                 contextual_filter.add_term(
@@ -219,9 +218,8 @@ def otu_search(request):
             errors.append("Invalid value provided for contextual field `%s'" % field_name)
             logger.critical("Exception parsing field: `%s':\n%s" % (field_name, traceback.format_exc()))
 
-    query = SampleQuery()
-    subq = query.build_taxonomy_subquery(taxonomy_filter)
-    result_count, results = query.contextual_query(subq, length, start)
+    query = SampleQuery(contextual_filter, taxonomy_filter)
+    result_count, results = query.get_results(start, length)
 
     res = {
         'draw': draw,
