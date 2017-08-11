@@ -7,6 +7,7 @@ from collections import defaultdict
 from django.views.decorators.http import require_http_methods
 from django.views.generic import TemplateView
 from django.http import JsonResponse
+import traceback
 from .otu import (
     SampleContext,
     TaxonomyOptions,
@@ -162,9 +163,9 @@ def otu_search(request):
 
     def parse_date(s):
         try:
-            return datetime.datetime.strptime(s, '%Y-%m-%d')
+            return datetime.datetime.strptime(s, '%Y-%m-%d').date()
         except ValueError:
-            return datetime.datetime.strptime(s, '%d/%m/%Y')
+            return datetime.datetime.strptime(s, '%d/%m/%Y').date()
 
     def parse_float(s):
         try:
@@ -205,7 +206,7 @@ def otu_search(request):
                     ContextualFilterTermOntology(field_name, int(filter_spec['is'])))
             elif typ == 'DATE':
                 contextual_filter.add_term(
-                    ContextualFilterTermFloat(field_name, parse_date(filter_spec['from']), parse_date(filter_spec['to'])))
+                    ContextualFilterTermDate(field_name, parse_date(filter_spec['from']), parse_date(filter_spec['to'])))
             elif typ == 'FLOAT':
                 contextual_filter.add_term(
                     ContextualFilterTermFloat(field_name, parse_float(filter_spec['from']), parse_float(filter_spec['to'])))
@@ -214,8 +215,9 @@ def otu_search(request):
                     ContextualFilterTermString(field_name, str(filter_spec['contains'])))
             else:
                 raise ValueError("invalid filter term type")
-        except:
+        except Exception as ex:
             errors.append("Invalid value provided for contextual field `%s'" % field_name)
+            logger.critical("Exception parsing field: `%s':\n%s" % (field_name, traceback.format_exc()))
 
     query = SampleQuery()
     subq = query.build_taxonomy_subquery(taxonomy_filter)
@@ -224,7 +226,6 @@ def otu_search(request):
     res = {
         'draw': draw,
     }
-    logger.critical(errors)
     if errors:
         res.update({
             'errors': [str(t) for t in errors],
