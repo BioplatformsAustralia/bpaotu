@@ -291,7 +291,9 @@ $(document).ready(function() {
     var setup_export = function() {
         var target = $("#export_button");
         target.click(function() {
-            var params = describe_search()
+            var params = {
+                'q': JSON.stringify(describe_search())
+            }
             var target_url = window.otu_search_config['export_endpoint'] + '?' + $.param(params);
             window.open(target_url);
         });

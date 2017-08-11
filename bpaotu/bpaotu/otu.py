@@ -328,18 +328,38 @@ class SampleQuery:
         self._taxonomy_filter = taxonomy_filter
         self._contextual_filter = contextual_filter
 
-    def get_results(self, start, length):
+    def _q_all_cached(self, topic, q):
+        cache = caches['search_results']
+        hash_str = 'SampleQuery:cached:%s:' % (topic) + repr(self._taxonomy_filter) + ':' + repr(self._contextual_filter)
+        key = sha256(hash_str.encode('utf8')).hexdigest()
+        result = cache.get(key)
+        if not result:
+            result = q.all()
+            cache.set(key, result)
+        return result
+
+    def matching_sample_ids(self):
+        q = self._session.query(SampleContext.id)
+        subq = self._build_taxonomy_subquery()
+        q = self._apply_filters(q, subq).order_by(SampleContext.id)
+        return self._q_all_cached('matching_sample_ids', q)
+
+    def matching_samples(self):
+        def _run_query():
+            q = self._session.query(SampleContext)
+            subq = self._build_taxonomy_subquery()
+            q = self._apply_filters(q, subq).order_by(SampleContext.id)
+            return q.all()
+
         # repr() completely describes the taxonomical and contextual filters
         cache = caches['search_results']
-        hash_str = 'SampleQuery:get_results:' + repr(self._taxonomy_filter) + ':' + repr(self._contextual_filter)
+        hash_str = 'SampleQuery:matching_sample_ids:' + repr(self._taxonomy_filter) + ':' + repr(self._contextual_filter)
         key = sha256(hash_str.encode('utf8')).hexdigest()
         result = cache.get(key)
         if result is None:
-            subq = self._build_taxonomy_subquery()
-            result = self._contextual_query(subq)
+            result = _run_query()
             cache.set(key, result)
-        result_count, all_results = result
-        return result_count, all_results[start:start + length]
+        return result
 
     def _build_taxonomy_subquery(self):
         """
@@ -356,7 +376,7 @@ class SampleQuery:
             q = q.filter(getattr(OTU, otu_attr) == value)
         return q
 
-    def _contextual_query(self, taxonomy_subquery):
+    def _apply_filters(self, sample_query, taxonomy_subquery):
         """
         run a contextual query, returning the BPA IDs which match.
         applies the passed taxonomy_subquery to apply taxonomy filters.
@@ -365,17 +385,12 @@ class SampleQuery:
         """
         # we use a window function here, to get count() over the whole query without having to
         # run it twice
-        q = self._session.query(SampleContext.id, sqlalchemy.func.count().over())
+        q = sample_query
         if taxonomy_subquery is not None:
             q = q.filter(SampleContext.id.in_(taxonomy_subquery))
         # apply contextual filter terms
         q = self._contextual_filter.apply(q)
-        q = q.order_by(SampleContext.id)
-        res = q.all()
-        if not res:
-            return 0, []
-        count = res[0][1]
-        return count, [t[0] for t in res]
+        return q
 
 
 class ContextualFilter:

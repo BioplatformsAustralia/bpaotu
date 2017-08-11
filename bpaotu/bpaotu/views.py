@@ -153,14 +153,10 @@ def _extract_ordering(request):
     return ordering
 
 
-# technically we should be using GET, but the specification
-# of the query (plus the datatables params) is large: so we
-# avoid the issues of long URLs by simply POSTing the query
-@require_http_methods(["POST"])
-def otu_search(request):
+def param_to_filters(query_str):
     """
-    private API: return the available fields, and their types, so that
-    the contextual filtering UI can be built
+    take a JSON encoded query_str, validate, return any errors
+    and the filter instances
     """
 
     def parse_date(s):
@@ -175,21 +171,7 @@ def otu_search(request):
         except ValueError:
             return None
 
-    def _int_get_param(param_name):
-        param = request.POST.get(param_name)
-        try:
-            return int(param) if param is not None else None
-        except ValueError:
-            return None
-
-    draw = _int_get_param('draw')
-    start = _int_get_param('start')
-    length = _int_get_param('length')
-
-    # column_definitions = _extract_column_definitions(request)
-    # ordering = _extract_ordering(request)
-
-    otu_query = json.loads(request.POST['otu_query'])
+    otu_query = json.loads(query_str)
     taxonomy_filter = clean_taxonomy_filter(otu_query['taxonomy_filters'])
 
     context_spec = otu_query['contextual_filters']
@@ -220,8 +202,35 @@ def otu_search(request):
             errors.append("Invalid value provided for contextual field `%s'" % field_name)
             logger.critical("Exception parsing field: `%s':\n%s" % (field_name, traceback.format_exc()))
 
+    return contextual_filter, taxonomy_filter, errors
+
+
+# technically we should be using GET, but the specification
+# of the query (plus the datatables params) is large: so we
+# avoid the issues of long URLs by simply POSTing the query
+@require_http_methods(["POST"])
+def otu_search(request):
+    """
+    private API: return the available fields, and their types, so that
+    the contextual filtering UI can be built
+    """
+
+    def _int_get_param(param_name):
+        param = request.POST.get(param_name)
+        try:
+            return int(param) if param is not None else None
+        except ValueError:
+            return None
+
+    draw = _int_get_param('draw')
+    start = _int_get_param('start')
+    length = _int_get_param('length')
+
+    contextual_filter, taxonomy_filter, errors = param_to_filters(request.POST['otu_query'])
     query = SampleQuery(contextual_filter, taxonomy_filter)
-    result_count, results = query.get_results(start, length)
+    results = query.matching_sample_ids()
+    result_count = len(results)
+    results = results[start:start + length]
 
     res = {
         'draw': draw,
@@ -252,6 +261,12 @@ def otu_export(request):
       - an CSV of all the contextual data samples matching the query
       - an CSV of all the OTUs matching the query, with counts against Sample IDs
     """
+
+    contextual_filter, taxonomy_filter, errors = param_to_filters(request.GET['q'])
+    query = SampleQuery(contextual_filter, taxonomy_filter)
+    results = query.matching_samples()
+    logger.critical(results)
+
     zip_fd = BytesIO()
     with zipfile.ZipFile(zip_fd, mode='w', compression=zipfile.ZIP_DEFLATED) as zf:
         zf.writestr('README.txt', 'hello world')
@@ -262,4 +277,4 @@ def otu_export(request):
     response = HttpResponse(zip_fd, content_type='application/zip')
     filename = "BPASearchResultsExport.zip"
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
-    return response
+    return HttpResponse(response)
