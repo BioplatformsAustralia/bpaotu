@@ -334,6 +334,7 @@ class SampleQuery:
         hash_str = 'SampleQuery:get_results:' + repr(self._taxonomy_filter) + ':' + repr(self._contextual_filter)
         key = sha256(hash_str.encode('utf8')).hexdigest()
         result = cache.get(key)
+        logger.critical(result)
         if result is None:
             subq = self._build_taxonomy_subquery()
             result = self._contextual_query(subq)
@@ -373,7 +374,7 @@ class SampleQuery:
         q = q.order_by(SampleContext.id)
         res = q.all()
         if not res:
-            return []
+            return 0, []
         count = res[0][1]
         return count, [t[0] for t in res]
 
