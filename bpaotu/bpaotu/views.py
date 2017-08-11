@@ -1,6 +1,7 @@
+import re
 import json
 import logging
-import re
+import datetime
 from collections import defaultdict
 
 from django.views.decorators.http import require_http_methods
@@ -10,7 +11,12 @@ from .otu import (
     SampleContext,
     TaxonomyOptions,
     OntologyInfo,
-    SampleQuery)
+    SampleQuery,
+    ContextualFilter,
+    ContextualFilterTermDate,
+    ContextualFilterTermFloat,
+    ContextualFilterTermOntology,
+    ContextualFilterTermString)
 
 logger = logging.getLogger("rainbow")
 # See datatables.net serverSide documentation for details
@@ -154,6 +160,18 @@ def otu_search(request):
     the contextual filtering UI can be built
     """
 
+    def parse_date(s):
+        try:
+            return datetime.datetime.strptime(s, '%Y-%m-%d')
+        except ValueError:
+            return datetime.datetime.strptime(s, '%d/%m/%Y')
+
+    def parse_float(s):
+        try:
+            return float(s)
+        except ValueError:
+            return None
+
     def _int_get_param(param_name):
         param = request.POST.get(param_name)
         try:
@@ -170,6 +188,34 @@ def otu_search(request):
 
     otu_query = json.loads(request.POST['otu_query'])
     taxonomy_filter = clean_taxonomy_filter(otu_query['taxonomy_filters'])
+    
+    context_spec = otu_query['contextual_filters']
+    contextual_filter = ContextualFilter(context_spec['mode'])
+
+    errors = []
+
+    for filter_spec in context_spec['filters']:
+        field_name = filter_spec['field']
+        column = SampleContext.__table__.columns[field_name]
+        typ = str(column.type)
+        logger.critical([filter_spec, typ])
+        try:
+            if hasattr(column, 'ontology_class'):
+                contextual_filter.add_term(
+                    ContextualFilterTermOntology(field_name, int(filter_spec['is'])))
+            elif typ == 'DATE':
+                contextual_filter.add_term(
+                    ContextualFilterTermFloat(field_name, parse_date(filter_spec['from']), parse_date(filter_spec['to'])))
+            elif typ == 'FLOAT':
+                contextual_filter.add_term(
+                    ContextualFilterTermFloat(field_name, parse_float(filter_spec['from']), parse_float(filter_spec['to'])))
+            elif typ == 'VARCHAR':
+                contextual_filter.add_term(
+                    ContextualFilterTermString(field_name, str(filter_spec['contains'])))
+            else:
+                raise ValueError("invalid filter term type")
+        except:
+            errors.append("Invalid value provided for contextual field `%s'" % field_name)
 
     query = SampleQuery()
     subq = query.build_taxonomy_subquery(taxonomy_filter)
@@ -177,8 +223,19 @@ def otu_search(request):
 
     res = {
         'draw': draw,
-        'data': [{"bpa_id": t} for t in results],
-        'recordsTotal': result_count,
-        'recordsFiltered': result_count,
     }
+    logger.critical(errors)
+    if errors:
+        res.update({
+            'errors': [str(t) for t in errors],
+            'data': [],
+            'recordsTotal': 0,
+            'recordsFiltered': 0,
+        })
+    else:
+        res.update({
+            'data': [{"bpa_id": t} for t in results],
+            'recordsTotal': result_count,
+            'recordsFiltered': result_count,
+        })
     return JsonResponse(res)

@@ -251,6 +251,22 @@ $(document).ready(function() {
         return data;
     };
 
+    var set_errors = function(errors) {
+        var target = $("#error-box");
+        target.empty();
+        if (!errors) {
+            target.hide();
+            return;
+        }
+        target.show();
+        target.append($("<h3>Errors detected in query:"));
+        var ul = $("<ul></ul>");
+        target.append(ul);
+        $.each(errors, function(i, e) {
+            ul.append($("<li>").text(e));
+        });
+    }
+
     var setup_datatables = function() {
         datatable = $("#results").DataTable({
             'processing': true,
@@ -264,6 +280,9 @@ $(document).ready(function() {
               { 'data': 'bpa_id' , 'defaultContent': ''},
             ]
         });
+        $("#results").on('xhr.dt', function(e, settings, json, xhr) {
+            set_errors(json.errors);
+        });
     };
 
     setup_csrf();
@@ -271,4 +290,5 @@ $(document).ready(function() {
     setup_contextual();
     setup_search();
     setup_datatables();
+    set_errors(null);
 });

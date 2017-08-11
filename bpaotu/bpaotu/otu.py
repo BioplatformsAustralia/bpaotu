@@ -1,5 +1,6 @@
 import csv
 import logging
+import datetime
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float
@@ -313,6 +314,11 @@ class OntologyInfo:
 
 
 class SampleQuery:
+    """
+    find samples IDs which match the given taxonomical and
+    contextual filters
+    """
+
     def __init__(self):
         self._engine = make_engine()
         Session = sessionmaker(bind=self._engine)
@@ -351,6 +357,52 @@ class SampleQuery:
             return []
         count = res[0][1]
         return count, [t[0] for t in res]
+
+
+class ContextualFilter:
+    def __init__(self, mode):
+        assert(mode == 'or' or mode == 'and')
+        self.mode = mode
+        self.terms = []
+    
+    def add_term(self, term):
+        self.terms.append(term)
+
+
+class ContextualFilterTerm:
+    pass
+
+
+class ContextualFilterTermFloat(ContextualFilterTerm):
+    def __init__(self, field_name, val_from, val_to):
+        assert(type(val_from) is float)
+        assert(type(val_to) is float)
+        self.field_name = field_name
+        self.val_from = val_from
+        self.val_to = val_to
+
+
+class ContextualFilterTermDate(ContextualFilterTerm):
+    def __init__(self, field_name, val_from, val_to):
+        assert(type(val_from) is datetime.date)
+        assert(type(val_to) is datetime.date)
+        self.field_name = field_name
+        self.val_from = val_from
+        self.val_to = val_to
+
+
+class ContextualFilterTermString(ContextualFilterTerm):
+    def __init__(self, field_name, val_contains):
+        assert(type(val_contains) is str)
+        self.field_name = field_name
+        self.val_contains = val_contains
+
+
+class ContextualFilterTermOntology(ContextualFilterTerm):
+    def __init__(self, field_name, val_is):
+        assert(type(val_is) is int)
+        self.field_name = field_name
+        self.val_is = val_is
 
 
 class DataImporter:
