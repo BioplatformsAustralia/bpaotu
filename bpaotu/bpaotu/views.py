@@ -1,12 +1,14 @@
 import re
 import json
 import logging
+import zipfile
 import datetime
 from collections import defaultdict
 
 from django.views.decorators.http import require_http_methods
 from django.views.generic import TemplateView
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from io import BytesIO
 import traceback
 from .otu import (
     SampleContext,
@@ -241,5 +243,23 @@ def otu_search(request):
 
 
 @require_http_methods(["GET"])
-def otu_search(request):
-    return JsonResponse({})
+def otu_export(request):
+    """
+    this view takes:
+     - contextual filters
+     - taxonomic filters
+    produces a Zip file containing:
+      - an CSV of all the contextual data samples matching the query
+      - an CSV of all the OTUs matching the query, with counts against Sample IDs
+    """
+    zip_fd = BytesIO()
+    with zipfile.ZipFile(zip_fd, mode='w', compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('README.txt', 'hello world')
+
+    zip_fd.flush()
+    zip_fd.seek(0)
+
+    response = HttpResponse(zip_fd, content_type='application/zip')
+    filename = "BPASearchResultsExport.zip"
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+    return response
