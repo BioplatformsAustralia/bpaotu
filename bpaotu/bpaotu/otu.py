@@ -386,6 +386,9 @@ class ContextualFilter:
         """
         return q with contextual filter terms applied to it
         """
+        # chain together the conditions provided by each term,
+        # combine into a single expression using our mode,
+        # then filter the query
         return q.filter(
             self.mode(
                 *(chain(*(t.get_conditions() for t in self.terms)))))
