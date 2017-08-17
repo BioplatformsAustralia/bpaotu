@@ -104,6 +104,14 @@ class OTU(SchemaMixin, Base):
     genus_id = ontology_fkey(OTUGenus)
     species_id = ontology_fkey(OTUSpecies)
 
+    kingdom = relationship(OTUKingdom)
+    phylum = relationship(OTUPhylum)
+    klass = relationship(OTUClass)
+    order = relationship(OTUOrder)
+    family = relationship(OTUFamily)
+    genus = relationship(OTUGenus)
+    species = relationship(OTUSpecies)
+
     def __repr__(self):
         return "<OTU(%d: %s,%s,%s,%s,%s,%s,%s)>" % (
             self.id,

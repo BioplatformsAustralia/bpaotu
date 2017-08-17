@@ -297,6 +297,11 @@ def otu_export(request):
       - an CSV of all the OTUs matching the query, with counts against Sample IDs
     """
 
+    def val_or_empty(obj):
+        if obj is None:
+            return ''
+        return obj.value
+
     def sample_otu_csv_rows():
         fd = StringIO()
         w = csv.writer(fd)
@@ -317,19 +322,17 @@ def otu_export(request):
         q = query.matching_sample_otus()
         logger.critical(q)
         for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
-            logger.critical(otu)
             w.writerow([
                 sample_otu.sample_id,
                 sample_otu.otu_id,
                 sample_otu.count,
-                otu.kingdom_id,
-                otu.phylum_id,
-                otu.class_id,
-                otu.order_id,
-                otu.family_id,
-                otu.genus_id,
-                otu.species_id])
-            logger.critical(repr(fd.getvalue()))
+                val_or_empty(otu.kingdom),
+                val_or_empty(otu.phylum),
+                val_or_empty(otu.klass),
+                val_or_empty(otu.order),
+                val_or_empty(otu.family),
+                val_or_empty(otu.genus),
+                val_or_empty(otu.species)])
             yield fd.getvalue().encode('utf8')
             fd.seek(0)
             fd.truncate(0)
