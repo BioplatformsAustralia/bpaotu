@@ -371,16 +371,19 @@ class SampleQuery:
         q = self._session.query(OTU, SampleOTU, SampleContext) \
             .filter(OTU.id == SampleOTU.otu_id) \
             .filter(SampleContext.id == SampleOTU.sample_id)
-        subq = self._build_taxonomy_subquery()
-        logger.critical(['query:', str(q)])
-        logger.critical(['sub_query:', str(subq)])
-        q = self._apply_filters(q, subq).order_by(SampleContext.id)
-        logger.critical('after apply:')
-        logger.critical(str(q))
+        q = self._apply_taxonomy_filters(q)
+        q = self._contextual_filter.apply(q)
         # we don't cache this query: the result size is enormous,
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
         # it can be iterated over
+        return q
+
+    def _apply_taxonomy_filters(self, q):
+        for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter):
+            if value is None:
+                break
+            q = q.filter(getattr(OTU, otu_attr) == value)
         return q
 
     def _build_taxonomy_subquery(self):
@@ -392,11 +395,7 @@ class SampleQuery:
         if self._taxonomy_filter[0] is None:
             return None
         q = self._session.query(SampleOTU.sample_id).distinct().join(OTU)
-        for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter):
-            if value is None:
-                break
-            q = q.filter(getattr(OTU, otu_attr) == value)
-        return q
+        return self._apply_taxonomy_filters(q)
 
     def _apply_filters(self, sample_query, taxonomy_subquery):
         """
