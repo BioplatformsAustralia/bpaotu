@@ -312,6 +312,7 @@ def otu_export(request):
             'Genus',
             'Species'])
         yield fd.getvalue().encode('utf8')
+        fd.seek(0)
         fd.truncate(0)
         q = query.matching_sample_otus()
         logger.critical(q)
@@ -328,7 +329,9 @@ def otu_export(request):
                 otu.family_id,
                 otu.genus_id,
                 otu.species_id])
+            logger.critical(repr(fd.getvalue()))
             yield fd.getvalue().encode('utf8')
+            fd.seek(0)
             fd.truncate(0)
 
     contextual_filter, taxonomy_filter, errors = param_to_filters(request.GET['q'])
