@@ -353,11 +353,8 @@ class SampleQuery:
         key = sha256(hash_str.encode('utf8')).hexdigest()
         result = cache.get(key)
         if not result:
-            logger.critical('cache miss: ' + hash_str)
             result = q.all()
             cache.set(key, result)
-        else:
-            logger.critical('cache hit: ' + hash_str)
         return result
 
     def matching_sample_ids(self):

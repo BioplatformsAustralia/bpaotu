@@ -320,7 +320,6 @@ def otu_export(request):
         fd.seek(0)
         fd.truncate(0)
         q = query.matching_sample_otus()
-        logger.critical(q)
         for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
             w.writerow([
                 sample_otu.sample_id,
