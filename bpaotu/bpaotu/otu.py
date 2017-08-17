@@ -103,15 +103,17 @@ class OTU(SchemaMixin, Base):
     family_id = ontology_fkey(OTUFamily)
     genus_id = ontology_fkey(OTUGenus)
     species_id = ontology_fkey(OTUSpecies)
-    kingdom = relationship(OTUKingdom)
-    phylum = relationship(OTUPhylum)
-    klass = relationship(OTUClass)
-    order = relationship(OTUOrder)
-    family = relationship(OTUFamily)
-    species = relationship(OTUSpecies)
 
     def __repr__(self):
-        return "<OTU(%d)>" % (self.id)
+        return "<OTU(%d: %s,%s,%s,%s,%s,%s,%s)>" % (
+            self.id,
+            self.kingdom_id,
+            self.phylum_id,
+            self.class_id,
+            self.order_id,
+            self.family_id,
+            self.genus_id,
+            self.species_id)
 
 
 class SampleHorizonClassification(OntologyMixin, Base):
@@ -224,7 +226,6 @@ class SampleContext(SchemaMixin, Base):
 
     def __repr__(self):
         return "<SampleContext(%d)>" % (self.id)
-
 
 
 class SampleOTU(SchemaMixin, Base):
@@ -371,8 +372,16 @@ class SampleQuery:
             .filter(OTU.id == SampleOTU.otu_id) \
             .filter(SampleContext.id == SampleOTU.sample_id)
         subq = self._build_taxonomy_subquery()
+        logger.critical(['query:', str(q)])
+        logger.critical(['sub_query:', str(subq)])
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
-        return self._q_all_cached('matching_sample_otus', q)
+        logger.critical('after apply:')
+        logger.critical(str(q))
+        # we don't cache this query: the result size is enormous,
+        # and we're unlikely to have the same query run twice.
+        # instead, we return the sqlalchemy query object so that
+        # it can be iterated over
+        return q
 
     def _build_taxonomy_subquery(self):
         """

@@ -2,14 +2,14 @@ import re
 import csv
 import json
 import logging
-import zipfile
+import zipstream
 import datetime
 from collections import defaultdict
 
 from django.views.decorators.http import require_http_methods
 from django.views.generic import TemplateView
-from django.http import JsonResponse, HttpResponse
-from io import BytesIO, StringIO
+from django.http import JsonResponse, StreamingHttpResponse
+from io import StringIO
 import traceback
 from .otu import (
     SampleContext,
@@ -297,20 +297,50 @@ def otu_export(request):
       - an CSV of all the OTUs matching the query, with counts against Sample IDs
     """
 
+    def sample_otu_csv_rows():
+        fd = StringIO()
+        w = csv.writer(fd)
+        w.writerow([
+            'BPA ID',
+            'OTU',
+            'OTU Count',
+            'Kingdom',
+            'Phylum',
+            'Class',
+            'Order',
+            'Family',
+            'Genus',
+            'Species'])
+        yield fd.getvalue().encode('utf8')
+        fd.truncate(0)
+        q = query.matching_sample_otus()
+        logger.critical(q)
+        return
+        for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
+            logger.critical(otu)
+            w.writerow([
+                sample_otu.sample_id,
+                sample_otu.otu_id,
+                sample_otu.count,
+                otu.kingdom_id,
+                otu.phylum_id,
+                otu.class_id,
+                otu.order_id,
+                otu.family_id,
+                otu.genus_id,
+                otu.species_id])
+            yield fd.getvalue().encode('utf8')
+            fd.truncate(0)
+
     contextual_filter, taxonomy_filter, errors = param_to_filters(request.GET['q'])
     query = SampleQuery(contextual_filter, taxonomy_filter)
 
-    result = query.matching_sample_otus()
+    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+    zf.writestr('README.txt', 'hello world'.encode('utf8'))
+    zf.writestr('contextual.csv', contextual_csv(query.matching_samples()).encode('utf8'))
+    zf.write_iter('bacteria.csv', sample_otu_csv_rows())
 
-    zip_fd = BytesIO()
-    with zipfile.ZipFile(zip_fd, mode='w', compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr('README.txt', 'hello world')
-        zf.writestr('contextual.csv', contextual_csv(query.matching_samples()))
-
-    zip_fd.flush()
-    zip_fd.seek(0)
-
-    response = HttpResponse(zip_fd, content_type='application/zip')
+    response = StreamingHttpResponse(zf, content_type='application/zip')
     filename = "BPASearchResultsExport.zip"
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     return response
