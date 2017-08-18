@@ -51,6 +51,7 @@ class DataImporter:
     def __init__(self, import_base):
         self._engine = make_engine()
         Session = sessionmaker(bind=self._engine)
+        self._create_extensions()
         self._session = Session()
         self._import_base = import_base
         try:
@@ -60,6 +61,16 @@ class DataImporter:
         self._session.execute(CreateSchema(SCHEMA))
         self._session.commit()
         Base.metadata.create_all(self._engine)
+
+    def _create_extensions(self):
+        extensions = ('citext',)
+        for extension in extensions:
+            try:
+                logger.info("creating extension: %s" % extension)
+                self._engine.execute('CREATE EXTENSION %s;' % extension)
+            except sqlalchemy.exc.ProgrammingError as e:
+                if 'already exists' not in str(e):
+                    logger.critical("couldn't create extension: %s (%s)" % (extension, e))
 
     def _read_tab_file(self, fname):
         with open(fname) as fd:

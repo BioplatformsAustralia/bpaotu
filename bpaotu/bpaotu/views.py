@@ -107,7 +107,7 @@ def contextual_fields(request):
             'type': 'float',
             'name': field_name
         })
-    for field_name in fields_by_type['VARCHAR']:
+    for field_name in fields_by_type['CITEXT']:
         definitions.append({
             'type': 'string',
             'name': field_name
@@ -127,35 +127,6 @@ def contextual_fields(request):
     return JsonResponse({
         'definitions': definitions
     })
-
-
-def _extract_column_definitions(request):
-    columns = []
-    for k in request.GET:
-        match = COLUMN_PATTERN.match(k)
-        if match is not None:
-            index = int(match.groups()[0])
-            attr = match.groups()[1]
-            for i in range(index - len(columns) + 1):
-                columns.append({})
-            columns[index][attr] = request.GET.get(k)
-    return columns
-
-
-def _extract_ordering(request):
-    ordering = []
-    for k in request.GET:
-        match = ORDERING_PATTERN.match(k)
-        if match is not None:
-            index = int(match.groups()[0])
-            attr = match.groups()[1]
-            for i in range(index - len(ordering) + 1):
-                ordering.append({})
-            value = request.GET.get(k)
-            if attr == 'column':
-                value = int(value)
-            ordering[index][attr] = value
-    return ordering
 
 
 def param_to_filters(query_str):
@@ -198,7 +169,7 @@ def param_to_filters(query_str):
             elif typ == 'FLOAT':
                 contextual_filter.add_term(
                     ContextualFilterTermFloat(field_name, parse_float(filter_spec['from']), parse_float(filter_spec['to'])))
-            elif typ == 'VARCHAR':
+            elif typ == 'CITEXT':
                 contextual_filter.add_term(
                     ContextualFilterTermString(field_name, str(filter_spec['contains'])))
             else:

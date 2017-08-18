@@ -271,7 +271,7 @@ class ContextualFilterTermString(ContextualFilterTerm):
 
     def get_conditions(self):
         return [
-            self.field.icontains(self.val_contains)
+            self.field.contains(self.val_contains)
         ]
 
 
