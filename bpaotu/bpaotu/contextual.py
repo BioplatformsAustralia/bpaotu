@@ -237,7 +237,7 @@ marine_field_specs = {
         ('chl_a_epi', 'chl_a_epi', ingest_utils.get_clean_number),
         ('chl_a_allomer', 'chl_a_allomer', ingest_utils.get_clean_number),
         ('zm_delta_sigmat', 'zm (delta.sigmat)', ingest_utils.get_clean_number),
-        ('zm__sigmat', 'zm (sigmat)', ingest_utils.get_clean_number),
+        ('zm_sigmat', 'zm (sigmat)', ingest_utils.get_clean_number),
         ('stratification', 'stratification (zm)', ingest_utils.get_clean_number),
         ('temp_from_ctd_file', '[temp from ctd file]', ingest_utils.get_clean_number),
     ],

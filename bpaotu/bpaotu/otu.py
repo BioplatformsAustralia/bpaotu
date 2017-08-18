@@ -325,7 +325,7 @@ class SampleContext(SchemaMixin, Base):
     viola = Column(Float)
     year = Column(String)
     zea = Column(Float)
-    zm__sigmat = Column(Float)
+    zm_sigmat = Column(Float)
     zm_delta_sigmat = Column(Float)
     #
     # ontologies
