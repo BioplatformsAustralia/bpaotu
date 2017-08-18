@@ -12,7 +12,9 @@ from django.http import JsonResponse, StreamingHttpResponse
 from io import StringIO
 import traceback
 from .otu import (
-    SampleContext)
+    OTUKingdom,
+    SampleContext,
+    OTU)
 from .query import (
     TaxonomyOptions,
     OntologyInfo,
@@ -308,7 +310,7 @@ def otu_export(request):
             return ''
         return obj.value
 
-    def sample_otu_csv_rows():
+    def sample_otu_csv_rows(kingdom_id):
         fd = StringIO()
         w = csv.writer(fd)
         w.writerow([
@@ -326,6 +328,7 @@ def otu_export(request):
         fd.seek(0)
         fd.truncate(0)
         q = query.matching_sample_otus()
+        q = q.filter(OTU.kingdom_id == kingdom_id)
         for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
             w.writerow([
                 sample_otu.sample_id,
@@ -348,8 +351,10 @@ def otu_export(request):
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     zf.writestr('README.txt', 'hello world'.encode('utf8'))
     zf.writestr('contextual.csv', contextual_csv(query.matching_samples()).encode('utf8'))
-    zf.write_iter('bacteria.csv', sample_otu_csv_rows())
 
+    info = OntologyInfo()
+    for kingdom_id, kingdom_label in info.get_values(OTUKingdom):
+        zf.write_iter('%s.csv' % (kingdom_label), sample_otu_csv_rows(kingdom_id))
     response = StreamingHttpResponse(zf, content_type='application/zip')
     filename = "BPASearchResultsExport.zip"
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
