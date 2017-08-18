@@ -331,7 +331,6 @@ def otu_export(request):
     query = SampleQuery(contextual_filter, taxonomy_filter)
 
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
-    zf.writestr('README.txt', 'hello world'.encode('utf8'))
     zf.writestr('contextual.csv', contextual_csv(query.matching_samples()).encode('utf8'))
 
     info = OntologyInfo()
