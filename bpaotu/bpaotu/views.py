@@ -258,7 +258,12 @@ def contextual_csv(samples):
 
     def make_ontology_export(ontology_cls):
         values = dict(info.get_values(ontology_cls))
-        return lambda x: values[x]
+
+        def __ontology_lookup(x):
+            if x is None:
+                return ''
+            return values[x]
+        return __ontology_lookup
 
     def str_none_blank(v):
         if v is None:
