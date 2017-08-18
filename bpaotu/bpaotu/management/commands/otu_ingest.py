@@ -1,6 +1,6 @@
 
 from django.core.management.base import BaseCommand
-from ...otu import DataImporter
+from ...importer import DataImporter
 
 
 class Command(BaseCommand):

@@ -12,7 +12,8 @@ from django.http import JsonResponse, StreamingHttpResponse
 from io import StringIO
 import traceback
 from .otu import (
-    SampleContext,
+    SampleContext)
+from .query import (
     TaxonomyOptions,
     OntologyInfo,
     SampleQuery,
