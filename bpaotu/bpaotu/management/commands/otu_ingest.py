@@ -6,6 +6,7 @@ from ...importer import DataImporter
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         importer = DataImporter('/data/otu')
-        importer.load_contextual_metadata()
+        importer.load_soil_contextual_metadata()
+        importer.load_marine_contextual_metadata()
         importer.load_taxonomies()
         importer.load_otu()

@@ -4,11 +4,14 @@ import sqlalchemy
 from sqlalchemy.schema import CreateSchema, DropSchema
 from sqlalchemy.orm import sessionmaker
 from glob import glob
-from .contextual import contextual_rows
+from .contextual import (
+    marine_contextual_rows,
+    soil_contextual_rows)
 from collections import defaultdict
 from itertools import zip_longest
 from .otu import (
     Base,
+    BPAProject,
     OTU,
     OTUKingdom,
     OTUPhylum,
@@ -28,6 +31,7 @@ from .otu import (
     SampleAustralianSoilClassification,
     SampleFAOSoilClassification,
     SampleTillage,
+    SampleType,
     SampleColor,
     SCHEMA,
     make_engine)
@@ -119,9 +123,11 @@ class DataImporter:
         self._session.bulk_save_objects(_make_otus())
         self._session.commit()
 
-    def load_contextual_metadata(self):
-        logger.warning("loading contextual metadata")
+    def load_soil_contextual_metadata(self):
+        logger.warning("loading BASE contextual metadata")
         ontologies = {
+            'project': BPAProject,
+            'sample_type': SampleType,
             'horizon_classification': SampleHorizonClassification,
             'soil_sample_storage_method': SampleStorageMethod,
             'broad_land_use': SampleLandUse,
@@ -154,7 +160,37 @@ class DataImporter:
                     attrs[field] = value
                 yield SampleContext(**attrs)
 
-        rows = [t._asdict() for t in contextual_rows(glob(self._import_base + '/contextual-*.xlsx')[0])]
+        rows = [t._asdict() for t in soil_contextual_rows(glob(self._import_base + '/base/*.xlsx')[0])]
+        mappings = self._load_ontology(ontologies, rows)
+        self._session.bulk_save_objects(_make_context())
+        self._session.commit()
+
+    def load_marine_contextual_metadata(self):
+        logger.warning("loading Marine Microbes contextual metadata")
+        ontologies = {
+            'project': BPAProject,
+            'sample_type': SampleType,
+        }
+
+        def _make_context():
+            for row in rows:
+                bpa_id = row['bpa_id']
+                if bpa_id is None:
+                    continue
+                attrs = {
+                    'id': int(bpa_id.split('.')[-1])
+                }
+                for field in ontologies:
+                    if field not in row:
+                        continue
+                    attrs[field + '_id'] = mappings[field][row[field]]
+                for field, value in row.items():
+                    if field in attrs or (field + '_id') in attrs or field == 'bpa_id':
+                        continue
+                    attrs[field] = value
+                yield SampleContext(**attrs)
+
+        rows = [t._asdict() for t in marine_contextual_rows(glob(self._import_base + '/mm/*.xlsx')[0])]
         mappings = self._load_ontology(ontologies, rows)
         self._session.bulk_save_objects(_make_context())
         self._session.commit()
