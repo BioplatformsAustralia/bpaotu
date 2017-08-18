@@ -2,7 +2,7 @@ FROM muccg/python-base:3.6-debian-8
 MAINTAINER https://github.com/muccg/bpaotu
 
 ENV PROJECT_NAME bpaotu
-ENV PROJECT_SOURCE https://github.com/muccg/bpaotu.git
+ENV PROJECT_SOURCE git@github.com:muccg/bpaotu.git
 ENV DEPLOYMENT prod
 ENV PRODUCTION 1
 ENV DEBUG 0
