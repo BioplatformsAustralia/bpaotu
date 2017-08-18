@@ -280,7 +280,25 @@ $(document).ready(function() {
                 'data': set_search_data
             },
             columns: [
-              { 'data': 'bpa_id' , 'defaultContent': ''},
+              {
+                  'data': 'bpa_id',
+                  'defaultContent': '',
+                  'render': function(data, type, row) {
+                      var project = row.project;
+                      var org;
+                      if (project == 'BASE') {
+                          org = 'bpa-base';
+                      } else {
+                          org = 'bpa-marine-microbes';
+                      }
+                      var url = window.otu_search_config['ckan_base_url'] + '/organization/' + org + '?q=102.100.100.' + data;
+                      return '<a href="' + url + '">' + data + '</a>';
+                  }
+              },
+              {
+                  'data': 'project',
+                  'defaultContent': ''
+              }
             ]
         });
         $("#results").on('xhr.dt', function(e, settings, json, xhr) {

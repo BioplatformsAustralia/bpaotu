@@ -140,12 +140,14 @@
             <table id="results" class="table" width="100%">
                 <thead>
                     <tr>
-                        <th>BPA ID</th>
+                        <th>BPA Sample ID</th>
+                        <th>BPA Project</th>
                     </tr>
                 </thead>
                 <tfoot>
                     <tr>
-                        <th>BPA ID</th>
+                        <th>BPA Sample ID</th>
+                        <th>BPA Project</th>
                     </tr>
                 </tfoot>
                 <tbody></tbody>
@@ -162,6 +164,7 @@
         'contextual_endpoint': "{% url 'contextual_fields' %}",
         'search_endpoint': "{% url 'otu_search' %}",
         'export_endpoint': "{% url 'otu_export' %}",
+        'ckan_base_url': "{{ ckan_base_url }}",
     };
     $(function () {
         $('[data-toggle="tooltip"]').tooltip()

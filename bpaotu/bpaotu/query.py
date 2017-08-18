@@ -127,11 +127,11 @@ class SampleQuery:
             cache.set(key, result)
         return result
 
-    def matching_sample_ids(self):
-        q = self._session.query(SampleContext.id)
+    def matching_sample_ids_and_project(self):
+        q = self._session.query(SampleContext.id, SampleContext.project_id)
         subq = self._build_taxonomy_subquery()
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
-        return self._q_all_cached('matching_sample_ids', q)
+        return self._q_all_cached('matching_sample_ids_and_project', q)
 
     def matching_samples(self):
         q = self._session.query(SampleContext)

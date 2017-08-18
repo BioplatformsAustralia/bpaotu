@@ -6,12 +6,14 @@ import zipstream
 import datetime
 from collections import defaultdict
 
+from django.conf import settings
 from django.views.decorators.http import require_http_methods
 from django.views.generic import TemplateView
 from django.http import JsonResponse, StreamingHttpResponse
 from io import StringIO
 import traceback
 from .otu import (
+    BPAProject,
     OTUKingdom,
     SampleContext,
     OTU)
@@ -43,6 +45,12 @@ def display_name(field_name):
 
 class OTUSearch(TemplateView):
     template_name = 'bpaotu/search_results.html'
+    ckan_base_url = settings.CKAN_SERVERS[0]['base_url']
+
+    def get_context_data(self, **kwargs):
+        context = super(OTUSearch, self).get_context_data(**kwargs)
+        context['ckan_base_url'] = settings.CKAN_SERVERS[0]['base_url']
+        return context
 
 
 def clean_taxonomy_filter(state_vector):
@@ -202,9 +210,12 @@ def otu_search(request):
     start = _int_get_param('start')
     length = _int_get_param('length')
 
+    info = OntologyInfo()
+    project_lookup = dict(info.get_values(BPAProject))
+
     contextual_filter, taxonomy_filter, errors = param_to_filters(request.POST['otu_query'])
     query = SampleQuery(contextual_filter, taxonomy_filter)
-    results = query.matching_sample_ids()
+    results = query.matching_sample_ids_and_project()
     result_count = len(results)
     results = results[start:start + length]
 
@@ -220,7 +231,7 @@ def otu_search(request):
         })
     else:
         res.update({
-            'data': [{"bpa_id": t} for t in results],
+            'data': [{"bpa_id": t[0], "project": project_lookup[t[1]]} for t in results],
             'recordsTotal': result_count,
             'recordsFiltered': result_count,
         })
