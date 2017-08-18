@@ -20,6 +20,8 @@ from .otu import (
 
 
 logger = logging.getLogger("rainbow")
+engine = make_engine()
+Session = sessionmaker(bind=engine)
 
 
 class TaxonomyOptions:
@@ -34,8 +36,6 @@ class TaxonomyOptions:
     ]
 
     def __init__(self):
-        self._engine = make_engine()
-        Session = sessionmaker(bind=self._engine)
         self._session = Session()
 
     def possibilities(self, state):
@@ -94,8 +94,6 @@ class TaxonomyOptions:
 
 class OntologyInfo:
     def __init__(self):
-        self._engine = make_engine()
-        Session = sessionmaker(bind=self._engine)
         self._session = Session()
 
     def get_values(self, ontology_class):
@@ -111,8 +109,6 @@ class SampleQuery:
     """
 
     def __init__(self, contextual_filter, taxonomy_filter):
-        self._engine = make_engine()
-        Session = sessionmaker(bind=self._engine)
         self._session = Session()
         self._taxonomy_filter = taxonomy_filter
         self._contextual_filter = contextual_filter
