@@ -38,6 +38,12 @@ class TaxonomyOptions:
     def __init__(self):
         self._session = Session()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exec_type, exc_value, traceback):
+        self._session.close()
+
     def possibilities(self, state):
         """
         state should be a list of integer IDs for the relevent model, in the order of
@@ -96,6 +102,12 @@ class OntologyInfo:
     def __init__(self):
         self._session = Session()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exec_type, exc_value, traceback):
+        self._session.close()
+
     def get_values(self, ontology_class):
         vals = self._session.query(ontology_class.id, ontology_class.value).all()
         vals.sort(key=lambda v: v[1])
@@ -112,6 +124,12 @@ class SampleQuery:
         self._session = Session()
         self._taxonomy_filter = taxonomy_filter
         self._contextual_filter = contextual_filter
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exec_type, exc_value, traceback):
+        self._session.close()
 
     def _q_all_cached(self, topic, q):
         cache = caches['search_results']

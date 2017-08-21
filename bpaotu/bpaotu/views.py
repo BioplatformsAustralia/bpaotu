@@ -74,9 +74,9 @@ def taxonomy_options(request):
     """
     private API: given taxonomy constraints, return the possible options
     """
-    options = TaxonomyOptions()
-    selected = clean_taxonomy_filter(json.loads(request.GET['selected']))
-    possibilities = options.possibilities(selected)
+    with TaxonomyOptions() as options:
+        selected = clean_taxonomy_filter(json.loads(request.GET['selected']))
+        possibilities = options.possibilities(selected)
     return JsonResponse({
         'possibilities': possibilities
     })
@@ -120,14 +120,14 @@ def contextual_fields(request):
             'type': 'string',
             'name': field_name
         })
-    info = OntologyInfo()
-    for field_name in fields_by_type['_ontology']:
-        ontology_class = ontology_classes[field_name]
-        definitions.append({
-            'type': 'ontology',
-            'name': field_name,
-            'values': info.get_values(ontology_class)
-        })
+    with OntologyInfo() as info:
+        for field_name in fields_by_type['_ontology']:
+            ontology_class = ontology_classes[field_name]
+            definitions.append({
+                'type': 'ontology',
+                'name': field_name,
+                'values': info.get_values(ontology_class)
+            })
     for defn in definitions:
         defn['display_name'] = display_name(defn['name'])
     definitions.sort(key=lambda x: x['name'])
@@ -210,12 +210,12 @@ def otu_search(request):
     start = _int_get_param('start')
     length = _int_get_param('length')
 
-    info = OntologyInfo()
-    project_lookup = dict(info.get_values(BPAProject))
+    with OntologyInfo() as info:
+        project_lookup = dict(info.get_values(BPAProject))
 
     contextual_filter, taxonomy_filter, errors = param_to_filters(request.POST['otu_query'])
-    query = SampleQuery(contextual_filter, taxonomy_filter)
-    results = query.matching_sample_ids_and_project()
+    with SampleQuery(contextual_filter, taxonomy_filter) as query:
+        results = query.matching_sample_ids_and_project()
     result_count = len(results)
     results = results[start:start + length]
 
@@ -239,41 +239,40 @@ def otu_search(request):
 
 
 def contextual_csv(samples):
-    info = OntologyInfo()
+    with OntologyInfo() as info:
+        def make_ontology_export(ontology_cls):
+            values = dict(info.get_values(ontology_cls))
 
-    def make_ontology_export(ontology_cls):
-        values = dict(info.get_values(ontology_cls))
+            def __ontology_lookup(x):
+                if x is None:
+                    return ''
+                return values[x]
+            return __ontology_lookup
 
-        def __ontology_lookup(x):
-            if x is None:
+        def str_none_blank(v):
+            if v is None:
                 return ''
-            return values[x]
-        return __ontology_lookup
+            return str(v)
 
-    def str_none_blank(v):
-        if v is None:
-            return ''
-        return str(v)
-
-    csv_fd = StringIO()
-    w = csv.writer(csv_fd)
-    fields = []
-    heading = []
-    write_fns = []
-    for column in SampleContext.__table__.columns:
-        fields.append(column.name)
-        if column.name == 'id':
-            heading.append('BPA ID')
-        else:
-            heading.append(display_name(column.name))
-        if hasattr(column, "ontology_class"):
-            write_fns.append(make_ontology_export(column.ontology_class))
-        else:
-            write_fns.append(str_none_blank)
-    w.writerow(heading)
-    for sample in samples:
-        w.writerow(f(getattr(sample, field)) for (field, f) in zip(fields, write_fns))
-    return csv_fd.getvalue()
+        csv_fd = StringIO()
+        w = csv.writer(csv_fd)
+        fields = []
+        heading = []
+        write_fns = []
+        for column in SampleContext.__table__.columns:
+            fields.append(column.name)
+            if column.name == 'id':
+                heading.append('BPA ID')
+            else:
+                heading.append(display_name(column.name))
+            if hasattr(column, "ontology_class"):
+                write_fns.append(make_ontology_export(column.ontology_class))
+            else:
+                write_fns.append(str_none_blank)
+        w.writerow(heading)
+        for sample in samples:
+            w.writerow(f(getattr(sample, field)) for (field, f) in zip(fields, write_fns))
+        return csv_fd.getvalue()
 
 
 @require_http_methods(["GET"])
@@ -292,50 +291,49 @@ def otu_export(request):
             return ''
         return obj.value
 
-    def sample_otu_csv_rows(kingdom_id):
-        fd = StringIO()
-        w = csv.writer(fd)
-        w.writerow([
-            'BPA ID',
-            'OTU',
-            'OTU Count',
-            'Kingdom',
-            'Phylum',
-            'Class',
-            'Order',
-            'Family',
-            'Genus',
-            'Species'])
-        yield fd.getvalue().encode('utf8')
-        fd.seek(0)
-        fd.truncate(0)
-        q = query.matching_sample_otus()
-        q = q.filter(OTU.kingdom_id == kingdom_id)
-        for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
+    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+    contextual_filter, taxonomy_filter, errors = param_to_filters(request.GET['q'])
+    with SampleQuery(contextual_filter, taxonomy_filter) as query:
+        def sample_otu_csv_rows(kingdom_id):
+            fd = StringIO()
+            w = csv.writer(fd)
             w.writerow([
-                sample_otu.sample_id,
-                sample_otu.otu_id,
-                sample_otu.count,
-                val_or_empty(otu.kingdom),
-                val_or_empty(otu.phylum),
-                val_or_empty(otu.klass),
-                val_or_empty(otu.order),
-                val_or_empty(otu.family),
-                val_or_empty(otu.genus),
-                val_or_empty(otu.species)])
+                'BPA ID',
+                'OTU',
+                'OTU Count',
+                'Kingdom',
+                'Phylum',
+                'Class',
+                'Order',
+                'Family',
+                'Genus',
+                'Species'])
             yield fd.getvalue().encode('utf8')
             fd.seek(0)
             fd.truncate(0)
+            q = query.matching_sample_otus()
+            q = q.filter(OTU.kingdom_id == kingdom_id)
+            for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
+                w.writerow([
+                    sample_otu.sample_id,
+                    sample_otu.otu_id,
+                    sample_otu.count,
+                    val_or_empty(otu.kingdom),
+                    val_or_empty(otu.phylum),
+                    val_or_empty(otu.klass),
+                    val_or_empty(otu.order),
+                    val_or_empty(otu.family),
+                    val_or_empty(otu.genus),
+                    val_or_empty(otu.species)])
+                yield fd.getvalue().encode('utf8')
+                fd.seek(0)
+                fd.truncate(0)
 
-    contextual_filter, taxonomy_filter, errors = param_to_filters(request.GET['q'])
-    query = SampleQuery(contextual_filter, taxonomy_filter)
+        zf.writestr('contextual.csv', contextual_csv(query.matching_samples()).encode('utf8'))
+        with OntologyInfo() as info:
+            for kingdom_id, kingdom_label in info.get_values(OTUKingdom):
+                zf.write_iter('%s.csv' % (kingdom_label), sample_otu_csv_rows(kingdom_id))
 
-    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
-    zf.writestr('contextual.csv', contextual_csv(query.matching_samples()).encode('utf8'))
-
-    info = OntologyInfo()
-    for kingdom_id, kingdom_label in info.get_values(OTUKingdom):
-        zf.write_iter('%s.csv' % (kingdom_label), sample_otu_csv_rows(kingdom_id))
     response = StreamingHttpResponse(zf, content_type='application/zip')
     filename = "BPASearchResultsExport.zip"
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
