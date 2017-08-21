@@ -33,6 +33,10 @@ ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
 
 
+def format_bpa_id(int_id):
+    return '102.100.100/%d' % int_id
+
+
 def display_name(field_name):
     """
     a bit of a bodge, just replace '_' with ' ' and upper-case
@@ -265,7 +269,10 @@ def contextual_csv(samples):
                 heading.append('BPA ID')
             else:
                 heading.append(display_name(column.name))
-            if hasattr(column, "ontology_class"):
+
+            if column.name == 'id':
+                write_fns.append(format_bpa_id)
+            elif hasattr(column, "ontology_class"):
                 write_fns.append(make_ontology_export(column.ontology_class))
             else:
                 write_fns.append(str_none_blank)
@@ -315,7 +322,7 @@ def otu_export(request):
             q = q.filter(OTU.kingdom_id == kingdom_id)
             for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
                 w.writerow([
-                    sample_otu.sample_id,
+                    format_bpa_id(sample_otu.sample_id),
                     sample_otu.otu_id,
                     sample_otu.count,
                     val_or_empty(otu.kingdom),

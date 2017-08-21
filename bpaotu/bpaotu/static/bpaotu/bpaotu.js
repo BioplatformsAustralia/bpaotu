@@ -292,7 +292,7 @@ $(document).ready(function() {
                           org = 'bpa-marine-microbes';
                       }
                       var url = window.otu_search_config['ckan_base_url'] + '/organization/' + org + '?q=102.100.100.' + data;
-                      return '<a href="' + url + '">' + data + '</a>';
+                      return '<a href="' + url + '" target="_blank">' + data + '</a>';
                   }
               },
               {
