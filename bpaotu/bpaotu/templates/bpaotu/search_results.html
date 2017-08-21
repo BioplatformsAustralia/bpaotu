@@ -1,176 +1,254 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+
+{% load staticfiles %}
 {% load static from staticfiles %}
-{% block title %}OTU Search{% endblock %}
-{% block content %}
 
-{% csrf_token %}
-
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-6">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    Filter on Taxonomy
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    {% block head_meta_viewport %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=11">
+    {% endblock %}
+    
+    <title>BPA OTU Search Facility</title>
+    {% load static from staticfiles %}
+    {% load bootstrap3 %}
+    
+    {% bootstrap_css %}
+    {% bootstrap_javascript jquery=True %}
+    
+    <link rel="icon" href="{% static 'bpa-logos/favicon.ico' %}" type="image/x-icon">
+    
+    <link rel="stylesheet" href="//cdn.datatables.net/r/bs-3.3.5/jq-2.1.4,jszip-2.5.0,pdfmake-0.1.18,dt-1.10.9,b-1.0.3,b-colvis-1.0.3,b-html5-1.0.3,b-print-1.0.3,cr-1.2.0,fh-3.0.0,sc-1.3.0/datatables.min.css"
+    integrity="sha256-4zLbOiFTCzQ4zxnm/S+9JeIFnhWuIPgyOw0mbhtPuIA= sha384-CpFB96HWkaVC+dOX28UQC2mE/55CXHOQ0JWb+xpe3BHJuxlbmlCwhihPF4Hhk83+ sha512-0EUkXuq2xI8ComQ0X1iDyAOTpE7LzirbiZeWPKMU3ZP/XoWcyx+IbIR9Gb9NOfYxq6Tz35dlRlEuuo8mUFf0xQ=="
+    crossorigin="anonymous">
+    
+    <script src="//cdn.datatables.net/r/bs-3.3.5/jq-2.1.4,jszip-2.5.0,pdfmake-0.1.18,dt-1.10.9,b-1.0.3,b-colvis-1.0.3,b-html5-1.0.3,b-print-1.0.3,cr-1.2.0,fh-3.0.0,sc-1.3.0/datatables.min.js"
+    integrity="sha256-O69JUtL+XiMlImbVqOAJfEj5amSjFS6Nhj5TaUk037s= sha384-GNOqhnos5Zj3KrBYHi6OtDTCzNYzxIuj7Qj5z3aod+l1EqQCu4uBGjvBb/MLHwXw sha512-r+vqCPpa188G9K9V9BlaRBGcU+y3S4nsdujJ5S3Z6K14Zm7yrr3N7jADGCC29kTXQ841jIKH095K1JBnemv3+g=="
+    crossorigin="anonymous"></script>
+    
+    <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/4.16.4/lodash.min.js"
+    integrity="sha256-KteOoEtQ75FeAFFOTJZlvNt0iJ8NMusVDESd5jlwKEQ= sha384-+VyieUXwWQSImpRIFhlRJNe2KeZblzwXEF8LsYAO/cYlQdDG2SdJaky4Ud0sdVup sha512-coj002JZWtDMvnYzDgRXBzWlrEiS/EW2SNAYs0SVSDf62RSZ7ygs0leIGAjMiwe8cQRfqwrInDlHYsUSTDTPjQ=="
+    crossorigin="anonymous"></script>
+    
+    <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.1/moment.min.js"
+    integrity="sha256-4PIvl58L9q7iwjT654TQJM+C/acEyoG738iL8B8nhXg= sha384-7pfELK0arQ3VANqV4kiPWPh5wOsrfitjFGF/NdyHXUJ3JJPy/rNhasPtdkaNKhul sha512-1V1LfkdFb5dlSJjEImkfBwiJhuqBLoWjWWYKI3kMvjOFm3y43yzHhyp1Swz31R7k2GOfVFKFA+7UDZkTdTBIqA=="
+    crossorigin="anonymous"></script>
+    
+    <script src="{% static 'bpaotu/bpaotu.js' %}"></script>
+    
+    <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/common.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/bpaotu.css' %}"/>
+    
+    {% block extra_head %}
+    {% endblock %}
+    
+</head>
+<body>
+    <div id="wrap">
+        <header class="navbar navbar-static-top">
+            <div class="container">
+                <a class="logo" href="https://data.bioplatforms.com/">
+                    <img src="{% static 'bpa-logos/BioplatformsAustralia.png' %}" alt="Bioplatform Australia" />
+                </a>
+            </div>
+            
+            {% if DEBUG_ONLY_VIEW %}
+            <div class="alert alert-warning text-center">
+                This page should be accessible only in <strong>DEBUG</strong> mode.
+            </div>
+            {% endif %}
+        </header>
+        <div class="hide container" id="error-bar"></div>
+        
+        <div class="content-div">
+            
+            {% csrf_token %}
+            
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                Filter on Taxonomy
+                            </div>
+                            
+                            <div id="taxonomic_filter_panel" class="panel-body">
+                                <table id="taxonomic_filter_table" class="table table-bordered table-striped table-condensed">
+                                    <thead>
+                                        <th>Level</th>
+                                        <th>Value</th>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td width="10%">Kingdom</td>
+                                            <td>
+                                                <select class="form-control" id="taxonomy_kingdom"></select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Phylum</td>
+                                            <td>
+                                                <select class="form-control" id="taxonomy_phylum"></select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Class</td>
+                                            <td>
+                                                <select class="form-control" id="taxonomy_class"></select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Order</td>
+                                            <td>
+                                                <select class="form-control" id="taxonomy_order"></select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Family</td>
+                                            <td>
+                                                <select class="form-control" id="taxonomy_family"></select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Genus</td>
+                                            <td>
+                                                <select class="form-control" id="taxonomy_genus"></select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Species</td>
+                                            <td>
+                                                <select class="form-control" id="taxonomy_species"></select>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="panel-footer">
+                                <div class="row">
+                                    <div class="col-md-5"></div>
+                                    <div class="col-md-2"><input class="form-control" type="button" id="clear_taxonomic_filters" value="Clear" /></div>
+                                    <div class="col-md-5"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                Contextual Filters
+                            </div>
+                            <div id="contextual_filters" class="panel-body">
+                                <p id="no_contextual_filters">
+                                    There are no contextual filters.
+                                </p>
+                                <p id="contextual_filters_mode_para">
+                                    Samples must match
+                                    <select id="contextual_filters_mode">
+                                        <option value="or">any</option>
+                                        <option value="and">all</option>
+                                    </select>
+                                    of the contextual filters.
+                                </p>
+                                <div id="contextual_filters_target">
+                                </div>
+                            </div>
+                            <div class="panel-footer">
+                                <div class="row">
+                                    <div class="col-md-4"></div>
+                                    <div class="col-md-2"><input class="form-control" type="button" id="add_contextual_filter" value="Add" /></div>
+                                    <div class="col-md-2"><input class="form-control" type="button" id="clear_contextual_filters" value="Clear" /></div>
+                                    <div class="col-md-4"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div id="taxonomic_filter_panel" class="panel-body">
-                    <table id="taxonomic_filter_table" class="table table-bordered table-striped table-condensed">
-                        <thead>
-                            <th>Level</th>
-                            <th>Value</th>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td width="10%">Kingdom</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_kingdom"></select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Phylum</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_phylum"></select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Class</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_class"></select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Order</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_order"></select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Family</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_family"></select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Genus</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_genus"></select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Species</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_species"></select>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="panel-footer">
-                    <div class="row">
-                        <div class="col-md-5"></div>
-                        <div class="col-md-2"><input class="form-control" type="button" id="clear_taxonomic_filters" value="Clear" /></div>
-                        <div class="col-md-5"></div>
+                <div class="row">
+                    <div class="col-md-12" id="error-box">
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    Contextual Filters
-                </div>
-                <div id="contextual_filters" class="panel-body">
-                    <p id="no_contextual_filters">
-                        There are no contextual filters.
-                    </p>
-                    <p id="contextual_filters_mode_para">
-                        Samples must match
-                        <select id="contextual_filters_mode">
-                            <option value="or">any</option>
-                            <option value="and">all</option>
-                        </select>
-                        of the contextual filters.
-                    </p>
-                    <div id="contextual_filters_target">
+                
+                <div class="row">
+                    <div class="col-md-5">
+                    </div>
+                    <div class="col-md-2">
+                        <div class="panel panel-default">
+                            <button type="button" class="btn btn-default btn-block" id="search_button"><span class="glyphicon glyphicon-search" aria-hidden="true"></span> Search</button>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
                     </div>
                 </div>
-                <div class="panel-footer">
-                    <div class="row">
-                        <div class="col-md-4"></div>
-                        <div class="col-md-2"><input class="form-control" type="button" id="add_contextual_filter" value="Add" /></div>
-                        <div class="col-md-2"><input class="form-control" type="button" id="clear_contextual_filters" value="Clear" /></div>
-                        <div class="col-md-4"></div>
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <a href="#search_results" role="button" class="btn popovers" data-toggle="popover" title="Search Results" data-trigger="focus" data-content="Export an OTU abundance table, OTU taxonomy and representative OTU sequences for samples filling filtered search."><span class="glyphicon glyphicon-info-sign"></span>
+                                </a>
+                                <button type="button" class="btn btn-default " id="export_button">
+                                    <span class="glyphicon glyphicon-download" aria-hidden="true"></span> Export Search Results
+                                </button>
+                                To sort by multiple columns, press and hold the Shift key.
+                            </div>
+                            <table id="results" class="table" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th>BPA Sample ID</th>
+                                        <th>BPA Project</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th>BPA Sample ID</th>
+                                        <th>BPA Project</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-</div>
-
-<div class="row">
-    <div class="col-md-12" id="error-box">
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-5">
-    </div>
-    <div class="col-md-2">
-        <div class="panel panel-default">
-            <button type="button" class="btn btn-default btn-block" id="search_button"><span class="glyphicon glyphicon-search" aria-hidden="true"></span> Search</button>
-        </div>
-    </div>
-    <div class="col-md-5">
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-12">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <a href="#search_results" role="button" class="btn popovers" data-toggle="popover" title="Search Results" data-trigger="focus" data-content="Export an OTU abundance table, OTU taxonomy and representative OTU sequences for samples filling filtered search."><span class="glyphicon glyphicon-info-sign"></span>
-                </a>
-                <button type="button" class="btn btn-default " id="export_button">
-                    <span class="glyphicon glyphicon-download" aria-hidden="true"></span> Export Search Results
-                </button>
-                To sort by multiple columns, press and hold the Shift key.
+    
+    <footer class="site-footer">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="container">
+                    <div class="span4">
+                        <a href="https://www.education.gov.au/national-collaborative-research-infrastructure-strategy-ncris">
+                            <img id="ncris-img" src="{% static 'bpa-logos/ncris.png' %}" alt="NCRIS" />
+                        </a>
+                    </div>
+                    <div class="span4">
+                        <p><a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a></p>
+                        <p><a href="http://www.bioplatforms.com/contact/">Contact</a></p>
+                    </div>
+                </div>
             </div>
-            <table id="results" class="table" width="100%">
-                <thead>
-                    <tr>
-                        <th>BPA Sample ID</th>
-                        <th>BPA Project</th>
-                    </tr>
-                </thead>
-                <tfoot>
-                    <tr>
-                        <th>BPA Sample ID</th>
-                        <th>BPA Project</th>
-                    </tr>
-                </tfoot>
-                <tbody></tbody>
-            </table>
         </div>
-    </div>
-</div>
-
-</div>
-
-<script>
-    window.otu_search_config = {
-        'taxonomy_endpoint': "{% url 'taxonomy_options' %}",
-        'contextual_endpoint': "{% url 'contextual_fields' %}",
-        'search_endpoint': "{% url 'otu_search' %}",
-        'export_endpoint': "{% url 'otu_export' %}",
-        'ckan_base_url': "{{ ckan_base_url }}",
-    };
-    $(function () {
-        $('[data-toggle="tooltip"]').tooltip()
-        $('[data-toggle="popover"]').popover({html:true})
-    })
-</script>
-
-
-{% endblock %}
+    </footer>
+    
+    <script>
+        window.otu_search_config = {
+            'taxonomy_endpoint': "{% url 'taxonomy_options' %}",
+            'contextual_endpoint': "{% url 'contextual_fields' %}",
+            'search_endpoint': "{% url 'otu_search' %}",
+            'export_endpoint': "{% url 'otu_export' %}",
+            'ckan_base_url': "{{ ckan_base_url }}",
+        };
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+            $('[data-toggle="popover"]').popover({html:true})
+        })
+    </script>
+    
+</body>
+</html>
