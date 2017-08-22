@@ -187,6 +187,9 @@ def param_to_filters(query_str):
 
     for filter_spec in context_spec['filters']:
         field_name = filter_spec['field']
+        if field_name not in SampleContext.__table__.columns:
+            errors.append("Please select a contextual data field to filter upon.")
+            continue
         column = SampleContext.__table__.columns[field_name]
         typ = str(column.type)
         try:

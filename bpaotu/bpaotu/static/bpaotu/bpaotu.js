@@ -278,7 +278,7 @@ $(document).ready(function() {
             return;
         }
         target.show();
-        target.append($("<h3>Errors detected in query:"));
+        target.append($("<h3>Error:</h3>"));
         var ul = $("<ul></ul>");
         target.append(ul);
         $.each(errors, function(i, e) {
