@@ -12,6 +12,7 @@ from django.views.generic import TemplateView
 from django.http import JsonResponse, StreamingHttpResponse
 from io import StringIO
 import traceback
+from .importer import DataImporter
 from .otu import (
     BPAProject,
     OTUKingdom,
@@ -112,6 +113,8 @@ def contextual_fields(request):
     """
     fields_by_type = defaultdict(list)
 
+    classifications = DataImporter.classify_fields(make_project_lookup())
+
     ontology_classes = {}
 
     # group together columns by their type. note special case
@@ -126,30 +129,27 @@ def contextual_fields(request):
             ty = str(column.type)
         fields_by_type[ty].append(column.name)
 
+    def make_defn(typ, name, **kwargs):
+        project = classifications.get(name)
+        r = kwargs.copy()
+        r.update({
+            'type': typ,
+            'name': field_name,
+            'project': project
+        })
+        return r
+
     definitions = []
     for field_name in fields_by_type['DATE']:
-        definitions.append({
-            'type': 'date',
-            'name': field_name
-        })
+        definitions.append(make_defn('date', field_name))
     for field_name in fields_by_type['FLOAT']:
-        definitions.append({
-            'type': 'float',
-            'name': field_name
-        })
+        definitions.append(make_defn('float', field_name))
     for field_name in fields_by_type['CITEXT']:
-        definitions.append({
-            'type': 'string',
-            'name': field_name
-        })
+        definitions.append(make_defn('string', field_name))
     with OntologyInfo() as info:
         for field_name in fields_by_type['_ontology']:
             ontology_class = ontology_classes[field_name]
-            definitions.append({
-                'type': 'ontology',
-                'name': field_name,
-                'values': info.get_values(ontology_class)
-            })
+            definitions.append(make_defn('ontology', field_name, values=info.get_values(ontology_class)))
     for defn in definitions:
         defn['display_name'] = display_name(defn['name'])
     definitions.sort(key=lambda x: x['name'])

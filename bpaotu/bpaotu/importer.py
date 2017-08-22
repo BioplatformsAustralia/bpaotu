@@ -6,7 +6,9 @@ from sqlalchemy.orm import sessionmaker
 from glob import glob
 from .contextual import (
     marine_contextual_rows,
-    soil_contextual_rows)
+    soil_contextual_rows,
+    soil_field_spec,
+    marine_field_specs)
 from collections import defaultdict
 from itertools import zip_longest
 from .otu import (
@@ -48,6 +50,28 @@ def grouper(iterable, n):
 
 
 class DataImporter:
+    soil_ontologies = {
+        'project': BPAProject,
+        'sample_type': SampleType,
+        'horizon_classification': SampleHorizonClassification,
+        'soil_sample_storage_method': SampleStorageMethod,
+        'broad_land_use': SampleLandUse,
+        'detailed_land_use': SampleLandUse,
+        'general_ecological_zone': SampleEcologicalZone,
+        'vegetation_type': SampleVegetationType,
+        'profile_position': SampleProfilePosition,
+        'australian_soil_classification': SampleAustralianSoilClassification,
+        'fao_soil_classification': SampleFAOSoilClassification,
+        'immediate_previous_land_use': SampleLandUse,
+        'tillage': SampleTillage,
+        'color': SampleColor,
+    }
+
+    marine_ontologies = {
+        'project': BPAProject,
+        'sample_type': SampleType,
+    }
+
     def __init__(self, import_base):
         self._engine = make_engine()
         Session = sessionmaker(bind=self._engine)
@@ -103,6 +127,31 @@ class DataImporter:
                 mappings[field] = map_dict
         return mappings
 
+    @classmethod
+    def classify_fields(cls, project_lookup):
+        # flip around to name -> id
+        pl = dict((t[1], t[0]) for t in project_lookup.items())
+
+        soil_fields = set()
+        marine_fields = set()
+        for field_info in soil_field_spec:
+            field_name = field_info[0]
+            if field_name in DataImporter.soil_ontologies:
+                field_name += '_id'
+            soil_fields.add(field_name)
+        for data_type, fields in marine_field_specs.items():
+            for field_info in fields:
+                field_name = field_info[0]
+                if field_name in DataImporter.marine_ontologies:
+                    field_name += '_id'
+                marine_fields.add(field_name)
+        soil_only = soil_fields - marine_fields
+        marine_only = marine_fields - soil_fields
+        r = {}
+        r.update((t, pl['BASE']) for t in soil_only)
+        r.update((t, pl['Marine Microbes']) for t in marine_only)
+        return r
+
     def load_taxonomies(self):
         logger.warning("loading taxonomies")
 
@@ -136,22 +185,6 @@ class DataImporter:
 
     def load_soil_contextual_metadata(self):
         logger.warning("loading BASE contextual metadata")
-        ontologies = {
-            'project': BPAProject,
-            'sample_type': SampleType,
-            'horizon_classification': SampleHorizonClassification,
-            'soil_sample_storage_method': SampleStorageMethod,
-            'broad_land_use': SampleLandUse,
-            'detailed_land_use': SampleLandUse,
-            'general_ecological_zone': SampleEcologicalZone,
-            'vegetation_type': SampleVegetationType,
-            'profile_position': SampleProfilePosition,
-            'australian_soil_classification': SampleAustralianSoilClassification,
-            'fao_soil_classification': SampleFAOSoilClassification,
-            'immediate_previous_land_use': SampleLandUse,
-            'tillage': SampleTillage,
-            'color': SampleColor,
-        }
 
         def _make_context():
             for row in rows:
@@ -161,7 +194,7 @@ class DataImporter:
                 attrs = {
                     'id': int(bpa_id.split('.')[-1])
                 }
-                for field in ontologies:
+                for field in DataImporter.soil_ontologies:
                     if field not in row:
                         continue
                     attrs[field + '_id'] = mappings[field][row[field]]
@@ -172,16 +205,12 @@ class DataImporter:
                 yield SampleContext(**attrs)
 
         rows = [t._asdict() for t in soil_contextual_rows(glob(self._import_base + '/base/*.xlsx')[0])]
-        mappings = self._load_ontology(ontologies, rows)
+        mappings = self._load_ontology(DataImporter.soil_ontologies, rows)
         self._session.bulk_save_objects(_make_context())
         self._session.commit()
 
     def load_marine_contextual_metadata(self):
         logger.warning("loading Marine Microbes contextual metadata")
-        ontologies = {
-            'project': BPAProject,
-            'sample_type': SampleType,
-        }
 
         def _make_context():
             for row in rows:
@@ -191,7 +220,7 @@ class DataImporter:
                 attrs = {
                     'id': int(bpa_id.split('.')[-1])
                 }
-                for field in ontologies:
+                for field in DataImporter.marine_onotologies:
                     if field not in row:
                         continue
                     attrs[field + '_id'] = mappings[field][row[field]]
@@ -202,7 +231,7 @@ class DataImporter:
                 yield SampleContext(**attrs)
 
         rows = [t._asdict() for t in marine_contextual_rows(glob(self._import_base + '/mm/*.xlsx')[0])]
-        mappings = self._load_ontology(ontologies, rows)
+        mappings = self._load_ontology(DataImporter.marine_ontologies, rows)
         self._session.bulk_save_objects(_make_context())
         self._session.commit()
 
