@@ -101,6 +101,50 @@ $(document).ready(function() {
         }
     };
 
+    var get_project_id = function() {
+        var contextual_state = marshal_contextual_filters();
+        var filters = contextual_state.filters;
+        var project_id = null;
+        $.each(filters, function(idx, filter) {
+            if (filter.field == 'project_id') {
+                project_id = filter.is;
+            }
+        });
+        return project_id;
+    }
+
+    var configure_unselected_contextual_filters = function() {
+        var current_project_id = get_project_id();
+        $.each($("#contextual_filters_target > div"), function(idx, target) {
+            var select_box = $(".contextual-item", target);
+            var select_val = select_box.val();
+            if (select_val !== null && select_val !== '') {
+                return;
+            }
+
+            // if we have a project ID set, we filter the available options to those for that project ID
+            // and those which are cross-project
+            var applicable_definitions = _.filter(contextual_config['definitions'], function (val) {
+                if (current_project_id === null) {
+                    return true;
+                }
+                if (val.project === null) {
+                    return true;
+                }
+                if (val.project == current_project_id) {
+                    return true;
+                }
+                return false;
+            });
+            set_options(select_box, [blank_option].concat(_.map(applicable_definitions, function(val) {
+                return {
+                    'value': val['name'],
+                    'text': val['display_name']
+                }
+            })));
+        });
+    }
+
     var add_contextual_filter = function() {
         if (!contextual_config) {
             // initial config not loaded yet
@@ -117,12 +161,6 @@ $(document).ready(function() {
         ].join("\n"));
         $("#contextual_filters_target").append(d);
         var select_box = $('#' + new_filter_id + " select");
-        set_options(select_box, [blank_option].concat(_.map(contextual_config['definitions'], function(val) {
-            return {
-                'value': val['name'],
-                'text': val['display_name']
-            }
-        })));
         select_box.on('change', function() {
             var target = $('#' + new_filter_id + " .contextual-entry");
             target.empty();
@@ -163,6 +201,11 @@ $(document).ready(function() {
                         'text': val[1]
                     }
                 }));
+                if (defn_name == 'project_id') {
+                    widget.on('change', function() {
+                        configure_unselected_contextual_filters();
+                    });
+                }
             }
             target.append(widget);
             target.trigger('otu:filter_changed');
@@ -171,6 +214,7 @@ $(document).ready(function() {
             $('#' + new_filter_id).remove();
             update_contextual_controls();
         });
+        configure_unselected_contextual_filters();
         update_contextual_controls();
         return new_filter_id;
     };
