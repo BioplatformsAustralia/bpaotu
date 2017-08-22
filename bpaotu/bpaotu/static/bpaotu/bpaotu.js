@@ -165,12 +165,14 @@ $(document).ready(function() {
                 }));
             }
             target.append(widget);
+            target.trigger('otu:filter_changed');
         });
         $('#' + new_filter_id + ' button').click(function() {
             $('#' + new_filter_id).remove();
             update_contextual_controls();
         });
         update_contextual_controls();
+        return new_filter_id;
     };
 
     var setup_contextual = function() {
@@ -190,8 +192,22 @@ $(document).ready(function() {
             url: window.otu_search_config['contextual_endpoint'],
         }).done(function(result) {
             contextual_config = result;
+
+            // initial contextual filter from URL parameter, if relevant
+            var project_id = window.otu_search_config['contextual_filter_project_id'];
+            if (project_id) {
+                var filter_id = add_contextual_filter();
+                var entry = $('#' + filter_id + " .contextual-entry");
+                entry.on('otu:filter_changed', function() {
+                    $('select', entry).val(project_id);
+                    datatable.ajax.reload();
+                });
+                var select_box = $('#' + filter_id + " select");
+                select_box.val('project_id').change();
+            }
         });
         update_contextual_controls();
+
     };
 
     var marshal_contextual_filters = function() {

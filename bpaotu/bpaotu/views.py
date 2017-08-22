@@ -33,6 +33,11 @@ ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
 
 
+def make_project_lookup():
+    with OntologyInfo() as info:
+        return dict(info.get_values(BPAProject))
+
+
 def format_bpa_id(int_id):
     return '102.100.100/%d' % int_id
 
@@ -51,9 +56,22 @@ class OTUSearch(TemplateView):
     template_name = 'bpaotu/search_results.html'
     ckan_base_url = settings.CKAN_SERVERS[0]['base_url']
 
+    project_filter = {
+        'marine-microbes': 'Marine Microbes',
+        'base': 'BASE',
+    }
+
     def get_context_data(self, **kwargs):
         context = super(OTUSearch, self).get_context_data(**kwargs)
         context['ckan_base_url'] = settings.CKAN_SERVERS[0]['base_url']
+
+        project_name = self.kwargs.get('project')
+        # note: project_name is constrained by the URL pattern, so we can assume it is valid
+        if project_name is not None:
+            project_lookup = make_project_lookup()
+            project_id = [k for (k, v) in project_lookup.items() if v == OTUSearch.project_filter[project_name]][0]
+            context['contextual_filter_project_id'] = project_id
+
         return context
 
 
@@ -214,8 +232,7 @@ def otu_search(request):
     start = _int_get_param('start')
     length = _int_get_param('length')
 
-    with OntologyInfo() as info:
-        project_lookup = dict(info.get_values(BPAProject))
+    project_lookup = make_project_lookup()
 
     contextual_filter, taxonomy_filter, errors = param_to_filters(request.POST['otu_query'])
     with SampleQuery(contextual_filter, taxonomy_filter) as query:
