@@ -220,7 +220,7 @@ class DataImporter:
                 attrs = {
                     'id': int(bpa_id.split('.')[-1])
                 }
-                for field in DataImporter.marine_onotologies:
+                for field in DataImporter.marine_ontologies:
                     if field not in row:
                         continue
                     attrs[field + '_id'] = mappings[field][row[field]]
