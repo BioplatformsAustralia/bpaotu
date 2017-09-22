@@ -127,9 +127,9 @@ def contextual_fields(request):
             ontology_classes[column.name] = column.ontology_class
         else:
             ty = str(column.type)
-        fields_by_type[ty].append(column.name)
+        fields_by_type[ty].append((column.name, getattr(column, 'units', None)))
 
-    def make_defn(typ, name, **kwargs):
+    def make_defn(typ, name, units, **kwargs):
         project = classifications.get(name)
         r = kwargs.copy()
         r.update({
@@ -137,19 +137,21 @@ def contextual_fields(request):
             'name': field_name,
             'project': project
         })
+        if units:
+            r['units'] = units
         return r
 
     definitions = []
-    for field_name in fields_by_type['DATE']:
-        definitions.append(make_defn('date', field_name))
-    for field_name in fields_by_type['FLOAT']:
-        definitions.append(make_defn('float', field_name))
-    for field_name in fields_by_type['CITEXT']:
-        definitions.append(make_defn('string', field_name))
+    for field_name, units in fields_by_type['DATE']:
+        definitions.append(make_defn('date', field_name, units))
+    for field_name, units in fields_by_type['FLOAT']:
+        definitions.append(make_defn('float', field_name, units))
+    for field_name, units in fields_by_type['CITEXT']:
+        definitions.append(make_defn('string', field_name, units))
     with OntologyInfo() as info:
-        for field_name in fields_by_type['_ontology']:
+        for field_name, units in fields_by_type['_ontology']:
             ontology_class = ontology_classes[field_name]
-            definitions.append(make_defn('ontology', field_name, values=info.get_values(ontology_class)))
+            definitions.append(make_defn('ontology', field_name, units, values=info.get_values(ontology_class)))
     for defn in definitions:
         defn['display_name'] = display_name(defn['name'])
     definitions.sort(key=lambda x: x['name'])

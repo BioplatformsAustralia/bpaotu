@@ -137,9 +137,14 @@ $(document).ready(function() {
                 return false;
             });
             set_options(select_box, [blank_option].concat(_.map(applicable_definitions, function(val) {
+                var dn = val['display_name'];
+                var units = val['units'];
+                if (units) {
+                    dn = dn + ' [' + units + ']';
+                }
                 return {
                     'value': val['name'],
-                    'text': val['display_name']
+                    'text': dn
                 }
             })));
         });
@@ -251,7 +256,6 @@ $(document).ready(function() {
             }
         });
         update_contextual_controls();
-
     };
 
     var marshal_contextual_filters = function() {
