@@ -163,7 +163,7 @@ marine_field_specs = {
         ('fluorescence_wetlab', 'fluorescence, wetlab eco-afl/fl [mg/m^3]', ingest_utils.get_clean_number),
         ('fluorescence', 'fluorescence (au)', ingest_utils.get_clean_number),
         ('transmittance', 'transmittance (%)', ingest_utils.get_clean_number),
-        ('turbidity', 'turbidity (nephelometric turbidity units) ctd', ingest_utils.get_clean_number),
+        ('turbidity_ctd', 'turbidity (nephelometric turbidity units) ctd', ingest_utils.get_clean_number),
         ('density', 'density [density, kg/m^3] ctd', ingest_utils.get_clean_number),
         ('depth_salt_water', 'depth [salt water, m], lat = -27.2', ingest_utils.get_clean_number),
         ('salinity_lab', 'salinity [psu] lab', ingest_utils.get_clean_number),
