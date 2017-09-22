@@ -293,10 +293,14 @@ def contextual_csv(samples):
         write_fns = []
         for column in SampleContext.__table__.columns:
             fields.append(column.name)
+            units = getattr(column, 'units', None)
             if column.name == 'id':
                 heading.append('BPA ID')
             else:
-                heading.append(display_name(column.name))
+                title = display_name(column.name)
+                if units:
+                    title += ' [%s]' % units
+                heading.append(title)
 
             if column.name == 'id':
                 write_fns.append(format_bpa_id)

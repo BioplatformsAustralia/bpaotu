@@ -185,7 +185,7 @@ class SampleContext(SchemaMixin, Base):
     beta_epi_car = with_units('mg/m3', Float)
     biomass = with_units('mg/m3', Float)
     boron_hot_cacl2 = with_units('mg/Kg', Float)
-    bottom_depth = Column(Float)
+    bottom_depth = with_units('m', Float)
     but_fuco = with_units('mg/m3', Float)
     cantha = with_units('mg/m3', Float)
     chl_a_allomer = Column(Float)
