@@ -302,3 +302,27 @@ class ContextualFilterTermOntology(ContextualFilterTerm):
         return [
             self.field == self.val_is
         ]
+
+
+class ContextualFilterTermSampleID(ContextualFilterTerm):
+    def __init__(self, field_name, val_is_in):
+        super(ContextualFilterTermSampleID, self).__init__(field_name)
+        assert(type(val_is_in) is list)
+        for t in val_is_in:
+            assert(type(t) is int)
+        self.val_is_in = val_is_in
+
+    def __repr__(self):
+        return '<TermSampleID(%s,%s)>' % (self.field_name, self.val_is_in)
+
+    def get_conditions(self):
+        return [
+            self.field.in_(self.val_is_in)
+        ]
+
+
+def get_sample_ids():
+    session = Session()
+    ids = [t[0] for t in session.query(SampleContext.id).all()]
+    session.close()
+    return ids

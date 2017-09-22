@@ -26,7 +26,9 @@ from .query import (
     ContextualFilterTermDate,
     ContextualFilterTermFloat,
     ContextualFilterTermOntology,
-    ContextualFilterTermString)
+    ContextualFilterTermSampleID,
+    ContextualFilterTermString,
+    get_sample_ids)
 
 logger = logging.getLogger("rainbow")
 # See datatables.net serverSide documentation for details
@@ -134,14 +136,14 @@ def contextual_fields(request):
         r = kwargs.copy()
         r.update({
             'type': typ,
-            'name': field_name,
+            'name': name,
             'project': project
         })
         if units:
             r['units'] = units
         return r
 
-    definitions = []
+    definitions = [make_defn('sample_id', 'id', None, display_name='Sample ID', values=get_sample_ids())]
     for field_name, units in fields_by_type['DATE']:
         definitions.append(make_defn('date', field_name, units))
     for field_name, units in fields_by_type['FLOAT']:
@@ -153,8 +155,10 @@ def contextual_fields(request):
             ontology_class = ontology_classes[field_name]
             definitions.append(make_defn('ontology', field_name, units, values=info.get_values(ontology_class)))
     for defn in definitions:
-        defn['display_name'] = display_name(defn['name'])
-    definitions.sort(key=lambda x: x['name'])
+        if 'display_name' not in defn:
+            defn['display_name'] = display_name(defn['name'])
+
+    definitions.sort(key=lambda x: x['display_name'])
 
     return JsonResponse({
         'definitions': definitions
@@ -195,7 +199,9 @@ def param_to_filters(query_str):
         column = SampleContext.__table__.columns[field_name]
         typ = str(column.type)
         try:
-            if hasattr(column, 'ontology_class'):
+            if column.name == 'id':
+                contextual_filter.add_term(ContextualFilterTermSampleID(field_name, [int(t) for t in filter_spec['is']]))
+            elif hasattr(column, 'ontology_class'):
                 contextual_filter.add_term(
                     ContextualFilterTermOntology(field_name, int(filter_spec['is'])))
             elif typ == 'DATE':
@@ -208,7 +214,7 @@ def param_to_filters(query_str):
                 contextual_filter.add_term(
                     ContextualFilterTermString(field_name, str(filter_spec['contains'])))
             else:
-                raise ValueError("invalid filter term type")
+                raise ValueError("invalid filter term type: %s", typ)
         except Exception as ex:
             errors.append("Invalid value provided for contextual field `%s'" % field_name)
             logger.critical("Exception parsing field: `%s':\n%s" % (field_name, traceback.format_exc()))
