@@ -175,7 +175,15 @@ $(document).ready(function() {
             var defn_type = defn['type'];
 
             var widget;
-            if (defn_type == 'date') {
+            if (defn_type == 'sample_id') {
+                widget = $('<select multiple class="form-control cval_select"></select>');
+                set_options(widget, _.map(defn['values'], function(val) {
+                    return {
+                        'value': val,
+                        'text': '102.100.100/' + val,
+                    }
+                }));
+            } else if (defn_type == 'date') {
                 widget = $([
                     '<div class="row">',
                     '<div class="col-md-5"><input class="form-control cval_from" /></div>',
