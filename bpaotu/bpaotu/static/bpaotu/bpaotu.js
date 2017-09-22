@@ -15,6 +15,7 @@ $(document).ready(function() {
     // contextual metadata fields and their types
     var contextual_config;
     var next_contextual_filter_id = 1;
+    var implicit_project_id = window.otu_search_config['contextual_filter_project_id'];
     var datatable;
 
     var set_options = function(target, options) {
@@ -125,12 +126,19 @@ $(document).ready(function() {
             // if we have a project ID set, we filter the available options to those for that project ID
             // and those which are cross-project
             var applicable_definitions = _.filter(contextual_config['definitions'], function (val) {
+                // exclude project selector if we're pinned to an implicit project
+                if (implicit_project_id && (val.name == 'project_id')) {
+                    return false;
+                }
+                // we don't have a project ID selected
                 if (current_project_id === null) {
                     return true;
                 }
+                // it's not a project specific field
                 if (val.project === null) {
                     return true;
                 }
+                // it matches current project
                 if (val.project == current_project_id) {
                     return true;
                 }
@@ -159,7 +167,7 @@ $(document).ready(function() {
         next_contextual_filter_id += 1;
         var d = $([
             '<div class="row" id="' + new_filter_id + '">',
-            '<div class="col-md-2"><button class="form-control" type="button"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button></div>',
+            '<div class="col-md-2"><button class="form-control remove-button" type="button"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button></div>',
             '<div class="col-md-4"><select class="form-control contextual-item"></select></div>',
             '<div class="col-md-6 contextual-entry"></div>',
             '</div>'
@@ -249,19 +257,6 @@ $(document).ready(function() {
             url: window.otu_search_config['contextual_endpoint'],
         }).done(function(result) {
             contextual_config = result;
-
-            // initial contextual filter from URL parameter, if relevant
-            var project_id = window.otu_search_config['contextual_filter_project_id'];
-            if (project_id) {
-                var filter_id = add_contextual_filter();
-                var entry = $('#' + filter_id + " .contextual-entry");
-                entry.on('otu:filter_changed', function() {
-                    $('select', entry).val(project_id);
-                    datatable.ajax.reload();
-                });
-                var select_box = $('#' + filter_id + " select");
-                select_box.val('project_id').change();
-            }
         });
         update_contextual_controls();
     };
@@ -282,6 +277,12 @@ $(document).ready(function() {
             marshal_input('.cval_select', 'is');
             return obj;
         });
+        if (implicit_project_id) {
+            filter_state.push({
+                'field': 'project_id',
+                'is': implicit_project_id
+            });
+        }
         return {
             'filters': filter_state,
             'mode': $('#contextual_filters_mode').val()
