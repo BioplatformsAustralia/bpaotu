@@ -325,7 +325,7 @@ class SampleContext(SchemaMixin, Base):
     transmittance = with_units('%', Float)
     tss = with_units('mg/L', Float)
     turbidity = with_units('Upoly 0, WET Labs FLNTURT', Float)
-    turbidity_cdt = with_units('Nephelometric Turbidity Units', Float)
+    turbidity_ctd = with_units('Nephelometric Turbidity Units', Float)
     vegetation_dom_grasses = with_units('%', Float)
     vegetation_dom_shrubs = with_units('%', Float)
     vegetation_dom_trees = with_units('%', Float)
