@@ -2,7 +2,7 @@ FROM muccg/python-base:3.6-debian-8
 MAINTAINER https://github.com/muccg/bpaotu
 
 ENV PROJECT_NAME bpaotu
-ENV PROJECT_SOURCE https://github.com/muccg/bpaotu.git
+ENV PROJECT_SOURCE git@github.com:muccg/bpaotu.git
 ENV DEPLOYMENT prod
 ENV PRODUCTION 1
 ENV DEBUG 0
@@ -20,8 +20,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   gettext \
   libpcre3 \
   libpq5 \
+  gdal-bin \
+  libgeos-c1 \
+  libproj-dev \
   mime-support \
-  nodejs-legacy \
   unixodbc \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

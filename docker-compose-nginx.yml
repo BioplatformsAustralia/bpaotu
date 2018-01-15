@@ -6,7 +6,7 @@ data:
     - ./data/dev:/data
 
 db:
-  image: mdillon/postgis:9.5
+  image: mdillon/postgis:9.6
   environment:
     - POSTGRES_USER=webapp
     - POSTGRES_PASSWORD=webapp
@@ -27,7 +27,7 @@ uwsgi:
   image: bpaotu_runserver
   command: uwsgi
   environment:
-    - DJANGO_SETTINGS_MODULE=bpam.settings
+    - DJANGO_SETTINGS_MODULE=bpaotu.settings
     - DBUSER=webapp
     - WAIT_FOR_DB=1
     - WAIT_FOR_CACHE=1

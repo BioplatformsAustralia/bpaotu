@@ -1,0 +1,12 @@
+#error-bar {
+    clear: both;
+    padding: 5px;
+    background-color: #ffffe0;
+    border: 1px solid black;
+}
+
+#footer {
+    color: rgb(230,230,230);
+    background-color: #1e73be;
+    padding: 15px 0 5px;
+}

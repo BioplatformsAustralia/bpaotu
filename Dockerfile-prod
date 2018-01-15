@@ -1,4 +1,4 @@
-# bpam production
+# bpaotu production
 FROM muccg/bpaotu-base
 MAINTAINER https://github.com/muccg/bpaotu
 

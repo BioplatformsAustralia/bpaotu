@@ -140,20 +140,6 @@ function _django_dev_fixtures {
 }
 
 
-function _django_create_cache_table {
-    info "running create_cache_table"
-    django-admin.py createcachetable --traceback --settings="${DJANGO_SETTINGS_MODULE}" 2>&1 | tee "${LOG_DIRECTORY}"/createcachetable.log
-}
-
-
-function _django_bpaotu_setup {
-    info "running set_mirrors"
-    django-admin.py set_mirrors --traceback --settings="${DJANGO_SETTINGS_MODULE}" 2>&1 | tee "${LOG_DIRECTORY}"/set_mirrors.log
-    info "running set_ckan"
-    django-admin.py set_ckan --traceback --settings="${DJANGO_SETTINGS_MODULE}" 2>&1 | tee "${LOG_DIRECTORY}"/set_ckan.log
-}
-
-
 function _django_fixtures {
     if [ "${DJANGO_FIXTURES}" = 'test' ]; then
         _django_test_fixtures
@@ -170,14 +156,16 @@ function _runserver() {
 
     _django_collectstatic
     _django_migrate
-    _django_create_cache_table
-    _django_bpaotu_setup
     _django_fixtures
 
     info "RUNSERVER_OPTS is ${RUNSERVER_OPTS}"
     set -x
-    # shellcheck disable=SC2086
-    exec django-admin.py ${RUNSERVER_OPTS}
+    while true; do
+        # shellcheck disable=SC2086
+        django-admin.py ${RUNSERVER_OPTS}
+        echo "oh no, runserver crashed: $!"
+        sleep 5
+    done
 }
 
 

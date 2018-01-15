@@ -27,15 +27,15 @@ RUN env | sort
 # Add our python deps in multiple docker layers
 # hgvs was failing due to lack of nose, hence the order
 COPY ./requirements/dev-requirements.txt /app/bpaotu/
-RUN pip install --upgrade -r bpam/dev-requirements.txt
+RUN pip install --upgrade -r bpaotu/dev-requirements.txt
 COPY ./requirements/test-requirements.txt /app/bpaotu/
-RUN pip install --upgrade -r bpam/test-requirements.txt
+RUN pip install --upgrade -r bpaotu/test-requirements.txt
 COPY ./requirements/runtime-requirements.txt /app/bpaotu/
-RUN pip install --upgrade -r bpam/runtime-requirements.txt
+RUN pip install --upgrade -r bpaotu/runtime-requirements.txt
 
 # Copy code and install the app
 COPY . /app
-RUN pip ${PIP_OPTS} install --upgrade -e bpam
+RUN pip ${PIP_OPTS} install --upgrade -e bpaotu
 
 EXPOSE 8000 9000 9001 9100 9101
 VOLUME ["/app", "/data"]
