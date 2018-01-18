@@ -93,7 +93,7 @@ class OTUSpecies(OntologyMixin, Base):
 class OTU(SchemaMixin, Base):
     __tablename__ = 'otu'
     id = Column(Integer, primary_key=True)
-    code = Column(String(length=21))  # current max length of OTU code
+    code = Column(String(length=1024))  # long GATTACAt-ype string
     kingdom_id = ontology_fkey(OTUKingdom)
     phylum_id = ontology_fkey(OTUPhylum)
     class_id = ontology_fkey(OTUClass)

@@ -9,7 +9,9 @@ from .contextual import (
     soil_contextual_rows,
     soil_field_spec,
     marine_field_specs)
-from collections import defaultdict
+from collections import (
+    defaultdict,
+    OrderedDict)
 from itertools import zip_longest
 from .otu import (
     Base,
@@ -42,35 +44,34 @@ from .otu import (
 logger = logging.getLogger("rainbow")
 
 
-# from itertools recipes
-def grouper(iterable, n):
+def grouper(iterable, n, fillvalue=None):
     "Collect data into fixed-length chunks or blocks"
+    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
     args = [iter(iterable)] * n
-    return zip_longest(*args)
-
+    return zip_longest(*args, fillvalue=fillvalue)
 
 class DataImporter:
-    soil_ontologies = {
-        'project': BPAProject,
-        'sample_type': SampleType,
-        'horizon_classification': SampleHorizonClassification,
-        'soil_sample_storage_method': SampleStorageMethod,
-        'broad_land_use': SampleLandUse,
-        'detailed_land_use': SampleLandUse,
-        'general_ecological_zone': SampleEcologicalZone,
-        'vegetation_type': SampleVegetationType,
-        'profile_position': SampleProfilePosition,
-        'australian_soil_classification': SampleAustralianSoilClassification,
-        'fao_soil_classification': SampleFAOSoilClassification,
-        'immediate_previous_land_use': SampleLandUse,
-        'tillage': SampleTillage,
-        'color': SampleColor,
-    }
+    soil_ontologies = OrderedDict([
+        ('project', BPAProject),
+        ('sample_type', SampleType),
+        ('horizon_classification', SampleHorizonClassification),
+        ('soil_sample_storage_method', SampleStorageMethod),
+        ('broad_land_use', SampleLandUse),
+        ('detailed_land_use', SampleLandUse),
+        ('general_ecological_zone', SampleEcologicalZone),
+        ('vegetation_type', SampleVegetationType),
+        ('profile_position', SampleProfilePosition),
+        ('australian_soil_classification', SampleAustralianSoilClassification),
+        ('fao_soil_classification', SampleFAOSoilClassification),
+        ('immediate_previous_land_use', SampleLandUse),
+        ('tillage', SampleTillage),
+        ('color', SampleColor),
+    ])
 
-    marine_ontologies = {
-        'project': BPAProject,
-        'sample_type': SampleType,
-    }
+    marine_ontologies = OrderedDict([
+        ('project', BPAProject),
+        ('sample_type', SampleType),
+    ])
 
     def __init__(self, import_base):
         self._engine = make_engine()
@@ -108,21 +109,23 @@ class DataImporter:
         self._session.commit()
         return dict((t.value, t.id) for t in self._session.query(db_class).all())
 
-    def _load_ontology(self, ontology_defn, rows):
+    def _load_ontology(self, ontology_defn, row_iter):
         # import the ontologies, and build a mapping from
         # permitted values into IDs in those ontologies
         by_class = defaultdict(list)
         for field, db_class in ontology_defn.items():
             by_class[db_class].append(field)
 
-        mappings = {}
-        for db_class, fields in by_class.items():
-            vals = set()
-            for row in rows:
+        vals = defaultdict(set)
+        for row in row_iter:
+            for db_class, fields in by_class.items():
                 for field in fields:
                     if field in row:
-                        vals.add(row[field])
-            map_dict = self._build_ontology(db_class, vals)
+                        vals[db_class].add(row[field])
+
+        mappings = {}
+        for db_class, fields in by_class.items():
+            map_dict = self._build_ontology(db_class, vals[db_class])
             for field in fields:
                 mappings[field] = map_dict
         return mappings
@@ -157,28 +160,43 @@ class DataImporter:
 
         # load each taxnomy file. note that not all files
         # have all of the columns
-        rows = []
-        for fname in glob(self._import_base + '/*.taxonomy'):
-            rows += list(self._read_tab_file(fname))
-        ontologies = {
-            'kingdom': OTUKingdom,
-            'phylum': OTUPhylum,
-            'class': OTUClass,
-            'order': OTUOrder,
-            'family': OTUFamily,
-            'genus': OTUGenus,
-            'species': OTUSpecies
-        }
-        mappings = self._load_ontology(ontologies, rows)
+        ontologies = OrderedDict([
+            ('kingdom', OTUKingdom),
+            ('phylum', OTUPhylum),
+            ('class', OTUClass),
+            ('order', OTUOrder),
+            ('family', OTUFamily),
+            ('genus', OTUGenus),
+            ('species', OTUSpecies),
+        ])
+
+        def _taxon_rows_iter():
+            for fname in glob(self._import_base + '/*.taxonomy'):
+                with open(fname) as fd:
+                    for otu, taxon in csv.reader(fd, dialect='excel-tab'):
+                        taxon_parts = taxon.split(';')
+                        # FIXME: this actually truncates some of the rows - to be chased up with CSIRO
+                        obj = dict(zip(ontologies.keys(), taxon_parts))
+                        obj['otu'] = otu
+                        yield obj
+
+        mappings = self._load_ontology(ontologies, _taxon_rows_iter())
 
         def _make_otus():
-            for row in rows:
+            for row in _taxon_rows_iter():
                 attrs = {}
                 for field in ontologies:
                     if field not in row:
                         continue
                     attrs[field + '_id'] = mappings[field][row[field]]
-                yield OTU(code=row['OTUId'], **attrs)
+                yield OTU(code=row['otu'], **attrs)
+
+        commit_size = 100000
+        for commit_block in grouper(_make_otus(), commit_size):
+            logger.warning("commiting block of ~ %d objects" % (commit_size))
+            self._session.bulk_save_objects(filter(None, commit_block))
+            self._session.commit()
+
         # import the OTU rows, applying ontology mappings
         self._session.bulk_save_objects(_make_otus())
         self._session.commit()
@@ -248,7 +266,7 @@ class DataImporter:
                     if bpa_id not in have_bpaids:
                         yield bpa_id
 
-        def _make_otus(fname):
+        def _make_sample_otus(fname):
             # note: (for now) we have to cope with duplicate columns in the input files.
             # we just make sure they don't clash, and this can be reported to CSIRO
             with open(fname, 'r') as fd:
@@ -279,7 +297,7 @@ class DataImporter:
         commit_size = 100000
         for fname in glob(self._import_base + '/*.txt'):
             logger.warning("second pass, reading from: %s" % (fname))
-            for commit_block in grouper(_make_otus(fname), commit_size):
+            for commit_block in grouper(_make_sample_otus(fname), commit_size):
                 logger.warning("commiting block of ~ %d objects" % (commit_size))
                 self._session.bulk_save_objects(filter(None, commit_block))
                 self._session.commit()
