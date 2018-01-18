@@ -2,6 +2,7 @@ import csv
 import logging
 import sqlalchemy
 from sqlalchemy.schema import CreateSchema, DropSchema
+from hashlib import md5
 from sqlalchemy.orm import sessionmaker
 from glob import glob
 from .contextual import (
@@ -50,6 +51,7 @@ def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
 
+
 class DataImporter:
     soil_ontologies = OrderedDict([
         ('project', BPAProject),
@@ -96,6 +98,14 @@ class DataImporter:
             except sqlalchemy.exc.ProgrammingError as e:
                 if 'already exists' not in str(e):
                     logger.critical("couldn't create extension: %s (%s)" % (extension, e))
+
+    def commit_from_iter(self, it, batch_size):
+        done = 0
+        for commit_block in grouper(it, batch_size):
+            self._session.bulk_save_objects(filter(None, commit_block))
+            done += len(commit_block)
+            logger.warning("committed block of ~ %d objects, %d done" % (batch_size, done))
+            self._session.commit()
 
     def _read_tab_file(self, fname):
         with open(fname) as fd:
@@ -189,13 +199,9 @@ class DataImporter:
                     if field not in row:
                         continue
                     attrs[field + '_id'] = mappings[field][row[field]]
-                yield OTU(code=row['otu'], **attrs)
+                yield OTU(code=row['otu'], code_md5=md5(row['otu'].encode('ascii')).digest(), **attrs)
 
-        commit_size = 100000
-        for commit_block in grouper(_make_otus(), commit_size):
-            logger.warning("commiting block of ~ %d objects" % (commit_size))
-            self._session.bulk_save_objects(filter(None, commit_block))
-            self._session.commit()
+        self.commit_from_iter(_make_otus(), 10_000)
 
         # import the OTU rows, applying ontology mappings
         self._session.bulk_save_objects(_make_otus())
@@ -254,7 +260,8 @@ class DataImporter:
         self._session.commit()
 
     def load_otu(self):
-        otu_lookup = dict(self._session.query(OTU.code, OTU.id))
+        logger.warning('building OTU lookup table')
+        otu_lookup = dict(self._session.query(OTU.code_md5, OTU.id).yield_per(1000))
 
         def _missing_bpa_ids(fname):
             have_bpaids = set([t[0] for t in self._session.query(SampleContext.id)])
@@ -274,7 +281,7 @@ class DataImporter:
                 header = next(reader)
                 bpa_ids = [int(t.split('/')[-1]) for t in header[1:]]
                 for row in reader:
-                    otu_id = otu_lookup[row[0]]
+                    otu_id = otu_lookup[md5(row[0].encode('ascii')).digest()]
                     to_make = {}
                     for bpa_id, count in zip(bpa_ids, row[1:]):
                         if count == '' or count == '0' or count == '0.0':
@@ -294,10 +301,6 @@ class DataImporter:
         self._session.bulk_save_objects(SampleContext(id=t) for t in missing_bpa_ids)
         self._session.commit()
 
-        commit_size = 100000
         for fname in glob(self._import_base + '/*.txt'):
             logger.warning("second pass, reading from: %s" % (fname))
-            for commit_block in grouper(_make_sample_otus(fname), commit_size):
-                logger.warning("commiting block of ~ %d objects" % (commit_size))
-                self._session.bulk_save_objects(filter(None, commit_block))
-                self._session.commit()
+            self.commit_from_iter(_make_sample_otus(fname), 100_000)

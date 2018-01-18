@@ -1,6 +1,6 @@
 import logging
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy import Column, Integer, ForeignKey, String, Date, Float
+from sqlalchemy import Column, Integer, ForeignKey, String, Date, Float, Binary
 from django.conf import settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship
@@ -94,6 +94,7 @@ class OTU(SchemaMixin, Base):
     __tablename__ = 'otu'
     id = Column(Integer, primary_key=True)
     code = Column(String(length=1024))  # long GATTACAt-ype string
+    code_md5 = Column(Binary(length=16))  # md5(code).digest() - for quick cross-matching
     kingdom_id = ontology_fkey(OTUKingdom)
     phylum_id = ontology_fkey(OTUPhylum)
     class_id = ontology_fkey(OTUClass)

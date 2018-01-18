@@ -355,7 +355,7 @@ def otu_export(request):
             for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
                 w.writerow([
                     format_bpa_id(sample_otu.sample_id),
-                    sample_otu.otu_id,
+                    sample_otu.otu_id,  # FIXME: shouldn't this be `code`
                     sample_otu.count,
                     val_or_empty(otu.kingdom),
                     val_or_empty(otu.phylum),
