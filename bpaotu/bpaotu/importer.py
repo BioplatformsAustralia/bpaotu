@@ -203,10 +203,6 @@ class DataImporter:
 
         self.commit_from_iter(_make_otus(), 10_000)
 
-        # import the OTU rows, applying ontology mappings
-        self._session.bulk_save_objects(_make_otus())
-        self._session.commit()
-
     def load_soil_contextual_metadata(self):
         logger.warning("loading BASE contextual metadata")
 
