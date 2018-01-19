@@ -166,8 +166,6 @@ class DataImporter:
         return r
 
     def load_taxonomies(self):
-        logger.warning("loading taxonomies")
-
         # load each taxnomy file. note that not all files
         # have all of the columns
         ontologies = OrderedDict([
@@ -190,6 +188,7 @@ class DataImporter:
                         obj['otu'] = otu
                         yield obj
 
+        logger.warning("loading taxonomies - pass 1, defining ontologies")
         mappings = self._load_ontology(ontologies, _taxon_rows_iter())
 
         def _make_otus():
@@ -201,6 +200,7 @@ class DataImporter:
                     attrs[field + '_id'] = mappings[field][row[field]]
                 yield OTU(code=row['otu'], code_md5=md5(row['otu'].encode('ascii')).digest(), **attrs)
 
+        logger.warning("loading taxonomies - pass 2, defining OTUs")
         self.commit_from_iter(_make_otus(), 10_000)
 
     def load_soil_contextual_metadata(self):
