@@ -94,7 +94,6 @@ class OTU(SchemaMixin, Base):
     __tablename__ = 'otu'
     id = Column(Integer, primary_key=True)
     code = Column(String(length=1024))  # long GATTACAt-ype string
-    code_md5 = Column(Binary(length=16))  # md5(code).digest() - for quick cross-matching
 
     # we query OTUs via heirarchy, so indexes on the first few
     # layers are sufficient

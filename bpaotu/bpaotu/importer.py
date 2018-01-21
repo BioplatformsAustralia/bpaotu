@@ -1,7 +1,10 @@
+import os
 import csv
+import tempfile
 import logging
 import sqlalchemy
 from sqlalchemy.schema import CreateSchema, DropSchema
+from sqlalchemy.sql.expression import text
 from hashlib import md5
 from sqlalchemy.orm import sessionmaker
 from glob import glob
@@ -191,17 +194,28 @@ class DataImporter:
         logger.warning("loading taxonomies - pass 1, defining ontologies")
         mappings = self._load_ontology(ontologies, _taxon_rows_iter())
 
-        def _make_otus():
-            for row in _taxon_rows_iter():
-                attrs = {}
+        logger.warning("loading taxonomies - pass 2, defining OTUs")
+        with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
+            fname = temp_fd.name
+            os.chmod(fname, 0o644)
+            logger.warning("writing out OTU data to CSV tempfile: %s" % fname)
+            w = csv.writer(temp_fd)
+            w.writerow(['id', 'code', 'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id'])
+            for _id, row in enumerate(_taxon_rows_iter()):
+                out_row = [_id + 1, row['otu']]
                 for field in ontologies:
                     if field not in row:
-                        continue
-                    attrs[field + '_id'] = mappings[field][row[field]]
-                yield OTU(code=row['otu'], code_md5=md5(row['otu'].encode('ascii')).digest(), **attrs)
+                        out_row.append('')
+                    else:
+                        out_row.append(mappings[field][row[field]])
+                w.writerow(out_row)
+        logger.warning("loading taxonomies from temporary CSV file")
+        self._engine.execute(
+            text('''COPY otu.otu from :csv CSV header''').execution_options(autocommit=True),
+            csv=fname)
+        os.unlink(fname)
 
-        logger.warning("loading taxonomies - pass 2, defining OTUs")
-        self.commit_from_iter(_make_otus(), 10_000)
+
 
     def load_soil_contextual_metadata(self):
         logger.warning("loading BASE contextual metadata")
@@ -293,6 +307,7 @@ class DataImporter:
         for fname in glob(self._import_base + '/*.txt'):
             logger.warning("first pass, reading from: %s" % (fname))
             missing_bpa_ids |= set(_missing_bpa_ids(fname))
+
         logger.warning("creating empty context for BPA IDs: %s" % (missing_bpa_ids))
         self._session.bulk_save_objects(SampleContext(id=t) for t in missing_bpa_ids)
         self._session.commit()
