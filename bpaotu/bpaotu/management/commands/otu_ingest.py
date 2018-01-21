@@ -8,5 +8,5 @@ class Command(BaseCommand):
         importer = DataImporter('/data/otu')
         importer.load_soil_contextual_metadata()
         importer.load_marine_contextual_metadata()
-        importer.load_taxonomies()
-        importer.load_otu()
+        otu_lookup = importer.load_taxonomies()
+        importer.load_otu(otu_lookup)

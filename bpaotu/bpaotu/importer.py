@@ -1,6 +1,7 @@
 import os
 import csv
 import tempfile
+import traceback
 import logging
 import sqlalchemy
 from sqlalchemy.schema import CreateSchema, DropSchema
@@ -102,14 +103,6 @@ class DataImporter:
                 if 'already exists' not in str(e):
                     logger.critical("couldn't create extension: %s (%s)" % (extension, e))
 
-    def commit_from_iter(self, it, batch_size):
-        done = 0
-        for commit_block in grouper(it, batch_size):
-            self._session.bulk_save_objects(filter(None, commit_block))
-            done += len(commit_block)
-            logger.warning("committed block of ~ %d objects, %d done" % (batch_size, done))
-            self._session.commit()
-
     def _read_tab_file(self, fname):
         with open(fname) as fd:
             reader = csv.DictReader(fd, dialect="excel-tab")
@@ -169,6 +162,8 @@ class DataImporter:
         return r
 
     def load_taxonomies(self):
+        # md5(otu code) -> otu ID, returned
+        otu_lookup = {}
         # load each taxnomy file. note that not all files
         # have all of the columns
         ontologies = OrderedDict([
@@ -195,27 +190,29 @@ class DataImporter:
         mappings = self._load_ontology(ontologies, _taxon_rows_iter())
 
         logger.warning("loading taxonomies - pass 2, defining OTUs")
-        with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
-            fname = temp_fd.name
-            os.chmod(fname, 0o644)
-            logger.warning("writing out OTU data to CSV tempfile: %s" % fname)
-            w = csv.writer(temp_fd)
-            w.writerow(['id', 'code', 'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id'])
-            for _id, row in enumerate(_taxon_rows_iter()):
-                out_row = [_id + 1, row['otu']]
-                for field in ontologies:
-                    if field not in row:
-                        out_row.append('')
-                    else:
-                        out_row.append(mappings[field][row[field]])
-                w.writerow(out_row)
-        logger.warning("loading taxonomies from temporary CSV file")
-        self._engine.execute(
-            text('''COPY otu.otu from :csv CSV header''').execution_options(autocommit=True),
-            csv=fname)
-        os.unlink(fname)
-
-
+        try:
+            with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
+                fname = temp_fd.name
+                os.chmod(fname, 0o644)
+                logger.warning("writing out OTU data to CSV tempfile: %s" % fname)
+                w = csv.writer(temp_fd)
+                w.writerow(['id', 'code', 'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id'])
+                for _id, row in enumerate(_taxon_rows_iter(), 1):
+                    otu_lookup[md5(row['otu'].encode('ascii')).digest()] = _id
+                    out_row = [_id, row['otu']]
+                    for field in ontologies:
+                        if field not in row:
+                            out_row.append('')
+                        else:
+                            out_row.append(mappings[field][row[field]])
+                    w.writerow(out_row)
+            logger.warning("loading taxonomies from temporary CSV file")
+            self._engine.execute(
+                text('''COPY otu.otu from :csv CSV header''').execution_options(autocommit=True),
+                csv=fname)
+        finally:
+            os.unlink(fname)
+        return otu_lookup
 
     def load_soil_contextual_metadata(self):
         logger.warning("loading BASE contextual metadata")
@@ -269,9 +266,8 @@ class DataImporter:
         self._session.bulk_save_objects(_make_context())
         self._session.commit()
 
-    def load_otu(self):
+    def load_otu(self, otu_lookup):
         logger.warning('building OTU lookup table')
-        otu_lookup = dict(self._session.query(OTU.code_md5, OTU.id).yield_per(1000))
 
         def _missing_bpa_ids(fname):
             have_bpaids = set([t[0] for t in self._session.query(SampleContext.id)])
@@ -301,7 +297,7 @@ class DataImporter:
                             raise Exception("conflicting OTU data, abort.")
                         to_make[bpa_id] = count
                     for bpa_id, count in to_make.items():
-                        yield SampleOTU(sample_id=bpa_id, otu_id=otu_id, count=int(count))
+                        yield [bpa_id, otu_id, count]
 
         missing_bpa_ids = set()
         for fname in glob(self._import_base + '/*.txt'):
@@ -312,6 +308,23 @@ class DataImporter:
         self._session.bulk_save_objects(SampleContext(id=t) for t in missing_bpa_ids)
         self._session.commit()
 
-        for fname in glob(self._import_base + '/*.txt'):
-            logger.warning("second pass, reading from: %s" % (fname))
-            self.commit_from_iter(_make_sample_otus(fname), 100_000)
+        for sampleotu_fname in glob(self._import_base + '/*.txt'):
+            try:
+                logger.warning("second pass, reading from: %s" % (sampleotu_fname))
+                with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
+                    fname = temp_fd.name
+                    os.chmod(fname, 0o644)
+                    logger.warning("writing out SampleOTU data to CSV tempfile: %s" % fname)
+                    w = csv.writer(temp_fd)
+                    w.writerow(['sample_id', 'otu_id', 'count'])
+                    w.writerows(_make_sample_otus(sampleotu_fname))
+                logger.warning("loading taxonomies from temporary CSV file")
+                try:
+                    self._engine.execute(
+                        text('''COPY otu.sample_otu from :csv CSV header''').execution_options(autocommit=True),
+                        csv=fname)
+                except:
+                    logger.critical("unable to import %s" % (sampleotu_fname))
+                    traceback.print_exc()
+            finally:
+                os.unlink(fname)
