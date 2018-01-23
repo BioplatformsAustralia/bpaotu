@@ -15,16 +15,26 @@ body {
 }
 
 .site-footer {
+    padding-top: 15px;
     color: rgb(230,230,230);
     background-color: #1e73be;
+    text-align: center;
 }
 
 .site-footer a {
     color: rgb(255,255,255);
 }
 
-/* Scaling down the footer logo a bit */
-#ncris-img {
-    height: 70px;
-    width: auto;
+.site-footer-links {
+    padding-bottom: 15px;
+}
+
+.site-footer-links a {
+    padding-right: 25px;
+}
+
+.site-footer-logo {
+    background-color: #171717;
+    padding-bottom: 30px;
+    padding-top: 30px;
 }

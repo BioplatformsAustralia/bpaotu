@@ -217,39 +217,32 @@
             </div>
         </div>
     </div>
-    
+
     <footer class="site-footer">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="container">
-                    <div class="span4">
-                        <a href="https://www.education.gov.au/national-collaborative-research-infrastructure-strategy-ncris">
-                            <img id="ncris-img" src="{% static 'bpa-logos/ncris.png' %}" alt="NCRIS" />
-                        </a>
-                    </div>
-                    <div class="span4">
-                        <p><a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a></p>
-                        <p><a href="http://www.bioplatforms.com/contact/">Contact</a></p>
-                    </div>
-                </div>
-            </div>
+        <div class="site-footer-links container-fluid">
+            <a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a>
+            <a href="http://www.bioplatforms.com/contact/">Contact</a>
         </div>
-    </footer>
+        <div class="site-footer-logo container-fluid">
+        <span><a href="https://www.bioplatforms.com"><img class="footer-logos" src="{% static 'bpa-logos/bpa-footer.png' %}" alt="Bioplatforms Australia" /></a></span>
+        <span style="padding-left: 30px;"><a href="https://www.education.gov.au/national-collaborative-research-infrastructure-strategy-ncris"><img class="footer-logos" src="{% static 'bpa-logos/ncris-footer.png' %}" /></a></span>
+        </div>
+      </footer>
     
-    <script>
-        window.otu_search_config = {
-            'taxonomy_endpoint': "{% url 'taxonomy_options' %}",
-            'contextual_endpoint': "{% url 'contextual_fields' %}",
-            'search_endpoint': "{% url 'otu_search' %}",
-            'export_endpoint': "{% url 'otu_export' %}",
-            'ckan_base_url': "{{ ckan_base_url }}",
-            'contextual_filter_project_id': "{{ contextual_filter_project_id }}",
-        };
-        $(function () {
-            $('[data-toggle="tooltip"]').tooltip()
-            $('[data-toggle="popover"]').popover({html:true})
-        })
-    </script>
+        <script>
+            window.otu_search_config = {
+                'taxonomy_endpoint': "{% url 'taxonomy_options' %}",
+                'contextual_endpoint': "{% url 'contextual_fields' %}",
+                'search_endpoint': "{% url 'otu_search' %}",
+                'export_endpoint': "{% url 'otu_export' %}",
+                'ckan_base_url': "{{ ckan_base_url }}",
+                'contextual_filter_project_id': "{{ contextual_filter_project_id }}",
+            };
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip()
+                $('[data-toggle="popover"]').popover({html:true})
+            })
+        </script>
+    </body>
+    </html>
     
-</body>
-</html>
