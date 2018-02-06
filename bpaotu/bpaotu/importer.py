@@ -21,7 +21,6 @@ from itertools import zip_longest
 from .otu import (
     Base,
     BPAProject,
-    OTU,
     OTUKingdom,
     OTUPhylum,
     OTUClass,
@@ -30,7 +29,6 @@ from .otu import (
     OTUGenus,
     OTUSpecies,
     SampleContext,
-    SampleOTU,
     SampleHorizonClassification,
     SampleStorageMethod,
     SampleLandUse,
@@ -47,6 +45,13 @@ from .otu import (
 
 
 logger = logging.getLogger("rainbow")
+
+
+def try_int(s):
+    try:
+        return int(s)
+    except ValueError:
+        return None
 
 
 def grouper(iterable, n, fillvalue=None):
@@ -277,12 +282,20 @@ class DataImporter:
     def load_otu(self, otu_lookup):
         logger.warning('building OTU lookup table')
 
+        def otu_rows(fd):
+            reader = csv.reader(fd, dialect='excel-tab')
+            header = next(reader)
+            # there's taxonomy and control information in the last few columns. this can be
+            # excluded from the import: we skip until we hit a non-integer header
+            bpa_ids = [try_int(t.split('/')[-1]) for t in header[1:]]
+            valid_until = bpa_ids.index(None)
+            bpa_ids = bpa_ids[:valid_until]
+            return bpa_ids, reader
+
         def _missing_bpa_ids(fname):
             have_bpaids = set([t[0] for t in self._session.query(SampleContext.id)])
             with open(fname, 'r') as fd:
-                reader = csv.reader(fd, dialect='excel-tab')
-                header = next(reader)
-                bpa_ids = [int(t.split('/')[-1]) for t in header[1:]]
+                bpa_ids, _ = otu_rows(fd)
                 for bpa_id in bpa_ids:
                     if bpa_id not in have_bpaids:
                         yield bpa_id
@@ -291,16 +304,11 @@ class DataImporter:
             # note: (for now) we have to cope with duplicate columns in the input files.
             # we just make sure they don't clash, and this can be reported to CSIRO
             with open(fname, 'r') as fd:
-                reader = csv.reader(fd, dialect='excel-tab')
-                header = next(reader)
-                # there's taxonomy information in the last few columns. this can be
-                # excluded from the import
-                taxo_index = header.index('kingdom')
-                bpa_ids = [int(t.split('/')[-1]) for t in header[1:taxo_index]]
+                bpa_ids, reader = otu_rows(fd)
                 for row in reader:
                     otu_id = otu_lookup[otu_hash(row[0])]
                     to_make = {}
-                    for bpa_id, count in zip(bpa_ids, row[1:tax_index]):
+                    for bpa_id, count in zip(bpa_ids, row[1:]):
                         if count == '' or count == '0' or count == '0.0':
                             continue
                         count = int(float(count))
