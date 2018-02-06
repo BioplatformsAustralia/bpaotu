@@ -55,15 +55,11 @@ BPA_SEPSIS_DOWNLOADS_PASSWORD
 - *Production* https://data.bioplatforms.com/bpa/otu/
 
 ## Licence
-BPA Metadata is released under the GNU Affero GPL. See source for a licence copy.
+BPA OTU is released under the GNU Affero GPL. See source for a licence copy.
 
 ## Contributing
+
 * Fork next_release branch
 * Make changes on a feature branch
 * Submit pull request
 
-## CCG Internal documentation
-
-https://ccgmurdoch.atlassian.net/wiki/display/BM/BPA+Metadata+Home
-
-[1]: Be aware that all CDN supported content still needs to be fetched from the internet. 
