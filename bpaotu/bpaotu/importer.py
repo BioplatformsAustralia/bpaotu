@@ -177,10 +177,14 @@ class DataImporter:
         ])
 
         def _taxon_rows_iter():
-            for fname in glob(self._import_base + '/*.taxonomy'):
+            for fname in glob(self._import_base + '/*.tax'):
+                logger.warning('reading taxonomy file: %s' % fname)
                 with open(fname) as fd:
-                    for otu, taxon in csv.reader(fd, dialect='excel-tab'):
-                        taxon_parts = taxon.split(';')
+                    for row in csv.reader(fd, dialect='excel-tab'):
+                        if row[0].startswith('#'):
+                            continue
+                        otu = row[0]
+                        taxon_parts = row[1:]
                         # FIXME: this actually truncates some of the rows - to be chased up with CSIRO
                         obj = dict(zip(ontologies.keys(), taxon_parts))
                         obj['otu'] = otu

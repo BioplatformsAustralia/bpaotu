@@ -52,7 +52,7 @@ BPA_SEPSIS_DOWNLOADS_PASSWORD
 ```
 
 ## Sites
-- *Production* https://downloads.bioplatforms.com
+- *Production* https://data.bioplatforms.com/bpa/otu/
 
 ## Licence
 BPA Metadata is released under the GNU Affero GPL. See source for a licence copy.
