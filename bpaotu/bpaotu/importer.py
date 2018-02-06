@@ -56,6 +56,10 @@ def grouper(iterable, n, fillvalue=None):
     return zip_longest(*args, fillvalue=fillvalue)
 
 
+def otu_hash(code):
+    return md5(code.encode('ascii')).digest()
+
+
 class DataImporter:
     soil_ontologies = OrderedDict([
         ('project', BPAProject),
@@ -202,7 +206,7 @@ class DataImporter:
                 w = csv.writer(temp_fd)
                 w.writerow(['id', 'code', 'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id'])
                 for _id, row in enumerate(_taxon_rows_iter(), 1):
-                    otu_lookup[md5(row['otu'].encode('ascii')).digest()] = _id
+                    otu_lookup[otu_hash(row['otu'])] = _id
                     out_row = [_id, row['otu']]
                     for field in ontologies:
                         if field not in row:
@@ -289,11 +293,14 @@ class DataImporter:
             with open(fname, 'r') as fd:
                 reader = csv.reader(fd, dialect='excel-tab')
                 header = next(reader)
-                bpa_ids = [int(t.split('/')[-1]) for t in header[1:]]
+                # there's taxonomy information in the last few columns. this can be
+                # excluded from the import
+                taxo_index = header.index('kingdom')
+                bpa_ids = [int(t.split('/')[-1]) for t in header[1:taxo_index]]
                 for row in reader:
-                    otu_id = otu_lookup[md5(row[0].encode('ascii')).digest()]
+                    otu_id = otu_lookup[otu_hash(row[0])]
                     to_make = {}
-                    for bpa_id, count in zip(bpa_ids, row[1:]):
+                    for bpa_id, count in zip(bpa_ids, row[1:tax_index]):
                         if count == '' or count == '0' or count == '0.0':
                             continue
                         count = int(float(count))
