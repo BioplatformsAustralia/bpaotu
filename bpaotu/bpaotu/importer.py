@@ -341,7 +341,7 @@ class DataImporter:
                     self._engine.execute(
                         text('''COPY otu.sample_otu from :csv CSV header''').execution_options(autocommit=True),
                         csv=fname)
-                except:
+                except:  # noqa
                     logger.critical("unable to import %s" % (sampleotu_fname))
                     traceback.print_exc()
             finally:
