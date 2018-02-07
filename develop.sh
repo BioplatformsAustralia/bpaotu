@@ -39,7 +39,6 @@ ENV_OPTS="$(env | sort | cut -d= -f1 | grep "^CCG_[a-zA-Z0-9_]*$" | awk '{print 
 # shellcheck disable=SC2086 disable=SC2048
 docker run --rm ${TTY_OPTS} ${ENV_FILE_OPT} \
     ${ENV_OPTS} \
-    -v /etc/timezone:/etc/timezone:ro \
     -v /var/run/docker.sock:/var/run/docker.sock  \
     -v "$(pwd)":"$(pwd)" \
     -v "${HOME}"/.docker:/data/.docker \

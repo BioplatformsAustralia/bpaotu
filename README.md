@@ -33,24 +33,6 @@ muccg/bpaotu-dev            0.0.0.0:9000-9001->9000-9001/tcp, 8000/tcp, 0.0.0.0:
 muccg/bpaotu-dev            9000-9001/tcp, 0.0.0.0:8000->8000/tcp, 9100-9101/tcp                           bpaotu_runserver_1
 ```
 
-Setup mirror config
-```
-docker exec -it bpaotu_runserver_1 /app/docker-entrypoint.sh django-admin set_mirrors
-```
-
-To execute the ingestion scripts run `docker exec -it bpaotu_runserver_1 /app/docker-entrypoint.sh django-admin`, be sure
-to have the relevant variables below available in the environment. 
-
-```
-DJANGO_MAILGUN_API_KEY
-BASE_REQUEST_LIST
-BPA_MELANOMA_DOWNLOADS_PASSWORD
-BPA_BASE_DOWNLOADS_PASSWORD
-BPA_USERS_DOWNLOADS_PASSWORD
-BPA_GBR_DOWNLOADS_PASSWORD
-BPA_SEPSIS_DOWNLOADS_PASSWORD
-```
-
 ## Sites
 - *Production* https://data.bioplatforms.com/bpa/otu/
 
