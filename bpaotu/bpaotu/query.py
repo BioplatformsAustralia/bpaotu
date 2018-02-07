@@ -70,32 +70,35 @@ class TaxonomyOptions:
 
         # scan through in order and find our target, by finding the first invalid selection
         target_attr, target_class, target_idx = determine_target()
-
         # the targets to be reset as a result of this choice
         clear = [drop_id(attr) for attr, _ in TaxonomyOptions.hierarchy[target_idx:]]
-
-        # clear invalidated part of the state
-        state = state[:target_idx] + [None] * (len(TaxonomyOptions.hierarchy) - target_idx)
 
         # no completion: we have a complete hierarchy
         if target_attr is None:
             return {}
+        # performance: hard-code kingdom (it's the slowest query, and the most common)
+        elif target_class is OTUKingdom:
+            possibilities = self._session.query(target_class.id, target_class.value).all()
+        else:
+            # clear invalidated part of the state
+            state = state[:target_idx] + [None] * (len(TaxonomyOptions.hierarchy) - target_idx)
+            # build up a query of the OTUs for our target attribute
+            q = self._session.query(getattr(OTU, target_attr), target_class.value).group_by(getattr(OTU, target_attr), target_class.value).order_by(target_class.value)
+            for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, state):
+                if value is None:
+                    break
+                q = q.filter(getattr(OTU, otu_attr) == value)
+            q = q.join(target_class)
+            possibilities = q.all()
 
-        # build up a query of the OTUs for our target attribute
-        q = self._session.query(getattr(OTU, target_attr), target_class.value).group_by(getattr(OTU, target_attr), target_class.value).order_by(target_class.value)
-        for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, state):
-            if value is None:
-                break
-            q = q.filter(getattr(OTU, otu_attr) == value)
-        q = q.join(target_class)
-        possibilities = q.all()
-        return {
+        result = {
             'new_options': {
                 'target': drop_id(target_attr),
                 'possibilities': possibilities,
             },
             'clear': clear
         }
+        return result
 
 
 class OntologyInfo:

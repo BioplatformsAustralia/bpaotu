@@ -1,6 +1,6 @@
 import logging
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy import Column, Integer, ForeignKey, String, Date, Float, Binary
+from sqlalchemy import Column, Integer, ForeignKey, String, Date, Float
 from django.conf import settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship
