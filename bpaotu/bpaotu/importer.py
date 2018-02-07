@@ -193,8 +193,7 @@ class DataImporter:
                         if row[0].startswith('#'):
                             continue
                         otu = row[0]
-                        taxon_parts = row[1:]
-                        # FIXME: this actually truncates some of the rows - to be chased up with CSIRO
+                        taxon_parts = row[2:]  # FIXME: blank first column, raise with CSIRO
                         obj = dict(zip(ontologies.keys(), taxon_parts))
                         obj['otu'] = otu
                         yield obj
