@@ -45,6 +45,16 @@ class TaxonomyOptions:
         self._session.close()
 
     def possibilities(self, state):
+        cache = caches['search_results']
+        hash_str = 'TaxonomyOptions:cached:' + repr(state)
+        key = sha256(hash_str.encode('utf8')).hexdigest()
+        result = cache.get(key)
+        if not result:
+            result = self._possibilities(state)
+            cache.set(key, result)
+        return result
+
+    def _possibilities(self, state):
         """
         state should be a list of integer IDs for the relevent model, in the order of
         TaxonomyOptions.hierarchy. a value of None indicates there is no selection.
