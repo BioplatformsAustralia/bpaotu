@@ -364,7 +364,7 @@ $(document).ready(function() {
                       } else {
                           org = 'bpa-marine-microbes';
                       }
-                      var url = window.otu_search_config['ckan_base_url'] + '/organization/' + org + '?q=102.100.100.' + data;
+                      var url = window.otu_search_config['ckan_base_url'] + '/organization/' + org + '?q=bpa_id:102.100.100.' + data;
                       return '<a href="' + url + '" target="_blank">' + data + '</a>';
                   }
               },

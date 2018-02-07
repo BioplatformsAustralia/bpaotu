@@ -251,6 +251,11 @@ def otu_search(request):
     result_count = len(results)
     results = results[start:start + length]
 
+    def get_project(project_id):
+        if project_id is None:
+            return None
+        return project_lookup[project_id]
+
     res = {
         'draw': draw,
     }
@@ -263,7 +268,7 @@ def otu_search(request):
         })
     else:
         res.update({
-            'data': [{"bpa_id": t[0], "project": project_lookup[t[1]]} for t in results],
+            'data': [{"bpa_id": t[0], "project": get_project(t[1])} for t in results],
             'recordsTotal': result_count,
             'recordsFiltered': result_count,
         })
@@ -355,7 +360,7 @@ def otu_export(request):
             for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
                 w.writerow([
                     format_bpa_id(sample_otu.sample_id),
-                    sample_otu.otu_id,
+                    otu.code,
                     sample_otu.count,
                     val_or_empty(otu.kingdom),
                     val_or_empty(otu.phylum),

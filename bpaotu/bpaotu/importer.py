@@ -1,7 +1,12 @@
+import os
 import csv
+import tempfile
+import traceback
 import logging
 import sqlalchemy
 from sqlalchemy.schema import CreateSchema, DropSchema
+from sqlalchemy.sql.expression import text
+from hashlib import md5
 from sqlalchemy.orm import sessionmaker
 from glob import glob
 from .contextual import (
@@ -9,12 +14,13 @@ from .contextual import (
     soil_contextual_rows,
     soil_field_spec,
     marine_field_specs)
-from collections import defaultdict
+from collections import (
+    defaultdict,
+    OrderedDict)
 from itertools import zip_longest
 from .otu import (
     Base,
     BPAProject,
-    OTU,
     OTUKingdom,
     OTUPhylum,
     OTUClass,
@@ -23,7 +29,6 @@ from .otu import (
     OTUGenus,
     OTUSpecies,
     SampleContext,
-    SampleOTU,
     SampleHorizonClassification,
     SampleStorageMethod,
     SampleLandUse,
@@ -42,35 +47,46 @@ from .otu import (
 logger = logging.getLogger("rainbow")
 
 
-# from itertools recipes
-def grouper(iterable, n):
+def try_int(s):
+    try:
+        return int(s)
+    except ValueError:
+        return None
+
+
+def grouper(iterable, n, fillvalue=None):
     "Collect data into fixed-length chunks or blocks"
+    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
     args = [iter(iterable)] * n
-    return zip_longest(*args)
+    return zip_longest(*args, fillvalue=fillvalue)
+
+
+def otu_hash(code):
+    return md5(code.encode('ascii')).digest()
 
 
 class DataImporter:
-    soil_ontologies = {
-        'project': BPAProject,
-        'sample_type': SampleType,
-        'horizon_classification': SampleHorizonClassification,
-        'soil_sample_storage_method': SampleStorageMethod,
-        'broad_land_use': SampleLandUse,
-        'detailed_land_use': SampleLandUse,
-        'general_ecological_zone': SampleEcologicalZone,
-        'vegetation_type': SampleVegetationType,
-        'profile_position': SampleProfilePosition,
-        'australian_soil_classification': SampleAustralianSoilClassification,
-        'fao_soil_classification': SampleFAOSoilClassification,
-        'immediate_previous_land_use': SampleLandUse,
-        'tillage': SampleTillage,
-        'color': SampleColor,
-    }
+    soil_ontologies = OrderedDict([
+        ('project', BPAProject),
+        ('sample_type', SampleType),
+        ('horizon_classification', SampleHorizonClassification),
+        ('soil_sample_storage_method', SampleStorageMethod),
+        ('broad_land_use', SampleLandUse),
+        ('detailed_land_use', SampleLandUse),
+        ('general_ecological_zone', SampleEcologicalZone),
+        ('vegetation_type', SampleVegetationType),
+        ('profile_position', SampleProfilePosition),
+        ('australian_soil_classification', SampleAustralianSoilClassification),
+        ('fao_soil_classification', SampleFAOSoilClassification),
+        ('immediate_previous_land_use', SampleLandUse),
+        ('tillage', SampleTillage),
+        ('color', SampleColor),
+    ])
 
-    marine_ontologies = {
-        'project': BPAProject,
-        'sample_type': SampleType,
-    }
+    marine_ontologies = OrderedDict([
+        ('project', BPAProject),
+        ('sample_type', SampleType),
+    ])
 
     def __init__(self, import_base):
         self._engine = make_engine()
@@ -108,21 +124,23 @@ class DataImporter:
         self._session.commit()
         return dict((t.value, t.id) for t in self._session.query(db_class).all())
 
-    def _load_ontology(self, ontology_defn, rows):
+    def _load_ontology(self, ontology_defn, row_iter):
         # import the ontologies, and build a mapping from
         # permitted values into IDs in those ontologies
         by_class = defaultdict(list)
         for field, db_class in ontology_defn.items():
             by_class[db_class].append(field)
 
-        mappings = {}
-        for db_class, fields in by_class.items():
-            vals = set()
-            for row in rows:
+        vals = defaultdict(set)
+        for row in row_iter:
+            for db_class, fields in by_class.items():
                 for field in fields:
                     if field in row:
-                        vals.add(row[field])
-            map_dict = self._build_ontology(db_class, vals)
+                        vals[db_class].add(row[field])
+
+        mappings = {}
+        for db_class, fields in by_class.items():
+            map_dict = self._build_ontology(db_class, vals[db_class])
             for field in fields:
                 mappings[field] = map_dict
         return mappings
@@ -153,35 +171,60 @@ class DataImporter:
         return r
 
     def load_taxonomies(self):
-        logger.warning("loading taxonomies")
-
+        # md5(otu code) -> otu ID, returned
+        otu_lookup = {}
         # load each taxnomy file. note that not all files
         # have all of the columns
-        rows = []
-        for fname in glob(self._import_base + '/*.taxonomy'):
-            rows += list(self._read_tab_file(fname))
-        ontologies = {
-            'kingdom': OTUKingdom,
-            'phylum': OTUPhylum,
-            'class': OTUClass,
-            'order': OTUOrder,
-            'family': OTUFamily,
-            'genus': OTUGenus,
-            'species': OTUSpecies
-        }
-        mappings = self._load_ontology(ontologies, rows)
+        ontologies = OrderedDict([
+            ('kingdom', OTUKingdom),
+            ('phylum', OTUPhylum),
+            ('class', OTUClass),
+            ('order', OTUOrder),
+            ('family', OTUFamily),
+            ('genus', OTUGenus),
+            ('species', OTUSpecies),
+        ])
 
-        def _make_otus():
-            for row in rows:
-                attrs = {}
-                for field in ontologies:
-                    if field not in row:
-                        continue
-                    attrs[field + '_id'] = mappings[field][row[field]]
-                yield OTU(code=row['OTUId'], **attrs)
-        # import the OTU rows, applying ontology mappings
-        self._session.bulk_save_objects(_make_otus())
-        self._session.commit()
+        def _taxon_rows_iter():
+            for fname in glob(self._import_base + '/*.tax'):
+                logger.warning('reading taxonomy file: %s' % fname)
+                with open(fname) as fd:
+                    for row in csv.reader(fd, dialect='excel-tab'):
+                        if row[0].startswith('#'):
+                            continue
+                        otu = row[0]
+                        taxon_parts = row[2:]  # FIXME: blank first column, raise with CSIRO
+                        obj = dict(zip(ontologies.keys(), taxon_parts))
+                        obj['otu'] = otu
+                        yield obj
+
+        logger.warning("loading taxonomies - pass 1, defining ontologies")
+        mappings = self._load_ontology(ontologies, _taxon_rows_iter())
+
+        logger.warning("loading taxonomies - pass 2, defining OTUs")
+        try:
+            with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
+                fname = temp_fd.name
+                os.chmod(fname, 0o644)
+                logger.warning("writing out OTU data to CSV tempfile: %s" % fname)
+                w = csv.writer(temp_fd)
+                w.writerow(['id', 'code', 'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id'])
+                for _id, row in enumerate(_taxon_rows_iter(), 1):
+                    otu_lookup[otu_hash(row['otu'])] = _id
+                    out_row = [_id, row['otu']]
+                    for field in ontologies:
+                        if field not in row:
+                            out_row.append('')
+                        else:
+                            out_row.append(mappings[field][row[field]])
+                    w.writerow(out_row)
+            logger.warning("loading taxonomies from temporary CSV file")
+            self._engine.execute(
+                text('''COPY otu.otu from :csv CSV header''').execution_options(autocommit=True),
+                csv=fname)
+        finally:
+            os.unlink(fname)
+        return otu_lookup
 
     def load_soil_contextual_metadata(self):
         logger.warning("loading BASE contextual metadata")
@@ -235,28 +278,34 @@ class DataImporter:
         self._session.bulk_save_objects(_make_context())
         self._session.commit()
 
-    def load_otu(self):
-        otu_lookup = dict(self._session.query(OTU.code, OTU.id))
+    def load_otu(self, otu_lookup):
+        logger.warning('building OTU lookup table')
+
+        def otu_rows(fd):
+            reader = csv.reader(fd, dialect='excel-tab')
+            header = next(reader)
+            # there's taxonomy and control information in the last few columns. this can be
+            # excluded from the import: we skip until we hit a non-integer header
+            bpa_ids = [try_int(t.split('/')[-1]) for t in header[1:]]
+            valid_until = bpa_ids.index(None)
+            bpa_ids = bpa_ids[:valid_until]
+            return bpa_ids, reader
 
         def _missing_bpa_ids(fname):
             have_bpaids = set([t[0] for t in self._session.query(SampleContext.id)])
             with open(fname, 'r') as fd:
-                reader = csv.reader(fd, dialect='excel-tab')
-                header = next(reader)
-                bpa_ids = [int(t.split('/')[-1]) for t in header[1:]]
+                bpa_ids, _ = otu_rows(fd)
                 for bpa_id in bpa_ids:
                     if bpa_id not in have_bpaids:
                         yield bpa_id
 
-        def _make_otus(fname):
+        def _make_sample_otus(fname):
             # note: (for now) we have to cope with duplicate columns in the input files.
             # we just make sure they don't clash, and this can be reported to CSIRO
             with open(fname, 'r') as fd:
-                reader = csv.reader(fd, dialect='excel-tab')
-                header = next(reader)
-                bpa_ids = [int(t.split('/')[-1]) for t in header[1:]]
+                bpa_ids, reader = otu_rows(fd)
                 for row in reader:
-                    otu_id = otu_lookup[row[0]]
+                    otu_id = otu_lookup[otu_hash(row[0])]
                     to_make = {}
                     for bpa_id, count in zip(bpa_ids, row[1:]):
                         if count == '' or count == '0' or count == '0.0':
@@ -266,20 +315,34 @@ class DataImporter:
                             raise Exception("conflicting OTU data, abort.")
                         to_make[bpa_id] = count
                     for bpa_id, count in to_make.items():
-                        yield SampleOTU(sample_id=bpa_id, otu_id=otu_id, count=int(count))
+                        yield [bpa_id, otu_id, count]
 
         missing_bpa_ids = set()
         for fname in glob(self._import_base + '/*.txt'):
             logger.warning("first pass, reading from: %s" % (fname))
             missing_bpa_ids |= set(_missing_bpa_ids(fname))
+
         logger.warning("creating empty context for BPA IDs: %s" % (missing_bpa_ids))
         self._session.bulk_save_objects(SampleContext(id=t) for t in missing_bpa_ids)
         self._session.commit()
 
-        commit_size = 100000
-        for fname in glob(self._import_base + '/*.txt'):
-            logger.warning("second pass, reading from: %s" % (fname))
-            for commit_block in grouper(_make_otus(fname), commit_size):
-                logger.warning("commiting block of ~ %d objects" % (commit_size))
-                self._session.bulk_save_objects(filter(None, commit_block))
-                self._session.commit()
+        for sampleotu_fname in glob(self._import_base + '/*.txt'):
+            try:
+                logger.warning("second pass, reading from: %s" % (sampleotu_fname))
+                with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
+                    fname = temp_fd.name
+                    os.chmod(fname, 0o644)
+                    logger.warning("writing out SampleOTU data to CSV tempfile: %s" % fname)
+                    w = csv.writer(temp_fd)
+                    w.writerow(['sample_id', 'otu_id', 'count'])
+                    w.writerows(_make_sample_otus(sampleotu_fname))
+                logger.warning("loading taxonomies from temporary CSV file")
+                try:
+                    self._engine.execute(
+                        text('''COPY otu.sample_otu from :csv CSV header''').execution_options(autocommit=True),
+                        csv=fname)
+                except:
+                    logger.critical("unable to import %s" % (sampleotu_fname))
+                    traceback.print_exc()
+            finally:
+                os.unlink(fname)

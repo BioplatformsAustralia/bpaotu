@@ -1,6 +1,6 @@
 import logging
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy import Column, Integer, ForeignKey, String, Date, Float
+from sqlalchemy import Column, Integer, ForeignKey, String, Date, Float, Binary
 from django.conf import settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship
@@ -39,9 +39,9 @@ class OntologyMixin(SchemaMixin):
         return "<%s(%s)>" % (type(self).__name__, self.value)
 
 
-def ontology_fkey(ontology_class):
+def ontology_fkey(ontology_class, index=False):
     nm = ontology_class.__name__
-    column = Column(Integer, ForeignKey(SCHEMA + '.' + OntologyMixin.make_tablename(nm) + '.id'))
+    column = Column(Integer, ForeignKey(SCHEMA + '.' + OntologyMixin.make_tablename(nm) + '.id'), index=index)
     # stash this here for introspection later: saves a lot of manual
     # work with sqlalchemy's relationship() stuff
     column.ontology_class = ontology_class
@@ -93,10 +93,13 @@ class OTUSpecies(OntologyMixin, Base):
 class OTU(SchemaMixin, Base):
     __tablename__ = 'otu'
     id = Column(Integer, primary_key=True)
-    code = Column(String(length=21))  # current max length of OTU code
-    kingdom_id = ontology_fkey(OTUKingdom)
-    phylum_id = ontology_fkey(OTUPhylum)
-    class_id = ontology_fkey(OTUClass)
+    code = Column(String(length=1024))  # long GATTACAt-ype string
+
+    # we query OTUs via heirarchy, so indexes on the first few
+    # layers are sufficient
+    kingdom_id = ontology_fkey(OTUKingdom, index=True)
+    phylum_id = ontology_fkey(OTUPhylum, index=True)
+    class_id = ontology_fkey(OTUClass, index=True)
     order_id = ontology_fkey(OTUOrder)
     family_id = ontology_fkey(OTUFamily)
     genus_id = ontology_fkey(OTUGenus)

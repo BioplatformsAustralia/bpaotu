@@ -54,28 +54,28 @@ class TaxonomyOptions:
             "return without `_id`"
             return attr[:-3]
 
+        def determine_target():
+            # this query is built up over time, and validates the hierarchy provided to us
+            q = self._session.query(OTU.kingdom_id).group_by(OTU.kingdom_id)
+            for idx, ((otu_attr, ontology_class), value) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
+                valid = True
+                if value is None:
+                    valid = False
+                else:
+                    q = q.filter(getattr(OTU, otu_attr) == value)
+                    valid = q.count() > 0
+                if not valid:
+                    return otu_attr, ontology_class, idx
+            return None, None, None
+
         # scan through in order and find our target, by finding the first invalid selection
-        target_attr = None
-        target_class = None
-        # this query is built up over time, and validates the hierarchy provided to us
-        q = self._session.query(OTU.kingdom_id).group_by(OTU.kingdom_id)
-        for idx, ((otu_attr, ontology_class), value) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
-            valid = True
-            if value is None:
-                valid = False
-            else:
-                q = q.filter(getattr(OTU, otu_attr) == value)
-                valid = q.count() > 0
-            if not valid:
-                target_attr = otu_attr
-                target_class = ontology_class
-                break
+        target_attr, target_class, target_idx = determine_target()
 
         # the targets to be reset as a result of this choice
-        clear = [drop_id(attr) for attr, _ in TaxonomyOptions.hierarchy[idx:]]
+        clear = [drop_id(attr) for attr, _ in TaxonomyOptions.hierarchy[target_idx:]]
 
         # clear invalidated part of the state
-        state = state[:idx] + [None] * (len(TaxonomyOptions.hierarchy) - idx)
+        state = state[:target_idx] + [None] * (len(TaxonomyOptions.hierarchy) - target_idx)
 
         # no completion: we have a complete hierarchy
         if target_attr is None:
