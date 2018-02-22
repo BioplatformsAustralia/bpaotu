@@ -65,6 +65,10 @@ def otu_hash(code):
     return md5(code.encode('ascii')).digest()
 
 
+def cleanup_australian_soil_classification(s):
+    return s
+
+
 class DataImporter:
     soil_ontologies = OrderedDict([
         ('project', BPAProject),
@@ -82,6 +86,9 @@ class DataImporter:
         ('tillage', SampleTillage),
         ('color', SampleColor),
     ])
+    soil_onotology_cleanups = {
+        'australian_soil_classification': cleanup_australian_soil_classification
+    }
 
     marine_ontologies = OrderedDict([
         ('project', BPAProject),
@@ -226,6 +233,11 @@ class DataImporter:
             os.unlink(fname)
         return otu_lookup
 
+
+
+
+
+
     def load_soil_contextual_metadata(self):
         logger.warning("loading BASE contextual metadata")
 
@@ -247,10 +259,22 @@ class DataImporter:
                     attrs[field] = value
                 yield SampleContext(**attrs)
 
-        rows = [t._asdict() for t in soil_contextual_rows(glob(self._import_base + '/base/*.xlsx')[0])]
+        rows = soil_contextual_rows(glob(self._import_base + '/base/*.xlsx')[0])
         mappings = self._load_ontology(DataImporter.soil_ontologies, rows)
         self._session.bulk_save_objects(_make_context())
         self._session.commit()
+
+
+
+
+
+
+
+
+
+
+
+
 
     def load_marine_contextual_metadata(self):
         logger.warning("loading Marine Microbes contextual metadata")
