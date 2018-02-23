@@ -3,8 +3,9 @@ from .libs import ingest_utils
 import datetime
 from .contextual_controlled_vocabularies import *
 
-import logging
+from pprint import pprint
 
+import logging
 logger = logging.getLogger("rainbow")
 
 # this code is taken from bpa-ingest: projects/base/contextual.py
@@ -442,11 +443,10 @@ def soil_contextual_rows(metadata_path):
             recognised_classifications.append(classification)
 
         recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
-
-        norm = _normalise_classification(original)
-
         recognised_classifications[_normalise_classification('Tenosol')] = 'Tenosols'
         recognised_classifications[_normalise_classification('Cambisol')] = 'Cambisols'
+
+        norm = _normalise_classification(original)
 
         if not norm:
             return ''
@@ -505,14 +505,58 @@ def soil_contextual_rows(metadata_path):
             return original
 
 
+    def _fix_general_ecological_zone(original):
+        recognised_classifications = []
+
+        for code, note in EcologicalZoneVocabulary:
+            recognised_classifications.append(code)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+        recognised_classifications[_normalise_classification('Mediterranian')] = 'Mediterranean'
+        recognised_classifications[_normalise_classification('Wet Tropics')] = 'Tropical (wet)'
+        recognised_classifications[_normalise_classification('Other (polar)')] = 'Polar'
+
+        norm = _normalise_classification(original)
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
+
+
+    def _fix_tillage(original):
+        recognised_classifications = []
+
+        for tillage, desc in TillageClassificationVocabulary:
+            recognised_classifications.append(tillage)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+
+        parts = original.split(":")
+        norm = _normalise_classification(parts[0]) #take first part of string which is the tillage and leave out description
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
+
+
     ontology_cleanups = {
         'horizon_classification': _fix_horizon_classification,
-        'vegetation_type': _fix_vegetation_type,
-        'detailed_land_use': _fix_detailed_land_use,
         'broad_land_use': _fix_broad_land_use,
-        'australian_soil_classification': _fix_australian_soil_classification,
+        'detailed_land_use': _fix_detailed_land_use,
+        'general_ecological_zone': _fix_general_ecological_zone,
+        'vegetation_type': _fix_vegetation_type,
         'profile_position': _fix_profile_position,
+        'australian_soil_classification': _fix_australian_soil_classification,
         'fao_soil_classification': _fix_fao_soil_classification,
+        'tillage': _fix_tillage,
         'color': _fix_color,
     }
 
@@ -529,7 +573,7 @@ def soil_contextual_rows(metadata_path):
             except NotInVocabulary as e:
                 onotology_error_values[cleanup_name].add(e.args[0])
         objs.append(obj)
-    logger.critical(onotology_error_values)
+    logger.critical(pprint(onotology_error_values))
     return objs
 
 
