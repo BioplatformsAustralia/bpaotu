@@ -234,10 +234,6 @@ class DataImporter:
         return otu_lookup
 
 
-
-
-
-
     def load_soil_contextual_metadata(self):
         logger.warning("loading BASE contextual metadata")
 
@@ -263,17 +259,6 @@ class DataImporter:
         mappings = self._load_ontology(DataImporter.soil_ontologies, rows)
         self._session.bulk_save_objects(_make_context())
         self._session.commit()
-
-
-
-
-
-
-
-
-
-
-
 
 
     def load_marine_contextual_metadata(self):
