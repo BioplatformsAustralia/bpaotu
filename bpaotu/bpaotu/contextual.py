@@ -315,9 +315,65 @@ def soil_contextual_rows(metadata_path):
         s = s.lower()
         s = s.replace(" ", "")
         s = s.replace("&", "and")
-        s = s.replace("reserve", "reserves")
-
+        s = s.replace('-', "")
         return s
+
+
+    def _fix_broad_land_use(original):
+        recognised_classifications = []
+
+        for classification in LandUseVocabulary:
+            recognised_classifications.append(classification[0])
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+        norm = _normalise_classification(original)
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
+
+
+    def _fix_detailed_land_use(original):
+        def expand_tree(values, tree, prefix=[]):
+            # some of the names are actually a tree path in themselves
+            name = [t.strip() for t in values[0].split('-')]
+            path = prefix + name
+            norm_path = tuple([_normalise_classification(t) for t in path])
+            tree[norm_path] = ' - '.join(path)
+            for value in values[1:]:
+                if type(value) is tuple:
+                    # a tuple is a sub-tree which we recurse into
+                    if value:
+                        expand_tree(value, tree, prefix=path)
+                else:
+                    # a string is a fellow leaf-node of the parent
+                    expand_tree((value,), tree, prefix=prefix)
+
+        if original == '':
+            return original
+        query = tuple([_normalise_classification(t) for t in original.split('-')])
+
+        # tree contains all fully expanded paths through the classifcation tree,
+        # as tuples, and the values in the tree are the string representation of these
+        # fully expanded forms. tuples have been run through normalisation.
+        recognised_classifications = {}
+        for subtree in LandUseVocabulary:
+            expand_tree(subtree, recognised_classifications)
+
+        matches = []
+        for code, classification in recognised_classifications.items():
+            if code[-len(query):] == query:
+                matches.append(code)
+
+        matches.sort(key=lambda m: len(m))
+        if matches:
+            return recognised_classifications[matches[0]]
+        else:
+            raise NotInVocabulary(original)
 
 
     def _fix_australian_soil_classification(original):
@@ -341,13 +397,14 @@ def soil_contextual_rows(metadata_path):
             return ''
 
 
-    def _fix_broad_land_use(original):
+    def _fix_profile_position(original):
         recognised_classifications = []
 
-        for classification in LandUseVocabulary:
-            recognised_classifications.append(classification[0])
+        for classification, _ in ProfilePositionVocabulary:
+            recognised_classifications.append(classification)
 
         recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+
         norm = _normalise_classification(original)
 
         if not norm:
@@ -359,36 +416,16 @@ def soil_contextual_rows(metadata_path):
             return ''
 
 
-
-    def _fix_detailed_land_use(original):
+    def _fix_vegetation_type(original):
         recognised_classifications = []
 
+        for classification, _ in BroadVegetationTypeVocabulary:
+            recognised_classifications.append(classification)
 
-        # the tree does not go more than 3 levels down.
-        for classification in LandUseVocabulary:
-            logger.critical(classification[0])
-
-            for subclassification in classification:
-                if type(subclassification) is tuple:
-                    recognised_classifications.append(subclassification[0])
-                    logger.critical(subclassification[0])
-
-                for subsubclassification in subclassification:
-                    if type(subsubclassification) is tuple:
-                        for elem in subsubclassification:
-                            recognised_classifications.append(elem)
-                            logger.critical(elem)
-
-
-
-        # 1. normalise classification list
         recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
 
-        # 2. add hardcoded values
-        recognised_classifications[_normalise_classification('Strict nature reserve')] = 'Strict nature reserves'
-
-        # 3. normalise original string
         norm = _normalise_classification(original)
+
         if not norm:
             return ''
         elif norm in recognised_classifications:
@@ -397,26 +434,88 @@ def soil_contextual_rows(metadata_path):
             raise NotInVocabulary(original)
             return ''
 
-        quit()
+
+    def _fix_fao_soil_classification(original):
+        recognised_classifications = []
+
+        for classification, _ in FAOSoilClassificationVocabulary:
+            recognised_classifications.append(classification)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+
+        norm = _normalise_classification(original)
+
+        recognised_classifications[_normalise_classification('Tenosol')] = 'Tenosols'
+        recognised_classifications[_normalise_classification('Cambisol')] = 'Cambisols'
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
 
 
+    def _fix_color(original):
+        recognised_classifications = []
+
+        for color, code in SoilColourVocabulary:
+            recognised_classifications.append(code)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+
+        norm = _normalise_classification(original)
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
 
 
+    def _fix_horizon_classification(original):
+        recognised_classifications = []
 
+        for code, description in HorizonClassificationVocabulary:
+            recognised_classifications.append(code)
 
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
 
+        if not original:
+            return ''
+        else:
+            codes = [_normalise_classification(x) for x in original.split(",")]
 
+            # this is to deal entries like: O A, OAB, AB that do not have a comma
+            for idx, c in enumerate(codes):
+                if len(c) > 1:
+                    split = list(c)
+                    codes = codes + split
+                    codes.pop(idx)
 
+            for c in codes:
+                if c not in recognised_classifications:
+                    print("{} {}".format(original, codes))
+                    raise NotInVocabulary(original)
+                    return ''
 
-
-
+            return original
 
 
     ontology_cleanups = {
+        'horizon_classification': _fix_horizon_classification,
+        'vegetation_type': _fix_vegetation_type,
         'detailed_land_use': _fix_detailed_land_use,
         'broad_land_use': _fix_broad_land_use,
         'australian_soil_classification': _fix_australian_soil_classification,
+        'profile_position': _fix_profile_position,
+        'fao_soil_classification': _fix_fao_soil_classification,
+        'color': _fix_color,
     }
+
 
     onotology_error_values = dict((t, set()) for t in ontology_cleanups)
 
