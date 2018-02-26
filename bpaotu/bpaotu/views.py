@@ -9,7 +9,7 @@ from collections import defaultdict
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
 from django.views.generic import TemplateView
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 from io import StringIO
 import traceback
 from .importer import DataImporter
@@ -382,3 +382,9 @@ def otu_export(request):
     filename = "BPASearchResultsExport.zip"
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     return response
+
+
+def otu_log(request):
+    print("Hello")
+    return HttpResponse("Hello")
+    pass

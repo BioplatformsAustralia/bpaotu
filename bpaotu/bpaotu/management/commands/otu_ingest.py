@@ -10,6 +10,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         importer = DataImporter(kwargs['base_dir'])
         importer.load_soil_contextual_metadata()
+        quit('-----exiting here')
         importer.load_marine_contextual_metadata()
         otu_lookup = importer.load_taxonomies()
         importer.load_otu(otu_lookup)
