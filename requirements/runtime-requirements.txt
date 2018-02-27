@@ -23,3 +23,5 @@ django-bootstrap3==9.1.0
 django-extensions==1.9.9
 django-redis==4.8.0
 zipstream==1.1.4
+h5py==2.7.1
+numpy==1.14.1

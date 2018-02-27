@@ -32,6 +32,8 @@ COPY ./requirements/test-requirements.txt /app/bpaotu/
 RUN pip install --upgrade -r bpaotu/test-requirements.txt
 COPY ./requirements/runtime-requirements.txt /app/bpaotu/
 RUN pip install --upgrade -r bpaotu/runtime-requirements.txt
+COPY ./requirements/biom-requirements.txt /app/bpaotu/
+RUN pip install --upgrade -r bpaotu/biom-requirements.txt
 
 # Copy code and install the app
 COPY . /app
