@@ -1,0 +1,20 @@
+<table>
+    <thead>
+        <td><b>Ontology Name</b></td>
+        <td><b>Mismatches</b></td>
+    </thead>
+
+    {% for item in items %}
+    <tr>
+        <td>{{ item.ontology_name }}</td>
+        <td>
+            {% if item.import_result == "set()" %}
+                -
+            {% else %}
+                {{ item.import_result }}
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+
+</table>

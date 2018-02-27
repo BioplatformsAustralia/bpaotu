@@ -29,6 +29,9 @@ from .query import (
     ContextualFilterTermSampleID,
     ContextualFilterTermString,
     get_sample_ids)
+from django.template import loader
+from .models import ImportLog
+
 
 logger = logging.getLogger("rainbow")
 # See datatables.net serverSide documentation for details
@@ -385,6 +388,10 @@ def otu_export(request):
 
 
 def otu_log(request):
-    print("Hello")
-    return HttpResponse("Hello")
-    pass
+    template = loader.get_template('bpaotu/otu_log.html')
+
+    context = {
+        'items': ImportLog.objects.all()
+    }
+
+    return HttpResponse(template.render(context, request))

@@ -1,6 +1,14 @@
 from .libs.excel_wrapper import ExcelWrapper
 from .libs import ingest_utils
 import datetime
+from .contextual_controlled_vocabularies import *
+
+from .models import ImportLog
+
+from pprint import pprint
+
+import logging
+logger = logging.getLogger("rainbow")
 
 # this code is taken from bpa-ingest: projects/base/contextual.py
 
@@ -292,6 +300,10 @@ marine_field_specs = {
 }
 
 
+class NotInVocabulary(Exception):
+    pass
+
+
 def soil_contextual_rows(metadata_path):
     wrapper = ExcelWrapper(
         soil_field_spec,
@@ -300,7 +312,277 @@ def soil_contextual_rows(metadata_path):
         header_length=1,
         column_name_row_index=0,
         additional_context={'project': 'BASE', 'sample_type': 'Soil'})
-    return list(wrapper.get_all())
+
+
+    def _normalise_classification(s):
+        s = s.lower()
+        s = s.replace(" ", "")
+        s = s.replace("&", "and")
+        s = s.replace('-', "")
+        return s
+
+
+    def _fix_broad_land_use(original):
+        recognised_classifications = []
+
+        for classification in LandUseVocabulary:
+            recognised_classifications.append(classification[0])
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+        norm = _normalise_classification(original)
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
+
+
+    def _fix_detailed_land_use(original):
+        def expand_tree(values, tree, prefix=[]):
+            # some of the names are actually a tree path in themselves
+            name = [t.strip() for t in values[0].split('-')]
+            path = prefix + name
+            norm_path = tuple([_normalise_classification(t) for t in path])
+            tree[norm_path] = ' - '.join(path)
+            for value in values[1:]:
+                if type(value) is tuple:
+                    # a tuple is a sub-tree which we recurse into
+                    if value:
+                        expand_tree(value, tree, prefix=path)
+                else:
+                    # a string is a fellow leaf-node of the parent
+                    expand_tree((value,), tree, prefix=prefix)
+
+        if original == '':
+            return original
+        query = tuple([_normalise_classification(t) for t in original.split('-')])
+
+        # tree contains all fully expanded paths through the classifcation tree,
+        # as tuples, and the values in the tree are the string representation of these
+        # fully expanded forms. tuples have been run through normalisation.
+        recognised_classifications = {}
+        for subtree in LandUseVocabulary:
+            expand_tree(subtree, recognised_classifications)
+
+        matches = []
+        for code, classification in recognised_classifications.items():
+            if code[-len(query):] == query:
+                matches.append(code)
+
+        matches.sort(key=lambda m: len(m))
+        if matches:
+            return recognised_classifications[matches[0]]
+        else:
+            raise NotInVocabulary(original)
+
+
+    def _fix_australian_soil_classification(original):
+        recognised_classifications = []
+        for classification, _ in AustralianSoilClassificationVocabulary:
+            recognised_classifications.append(classification)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+        # hard-coded fixes
+        recognised_classifications[_normalise_classification('Tenosol')] = 'Tenosols'
+        recognised_classifications[_normalise_classification('Chromosol')] = 'Chromosols'
+        recognised_classifications[_normalise_classification('Hydrosol')] = 'Hydrosols'
+
+        norm = _normalise_classification(original)
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
+
+
+    def _fix_profile_position(original):
+        recognised_classifications = []
+
+        for classification, _ in ProfilePositionVocabulary:
+            recognised_classifications.append(classification)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+
+        norm = _normalise_classification(original)
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
+
+
+    def _fix_vegetation_type(original):
+        recognised_classifications = []
+
+        for classification, _ in BroadVegetationTypeVocabulary:
+            recognised_classifications.append(classification)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+
+        norm = _normalise_classification(original)
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
+
+
+    def _fix_fao_soil_classification(original):
+        recognised_classifications = []
+
+        for classification, _ in FAOSoilClassificationVocabulary:
+            recognised_classifications.append(classification)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+        recognised_classifications[_normalise_classification('Tenosol')] = 'Tenosols'
+        recognised_classifications[_normalise_classification('Cambisol')] = 'Cambisols'
+
+        norm = _normalise_classification(original)
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
+
+
+    def _fix_color(original):
+        recognised_classifications = []
+
+        for color, code in SoilColourVocabulary:
+            recognised_classifications.append(code)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+
+        norm = _normalise_classification(original)
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
+
+
+    def _fix_horizon_classification(original):
+        recognised_classifications = []
+
+        for code, description in HorizonClassificationVocabulary:
+            recognised_classifications.append(code)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+
+        if not original:
+            return ''
+        else:
+            codes = [_normalise_classification(x) for x in original.split(",")]
+
+            # this is to deal entries like: O A, OAB, AB that do not have a comma
+            for idx, c in enumerate(codes):
+                if len(c) > 1:
+                    split = list(c)
+                    codes = codes + split
+                    codes.pop(idx)
+
+            for c in codes:
+                if c not in recognised_classifications:
+                    print("{} {}".format(original, codes))
+                    raise NotInVocabulary(original)
+                    return ''
+
+            return original
+
+
+    def _fix_general_ecological_zone(original):
+        recognised_classifications = []
+
+        for code, note in EcologicalZoneVocabulary:
+            recognised_classifications.append(code)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+        recognised_classifications[_normalise_classification('Mediterranian')] = 'Mediterranean'
+        recognised_classifications[_normalise_classification('Wet Tropics')] = 'Tropical (wet)'
+        recognised_classifications[_normalise_classification('Other (polar)')] = 'Polar'
+
+        norm = _normalise_classification(original)
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
+
+
+    def _fix_tillage(original):
+        recognised_classifications = []
+
+        for tillage, desc in TillageClassificationVocabulary:
+            recognised_classifications.append(tillage)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+
+        parts = original.split(":")
+        norm = _normalise_classification(parts[0]) #take first part of string which is the tillage and leave out description
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
+
+
+    ontology_cleanups = {
+        'horizon_classification': _fix_horizon_classification,
+        'broad_land_use': _fix_broad_land_use,
+        'detailed_land_use': _fix_detailed_land_use,
+        'general_ecological_zone': _fix_general_ecological_zone,
+        'vegetation_type': _fix_vegetation_type,
+        'profile_position': _fix_profile_position,
+        'australian_soil_classification': _fix_australian_soil_classification,
+        'fao_soil_classification': _fix_fao_soil_classification,
+        'tillage': _fix_tillage,
+        'color': _fix_color,
+    }
+
+
+    onotology_error_values = dict((t, set()) for t in ontology_cleanups)
+
+    objs = []
+    for row in wrapper.get_all():
+        obj = row._asdict()
+
+        for cleanup_name, cleanup_fn in ontology_cleanups.items():
+            try:
+                obj[cleanup_name] = cleanup_fn(obj[cleanup_name])
+            except NotInVocabulary as e:
+                onotology_error_values[cleanup_name].add(e.args[0])
+        objs.append(obj)
+
+    ImportLog.objects.all().delete()
+    for val in onotology_error_values:
+        il = ImportLog(ontology_name=val, import_result=onotology_error_values[val])
+        il.save()
+
+    logger.critical(pprint(onotology_error_values))
+    return objs
 
 
 def marine_contextual_rows(metadata_path):
