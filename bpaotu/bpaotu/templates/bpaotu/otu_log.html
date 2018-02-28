@@ -1,4 +1,11 @@
-<title>Ontology Log</title>
+{% extends 'bpaotu/base.html' %}
+
+{% block title %}
+<title>Bioplatforms OTU Search Facility - Ingest Log</title>
+{% endblock title %}
+
+
+{% block content %}
 
 <style>
     td, th {
@@ -12,30 +19,39 @@
     }
 </style>
 
-<h1>Ontology Log</h1>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
 
-<table>
-    <thead>
-        <td><b>Ontology File</b></td>
-        <td><b>Ontology Name</b></td>
-        <td><b>Mismatches</b></td>
-    </thead>
 
-    {% for item in items %}
-    <tr>
-        <td>{{ item.ontology_filename }}</td>
-        <td>{{ item.ontology_name }}</td>
-        <td>
-            {% if item.import_result == "set()" %}
-                None
-            {% else %}
-                <ul>
-                    {% for result in item.get_import_result %}
-                        <li>{{ result }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+        <h1>BPA OTU Database - Ingest log</h1>
+
+        <h2>Ontology errors</h2>
+
+        <table>
+            <thead>
+                <td><b>Ontology File</b></td>
+                <td><b>Ontology Name</b></td>
+                <td><b>Mismatches</b></td>
+            </thead>
+
+            {% for item in items %}
+                {% if item.import_result %}
+                    <tr>
+                        <td>{{ item.project_name }}</td>
+                        <td>{{ item.ontology_name }}</td>
+                        <td>
+                            <ul>
+                                {% for result in item.import_result %}
+                                    <li>{{ result }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}

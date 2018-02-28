@@ -577,12 +577,9 @@ def soil_contextual_rows(metadata_path):
         objs.append(obj)
 
 
-    # print(os.path.basename(metadata_path))
-    # quit()
-
     ImportOntologyLog.objects.all().delete()
     for val in onotology_error_values:
-        il = ImportOntologyLog(ontology_filename=os.path.basename(metadata_path), ontology_name=val, import_result=onotology_error_values[val])
+        il = ImportOntologyLog(project_name="BASE", ontology_name=val, import_result=list(sorted(onotology_error_values[val])))
         il.save()
 
     logger.critical(pprint(onotology_error_values))
