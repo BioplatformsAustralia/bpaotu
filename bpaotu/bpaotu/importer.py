@@ -247,7 +247,7 @@ class DataImporter:
                     attrs[field] = value
                 yield SampleContext(**attrs)
 
-        rows = [t._asdict() for t in soil_contextual_rows(glob(self._import_base + '/base/*.xlsx')[0])]
+        rows = list(soil_contextual_rows(glob(self._import_base + '/base/*.xlsx')[0]))
         mappings = self._load_ontology(DataImporter.soil_ontologies, rows)
         self._session.bulk_save_objects(_make_context())
         self._session.commit()

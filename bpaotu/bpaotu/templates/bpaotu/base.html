@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+
+{% load staticfiles %}
+{% load static from staticfiles %}
+
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    {% block head_meta_viewport %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=11">
+    {% endblock %}
+
+    {% block title %}
+    <title>Bioplatforms OTU Search Facility</title>
+    {% endblock title %}
+
+    {% load static from staticfiles %}
+    {% load bootstrap3 %}
+
+    {% bootstrap_css %}
+    {% bootstrap_javascript jquery=True %}
+
+    <link rel="icon" href="{% static 'bpa-logos/favicon.ico' %}" type="image/x-icon">
+
+    <link rel="stylesheet" href="//cdn.datatables.net/r/bs-3.3.5/jq-2.1.4,jszip-2.5.0,pdfmake-0.1.18,dt-1.10.9,b-1.0.3,b-colvis-1.0.3,b-html5-1.0.3,b-print-1.0.3,cr-1.2.0,fh-3.0.0,sc-1.3.0/datatables.min.css"
+    integrity="sha256-4zLbOiFTCzQ4zxnm/S+9JeIFnhWuIPgyOw0mbhtPuIA= sha384-CpFB96HWkaVC+dOX28UQC2mE/55CXHOQ0JWb+xpe3BHJuxlbmlCwhihPF4Hhk83+ sha512-0EUkXuq2xI8ComQ0X1iDyAOTpE7LzirbiZeWPKMU3ZP/XoWcyx+IbIR9Gb9NOfYxq6Tz35dlRlEuuo8mUFf0xQ=="
+    crossorigin="anonymous">
+
+    <script src="//cdn.datatables.net/r/bs-3.3.5/jq-2.1.4,jszip-2.5.0,pdfmake-0.1.18,dt-1.10.9,b-1.0.3,b-colvis-1.0.3,b-html5-1.0.3,b-print-1.0.3,cr-1.2.0,fh-3.0.0,sc-1.3.0/datatables.min.js"
+    integrity="sha256-O69JUtL+XiMlImbVqOAJfEj5amSjFS6Nhj5TaUk037s= sha384-GNOqhnos5Zj3KrBYHi6OtDTCzNYzxIuj7Qj5z3aod+l1EqQCu4uBGjvBb/MLHwXw sha512-r+vqCPpa188G9K9V9BlaRBGcU+y3S4nsdujJ5S3Z6K14Zm7yrr3N7jADGCC29kTXQ841jIKH095K1JBnemv3+g=="
+    crossorigin="anonymous"></script>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/4.16.4/lodash.min.js"
+    integrity="sha256-KteOoEtQ75FeAFFOTJZlvNt0iJ8NMusVDESd5jlwKEQ= sha384-+VyieUXwWQSImpRIFhlRJNe2KeZblzwXEF8LsYAO/cYlQdDG2SdJaky4Ud0sdVup sha512-coj002JZWtDMvnYzDgRXBzWlrEiS/EW2SNAYs0SVSDf62RSZ7ygs0leIGAjMiwe8cQRfqwrInDlHYsUSTDTPjQ=="
+    crossorigin="anonymous"></script>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.1/moment.min.js"
+    integrity="sha256-4PIvl58L9q7iwjT654TQJM+C/acEyoG738iL8B8nhXg= sha384-7pfELK0arQ3VANqV4kiPWPh5wOsrfitjFGF/NdyHXUJ3JJPy/rNhasPtdkaNKhul sha512-1V1LfkdFb5dlSJjEImkfBwiJhuqBLoWjWWYKI3kMvjOFm3y43yzHhyp1Swz31R7k2GOfVFKFA+7UDZkTdTBIqA=="
+    crossorigin="anonymous"></script>
+
+    <script src="{% static 'bpaotu/bpaotu.js' %}"></script>
+
+    <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/common.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/bpaotu.css' %}"/>
+
+    {% block extra_head %}
+    {% endblock %}
+
+</head>
+<body>
+    <div id="wrap">
+        <header class="navbar navbar-static-top">
+            <div class="container">
+                <a class="logo" href="https://data.bioplatforms.com/">
+                    <img src="{% static 'bpa-logos/bpalogo_withdataportal.png' %}" alt="Bioplatform Australia" />
+                </a>
+            </div>
+
+            {% if DEBUG_ONLY_VIEW %}
+            <div class="alert alert-warning text-center">
+                This page should be accessible only in <strong>DEBUG</strong> mode.
+            </div>
+            {% endif %}
+        </header>
+        <div class="hide container" id="error-bar"></div>
+
+        <div class="content-div">
+
+            {% csrf_token %}
+
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <div class="site-footer-links container-fluid">
+            <a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a>
+            <a href="http://www.bioplatforms.com/contact/">Contact</a>
+        </div>
+        <div class="site-footer-logo container-fluid">
+        <span><a href="https://www.bioplatforms.com"><img class="footer-logos" src="{% static 'bpa-logos/bpa-footer.png' %}" alt="Bioplatforms Australia" /></a></span>
+        <span style="padding-left: 30px;"><a href="https://www.education.gov.au/national-collaborative-research-infrastructure-strategy-ncris"><img class="footer-logos" src="{% static 'bpa-logos/ncris-footer.png' %}" /></a></span>
+        </div>
+      </footer>
+
+        <script>
+            window.otu_search_config = {
+                'taxonomy_endpoint': "{% url 'taxonomy_options' %}",
+                'contextual_endpoint': "{% url 'contextual_fields' %}",
+                'search_endpoint': "{% url 'otu_search' %}",
+                'export_endpoint': "{% url 'otu_export' %}",
+                'ckan_base_url': "{{ ckan_base_url }}",
+                'contextual_filter_project_id': "{{ contextual_filter_project_id }}",
+            };
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip()
+                $('[data-toggle="popover"]').popover({html:true})
+            })
+        </script>
+</body>
+</html>

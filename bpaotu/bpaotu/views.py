@@ -9,7 +9,7 @@ from collections import defaultdict
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
 from django.views.generic import TemplateView
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 from io import StringIO
 import traceback
 from .importer import DataImporter
@@ -29,6 +29,9 @@ from .query import (
     ContextualFilterTermSampleID,
     ContextualFilterTermString,
     get_sample_ids)
+from django.template import loader
+from .models import ImportOntologyLog
+
 
 logger = logging.getLogger("rainbow")
 # See datatables.net serverSide documentation for details
@@ -382,3 +385,15 @@ def otu_export(request):
     filename = "BPASearchResultsExport.zip"
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     return response
+
+
+def otu_log(request):
+    template = loader.get_template('bpaotu/otu_log.html')
+
+    il = ImportOntologyLog()
+
+    context = {
+        'items': ImportOntologyLog.objects.all()
+    }
+
+    return HttpResponse(template.render(context, request))
