@@ -1,5 +1,8 @@
 from django.db import models
 
+import logging
+logger = logging.getLogger("rainbow")
+
 
 class ImportLog(models.Model):
     ontology_name = models.CharField(max_length=300)
@@ -9,4 +12,7 @@ class ImportLog(models.Model):
         return self.ontology_name
 
     def get_import_result(self):
-        return self.import_result
+        output = self.import_result[1:-1].split(",")
+        output = [x.replace("'", "") for x in output]
+
+        return output

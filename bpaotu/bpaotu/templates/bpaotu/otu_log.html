@@ -1,3 +1,15 @@
+<style>
+    td, th {
+        vertical-align: top;
+    }
+
+    table, th, td {
+        padding: 12px;
+        border: 1px solid;
+        border-collapse: collapse;
+    }
+</style>
+
 <table>
     <thead>
         <td><b>Ontology Name</b></td>
@@ -9,12 +21,15 @@
         <td>{{ item.ontology_name }}</td>
         <td>
             {% if item.import_result == "set()" %}
-                -
+                None
             {% else %}
-                {{ item.import_result }}
+                <ul>
+                    {% for result in item.get_import_result %}
+                        <li>{{ result }}</li>
+                    {% endfor %}
+                </ul>
             {% endif %}
         </td>
     </tr>
     {% endfor %}
-
 </table>
