@@ -30,7 +30,7 @@ from .query import (
     ContextualFilterTermString,
     get_sample_ids)
 from django.template import loader
-from .models import ImportLog
+from .models import ImportOntologyLog
 
 
 logger = logging.getLogger("rainbow")
@@ -390,8 +390,10 @@ def otu_export(request):
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
 
+    il = ImportOntologyLog()
+
     context = {
-        'items': ImportLog.objects.all()
+        'items': ImportOntologyLog.objects.all()
     }
 
     return HttpResponse(template.render(context, request))

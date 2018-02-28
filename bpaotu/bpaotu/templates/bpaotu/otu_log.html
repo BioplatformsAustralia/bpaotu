@@ -1,3 +1,5 @@
+<title>Ontology Log</title>
+
 <style>
     td, th {
         vertical-align: top;
@@ -10,14 +12,18 @@
     }
 </style>
 
+<h1>Ontology Log</h1>
+
 <table>
     <thead>
+        <td><b>Ontology File</b></td>
         <td><b>Ontology Name</b></td>
         <td><b>Mismatches</b></td>
     </thead>
 
     {% for item in items %}
     <tr>
+        <td>{{ item.ontology_filename }}</td>
         <td>{{ item.ontology_name }}</td>
         <td>
             {% if item.import_result == "set()" %}

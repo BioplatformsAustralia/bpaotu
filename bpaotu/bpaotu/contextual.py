@@ -1,12 +1,12 @@
+import os
 from .libs.excel_wrapper import ExcelWrapper
 from .libs import ingest_utils
 import datetime
 from .contextual_controlled_vocabularies import *
 
-from .models import ImportLog
+from .models import ImportOntologyLog
 
 from pprint import pprint
-
 import logging
 logger = logging.getLogger("rainbow")
 
@@ -576,9 +576,13 @@ def soil_contextual_rows(metadata_path):
                 onotology_error_values[cleanup_name].add(e.args[0])
         objs.append(obj)
 
-    ImportLog.objects.all().delete()
+
+    # print(os.path.basename(metadata_path))
+    # quit()
+
+    ImportOntologyLog.objects.all().delete()
     for val in onotology_error_values:
-        il = ImportLog(ontology_name=val, import_result=onotology_error_values[val])
+        il = ImportOntologyLog(ontology_filename=os.path.basename(metadata_path), ontology_name=val, import_result=onotology_error_values[val])
         il.save()
 
     logger.critical(pprint(onotology_error_values))
