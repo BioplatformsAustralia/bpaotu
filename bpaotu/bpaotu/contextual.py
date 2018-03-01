@@ -314,6 +314,12 @@ class NotInVocabulary(Exception):
     pass
 
 
+def context_valid(obj):
+    # we must have certain minimal fields, or we exclude the sample from the context
+    # (and, by extension, from the ingest)
+    return obj.get('latitude') is not None and obj.get('longitude') is not None
+
+
 def soil_contextual_rows(metadata_path):
     wrapper = ExcelWrapper(
         soil_field_spec,
@@ -606,12 +612,12 @@ def soil_contextual_rows(metadata_path):
     for val in onotology_error_values:
         il = ImportOntologyLog(project_name="BASE", ontology_name=val, import_result=list(sorted(onotology_error_values[val])))
         il.save()
-    return objs
+    return [t for t in objs if context_valid(t)]
 
 
 def marine_contextual_rows(metadata_path):
     # MM spreadsheet has multiple tabs for the various forms of data
-    rows = []
+    objs = []
     for sheet_name, field_spec in sorted(marine_field_specs.items()):
         wrapper = ExcelWrapper(
             field_spec,
@@ -620,5 +626,6 @@ def marine_contextual_rows(metadata_path):
             header_length=1,
             column_name_row_index=0,
             additional_context={'sample_type': sheet_name, 'project': 'Marine Microbes'})
-        rows += wrapper.get_all()
-    return rows
+        objs += [t._asdict() for t in wrapper.get_all()]
+    return [t for t in objs if context_valid(t)]
+
