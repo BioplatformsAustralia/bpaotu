@@ -1,8 +1,18 @@
-import os
 from .libs.excel_wrapper import ExcelWrapper
 from .libs import ingest_utils
 import datetime
-from .contextual_controlled_vocabularies import *
+from .contextual_controlled_vocabularies import (
+    AustralianSoilClassificationVocabulary,
+    BroadVegetationTypeVocabulary,
+    CropRotationClassification,
+    DrainageClassificationVocabulary,
+    EcologicalZoneVocabulary,
+    FAOSoilClassificationVocabulary,
+    HorizonClassificationVocabulary,
+    LandUseVocabulary,
+    ProfilePositionVocabulary,
+    SoilColourVocabulary,
+    TillageClassificationVocabulary)
 
 from .models import ImportOntologyLog
 
@@ -313,14 +323,12 @@ def soil_contextual_rows(metadata_path):
         column_name_row_index=0,
         additional_context={'project': 'BASE', 'sample_type': 'Soil'})
 
-
     def _normalise_classification(s):
         s = s.lower()
         s = s.replace(" ", "")
         s = s.replace("&", "and")
         s = s.replace('-', "")
         return s
-
 
     def _fix_broad_land_use(original):
         recognised_classifications = []
@@ -338,7 +346,6 @@ def soil_contextual_rows(metadata_path):
         else:
             raise NotInVocabulary(original)
             return ''
-
 
     def _fix_detailed_land_use(original):
         def expand_tree(values, tree, prefix=[]):
@@ -378,7 +385,6 @@ def soil_contextual_rows(metadata_path):
         else:
             raise NotInVocabulary(original)
 
-
     def _fix_australian_soil_classification(original):
         recognised_classifications = []
         for classification, _ in AustralianSoilClassificationVocabulary:
@@ -399,7 +405,6 @@ def soil_contextual_rows(metadata_path):
             raise NotInVocabulary(original)
             return ''
 
-
     def _fix_profile_position(original):
         recognised_classifications = []
 
@@ -418,7 +423,6 @@ def soil_contextual_rows(metadata_path):
             raise NotInVocabulary(original)
             return ''
 
-
     def _fix_vegetation_type(original):
         recognised_classifications = []
 
@@ -436,7 +440,6 @@ def soil_contextual_rows(metadata_path):
         else:
             raise NotInVocabulary(original)
             return ''
-
 
     def _fix_fao_soil_classification(original):
         recognised_classifications = []
@@ -458,7 +461,6 @@ def soil_contextual_rows(metadata_path):
             raise NotInVocabulary(original)
             return ''
 
-
     def _fix_color(original):
         recognised_classifications = []
 
@@ -476,7 +478,6 @@ def soil_contextual_rows(metadata_path):
         else:
             raise NotInVocabulary(original)
             return ''
-
 
     def _fix_horizon_classification(original):
         recognised_classifications = []
@@ -506,7 +507,6 @@ def soil_contextual_rows(metadata_path):
 
             return original
 
-
     def _fix_general_ecological_zone(original):
         recognised_classifications = []
 
@@ -528,7 +528,6 @@ def soil_contextual_rows(metadata_path):
             raise NotInVocabulary(original)
             return ''
 
-
     def _fix_tillage(original):
         recognised_classifications = []
 
@@ -538,7 +537,7 @@ def soil_contextual_rows(metadata_path):
         recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
 
         parts = original.split(":")
-        norm = _normalise_classification(parts[0]) #take first part of string which is the tillage and leave out description
+        norm = _normalise_classification(parts[0])  # take first part of string which is the tillage and leave out description
 
         if not norm:
             return ''
@@ -547,7 +546,6 @@ def soil_contextual_rows(metadata_path):
         else:
             raise NotInVocabulary(original)
             return ''
-
 
     ontology_cleanups = {
         'horizon_classification': _fix_horizon_classification,
@@ -562,7 +560,6 @@ def soil_contextual_rows(metadata_path):
         'color': _fix_color,
     }
 
-
     onotology_error_values = dict((t, set()) for t in ontology_cleanups)
 
     objs = []
@@ -575,7 +572,6 @@ def soil_contextual_rows(metadata_path):
             except NotInVocabulary as e:
                 onotology_error_values[cleanup_name].add(e.args[0])
         objs.append(obj)
-
 
     ImportOntologyLog.objects.all().delete()
     for val in onotology_error_values:

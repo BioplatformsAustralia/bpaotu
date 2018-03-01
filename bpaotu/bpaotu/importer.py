@@ -186,7 +186,7 @@ class DataImporter:
         ])
 
         def _taxon_rows_iter():
-            for fname in glob(self._import_base + '/*.tax'):
+            for fname in glob(self._import_base + '/*/*.taxonomy'):
                 logger.warning('reading taxonomy file: %s' % fname)
                 with open(fname) as fd:
                     for row in csv.reader(fd, dialect='excel-tab'):
@@ -318,7 +318,7 @@ class DataImporter:
                         yield [bpa_id, otu_id, count]
 
         missing_bpa_ids = set()
-        for fname in glob(self._import_base + '/*.txt'):
+        for fname in glob(self._import_base + '/*/*.txt'):
             logger.warning("first pass, reading from: %s" % (fname))
             missing_bpa_ids |= set(_missing_bpa_ids(fname))
 
