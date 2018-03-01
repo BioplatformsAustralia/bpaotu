@@ -547,6 +547,30 @@ def soil_contextual_rows(metadata_path):
             raise NotInVocabulary(original)
             return ''
 
+    def _fix_crop_rotation(original):
+        recognised_classifications = []
+
+        for entry in CropRotationClassification:
+            parts = entry.split("-")
+            parts = [p.strip() for p in parts]
+
+            for p in parts:
+                recognised_classifications.append(p)
+
+            recognised_classifications.append(entry)
+
+        recognised_classifications = dict((_normalise_classification(x), x) for x in recognised_classifications)
+
+        norm = _normalise_classification(original)
+
+        if not norm:
+            return ''
+        elif norm in recognised_classifications:
+            return recognised_classifications[norm]
+        else:
+            raise NotInVocabulary(original)
+            return ''
+
     ontology_cleanups = {
         'horizon_classification': _fix_horizon_classification,
         'broad_land_use': _fix_broad_land_use,
@@ -558,6 +582,11 @@ def soil_contextual_rows(metadata_path):
         'fao_soil_classification': _fix_fao_soil_classification,
         'tillage': _fix_tillage,
         'color': _fix_color,
+        'crop_rotation_1yr_since_present': _fix_crop_rotation,
+        'crop_rotation_2yrs_since_present': _fix_crop_rotation,
+        'crop_rotation_3yrs_since_present': _fix_crop_rotation,
+        'crop_rotation_4yrs_since_present': _fix_crop_rotation,
+        'crop_rotation_5yrs_since_present': _fix_crop_rotation,
     }
 
     onotology_error_values = dict((t, set()) for t in ontology_cleanups)
