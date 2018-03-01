@@ -18,6 +18,7 @@ from collections import (
     defaultdict,
     OrderedDict)
 from itertools import zip_longest
+from .models import ImportSamplesMissingMetadataLog
 from .otu import (
     Base,
     BPAProject,
@@ -214,7 +215,7 @@ class DataImporter:
             with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
                 fname = temp_fd.name
                 os.chmod(fname, 0o644)
-                logger.warning("writing out OTU data to CSV tempfile: %s" % fname)
+                logger.warning("writing out OTU abundance data to CSV tempfile: %s" % fname)
                 w = csv.writer(temp_fd)
                 w.writerow(['id', 'code', 'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id'])
                 for _id, row in enumerate(_taxon_rows_iter(), 1):
@@ -226,7 +227,7 @@ class DataImporter:
                         else:
                             out_row.append(mappings[field][row[field]])
                     w.writerow(out_row)
-            logger.warning("loading taxonomies from temporary CSV file")
+            logger.warning("loading OTU abundance data from temporary CSV file")
             self._engine.execute(
                 text('''COPY otu.otu from :csv CSV header''').execution_options(autocommit=True),
                 csv=fname)
@@ -295,8 +296,11 @@ class DataImporter:
             # there's taxonomy and control information in the last few columns. this can be
             # excluded from the import: we skip until we hit a non-integer header
             bpa_ids = [try_int(t.split('/')[-1]) for t in header[1:]]
-            valid_until = bpa_ids.index(None)
-            bpa_ids = bpa_ids[:valid_until]
+            try:
+                valid_until = bpa_ids.index(None)
+                bpa_ids = bpa_ids[:valid_until]
+            except ValueError:
+                pass
             return bpa_ids, reader
 
         def _missing_bpa_ids(fname):
@@ -307,7 +311,7 @@ class DataImporter:
                     if bpa_id not in have_bpaids:
                         yield bpa_id
 
-        def _make_sample_otus(fname):
+        def _make_sample_otus(fname, skip_missing):
             # note: (for now) we have to cope with duplicate columns in the input files.
             # we just make sure they don't clash, and this can be reported to CSIRO
             with open(fname, 'r') as fd:
@@ -317,6 +321,8 @@ class DataImporter:
                     to_make = {}
                     for bpa_id, count in zip(bpa_ids, row[1:]):
                         if count == '' or count == '0' or count == '0.0':
+                            continue
+                        if bpa_id in skip_missing:
                             continue
                         count = int(float(count))
                         if bpa_id in to_make and to_make[bpa_id] != count:
@@ -330,11 +336,7 @@ class DataImporter:
             logger.warning("first pass, reading from: %s" % (fname))
             missing_bpa_ids |= set(_missing_bpa_ids(fname))
 
-        logger.warning("creating empty context for BPA IDs: %s" % (missing_bpa_ids))
-        self._session.bulk_save_objects(SampleContext(id=t) for t in missing_bpa_ids)
-        self._session.commit()
-
-        for sampleotu_fname in glob(self._import_base + '/*.txt'):
+        for sampleotu_fname in glob(self._import_base + '/*/*.txt'):
             try:
                 logger.warning("second pass, reading from: %s" % (sampleotu_fname))
                 with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
@@ -343,7 +345,7 @@ class DataImporter:
                     logger.warning("writing out SampleOTU data to CSV tempfile: %s" % fname)
                     w = csv.writer(temp_fd)
                     w.writerow(['sample_id', 'otu_id', 'count'])
-                    w.writerows(_make_sample_otus(sampleotu_fname))
+                    w.writerows(_make_sample_otus(sampleotu_fname, missing_bpa_ids))
                 logger.warning("loading taxonomies from temporary CSV file")
                 try:
                     self._engine.execute(

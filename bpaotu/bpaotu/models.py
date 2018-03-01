@@ -15,3 +15,7 @@ class ImportOntologyLog(models.Model):
 
     def __str__(self):
         return self.ontology_name
+
+
+class ImportSamplesMissingMetadataLog(models.Model):
+    samples_without_metadata = ArrayField(models.TextField())
