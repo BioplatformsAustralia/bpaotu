@@ -21,6 +21,7 @@ from itertools import zip_longest
 from .otu import (
     Base,
     BPAProject,
+    OTUAmplicon,
     OTUKingdom,
     OTUPhylum,
     OTUClass,
@@ -118,7 +119,7 @@ class DataImporter:
             yield from reader
 
     def _build_ontology(self, db_class, vals):
-        for val in vals:
+        for val in sorted(vals):
             instance = db_class(value=val)
             self._session.add(instance)
         self._session.commit()
@@ -172,9 +173,8 @@ class DataImporter:
 
     def load_taxonomies(self):
         # md5(otu code) -> otu ID, returned
+
         otu_lookup = {}
-        # load each taxnomy file. note that not all files
-        # have all of the columns
         ontologies = OrderedDict([
             ('kingdom', OTUKingdom),
             ('phylum', OTUPhylum),
@@ -183,6 +183,7 @@ class DataImporter:
             ('family', OTUFamily),
             ('genus', OTUGenus),
             ('species', OTUSpecies),
+            ('amplicon', OTUAmplicon),
         ])
 
         def _taxon_rows_iter():
@@ -193,8 +194,15 @@ class DataImporter:
                         if row[0].startswith('#'):
                             continue
                         otu = row[0]
-                        taxon_parts = row[2:]  # FIXME: blank first column, raise with CSIRO
-                        obj = dict(zip(ontologies.keys(), taxon_parts))
+                        ontology_parts = row[1:]
+                        if len(ontology_parts) > len(ontologies):
+                            # work-around: duplicated species column; reported to CSIRO
+                            ontology_parts = ontology_parts[:len(ontologies) - 1] + [ontology_parts[-1]]
+                        elif len(ontology_parts) < len(ontologies):
+                            # work-around: short rows; reported to CSIRO
+                            ontology_parts = ontology_parts[:-1] + [''] * (len(ontologies) - len(ontology_parts)) + [ontology_parts[-1]]
+                        assert(len(ontology_parts) == len(ontologies))
+                        obj = dict(zip(ontologies.keys(), ontology_parts))
                         obj['otu'] = otu
                         yield obj
 
@@ -208,7 +216,7 @@ class DataImporter:
                 os.chmod(fname, 0o644)
                 logger.warning("writing out OTU data to CSV tempfile: %s" % fname)
                 w = csv.writer(temp_fd)
-                w.writerow(['id', 'code', 'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id'])
+                w.writerow(['id', 'code', 'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id'])
                 for _id, row in enumerate(_taxon_rows_iter(), 1):
                     otu_lookup[otu_hash(row['otu'])] = _id
                     out_row = [_id, row['otu']]
