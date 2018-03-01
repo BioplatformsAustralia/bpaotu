@@ -62,6 +62,10 @@ class BPAProject(OntologyMixin, Base):
     pass
 
 
+class OTUAmplicon(OntologyMixin, Base):
+    pass
+
+
 class OTUKingdom(OntologyMixin, Base):
     pass
 
@@ -104,6 +108,7 @@ class OTU(SchemaMixin, Base):
     family_id = ontology_fkey(OTUFamily)
     genus_id = ontology_fkey(OTUGenus)
     species_id = ontology_fkey(OTUSpecies)
+    amplicon_id = ontology_fkey(OTUAmplicon, index=True)
 
     kingdom = relationship(OTUKingdom)
     phylum = relationship(OTUPhylum)
@@ -112,10 +117,12 @@ class OTU(SchemaMixin, Base):
     family = relationship(OTUFamily)
     genus = relationship(OTUGenus)
     species = relationship(OTUSpecies)
+    amplicon = relationship(OTUAmplicon)
 
     def __repr__(self):
-        return "<OTU(%d: %s,%s,%s,%s,%s,%s,%s)>" % (
+        return "<OTU(%d: %s,%s,%s,%s,%s,%s,%s,%s)>" % (
             self.id,
+            self.amplicon_id,
             self.kingdom_id,
             self.phylum_id,
             self.class_id,
