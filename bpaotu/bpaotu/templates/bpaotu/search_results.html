@@ -74,6 +74,31 @@
         <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading">
+                    Filter by Amplicon
+                </div>
+                <div id="amplicon_filter_panel" class="panel-body">
+                    <table id="amplicon_filter_table" class="table table-bordered table-striped table-condensed">
+                        <tbody>
+                            <tr>
+                                <td width="10%">Amplicon</td>
+                                <td>
+                                    <select class="form-control" id="amplicon"></select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="panel-footer">
+                    <div class="row">
+                        <div class="col-md-5"></div>
+                        <div class="col-md-2"><input class="btn btn-warning" type="button" id="clear_taxonomic_filters" value="Clear" /></div>
+                        <div class="col-md-5"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading">
                     Contextual Filters
                 </div>
                 <div id="contextual_filters" class="panel-body">

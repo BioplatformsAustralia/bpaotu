@@ -17,6 +17,7 @@ from .otu import (
     BPAProject,
     OTUKingdom,
     SampleContext,
+    OTUAmplicon,
     OTU)
 from .query import (
     TaxonomyOptions,
@@ -95,6 +96,18 @@ def clean_taxonomy_filter(state_vector):
     return list(map(
         int_if_not_already_none,
         state_vector))
+
+
+@require_http_methods(["GET"])
+def amplicon_options(request):
+    """
+    private API: return the possible amplicons
+    """
+    with OntologyInfo() as options:
+        vals = options.get_values(OTUAmplicon)
+    return JsonResponse({
+        'possibilities': vals
+    })
 
 
 @require_http_methods(["GET"])

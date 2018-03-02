@@ -15,7 +15,6 @@ $(document).ready(function() {
     // contextual metadata fields and their types
     var contextual_config;
     var next_contextual_filter_id = 1;
-    var implicit_project_id = window.otu_search_config['contextual_filter_project_id'];
     var datatable;
 
     var set_options = function(target, options) {
@@ -28,6 +27,16 @@ $(document).ready(function() {
     var taxonomy_selector = function(s) {
         return '#taxonomy_' + s;
     };
+
+    var amplicon_set_possibilities = function(options) {
+        options.unshift([null, '- All -']);
+        set_options($('#amplicon'),  _.map(options, function(val) {
+            return {
+                'value': val[0],
+                'text': val[1]
+            }
+        }));
+    }
 
     var taxonomy_set_possibilities = function(result) {
         // first, we clear any drop-downs invalidated by this
@@ -86,6 +95,20 @@ $(document).ready(function() {
         taxonomy_refresh();
     };
 
+    var amplicon_refresh = function() {
+        $.ajax({
+            method: 'GET',
+            dataType: 'json',
+            url: window.otu_search_config['amplicon_endpoint'],
+        }).done(function(result) {
+            amplicon_set_possibilities(result['possibilities']);
+        });
+    };
+
+    var setup_amplicon = function() {
+        amplicon_refresh();
+    };
+
     var update_contextual_controls = function() {
         var filters = $("#contextual_filters_target > div");
         var target = $("#no_contextual_filters");
@@ -126,10 +149,6 @@ $(document).ready(function() {
             // if we have a project ID set, we filter the available options to those for that project ID
             // and those which are cross-project
             var applicable_definitions = _.filter(contextual_config['definitions'], function (val) {
-                // exclude project selector if we're pinned to an implicit project
-                if (implicit_project_id && (val.name == 'project_id')) {
-                    return false;
-                }
                 // we don't have a project ID selected
                 if (current_project_id === null) {
                     return true;
@@ -216,7 +235,10 @@ $(document).ready(function() {
                 ].join("\n"));
             } else if (defn_type == 'ontology') {
                 widget = $('<select class="form-control cval_select"></select>');
-                set_options(widget, _.map(defn['values'], function(val) {
+                // clone
+                var options = defn['values'].slice(0);
+                options.unshift([null, '- All -']);
+                set_options(widget, _.map(options, function(val) {
                     return {
                         'value': val[0],
                         'text': val[1]
@@ -257,6 +279,12 @@ $(document).ready(function() {
             url: window.otu_search_config['contextual_endpoint'],
         }).done(function(result) {
             contextual_config = result;
+            // initial contextual filter from URL parameter, if relevant
+            var filter_id = add_contextual_filter();
+            var entry = $('#' + filter_id + " .contextual-entry");
+            var select_box = $('#' + filter_id + " select");
+            select_box.val('project_id').change();
+            
         });
         update_contextual_controls();
     };
@@ -266,7 +294,12 @@ $(document).ready(function() {
             var marshal_input = function(selector, obj_name) {
                 var matches = $(selector, target);
                 if (matches.length == 1) {
-                    obj[obj_name] = matches.val();
+                    var val = matches.val();
+                    if (!val) {
+                        obj['invalid'] = true;
+                    } else {
+                        obj[obj_name] = val;
+                    }
                 }
             }
             var obj = {};
@@ -277,17 +310,13 @@ $(document).ready(function() {
             marshal_input('.cval_select', 'is');
             return obj;
         });
-        if (implicit_project_id) {
-            filter_state.push({
-                'field': 'project_id',
-                'is': implicit_project_id
-            });
-        }
+        filter_state = _.filter(filter_state, function(o) {
+            return !o.invalid;
+        });
         return {
             'filters': filter_state,
             'mode': $('#contextual_filters_mode').val()
         };
-        return state;
     };
 
     var marshal_taxonomy_filters = function() {
@@ -391,6 +420,7 @@ $(document).ready(function() {
     };
 
     setup_csrf();
+    setup_amplicon();
     setup_taxonomic();
     setup_contextual();
     setup_search();
