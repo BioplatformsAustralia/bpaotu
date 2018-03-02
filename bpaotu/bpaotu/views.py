@@ -82,15 +82,21 @@ class OTUSearch(TemplateView):
         return context
 
 
+def int_if_not_already_none(v):
+    if v is None or v == '':
+        return None
+    return int(v)
+
+
+def clean_amplicon_filter(v):
+    return int_if_not_already_none(str(v))
+
+
 def clean_taxonomy_filter(state_vector):
     """
     take a taxonomy filter (a list of phylum, kingdom, ...) and clean it
     so that it is a simple list of ints or None of the correct length.
     """
-    def int_if_not_already_none(v):
-        if v is None or v == '':
-            return None
-        return int(v)
 
     assert(len(state_vector) == len(TaxonomyOptions.hierarchy))
     return list(map(
@@ -201,6 +207,7 @@ def param_to_filters(query_str):
 
     otu_query = json.loads(query_str)
     taxonomy_filter = clean_taxonomy_filter(otu_query['taxonomy_filters'])
+    amplicon_filter = clean_amplicon_filter(otu_query['amplicon_filter'])
 
     context_spec = otu_query['contextual_filters']
     contextual_filter = ContextualFilter(context_spec['mode'])
@@ -235,7 +242,7 @@ def param_to_filters(query_str):
             errors.append("Invalid value provided for contextual field `%s'" % field_name)
             logger.critical("Exception parsing field: `%s':\n%s" % (field_name, traceback.format_exc()))
 
-    return contextual_filter, taxonomy_filter, errors
+    return amplicon_filter, contextual_filter, taxonomy_filter, errors
 
 
 # technically we should be using GET, but the specification
@@ -261,8 +268,8 @@ def otu_search(request):
 
     project_lookup = make_project_lookup()
 
-    contextual_filter, taxonomy_filter, errors = param_to_filters(request.POST['otu_query'])
-    with SampleQuery(contextual_filter, taxonomy_filter) as query:
+    amplicon_filter, contextual_filter, taxonomy_filter, errors = param_to_filters(request.POST['otu_query'])
+    with SampleQuery(amplicon_filter, contextual_filter, taxonomy_filter) as query:
         results = query.matching_sample_ids_and_project()
     result_count = len(results)
     results = results[start:start + length]
@@ -352,8 +359,8 @@ def otu_export(request):
         return obj.value
 
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
-    contextual_filter, taxonomy_filter, errors = param_to_filters(request.GET['q'])
-    with SampleQuery(contextual_filter, taxonomy_filter) as query:
+    amplicon_filter, contextual_filter, taxonomy_filter, errors = param_to_filters(request.GET['q'])
+    with SampleQuery(amplicon_filter, contextual_filter, taxonomy_filter) as query:
         def sample_otu_csv_rows(kingdom_id):
             fd = StringIO()
             w = csv.writer(fd)
@@ -402,11 +409,7 @@ def otu_export(request):
 
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
-
-    il = ImportOntologyLog()
-
     context = {
         'items': ImportOntologyLog.objects.all()
     }
-
     return HttpResponse(template.render(context, request))

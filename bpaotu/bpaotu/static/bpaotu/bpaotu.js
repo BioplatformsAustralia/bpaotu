@@ -289,6 +289,10 @@ $(document).ready(function() {
         update_contextual_controls();
     };
 
+    var marshal_amplicon_filter = function() {
+        return $("#amplicon").val();
+    };
+
     var marshal_contextual_filters = function() {
         var filter_state = _.map($("#contextual_filters_target > div"), function(target) {
             var marshal_input = function(selector, obj_name) {
@@ -348,6 +352,7 @@ $(document).ready(function() {
         return {
             'taxonomy_filters': marshal_taxonomy_filters(),
             'contextual_filters': marshal_contextual_filters(),
+            'amplicon_filter': marshal_amplicon_filter(),
         };
     }
 

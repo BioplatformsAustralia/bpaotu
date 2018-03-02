@@ -133,8 +133,12 @@ class SampleQuery:
     contextual filters
     """
 
-    def __init__(self, contextual_filter, taxonomy_filter):
+    def __init__(self, amplicon_filter, contextual_filter, taxonomy_filter):
         self._session = Session()
+        # amplicon filter is a master filter over the taxonomy; it's not
+        # a strict part of the hierarchy, but affects taxonomy options
+        # available
+        self._amplicon_filter = amplicon_filter
         self._taxonomy_filter = taxonomy_filter
         self._contextual_filter = contextual_filter
 
@@ -146,7 +150,10 @@ class SampleQuery:
 
     def _q_all_cached(self, topic, q):
         cache = caches['search_results']
-        hash_str = 'SampleQuery:cached:%s:' % (topic) + repr(self._taxonomy_filter) + ':' + repr(self._contextual_filter)
+        hash_str = 'SampleQuery:cached:%s:' % (topic) \
+            + repr(self._amplicon_filter) + ':' \
+            + repr(self._taxonomy_filter) + ':' \
+            + repr(self._contextual_filter)
         key = sha256(hash_str.encode('utf8')).hexdigest()
         result = cache.get(key)
         if not result:
@@ -182,6 +189,8 @@ class SampleQuery:
         return q
 
     def _apply_taxonomy_filters(self, q):
+        if self._amplicon_filter:
+            q = q.filter(OTU.amplicon_id == self._amplicon_filter)
         for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter):
             if value is None:
                 break
@@ -194,7 +203,7 @@ class SampleQuery:
         matching the taxonomy filter
         """
         # shortcut: if we don't have any filters, don't produce a subquery
-        if self._taxonomy_filter[0] is None:
+        if not self._amplicon_filter and self._taxonomy_filter[0] is None:
             return None
         q = self._session.query(SampleOTU.sample_id).distinct().join(OTU)
         return self._apply_taxonomy_filters(q)
