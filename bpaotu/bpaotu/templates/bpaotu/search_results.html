@@ -1,4 +1,10 @@
 {% extends 'bpaotu/base.html' %}
+{% load staticfiles %}
+{% load static from staticfiles %}
+
+{% block extra_head %}
+    <script src="{% static 'bpaotu/bpaotu.js' %}"></script>
+{% endblock extra_head %}
 
 {% block content %}
 <div class="container-fluid">

@@ -127,7 +127,6 @@ def taxonomy_options(request):
     with TaxonomyOptions() as options:
         amplicon = clean_amplicon_filter(request.GET['amplicon'])
         selected = clean_taxonomy_filter(json.loads(request.GET['selected']))
-        logger.critical([amplicon, selected])
         possibilities = options.possibilities(amplicon, selected)
     return JsonResponse({
         'possibilities': possibilities
@@ -421,6 +420,6 @@ def otu_log(request):
         missing_sample_ids += obj.samples_without_metadata
     context = {
         'ontology_errors': ImportOntologyLog.objects.all(),
-        'missing_samples': ImportSamplesMissingMetadataLog.objects.all()
+        'missing_samples': ', '.join(sorted(missing_sample_ids)),
     }
     return HttpResponse(template.render(context, request))
