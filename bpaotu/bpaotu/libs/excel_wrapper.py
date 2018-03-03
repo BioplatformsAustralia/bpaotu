@@ -12,9 +12,20 @@ as mangled by the provided method.
 '''
 
 import datetime
-from collections import namedtuple
+from collections import namedtuple, Counter
 
+import os
 import xlrd
+
+from ..util import strip_to_ascii
+
+
+FieldDefinition = namedtuple('FieldSpec', ['attribute', 'column_name', 'coerce', 'optional'])
+field_definition_default = FieldDefinition('<replace>', '<replace>', None, False)
+
+
+def make_field_definition(attribute, column_name, **kwargs):
+    return field_definition_default._replace(attribute=attribute, column_name=column_name, **kwargs)
 
 
 class ExcelWrapper(object):
@@ -23,7 +34,7 @@ class ExcelWrapper(object):
     fieldspec specifies the columns  to be read in, and the name
     of the attribute to map them to on the new type
 
-    field_spec: list of (new_name, column_name, callable) tuples
+    field_spec: list of FieldSpec named tuples
     file_name: workbook name
     sheet_name: sheet in workbook
     header_length: first number of lines to ignore
@@ -33,21 +44,22 @@ class ExcelWrapper(object):
     def __init__(self,
                  field_spec,
                  file_name,
-                 sheet_name,
-                 header_length,
+                 sheet_name=None,
+                 header_length=0,
                  column_name_row_index=0,
-                 ignore_date=False,
-                 formatting_info=False,
+                 suggest_template=False,
                  additional_context=None):
 
-        self.ignore_date = ignore_date  # ignore xlrd's attempt at date conversion
+        self._log = []
         self.file_name = file_name
         self.header_length = header_length
         self.column_name_row_index = column_name_row_index
-        self.field_spec = ExcelWrapper._pad_field_spec(field_spec)
+        self.field_spec = field_spec
+        assert(type(self.field_spec[0]) is FieldDefinition)
         self.additional_context = additional_context
+        self.suggest_template = suggest_template
 
-        self.workbook = xlrd.open_workbook(file_name, formatting_info=False)  # not implemented
+        self.workbook = xlrd.open_workbook(file_name)
         if sheet_name is None:
             self.sheet = self.workbook.sheet_by_index(0)
         else:
@@ -58,32 +70,28 @@ class ExcelWrapper(object):
         self.header, self.name_to_column_map = self.set_name_to_column_map()
         self.name_to_func_map = self.set_name_to_func_map()
 
-    @classmethod
-    def _pad_field_spec(cls, spec):
-        # attribute, column_name, func, is_optional
-        new_spec = []
-        for tpl in spec:
-            if len(tpl) == 2:
-                new_spec.append(tpl + (None, False))
-            elif len(tpl) == 3:
-                new_spec.append(tpl + (False,))
-            else:
-                new_spec.append(tpl)
-        return new_spec
+    def _error(self, s):
+        self._log.append(s)
+
+    def get_errors(self):
+        return self._log.copy()
 
     def _set_field_names(self):
-        ''' sets field name list '''
-
-        names = []
-        for attribute, _, _, _ in self.field_spec:
-            names.append(attribute)
+        names = [spec.attribute for spec in self.field_spec]
+        if len(set(names)) != len(self.field_spec):
+            # this is a problem in the bpa-ingest code, not in the passed-in spreadsheet,
+            # so we can fail hard here
+            raise Exception("duplicate `attribute` in field definition: %s" % [t for (t, c) in Counter(names).items() if c > 1])
         return names
 
     def set_name_to_column_map(self):
         ''' maps the named field to the actual column in the spreadsheet '''
 
         def coerce_header(s):
-            return str(s)
+            if type(s) is not str:
+                self._error("header is not a string: %s `%s'" % (type(s), repr(s)))
+                return str(s)
+            return strip_to_ascii(s)
 
         header = [coerce_header(t).strip().lower() for t in self.sheet.row_values(self.column_name_row_index)]
 
@@ -106,39 +114,41 @@ class ExcelWrapper(object):
 
         cmap = {}
         missing_columns = False
-        for attribute, column_name, _, is_optional in self.field_spec:
+        for spec in self.field_spec:
             col_index = -1
-            if type(column_name) == tuple:
-                for c, _name in enumerate(column_name):
+            col_descr = spec.column_name
+            if hasattr(spec.column_name, 'match'):
+                col_descr = spec.column_name.pattern
+            if type(spec.column_name) == tuple:
+                for c, _name in enumerate(spec.column_name):
                     col_index = find_column(_name)
                     if col_index != -1:
                         break
             else:
-                col_index = find_column(column_name)
+                col_index = find_column(spec.column_name)
 
             if col_index != -1:
-                cmap[attribute] = col_index
+                cmap[spec.attribute] = col_index
             else:
-                self.missing_headers.append(column_name)
-                if not is_optional:
+                self.missing_headers.append(spec.column_name)
+                if not spec.optional:
+                    self._error("Column `{}' not found in `{}' `{}'".format(col_descr, os.path.basename(self.file_name), self.sheet.name))
                     missing_columns = True
-                cmap[attribute] = None
+                cmap[spec.attribute] = None
 
-        if missing_columns:
+        if missing_columns and self.suggest_template:
             template = ['[']
             for header in (str(t) for t in header):
-                template.append("    ('%s', '%s')," % (header.lower().replace(' ', '_'), header))
+                template.append("    fld('%s', '%s')," % (header.lower().replace(' ', '_'), header))
             template.append(']')
+            self._error('Missing columns -- template for columns in spreadsheet is:\n%s' % ('\n'.join(template)))
 
         return header, cmap
 
     def set_name_to_func_map(self):
         ''' Map the spec fields to their corresponding functions '''
 
-        function_map = {}
-        for attribute, _, func, _ in self.field_spec:
-            function_map[attribute] = func
-        return function_map
+        return dict((t.attribute, t.coerce) for t in self.field_spec)
 
     def get_date_mode(self):
         assert (self.workbook is not None)
@@ -189,7 +199,7 @@ class ExcelWrapper(object):
             else:
                 val = datetime.datetime(*date_time_tup)
         except ValueError:
-            pass
+            self._error('column: `%s\' -- value `%s\' cannot be converted to a date' % (i, val))
         return val
 
     def get_all(self, typname='DataRow'):
@@ -215,7 +225,7 @@ class ExcelWrapper(object):
                 ctype = cell.ctype
                 val = cell.value
                 # convert dates to python dates
-                if not self.ignore_date and ctype == xlrd.XL_CELL_DATE:
+                if ctype == xlrd.XL_CELL_DATE:
                     val = self.get_date_time(i, cell)
                 if ctype == xlrd.XL_CELL_TEXT:
                     val = val.strip()
