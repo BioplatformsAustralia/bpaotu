@@ -44,17 +44,17 @@ class TaxonomyOptions:
     def __exit__(self, exec_type, exc_value, traceback):
         self._session.close()
 
-    def possibilities(self, state):
+    def possibilities(self, amplicon, state):
         cache = caches['search_results']
-        hash_str = 'TaxonomyOptions:cached:' + repr(state)
+        hash_str = 'TaxonomyOptions:cached:' + repr(amplicon) + ':' + repr(state)
         key = sha256(hash_str.encode('utf8')).hexdigest()
         result = cache.get(key)
         if not result:
-            result = self._possibilities(state)
+            result = self._possibilities(amplicon, state)
             cache.set(key, result)
         return result
 
-    def _possibilities(self, state):
+    def _possibilities(self, amplicon, state):
         """
         state should be a list of integer IDs for the relevent model, in the order of
         TaxonomyOptions.hierarchy. a value of None indicates there is no selection.
@@ -67,6 +67,8 @@ class TaxonomyOptions:
         def determine_target():
             # this query is built up over time, and validates the hierarchy provided to us
             q = self._session.query(OTU.kingdom_id).group_by(OTU.kingdom_id)
+            if amplicon:
+                q = q.filter(OTU.amplicon_id == amplicon)
             for idx, ((otu_attr, ontology_class), value) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
                 valid = True
                 if value is None:
@@ -87,13 +89,15 @@ class TaxonomyOptions:
         if target_attr is None:
             return {}
         # performance: hard-code kingdom (it's the slowest query, and the most common)
-        elif target_class is OTUKingdom:
+        elif not amplicon and target_class is OTUKingdom:
             possibilities = self._session.query(target_class.id, target_class.value).all()
         else:
             # clear invalidated part of the state
             state = state[:target_idx] + [None] * (len(TaxonomyOptions.hierarchy) - target_idx)
             # build up a query of the OTUs for our target attribute
             q = self._session.query(getattr(OTU, target_attr), target_class.value).group_by(getattr(OTU, target_attr), target_class.value).order_by(target_class.value)
+            if amplicon:
+                q = q.filter(OTU.amplicon_id == amplicon)
             for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, state):
                 if value is None:
                     break

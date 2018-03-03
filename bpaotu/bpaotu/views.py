@@ -85,11 +85,12 @@ class OTUSearch(TemplateView):
 def int_if_not_already_none(v):
     if v is None or v == '':
         return None
+    v = str(v)  # let's not let anything odd through
     return int(v)
 
 
 def clean_amplicon_filter(v):
-    return int_if_not_already_none(str(v))
+    return int_if_not_already_none(v)
 
 
 def clean_taxonomy_filter(state_vector):
@@ -122,8 +123,10 @@ def taxonomy_options(request):
     private API: given taxonomy constraints, return the possible options
     """
     with TaxonomyOptions() as options:
+        amplicon = clean_amplicon_filter(request.GET['amplicon'])
         selected = clean_taxonomy_filter(json.loads(request.GET['selected']))
-        possibilities = options.possibilities(selected)
+        logger.critical([amplicon, selected])
+        possibilities = options.possibilities(amplicon, selected)
     return JsonResponse({
         'possibilities': possibilities
     })
@@ -368,6 +371,7 @@ def otu_export(request):
                 'BPA ID',
                 'OTU',
                 'OTU Count',
+                'Amplicon',
                 'Kingdom',
                 'Phylum',
                 'Class',
@@ -385,6 +389,7 @@ def otu_export(request):
                     format_bpa_id(sample_otu.sample_id),
                     otu.code,
                     sample_otu.count,
+                    val_or_empty(otu.amplicon),
                     val_or_empty(otu.kingdom),
                     val_or_empty(otu.phylum),
                     val_or_empty(otu.klass),

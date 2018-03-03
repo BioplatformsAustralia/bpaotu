@@ -38,6 +38,13 @@ $(document).ready(function() {
         }));
     };
 
+    var taxonomy_clear_all = function() {
+        _.each(taxonomy_hierarchy, function(s) {
+            var target = $(taxonomy_selector(s));
+            set_options(target, [blank_option]);
+        });
+    };
+
     var taxonomy_set_possibilities = function(result) {
         // first, we clear any drop-downs invalidated by this
         // new information
@@ -87,6 +94,7 @@ $(document).ready(function() {
             });
         });
         $("#clear_taxonomic_filters").click(function () {
+            $("#amplicon").val(null);
             $.each(taxonomy_hierarchy, function(idx, s) {
                 $(taxonomy_selector(s)).val(null);
             });
@@ -97,6 +105,10 @@ $(document).ready(function() {
     };
 
     var amplicon_refresh = function() {
+        $("#amplicon").on('change', function() {
+            taxonomy_clear_all();
+            taxonomy_refresh();
+        });
         $.ajax({
             method: 'GET',
             dataType: 'json',
