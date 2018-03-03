@@ -22,7 +22,7 @@ $(document).ready(function() {
         $.each(options, function(index, option) {
             $('<option/>').val(option.value).text(option.text).appendTo(target);
         });
-    }
+    };
 
     var taxonomy_selector = function(s) {
         return '#taxonomy_' + s;
@@ -36,7 +36,7 @@ $(document).ready(function() {
                 'text': val[1]
             }
         }));
-    }
+    };
 
     var taxonomy_set_possibilities = function(result) {
         // first, we clear any drop-downs invalidated by this
@@ -57,7 +57,7 @@ $(document).ready(function() {
                 'text': val[1]
             }
         })));
-    }
+    };
 
     var taxonomy_get_state = function() {
         return _.map(taxonomy_hierarchy, function(s) {
@@ -71,6 +71,7 @@ $(document).ready(function() {
             dataType: 'json',
             url: window.otu_search_config['taxonomy_endpoint'],
             data: {
+                'amplicon': marshal_amplicon_filter(),
                 'selected': JSON.stringify(taxonomy_get_state())
             }
         }).done(function(result) {
