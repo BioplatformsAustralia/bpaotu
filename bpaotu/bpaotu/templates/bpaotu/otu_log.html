@@ -11,7 +11,7 @@
     td, th {
         vertical-align: top;
     }
-
+    
     table, th, td {
         padding: 12px;
         border: 1px solid;
@@ -22,35 +22,47 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-12">
-
-
-        <h1>BPA OTU Database - Ingest log</h1>
-
-        <h2>Ontology errors</h2>
-
-        <table>
-            <thead>
-                <td><b>Ontology File</b></td>
-                <td><b>Ontology Name</b></td>
-                <td><b>Mismatches</b></td>
-            </thead>
-
-            {% for item in items %}
+            <h1>BPA OTU Database - Ingest log</h1>
+            
+            <h2>Ontology errors</h2>
+            
+            <table>
+                <thead>
+                    <th>Ontology File</th>
+                    <th>Ontology Name</th>
+                    <th>Mismatches</th>
+                </thead>
+                
+                {% for item in ontology_errors %}
                 {% if item.import_result %}
-                    <tr>
-                        <td>{{ item.project_name }}</td>
-                        <td>{{ item.ontology_name }}</td>
-                        <td>
-                            <ul>
-                                {% for result in item.import_result %}
-                                    <li>{{ result }}</li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                    </tr>
+                <tr>
+                    <td>{{ item.project_name }}</td>
+                    <td>{{ item.ontology_name }}</td>
+                    <td>
+                        <ul>
+                            {% for result in item.import_result %}
+                            <li>{{ result }}</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                </tr>
                 {% endif %}
-            {% endfor %}
-        </table>
+
+                {% endfor %}
+            </table>
+
+            <h2>Samples excluded due to missing metadata</h2>
+            
+            <table>
+                <thead>
+                    <th>Sample ID</th>
+                </thead>
+                
+                {% for sample_id in missing_samples %}
+                <tr><td>{{ sample_id }}</td></tr>
+                {% endfor %}
+            </table>
+
         </div>
     </div>
 </div>

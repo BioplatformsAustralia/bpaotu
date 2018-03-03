@@ -5,7 +5,6 @@ from .contextual_controlled_vocabularies import (
     AustralianSoilClassificationVocabulary,
     BroadVegetationTypeVocabulary,
     CropRotationClassification,
-    DrainageClassificationVocabulary,
     EcologicalZoneVocabulary,
     FAOSoilClassificationVocabulary,
     HorizonClassificationVocabulary,
@@ -16,7 +15,6 @@ from .contextual_controlled_vocabularies import (
 
 from .models import ImportOntologyLog
 
-from pprint import pprint
 import logging
 logger = logging.getLogger("rainbow")
 
@@ -584,6 +582,7 @@ def soil_contextual_rows(metadata_path):
                 obj[cleanup_name] = cleanup_fn(obj[cleanup_name])
             except NotInVocabulary as e:
                 onotology_error_values[cleanup_name].add(e.args[0])
+                del obj[cleanup_name]
         objs.append(obj)
 
     ImportOntologyLog.objects.all().delete()
@@ -606,4 +605,3 @@ def marine_contextual_rows(metadata_path):
             additional_context={'sample_type': sheet_name, 'project': 'Marine Microbes'})
         objs += [t._asdict() for t in wrapper.get_all()]
     return [t for t in objs if context_valid(t)]
-

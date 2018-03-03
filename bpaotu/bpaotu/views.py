@@ -31,7 +31,9 @@ from .query import (
     ContextualFilterTermString,
     get_sample_ids)
 from django.template import loader
-from .models import ImportOntologyLog
+from .models import (
+    ImportOntologyLog,
+    ImportSamplesMissingMetadataLog)
 
 
 logger = logging.getLogger("rainbow")
@@ -414,7 +416,11 @@ def otu_export(request):
 
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
+    missing_sample_ids = []
+    for obj in ImportSamplesMissingMetadataLog.objects.all():
+        missing_sample_ids += obj.samples_without_metadata
     context = {
-        'items': ImportOntologyLog.objects.all()
+        'ontology_errors': ImportOntologyLog.objects.all(),
+        'missing_samples': ImportSamplesMissingMetadataLog.objects.all()
     }
     return HttpResponse(template.render(context, request))

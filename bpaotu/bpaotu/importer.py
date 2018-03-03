@@ -336,6 +336,11 @@ class DataImporter:
             logger.warning("first pass, reading from: %s" % (fname))
             missing_bpa_ids |= set(_missing_bpa_ids(fname))
 
+        ImportSamplesMissingMetadataLog.objects.all().delete()
+        if missing_bpa_ids:
+            il = ImportSamplesMissingMetadataLog(samples_without_metadata=list(sorted(missing_bpa_ids)))
+            il.save()
+
         for sampleotu_fname in glob(self._import_base + '/*/*.txt'):
             try:
                 logger.warning("second pass, reading from: %s" % (sampleotu_fname))
