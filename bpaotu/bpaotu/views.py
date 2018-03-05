@@ -17,8 +17,7 @@ from .otu import (
     Environment,
     OTUKingdom,
     SampleContext,
-    OTUAmplicon,
-    OTU)
+    OTUAmplicon)
 from .query import (
     OTUQueryParams,
     TaxonomyOptions,
@@ -378,8 +377,7 @@ def otu_export(request):
             yield fd.getvalue().encode('utf8')
             fd.seek(0)
             fd.truncate(0)
-            q = query.matching_sample_otus()
-            q = q.filter(OTU.kingdom_id == kingdom_id)
+            q = query.matching_sample_otus(kingdom_id)
             for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
                 w.writerow([
                     format_bpa_id(sample_otu.sample_id),
@@ -400,6 +398,8 @@ def otu_export(request):
         zf.writestr('contextual.csv', contextual_csv(query.matching_samples()).encode('utf8'))
         with OntologyInfo() as info:
             for kingdom_id, kingdom_label in info.get_values(OTUKingdom):
+                if not query.has_matching_sample_otus(kingdom_id):
+                    continue
                 zf.write_iter('%s.csv' % (kingdom_label), sample_otu_csv_rows(kingdom_id))
 
     response = StreamingHttpResponse(zf, content_type='application/zip')

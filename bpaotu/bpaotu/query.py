@@ -158,7 +158,7 @@ class SampleQuery:
     def __exit__(self, exec_type, exc_value, traceback):
         self._session.close()
 
-    def _q_all_cached(self, topic, q):
+    def _q_all_cached(self, topic, q, mutate_result=None):
         cache = caches['search_results']
         hash_str = 'SampleQuery:cached:%s:' % (topic) \
             + repr(self._amplicon_filter) + ':' \
@@ -168,6 +168,8 @@ class SampleQuery:
         result = cache.get(key)
         if not result:
             result = q.all()
+            if mutate_result:
+                result = mutate_result(result)
             cache.set(key, result)
         return result
 
@@ -183,7 +185,14 @@ class SampleQuery:
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
         return self._q_all_cached('matching_samples', q)
 
-    def matching_sample_otus(self):
+    def has_matching_sample_otus(self, kingdom_id):
+        def to_boolean(result):
+            return result[0][0]
+
+        q = self._session.query(self.matching_sample_otus(kingdom_id).exists())
+        return self._q_all_cached('has_matching_sample_otus:%s' % (kingdom_id), q, to_boolean)
+
+    def matching_sample_otus(self, kingdom_id):
         # we do a cross-join, but convert to an inner-join with
         # filters. as SampleContext is in the main query, the
         # machinery for filtering above will just work
@@ -192,6 +201,8 @@ class SampleQuery:
             .filter(SampleContext.id == SampleOTU.sample_id)
         q = self._apply_taxonomy_filters(q)
         q = self._contextual_filter.apply(q)
+        if kingdom_id is not None:
+            q = q.filter(OTU.kingdom_id == kingdom_id)
         # we don't cache this query: the result size is enormous,
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
