@@ -215,7 +215,7 @@ class DataImporter:
             with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
                 fname = temp_fd.name
                 os.chmod(fname, 0o644)
-                logger.warning("writing out OTU abundance data to CSV tempfile: %s" % fname)
+                logger.warning("writing out taxonomy data to CSV tempfile: %s" % fname)
                 w = csv.writer(temp_fd)
                 w.writerow(['id', 'code', 'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id'])
                 for _id, row in enumerate(_taxon_rows_iter(), 1):
@@ -227,7 +227,7 @@ class DataImporter:
                         else:
                             out_row.append(mappings[field][row[field]])
                     w.writerow(out_row)
-            logger.warning("loading OTU abundance data from temporary CSV file")
+            logger.warning("loading taxonomy data from temporary CSV file")
             self._engine.execute(
                 text('''COPY otu.otu from :csv CSV header''').execution_options(autocommit=True),
                 csv=fname)
@@ -236,7 +236,7 @@ class DataImporter:
         return otu_lookup
 
     def load_soil_contextual_metadata(self):
-        logger.warning("loading soil contextual metadata")
+        logger.warning("loading Soil contextual metadata")
 
         def _make_context():
             for row in rows:
@@ -287,9 +287,7 @@ class DataImporter:
         self._session.bulk_save_objects(_make_context())
         self._session.commit()
 
-    def load_otu(self, otu_lookup):
-        logger.warning('building OTU lookup table')
-
+    def load_otu_abundance(self, otu_lookup):
         def otu_rows(fd):
             reader = csv.reader(fd, dialect='excel-tab')
             header = next(reader)
@@ -331,6 +329,7 @@ class DataImporter:
                     for bpa_id, count in to_make.items():
                         yield [bpa_id, otu_id, count]
 
+        logger.warning('Loading OTU abundance tables')
         missing_bpa_ids = set()
         for fname in glob(self._import_base + '/*/*.txt'):
             logger.warning("first pass, reading from: %s" % (fname))
@@ -347,11 +346,11 @@ class DataImporter:
                 with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
                     fname = temp_fd.name
                     os.chmod(fname, 0o644)
-                    logger.warning("writing out SampleOTU data to CSV tempfile: %s" % fname)
+                    logger.warning("writing out OTU abundance data to CSV tempfile: %s" % fname)
                     w = csv.writer(temp_fd)
                     w.writerow(['sample_id', 'otu_id', 'count'])
                     w.writerows(_make_sample_otus(sampleotu_fname, missing_bpa_ids))
-                logger.warning("loading taxonomies from temporary CSV file")
+                logger.warning("loading OTU abundance data from temporary CSV file")
                 try:
                     self._engine.execute(
                         text('''COPY otu.sample_otu from :csv CSV header''').execution_options(autocommit=True),
