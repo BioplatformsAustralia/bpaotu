@@ -349,7 +349,7 @@ class BroadVegetationTypeEnforement(BaseOntologyEnforcement):
 
 
 class FAOSoilClassificationEnforcement(BaseOntologyEnforcement):
-    vocabulary = BroadVegetationTypeVocabulary
+    vocabulary = FAOSoilClassificationVocabulary
 
     def __init__(self):
         super().__init__()
@@ -360,12 +360,16 @@ class FAOSoilClassificationEnforcement(BaseOntologyEnforcement):
 class SoilColourEnforcement(BaseOntologyEnforcement):
     vocabulary = SoilColourVocabulary
 
+    def _build_terms(self):
+        terms = [t[1] for t in self.vocabulary]
+        return dict((BaseOntologyEnforcement._normalise(x), x) for x in terms)
+
 
 class HorizonClassificationEnforcement(BaseOntologyEnforcement):
     vocabulary = HorizonClassificationVocabulary
 
     def get(self, term):
-        # colour codes are single characters. we check each character
+        # codes are single characters. we check each character
         # against the vocabulary; if it's not in there, we chuck it out
         terms = []
         for c in term:
@@ -399,6 +403,10 @@ class TillageClassificationEnforcement(BaseOntologyEnforcement):
 class CropRotationEnforcement(BaseOntologyEnforcement):
     vocabulary = CropRotationClassification
 
+    def _build_terms(self):
+        terms = [t for t in self.vocabulary]
+        return dict((BaseOntologyEnforcement._normalise(x), x) for x in terms)
+
 
 class LandUseEnforcement(BaseOntologyEnforcement):
     def __init__(self):
@@ -426,7 +434,10 @@ class LandUseEnforcement(BaseOntologyEnforcement):
         return tree
 
     def get(self, original):
-        query = tuple([self._normalise(t) for t in original.split('-')])
+        query = tuple([t for t in [self._normalise(t) for t in original.split('-')] if t])
+
+        if len(query) == 0:
+            return ''
 
         # tree contains all fully expanded paths through the classification tree,
         # as tuples, and the values in the tree are the string representation of these
@@ -457,6 +468,7 @@ def soil_contextual_rows(metadata_path):
         'horizon_classification': HorizonClassificationEnforcement(),
         'broad_land_use': LandUseEnforcement(),
         'detailed_land_use': LandUseEnforcement(),
+        'immediate_previous_land_use': LandUseEnforcement(),
         'general_ecological_zone': EcologicalZoneEnforcement(),
         'vegetation_type': BroadVegetationTypeEnforement(),
         'profile_position': ProfilePositionEnforcement(),
