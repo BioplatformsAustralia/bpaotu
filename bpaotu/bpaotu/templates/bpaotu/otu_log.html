@@ -28,7 +28,7 @@
             
             <table>
                 <thead>
-                    <th>Ontology File</th>
+                    <th>Environment</th>
                     <th>Ontology Name</th>
                     <th>Mismatches</th>
                 </thead>
@@ -36,7 +36,7 @@
                 {% for item in ontology_errors %}
                 {% if item.import_result %}
                 <tr>
-                    <td>{{ item.project_name }}</td>
+                    <td>{{ item.environment }}</td>
                     <td>{{ item.ontology_name }}</td>
                     <td>
                         <ul>

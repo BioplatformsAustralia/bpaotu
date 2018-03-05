@@ -104,7 +104,7 @@ $(document).ready(function() {
         taxonomy_refresh();
     };
 
-    var amplicon_refresh = function() {
+    var setup_amplicon = function() {
         $("#amplicon").on('change', function() {
             taxonomy_clear_all();
             taxonomy_refresh();
@@ -118,18 +118,8 @@ $(document).ready(function() {
         });
     };
 
-    var setup_amplicon = function() {
-        amplicon_refresh();
-    };
-
     var update_contextual_controls = function() {
         var filters = $("#contextual_filters_target > div");
-        var target = $("#no_contextual_filters");
-        if (filters.length > 0) {
-            target.hide()
-        } else {
-            target.show()
-        }
         var target = $("#contextual_filters_mode_para");
         if (filters.length > 1) {
             target.show()
@@ -138,20 +128,12 @@ $(document).ready(function() {
         }
     };
 
-    var get_project_id = function() {
-        var contextual_state = marshal_contextual_filters();
-        var filters = contextual_state.filters;
-        var project_id = null;
-        $.each(filters, function(idx, filter) {
-            if (filter.field == 'project_id') {
-                project_id = filter.is;
-            }
-        });
-        return project_id;
+    var get_environment_id = function() {
+        return marshal_environment_filter();
     }
 
     var configure_unselected_contextual_filters = function() {
-        var current_project_id = get_project_id();
+        var current_environment_id = get_environment_id();
         $.each($("#contextual_filters_target > div"), function(idx, target) {
             var select_box = $(".contextual-item", target);
             var select_val = select_box.val();
@@ -159,19 +141,22 @@ $(document).ready(function() {
                 return;
             }
 
-            // if we have a project ID set, we filter the available options to those for that project ID
-            // and those which are cross-project
+            // if we have an environment ID set, we filter the available options to those for that environment ID and those which are cross-environment
             var applicable_definitions = _.filter(contextual_config['definitions'], function (val) {
-                // we don't have a project ID selected
-                if (current_project_id === null) {
+                // we don't ever select environment through the dynamic UI
+                if (val.name == "environment_id") {
+                    return false;
+                }
+                // we don't have a environment ID selected
+                if (current_environment_id === null) {
                     return true;
                 }
-                // it's not a project specific field
-                if (val.project === null) {
+                // it's not a environment specific field
+                if (val.environment === null) {
                     return true;
                 }
-                // it matches current project
-                if (val.project == current_project_id) {
+                // it matches current environment
+                if (val.environment == current_environment_id) {
                     return true;
                 }
                 return false;
@@ -257,11 +242,6 @@ $(document).ready(function() {
                         'text': val[1]
                     }
                 }));
-                if (defn_name == 'project_id') {
-                    widget.on('change', function() {
-                        configure_unselected_contextual_filters();
-                    });
-                }
             }
             target.append(widget);
             target.trigger('otu:filter_changed');
@@ -292,18 +272,34 @@ $(document).ready(function() {
             url: window.otu_search_config['contextual_endpoint'],
         }).done(function(result) {
             contextual_config = result;
-            // initial contextual filter from URL parameter, if relevant
-            var filter_id = add_contextual_filter();
-            var entry = $('#' + filter_id + " .contextual-entry");
-            var select_box = $('#' + filter_id + " select");
-            select_box.val('project_id').change();
-            
+            // set up the environment filter
+            var widget = $("#environment");
+            var defn = _.find(contextual_config['definitions'], {'name': 'environment_id'});
+            var options = defn['values'].slice(0);
+            options.unshift([null, '- All -']);
+            set_options(widget, _.map(options, function(val) {
+                return {
+                    'value': val[0],
+                    'text': val[1]
+                }
+            }));
+            widget.on('change', function() {
+                configure_unselected_contextual_filters();
+            });
         });
         update_contextual_controls();
     };
 
     var marshal_amplicon_filter = function() {
         return $("#amplicon").val();
+    };
+
+    var marshal_environment_filter = function() {
+        var val = $("#environment").val();
+        if (!val) {
+            return null;
+        }
+        return val;
     };
 
     var marshal_contextual_filters = function() {
@@ -332,6 +328,7 @@ $(document).ready(function() {
         });
         return {
             'filters': filter_state,
+            'environment': marshal_environment_filter(),
             'mode': $('#contextual_filters_mode').val()
         };
     };
@@ -404,9 +401,9 @@ $(document).ready(function() {
                   'data': 'bpa_id',
                   'defaultContent': '',
                   'render': function(data, type, row) {
-                      var project = row.project;
+                      var environment = row.environment;
                       var org;
-                      if (project == 'BASE') {
+                      if (environment == 'Soil') {
                           org = 'bpa-base';
                       } else {
                           org = 'bpa-marine-microbes';
@@ -416,7 +413,7 @@ $(document).ready(function() {
                   }
               },
               {
-                  'data': 'project',
+                  'data': 'environment',
                   'defaultContent': ''
               }
             ]

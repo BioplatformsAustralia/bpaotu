@@ -58,7 +58,7 @@ class SampleType(OntologyMixin, Base):
     pass
 
 
-class BPAProject(OntologyMixin, Base):
+class Environment(OntologyMixin, Base):
     pass
 
 
@@ -174,7 +174,7 @@ class SampleColor(OntologyMixin, Base):
 
 class SampleContext(SchemaMixin, Base):
     __tablename__ = 'sample_context'
-    id = Column(Integer, primary_key=True)  # NB: we use the final component of the BPA ID here
+    id = Column(Integer, primary_key=True)  # NB: we use the final component of the ID here
 
     # There are a large number of contextual fields, we are merging together all fields from BASE and MM
     # so that they can be queried universally.
@@ -364,7 +364,7 @@ class SampleContext(SchemaMixin, Base):
     horizon_classification_id = ontology_fkey(SampleHorizonClassification)
     immediate_previous_land_use_id = ontology_fkey(SampleLandUse)
     profile_position_id = ontology_fkey(SampleProfilePosition)
-    project_id = ontology_fkey(BPAProject)
+    environment_id = ontology_fkey(Environment)
     sample_type_id = ontology_fkey(SampleType)
     soil_sample_storage_method_id = ontology_fkey(SampleStorageMethod)
     tillage_id = ontology_fkey(SampleTillage)

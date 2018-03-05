@@ -21,7 +21,7 @@ from itertools import zip_longest
 from .models import ImportSamplesMissingMetadataLog
 from .otu import (
     Base,
-    BPAProject,
+    Environment,
     OTUAmplicon,
     OTUKingdom,
     OTUPhylum,
@@ -69,7 +69,7 @@ def otu_hash(code):
 
 class DataImporter:
     soil_ontologies = OrderedDict([
-        ('project', BPAProject),
+        ('environment', Environment),
         ('sample_type', SampleType),
         ('horizon_classification', SampleHorizonClassification),
         ('soil_sample_storage_method', SampleStorageMethod),
@@ -86,7 +86,7 @@ class DataImporter:
     ])
 
     marine_ontologies = OrderedDict([
-        ('project', BPAProject),
+        ('environment', Environment),
         ('sample_type', SampleType),
     ])
 
@@ -148,9 +148,9 @@ class DataImporter:
         return mappings
 
     @classmethod
-    def classify_fields(cls, project_lookup):
+    def classify_fields(cls, environment_lookup):
         # flip around to name -> id
-        pl = dict((t[1], t[0]) for t in project_lookup.items())
+        pl = dict((t[1], t[0]) for t in environment_lookup.items())
 
         soil_fields = set()
         marine_fields = set()
@@ -168,8 +168,8 @@ class DataImporter:
         soil_only = soil_fields - marine_fields
         marine_only = marine_fields - soil_fields
         r = {}
-        r.update((t, pl['BASE']) for t in soil_only)
-        r.update((t, pl['Marine Microbes']) for t in marine_only)
+        r.update((t, pl['Soil']) for t in soil_only)
+        r.update((t, pl['Marine']) for t in marine_only)
         return r
 
     def load_taxonomies(self):
@@ -236,7 +236,7 @@ class DataImporter:
         return otu_lookup
 
     def load_soil_contextual_metadata(self):
-        logger.warning("loading BASE contextual metadata")
+        logger.warning("loading soil contextual metadata")
 
         def _make_context():
             for row in rows:
@@ -262,7 +262,7 @@ class DataImporter:
         self._session.commit()
 
     def load_marine_contextual_metadata(self):
-        logger.warning("loading Marine Microbes contextual metadata")
+        logger.warning("loading Marine contextual metadata")
 
         def _make_context():
             for row in rows:

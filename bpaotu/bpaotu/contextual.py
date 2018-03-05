@@ -462,7 +462,7 @@ def soil_contextual_rows(metadata_path):
         sheet_name=None,
         header_length=1,
         column_name_row_index=0,
-        additional_context={'project': 'BASE', 'sample_type': 'Soil'})
+        additional_context={'environment': 'Soil', 'sample_type': 'Soil'})
 
     ontology_cleanups = {
         'horizon_classification': HorizonClassificationEnforcement(),
@@ -499,7 +499,7 @@ def soil_contextual_rows(metadata_path):
 
     ImportOntologyLog.objects.all().delete()
     for val in onotology_error_values:
-        il = ImportOntologyLog(project_name="BASE", ontology_name=val, import_result=list(sorted(onotology_error_values[val])))
+        il = ImportOntologyLog(environment="Soil", ontology_name=val, import_result=list(sorted(onotology_error_values[val])))
         il.save()
     return [t for t in objs if context_valid(t)]
 
@@ -514,6 +514,6 @@ def marine_contextual_rows(metadata_path):
             sheet_name=sheet_name,
             header_length=1,
             column_name_row_index=0,
-            additional_context={'sample_type': sheet_name, 'project': 'Marine Microbes'})
+            additional_context={'sample_type': sheet_name, 'environment': 'Marine'})
         objs += [t._asdict() for t in wrapper.get_all()]
     return [t for t in objs if context_valid(t)]

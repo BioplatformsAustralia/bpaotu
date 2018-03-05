@@ -3,7 +3,7 @@
 {% load static from staticfiles %}
 
 {% block extra_head %}
-    <script src="{% static 'bpaotu/bpaotu.js' %}"></script>
+<script src="{% static 'bpaotu/bpaotu.js' %}"></script>
 {% endblock extra_head %}
 
 {% block content %}
@@ -15,7 +15,7 @@
                 <div class="panel-heading">
                     Filter on Taxonomy
                 </div>
-
+                
                 <div id="taxonomic_filter_panel" class="panel-body">
                     <table id="amplicon_filter_table" class="table table-bordered table-condensed">
                         <tbody>
@@ -27,7 +27,7 @@
                             </tr>
                         </tbody>
                     </table>
-
+                    
                     <table id="taxonomic_filter_table" class="table table-bordered table-striped table-condensed">
                         <thead>
                             <th>Level</th>
@@ -88,23 +88,27 @@
                 </div>
             </div>
         </div>
-
+        
         <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     Contextual Filters
                 </div>
                 <div id="contextual_filters" class="panel-body">
-                    <p id="no_contextual_filters">
-                        There are no contextual filters.
-                    </p>
+                    <div class="row" id="environment-row">
+                        <div class="col-md-2"></div>
+                        <div class="col-md-4">Environment</div>
+                        <div class="col-md-6 contextual-entry">
+                            <select class="form-control" id="environment"></select>
+                        </div>
+                    </div>
                     <p id="contextual_filters_mode_para">
                         Samples must match
                         <select id="contextual_filters_mode">
                             <option value="and">all</option>
                             <option value="or">any</option>
                         </select>
-                        of the contextual filters.
+                        of the following contextual filters.
                     </p>
                     <div id="contextual_filters_target">
                     </div>
@@ -120,12 +124,12 @@
             </div>
         </div>
     </div>
-
+    
     <div class="row">
         <div class="col-md-12" id="error-box">
         </div>
     </div>
-
+    
     <div class="row">
         <div class="col-md-5">
         </div>
@@ -137,7 +141,7 @@
         <div class="col-md-5">
         </div>
     </div>
-
+    
     <div class="row">
         <div class="col-md-12">
             <div class="panel panel-default">

@@ -24,6 +24,12 @@ engine = make_engine()
 Session = sessionmaker(bind=engine)
 
 
+class OTUQueryParams:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+
 class TaxonomyOptions:
     hierarchy = [
         ('kingdom_id', OTUKingdom),
@@ -137,14 +143,14 @@ class SampleQuery:
     contextual filters
     """
 
-    def __init__(self, amplicon_filter, contextual_filter, taxonomy_filter):
+    def __init__(self, params):
         self._session = Session()
         # amplicon filter is a master filter over the taxonomy; it's not
         # a strict part of the hierarchy, but affects taxonomy options
         # available
-        self._amplicon_filter = amplicon_filter
-        self._taxonomy_filter = taxonomy_filter
-        self._contextual_filter = contextual_filter
+        self._amplicon_filter = params.amplicon_filter
+        self._taxonomy_filter = params.taxonomy_filter
+        self._contextual_filter = params.contextual_filter
 
     def __enter__(self):
         return self
@@ -165,11 +171,11 @@ class SampleQuery:
             cache.set(key, result)
         return result
 
-    def matching_sample_ids_and_project(self):
-        q = self._session.query(SampleContext.id, SampleContext.project_id)
+    def matching_sample_ids_and_environment(self):
+        q = self._session.query(SampleContext.id, SampleContext.environment_id)
         subq = self._build_taxonomy_subquery()
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
-        return self._q_all_cached('matching_sample_ids_and_project', q)
+        return self._q_all_cached('matching_sample_ids_and_environment', q)
 
     def matching_samples(self):
         q = self._session.query(SampleContext)
@@ -235,13 +241,14 @@ class ContextualFilter:
         'and': sqlalchemy.and_,
     }
 
-    def __init__(self, mode):
+    def __init__(self, mode, environment_filter):
         self.mode = mode
         self.mode_func = ContextualFilter.mode_operators[self.mode]
+        self.environment_filter = environment_filter
         self.terms = []
 
     def __repr__(self):
-        return '<ContextualFilter(%s,[%s]>' % (self.mode, ','.join(repr(t) for t in self.terms))
+        return '<ContextualFilter(%s,env[%s],[%s]>' % (self.mode, repr(self.environment_filter), ','.join(repr(t) for t in self.terms))
 
     def add_term(self, term):
         self.terms.append(term)
@@ -250,6 +257,10 @@ class ContextualFilter:
         """
         return q with contextual filter terms applied to it
         """
+        # if there's an environment filter, it applies prior to the filters
+        # below, so it's outside of the application of mode_func
+        if self.environment_filter:
+            q = q.filter(SampleContext.environment_id == self.environment_filter)
         # chain together the conditions provided by each term,
         # combine into a single expression using our mode,
         # then filter the query
