@@ -442,4 +442,6 @@ $(document).ready(function() {
     setup_datatables();
     setup_export();
     set_errors(null);
+
+    $(document).tooltip();
 });

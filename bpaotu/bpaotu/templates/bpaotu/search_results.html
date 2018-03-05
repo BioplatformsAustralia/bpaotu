@@ -8,7 +8,7 @@
 
 {% block content %}
 <div class="container-fluid">
-    <h4>For instructions on how to use this search tool, please click <a href="/blog/search-instructions">here</a>.</h4>
+    <h4>For instructions on how to use this search tool, please see <a href="/organization/pages/australian-microbiome/search-instructions">the search documentation</a>.</h4>
     <div class="row">
         <div class="col-md-6">
             <div class="panel panel-default">
@@ -97,7 +97,10 @@
                 <div id="contextual_filters" class="panel-body">
                     <div class="row" id="environment-row">
                         <div class="col-md-2"></div>
-                        <div class="col-md-4">Environment</div>
+                        <div class="col-md-4">
+                            Environment 
+                            <span class="glyphicon glyphicon-info-sign" aria-hidden="true" title="Data may be filtered on environment to restrict samples to either soil or marine environment sources.  Marine environment includes pelagic, coastal, sediment and host associated samples.  Within marine environment, samples may be further filtered by adding another filter and selecting the “Sample Type” filter."></span>
+                        </div>
                         <div class="col-md-6 contextual-entry">
                             <select class="form-control" id="environment"></select>
                         </div>
@@ -141,16 +144,15 @@
         <div class="col-md-5">
         </div>
     </div>
-    
+
     <div class="row">
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <a href="#search_results" role="button" class="btn popovers" data-toggle="popover" title="Search Results" data-trigger="focus" data-content="Export an OTU abundance table, OTU taxonomy and representative OTU sequences for samples filling filtered search."><span class="glyphicon glyphicon-info-sign"></span>
-                    </a>
                     <button type="button" class="btn btn-default " id="export_button">
                         <span class="glyphicon glyphicon-download" aria-hidden="true"></span> Export Search Results
                     </button>
+                    <span class="glyphicon glyphicon-info-sign" title="Export an OTU abundance table, OTU taxonomy and representative OTU sequences for samples filling filtered search."></span>
                     To sort by multiple columns, press and hold the Shift key.
                 </div>
                 <table id="results" class="table" width="100%">
