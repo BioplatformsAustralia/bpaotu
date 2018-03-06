@@ -160,7 +160,7 @@ def contextual_fields(request):
             r['units'] = units
         return r
 
-    definitions = [make_defn('sample_id', 'id', None, display_name='Sample ID', values=get_sample_ids())]
+    definitions = [make_defn('sample_id', 'id', None, display_name='Sample ID', values=list(sorted(get_sample_ids())))]
     for field_name, units in fields_by_type['DATE']:
         definitions.append(make_defn('date', field_name, units))
     for field_name, units in fields_by_type['FLOAT']:

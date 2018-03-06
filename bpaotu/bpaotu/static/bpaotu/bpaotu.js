@@ -205,7 +205,7 @@ $(document).ready(function() {
                 set_options(widget, _.map(defn['values'], function(val) {
                     return {
                         'value': val,
-                        'text': '102.100.100/' + val,
+                        'text': val,
                     }
                 }));
             } else if (defn_type == 'date') {
