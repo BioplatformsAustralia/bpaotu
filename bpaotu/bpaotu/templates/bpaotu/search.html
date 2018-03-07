@@ -13,21 +13,21 @@
         <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    Filter on Taxonomy
+                    <span class="glyphicon glyphicon-info-sign" aria-hidden="true" title="Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, Eukaryotes (v4 and v9) and Fungi.  To filter data from a single amplicon select that amplicon here.  To search all amplicons for a taxa select "all".  Note the "all" search will return non-target sequences as well as target, for example searching "Amplicon = all" + "Kingdom = Bacteria" will return all sequences classified as bacteria in all assays."></span>
+                    Filter on Amplicon
                 </div>
                 
-                <div id="taxonomic_filter_panel" class="panel-body">
-                    <table id="amplicon_filter_table" class="table table-bordered table-condensed">
-                        <tbody>
-                            <tr>
-                                <td width="10%">Amplicon</td>
-                                <td>
-                                    <select class="form-control" id="amplicon"></select>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    
+                <div class="panel-body">
+                    <select class="form-control" id="amplicon"></select>
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <span class="glyphicon glyphicon-info-sign" aria-hidden="true" title="Taxonomy is assigned to sequences using consensus taxonomy of the top 3 hits against SILVA132 for rRNA targets and UNITE for ITS1 targets."></span>
+                    Filter on Taxonomy
+                </div>
+                <div class="panel-body">
                     <table id="taxonomic_filter_table" class="table table-bordered table-striped table-condensed">
                         <thead>
                             <th>Level</th>
@@ -92,6 +92,7 @@
         <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading">
+                    <span class="glyphicon glyphicon-info-sign" aria-hidden="true" title="Contextual filters allow data to be filtered on site specific chemical and physical data.   More than one filter may be used and combined with "and/or" functions"></span>
                     Contextual Filters
                 </div>
                 <div id="contextual_filters" class="panel-body">
@@ -145,7 +146,7 @@
         <div class="col-md-5">
         </div>
     </div>
-
+    
     <div class="row">
         <div class="col-md-12">
             <div class="panel panel-default">

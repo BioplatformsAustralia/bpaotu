@@ -62,7 +62,7 @@ def display_name(field_name):
 
 
 class OTUSearch(TemplateView):
-    template_name = 'bpaotu/search_results.html'
+    template_name = 'bpaotu/search.html'
     ckan_base_url = settings.CKAN_SERVERS[0]['base_url']
 
     def get_context_data(self, **kwargs):
