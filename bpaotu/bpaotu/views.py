@@ -35,6 +35,8 @@ from .models import (
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
 
+from .contextual import *
+
 
 logger = logging.getLogger("rainbow")
 # See datatables.net serverSide documentation for details
@@ -417,4 +419,48 @@ def otu_log(request):
         'ontology_errors': ImportOntologyLog.objects.all(),
         'missing_samples': ', '.join(sorted(missing_sample_ids)),
     }
+    return HttpResponse(template.render(context, request))
+
+
+def tables(request):
+    template = loader.get_template('bpaotu/tables.html')
+
+    table_data = soil_field_spec
+
+    table_header = []
+
+    print("--------{}".format(type(table_data)))
+
+    for row in table_data:
+        # print("-------{} {}".format(row, type(row)))
+        # print(row.get_field_spec)
+        # # print(row.column_name)
+        # print(dir(row))
+        # quit()
+
+        vals = row.attribute.split("_")
+        vals = " ".join(vals)
+        vals = vals.title()
+        table_header.append(vals)
+
+        # table_header.append(row.attribute)
+
+    # print(table_data)
+    # quit()
+
+    # for elem in table_header:
+
+
+    # table_header = [x.split("_") for x in table_header]
+    # table_header = [x.title() for x in table_header]
+
+
+    context = {
+        'categories': ['Soil', 'Costal Water', 'Coral', 'Pelagic', 'Seaweed', 'Sediment', 'Sponge'],
+        'table_header': table_header,
+        'table_data': table_data
+    }
+
+    print(context)
+
     return HttpResponse(template.render(context, request))

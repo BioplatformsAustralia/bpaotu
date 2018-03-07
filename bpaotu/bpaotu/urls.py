@@ -14,4 +14,5 @@ urlpatterns = [
     url(r'^private/api/v1/search$', views.otu_search, name="otu_search"),
     url(r'^private/api/v1/export$', views.otu_export, name="otu_export"),
     url(r'^ingest/$', views.otu_log, name="otu_log"),
+    url(r'^tables/$', views.tables, name="tables"),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
