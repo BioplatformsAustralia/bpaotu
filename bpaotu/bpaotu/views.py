@@ -37,8 +37,10 @@ from .models import (
 
 from .contextual import *
 
-
+import logging
 logger = logging.getLogger("rainbow")
+
+
 # See datatables.net serverSide documentation for details
 ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
@@ -245,6 +247,59 @@ def param_to_filters(query_str):
         taxonomy_filter=taxonomy_filter), errors)
 
 
+
+
+
+@require_http_methods(["POST"])
+def required_table_headers(request):
+    logger.critical("required_table_headers method called")
+
+    def _int_get_param(param_name):
+        param = request.POST.get(param_name)
+        try:
+            return int(param) if param is not None else None
+        except ValueError:
+            return None
+
+    draw = _int_get_param('draw')
+    start = _int_get_param('start')
+    length = _int_get_param('length')
+
+    search_terms = json.loads(request.POST['otu_query'])
+    contextual_terms = search_terms['contextual_filters']['filters']
+
+    required_headers = []
+    for elem in contextual_terms:
+        required_headers.append(elem['field'])
+
+    logger.critical(required_headers)
+
+    environment_lookup = make_environment_lookup()
+
+    results = []
+    result_count = len(results)
+
+    def get_environment(environment_id):
+        if environment_id is None:
+            return None
+        return environment_lookup[environment_id]
+
+    res = {
+        'draw': draw,
+    }
+    res.update({
+        'data': [{"bpa_id": t[0], "environment": get_environment(t[1])} for t in results],
+        'recordsTotal': result_count,
+        'recordsFiltered': result_count,
+    })
+    return JsonResponse(res)
+
+
+
+
+
+
+
 # technically we should be using GET, but the specification
 # of the query (plus the datatables params) is large: so we
 # avoid the issues of long URLs by simply POSTing the query
@@ -423,44 +478,9 @@ def otu_log(request):
 
 
 def tables(request):
+    logger.critical("tables method called")
     template = loader.get_template('bpaotu/tables.html')
 
-    table_data = soil_field_spec
-
-    table_header = []
-
-    print("--------{}".format(type(table_data)))
-
-    for row in table_data:
-        # print("-------{} {}".format(row, type(row)))
-        # print(row.get_field_spec)
-        # # print(row.column_name)
-        # print(dir(row))
-        # quit()
-
-        vals = row.attribute.split("_")
-        vals = " ".join(vals)
-        vals = vals.title()
-        table_header.append(vals)
-
-        # table_header.append(row.attribute)
-
-    # print(table_data)
-    # quit()
-
-    # for elem in table_header:
-
-
-    # table_header = [x.split("_") for x in table_header]
-    # table_header = [x.title() for x in table_header]
-
-
-    context = {
-        'categories': ['Soil', 'Costal Water', 'Coral', 'Pelagic', 'Seaweed', 'Sediment', 'Sponge'],
-        'table_header': table_header,
-        'table_data': table_data
-    }
-
-    print(context)
+    context = {}
 
     return HttpResponse(template.render(context, request))
