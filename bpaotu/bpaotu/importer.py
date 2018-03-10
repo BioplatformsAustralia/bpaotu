@@ -18,7 +18,10 @@ from collections import (
     defaultdict,
     OrderedDict)
 from itertools import zip_longest
-from .models import ImportSamplesMissingMetadataLog
+from .models import (
+    ImportSamplesMissingMetadataLog,
+    ImportFileLog,
+    ImportOntologyLog)
 from .otu import (
     Base,
     Environment,
@@ -91,6 +94,7 @@ class DataImporter:
     ])
 
     def __init__(self, import_base):
+        self._clear_import_log()
         self._engine = make_engine()
         Session = sessionmaker(bind=self._engine)
         self._create_extensions()
@@ -103,6 +107,11 @@ class DataImporter:
         self._session.execute(CreateSchema(SCHEMA))
         self._session.commit()
         Base.metadata.create_all(self._engine)
+
+    def _clear_import_log(self):
+        logger.critical("Clearing import log")
+        for log_cls in (ImportSamplesMissingMetadataLog, ImportFileLog, ImportOntologyLog):
+            log_cls.objects.all().delete()
 
     def _create_extensions(self):
         extensions = ('citext',)
@@ -190,6 +199,7 @@ class DataImporter:
         def _taxon_rows_iter():
             for fname in glob(self._import_base + '/*/*.taxonomy'):
                 logger.warning('reading taxonomy file: %s' % fname)
+                imported = 0
                 with open(fname) as fd:
                     for row in csv.reader(fd, dialect='excel-tab'):
                         if row[0].startswith('#'):
@@ -205,7 +215,9 @@ class DataImporter:
                         assert(len(ontology_parts) == len(ontologies))
                         obj = dict(zip(ontologies.keys(), ontology_parts))
                         obj['otu'] = otu
+                        imported += 1
                         yield obj
+                ImportFileLog.make_file_log(fname, file_type='Taxonomy', rows_imported=imported, rows_skipped=0)
 
         logger.warning("loading taxonomies - pass 1, defining ontologies")
         mappings = self._load_ontology(ontologies, _taxon_rows_iter())
@@ -314,7 +326,7 @@ class DataImporter:
             # we just make sure they don't clash, and this can be reported to CSIRO
             with open(fname, 'r') as fd:
                 bpa_ids, reader = otu_rows(fd)
-                for row in reader:
+                for (imported, row) in enumerate(reader):
                     otu_id = otu_lookup[otu_hash(row[0])]
                     to_make = {}
                     for bpa_id, count in zip(bpa_ids, row[1:]):
@@ -328,6 +340,7 @@ class DataImporter:
                         to_make[bpa_id] = count
                     for bpa_id, count in to_make.items():
                         yield [bpa_id, otu_id, count]
+                ImportFileLog.make_file_log(fname, file_type='Abundance', rows_imported=imported, rows_skipped=0)
 
         logger.warning('Loading OTU abundance tables')
         missing_bpa_ids = set()
@@ -335,7 +348,6 @@ class DataImporter:
             logger.warning("first pass, reading from: %s" % (fname))
             missing_bpa_ids |= set(_missing_bpa_ids(fname))
 
-        ImportSamplesMissingMetadataLog.objects.all().delete()
         if missing_bpa_ids:
             il = ImportSamplesMissingMetadataLog(samples_without_metadata=list(sorted(missing_bpa_ids)))
             il.save()

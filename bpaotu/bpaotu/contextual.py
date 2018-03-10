@@ -12,8 +12,9 @@ from .contextual_controlled_vocabularies import (
     ProfilePositionVocabulary,
     SoilColourVocabulary,
     TillageClassificationVocabulary)
-
-from .models import ImportOntologyLog
+from .models import (
+    ImportOntologyLog,
+    ImportFileLog)
 
 import logging
 logger = logging.getLogger("rainbow")
@@ -488,7 +489,8 @@ def soil_contextual_rows(metadata_path):
     objs = []
     for row in wrapper.get_all():
         obj = row._asdict()
-
+        if obj['bpa_id'] is None:
+            continue
         for cleanup_name, enforcer in ontology_cleanups.items():
             try:
                 obj[cleanup_name] = enforcer.get(obj[cleanup_name])
@@ -497,11 +499,12 @@ def soil_contextual_rows(metadata_path):
                 del obj[cleanup_name]
         objs.append(obj)
 
-    ImportOntologyLog.objects.all().delete()
     for val in onotology_error_values:
         il = ImportOntologyLog(environment="Soil", ontology_name=val, import_result=list(sorted(onotology_error_values[val])))
         il.save()
-    return [t for t in objs if context_valid(t)]
+    valid_objs = [t for t in objs if context_valid(t)]
+    ImportFileLog.make_file_log(metadata_path, file_type='Soil contextual metadata', rows_imported=len(valid_objs), rows_skipped=len(objs) - len(valid_objs))
+    return valid_objs
 
 
 def marine_contextual_rows(metadata_path):
@@ -516,4 +519,14 @@ def marine_contextual_rows(metadata_path):
             column_name_row_index=0,
             additional_context={'sample_type': sheet_name, 'environment': 'Marine'})
         objs += [t._asdict() for t in wrapper.get_all()]
-    return [t for t in objs if context_valid(t)]
+
+    objs = []
+    for row in wrapper.get_all():
+        obj = row._asdict()
+        if obj['bpa_id'] is None:
+            continue
+        objs.append(obj)
+
+    valid_objs = [t for t in objs if context_valid(t)]
+    ImportFileLog.make_file_log(metadata_path, file_type='Marine contextual metadata', rows_imported=len(valid_objs), rows_skipped=len(objs) - len(valid_objs))
+    return valid_objs

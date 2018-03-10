@@ -1,4 +1,5 @@
 {% extends 'bpaotu/base.html' %}
+{% load humanize %}
 
 {% block title %}
 <title>Bioplatforms OTU Search Facility - Ingest Log</title>
@@ -23,6 +24,50 @@
     <div class="row">
         <div class="col-md-12">
             <h1>BPA OTU Database - Ingest log</h1>
+
+            <h2>Database</h2>
+
+            <table>
+                <thead>
+                    <th>Object</th>
+                    <th>Count</th>
+                </thead>
+                <tr>
+                    <td>Sample</td>
+                    <td>{{ samplecontext_count | intcomma }}</td>
+                </tr>
+                <tr>
+                    <td>OTU</td>
+                    <td>{{ otu_count | intcomma }}</td>
+                </tr>
+                <tr>
+                    <td>Abundance entries</td>
+                    <td>{{ sampleotu_count | intcomma }}</td>
+                </tr>
+
+            </table>
+
+            <h2>Files ingested</h2>
+
+            <table>
+                <thead>
+                    <th>File name</th>
+                    <th>File type</th>
+                    <th>File size</th>
+                    <th>Rows imported</th>
+                    <th>Rows skipped</th>
+                </thead>
+                
+                {% for file in files %}
+                <tr>
+                    <td>{{ file.filename }}</td>
+                    <td>{{ file.file_type }}</td>
+                    <td>{{ file.file_size | intcomma }}</td>
+                    <td>{{ file.rows_imported | intcomma }}</td>
+                    <td>{{ file.rows_skipped | intcomma }}</td>
+                </tr>
+                {% endfor %}
+            </table>
             
             <h2>Ontology errors</h2>
             
