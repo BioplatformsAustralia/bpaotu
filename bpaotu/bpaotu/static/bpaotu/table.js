@@ -276,42 +276,6 @@ $(document).ready(function() {
     };
 
 
-    $("#search_button").click(function() {
-        var required_headers = marshal_contextual_filters();
-        required_headers = required_headers["filters"];
-
-        var headers = [];
-
-        for (var i=0; i<required_headers.length; i++) {
-            var elem = required_headers[i]["field"];
-
-            if (elem.length > 0) {
-                var array = elem.split("_");
-                var user_friendly = "";
-
-                for(var j=0; j<array.length; j++) {
-                    user_friendly += (array[j].substr(0,1).toUpperCase() + array[j].substr(1) + ' ');
-                }
-
-                user_friendly = user_friendly.substr(0, user_friendly.length -1);
-                headers.push(user_friendly);
-            }
-        }
-
-        headers = $.unique(headers);
-
-        var header_footer_str = "<th class='sorting_asc'>Sample BPA ID</th><th class='sorting'>BPA Project</th>"
-        for (var i=0; i<headers.length; i++) {
-            header_footer_str += "<th class='sorting'>" + headers[i] + "</th>";
-        }
-
-        $("#results > thead > tr > th").remove();
-        $("#results > tfoot > tr > th").remove();
-        $("#results").find('thead').find('tr').append(header_footer_str);
-        $("#results").find('tfoot').find('tr').append(header_footer_str);
-    });
-
-
     var marshal_contextual_filters = function() {
         var filter_state = _.map($("#contextual_filters_target > div"), function(target) {
             var marshal_input = function(selector, obj_name) {
@@ -375,47 +339,120 @@ $(document).ready(function() {
     }
 
 
+    var columns_config_default = [
+        {
+            'data': 'bpa_id',
+            'defaultContent': '',
+            'render': function(data, type, row) {
+                var environment = row.environment;
+                var org;
+                if (environment == 'Soil') {
+                    org = 'bpa-base';
+                } else {
+                    org = 'bpa-marine-microbes';
+                }
+                var url = window.otu_search_config['ckan_base_url'] + '/organization/' + org + '?q=bpa_id:102.100.100.' + data;
+                return '<a href="' + url + '" target="_blank">' + data + '</a>';
+            }
+        },
+        {
+            'data': 'environment',
+            'defaultContent': ''
+        }
+    ];
+
+
+    var datatable_config = {
+        'processing': true,
+        'serverSide': true,
+        'ajax': {
+            'url': window.otu_search_config['required_table_headers_endpoint'],
+            'type': 'POST',
+            'data': set_search_data
+        },
+        columns: columns_config_default,
+        "dom": 'Blfrtip',
+        buttons: ['csv']
+    };
+
+
     var setup_datatables = function() {
-        datatable = $("#results").DataTable({
-            'processing': true,
-            'serverSide': true,
-            'ajax': {
-                'url': window.otu_search_config['required_table_headers_endpoint'],
-                'type': 'POST',
-                'data': set_search_data
-            },
-            columns: [
-              {
-                  'data': 'bpa_id',
-                  'defaultContent': '',
-                  'render': function(data, type, row) {
-                      var environment = row.environment;
-                      var org;
-                      if (environment == 'Soil') {
-                          org = 'bpa-base';
-                      } else {
-                          org = 'bpa-marine-microbes';
-                      }
-                      var url = window.otu_search_config['ckan_base_url'] + '/organization/' + org + '?q=bpa_id:102.100.100.' + data;
-                      return '<a href="' + url + '" target="_blank">' + data + '</a>';
-                  }
-              },
-              {
-                  'data': 'environment',
-                  'defaultContent': ''
-              }
-            ]
-        });
+        datatable = $("#results").DataTable(datatable_config);
         $("#results").on('xhr.dt', function(e, settings, json, xhr) {
             set_errors(json.errors);
         });
+
+        // console.log(datatable_config);
+
+        return datatable;
     };
+
+
+    $("#search_button").click(function() {
+        if ($.fn.DataTable.isDataTable("#results")) {
+            $('#results').DataTable().clear().destroy();
+        }
+
+        var required_headers = marshal_contextual_filters();
+        required_headers = required_headers["filters"];
+
+        var headers = [];
+        var datatable_headers = [];
+
+        for (var i=0; i<required_headers.length; i++) {
+            var elem = required_headers[i]["field"];
+
+            if (elem.length > 0) {
+                datatable_headers.push(elem);
+
+                var array = elem.split("_");
+                var user_friendly = "";
+
+                for(var j=0; j<array.length; j++) {
+                    user_friendly += (array[j].substr(0,1).toUpperCase() + array[j].substr(1) + ' ');
+                }
+
+                user_friendly = user_friendly.substr(0, user_friendly.length -1);
+                headers.push(user_friendly);
+            }
+        }
+
+        headers = $.unique(headers);
+        datatable_headers = $.unique(datatable_headers);
+
+        var cols = columns_config_default;
+        cols.splice(2);
+
+        for (var i = 0; i<datatable_headers.length; i++) {
+            cols.push({
+                'data': datatable_headers[i],
+                'defaultContent': ''
+            });
+        }
+
+        datatable_config.columns = cols;
+        var header_footer_str = "<th class='sorting_asc'>Sample BPA ID</th><th class='sorting'>BPA Project</th>";
+        for (var i=0; i<headers.length; i++) {
+            header_footer_str += "<th class='sorting'>" + headers[i] + "</th>";
+        }
+
+        $("#results > thead > tr > th").remove();
+        $("#results > tfoot > tr > th").remove();
+        $("#results").find('thead').find('tr').append(header_footer_str);
+        $("#results").find('tfoot').find('tr').append(header_footer_str);
+
+        datatable_config.buttons.push('csv');
+
+        console.log(datatable_config);
+
+        tbl_ptr = setup_datatables();
+    }); // End click function()
 
 
     setup_csrf();
     setup_contextual();
     setup_search();
-    setup_datatables();
+    var tbl_ptr = setup_datatables();
     set_errors(null);
 
     $(document).tooltip();

@@ -247,12 +247,39 @@ def param_to_filters(query_str):
         taxonomy_filter=taxonomy_filter), errors)
 
 
+def param_to_filters_without_checks(query_str):
+    def parse_date(s):
+        try:
+            return datetime.datetime.strptime(s, '%Y-%m-%d').date()
+        except ValueError:
+            return datetime.datetime.strptime(s, '%d/%m/%Y').date()
 
+    def parse_float(s):
+        try:
+            return float(s)
+        except ValueError:
+            return None
+
+    otu_query = json.loads(query_str)
+    taxonomy_filter = clean_taxonomy_filter(otu_query['taxonomy_filters'])
+    amplicon_filter = clean_amplicon_filter(otu_query['amplicon_filter'])
+
+    context_spec = otu_query['contextual_filters']
+    contextual_filter = ContextualFilter(context_spec['mode'], context_spec['environment'])
+
+    errors = []
+
+    return (OTUQueryParams(
+        amplicon_filter=amplicon_filter,
+        contextual_filter=contextual_filter,
+        taxonomy_filter=taxonomy_filter), errors)
 
 
 @require_http_methods(["POST"])
 def required_table_headers(request):
-    logger.critical("required_table_headers method called")
+    """
+    This is a modification of the otu_search method to populate the DataTable
+    """
 
     def _int_get_param(param_name):
         param = request.POST.get(param_name)
@@ -272,32 +299,43 @@ def required_table_headers(request):
     for elem in contextual_terms:
         required_headers.append(elem['field'])
 
-    logger.critical(required_headers)
+    results = []
+    result_count = len(results)
 
     environment_lookup = make_environment_lookup()
 
-    results = []
+    params, errors = param_to_filters_without_checks(request.POST['otu_query'])
+    with SampleQuery(params) as query:
+        results = query.matching_sample_headers(required_headers)
+
     result_count = len(results)
+    results = results[start:start + length]
 
     def get_environment(environment_id):
         if environment_id is None:
             return None
         return environment_lookup[environment_id]
 
+    data = []
+    for t in results:
+        count = 2
+        data_dict = {"bpa_id": t[0], "environment": get_environment(t[1])}
+
+        for rh in required_headers:
+            data_dict[rh] = t[count]
+            count = count + 1
+
+        data.append(data_dict)
+
     res = {
         'draw': draw,
     }
     res.update({
-        'data': [{"bpa_id": t[0], "environment": get_environment(t[1])} for t in results],
+        'data': data,
         'recordsTotal': result_count,
         'recordsFiltered': result_count,
     })
     return JsonResponse(res)
-
-
-
-
-
 
 
 # technically we should be using GET, but the specification
