@@ -227,12 +227,6 @@ $(document).ready(function() {
         update_contextual_controls();
     };
 
-
-    var marshal_amplicon_filter = function() {
-        return $("#amplicon").val();
-    };
-
-
     var marshal_environment_filter = function() {
         var val = $("#environment").val();
         if (!val) {
@@ -311,7 +305,7 @@ $(document).ready(function() {
         return {
             'taxonomy_filters': marshal_taxonomy_filters(),
             'contextual_filters': marshal_contextual_filters(),
-            'amplicon_filter': marshal_amplicon_filter(),
+            'amplicon_filter': '',
         };
     }
 

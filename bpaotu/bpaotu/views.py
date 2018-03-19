@@ -37,8 +37,6 @@ from .models import (
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
 
-from .contextual import *
-
 import logging
 logger = logging.getLogger("rainbow")
 
@@ -250,18 +248,6 @@ def param_to_filters(query_str):
 
 
 def param_to_filters_without_checks(query_str):
-    def parse_date(s):
-        try:
-            return datetime.datetime.strptime(s, '%Y-%m-%d').date()
-        except ValueError:
-            return datetime.datetime.strptime(s, '%d/%m/%Y').date()
-
-    def parse_float(s):
-        try:
-            return float(s)
-        except ValueError:
-            return None
-
     otu_query = json.loads(query_str)
     taxonomy_filter = clean_taxonomy_filter(otu_query['taxonomy_filters'])
     amplicon_filter = clean_amplicon_filter(otu_query['amplicon_filter'])

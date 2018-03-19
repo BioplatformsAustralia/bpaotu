@@ -13,79 +13,10 @@
 {% block content %}
 
 <div class="container-fluid">
-    <div class="row" style="display:none">
-        <div class="col-md-6">
-            <div class="panel panel-default">
-                <div id="taxonomic_filter_panel" class="panel-body">
-                    <table id="amplicon_filter_table" class="table table-bordered table-condensed">
-                        <tbody>
-                            <tr>
-                                <td width="10%">Amplicon</td>
-                                <td>
-                                    <select class="form-control" id="amplicon"></select>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <table id="taxonomic_filter_table" class="table table-bordered table-striped table-condensed">
-                        <thead>
-                            <th>Level</th>
-                            <th>Value</th>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td width="10%">Kingdom</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_kingdom"></select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Phylum</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_phylum"></select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Class</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_class"></select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Order</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_order"></select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Family</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_family"></select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Genus</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_genus"></select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Species</td>
-                                <td>
-                                    <select class="form-control" id="taxonomy_species"></select>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="col-md-6">
         <div class="panel panel-default">
             <div class="panel-heading">
-                Select Table Rows
+                Select Table Columns
             </div>
             <div id="contextual_filters" class="panel-body">
                 <div id="contextual_filters_target">
@@ -101,8 +32,6 @@
             </div>
         </div>
     </div>
-
-
 
     <div class="row">
         <div class="col-md-12" id="error-box">
