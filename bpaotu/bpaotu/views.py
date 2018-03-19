@@ -5,6 +5,8 @@ import logging
 import zipstream
 import datetime
 from collections import defaultdict
+import csv
+import io
 
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
@@ -515,10 +517,51 @@ def otu_log(request):
     return HttpResponse(template.render(context, request))
 
 
-def tables(request):
-    logger.critical("tables method called")
-    template = loader.get_template('bpaotu/tables.html')
+@require_http_methods(["POST"])
+def contextual_csv_download_endpoint(request):
+    data = request.POST.get('otu_query')
 
+    search_terms = json.loads(data)
+    contextual_terms = search_terms['contextual_filters']['filters']
+
+    required_headers = []
+    for h in contextual_terms:
+        required_headers.append(h['field'])
+
+    params, errors = param_to_filters_without_checks(request.POST['otu_query'])
+    with SampleQuery(params) as query:
+        results = query.matching_sample_headers(required_headers)
+
+    header = ['sample_bpa_id', 'bpa_project'] + required_headers
+
+    file_buffer = io.StringIO()
+    csv_writer = csv.writer(file_buffer)
+
+    def read_and_flush():
+        data = file_buffer.getvalue()
+        file_buffer.seek(0)
+        file_buffer.truncate()
+        return data
+
+    def yield_csv_function():
+        csv_writer.writerow(header)
+        yield read_and_flush()
+
+        for r in results:
+            row = []
+            row.append(r)
+
+            csv_writer.writerow(r)
+            yield read_and_flush()
+
+    response = StreamingHttpResponse(yield_csv_function(), content_type="text/csv")
+    response['Content-Disposition'] = "application/download; filename=table.csv"
+
+    return response
+
+
+def tables(request):
+    template = loader.get_template('bpaotu/tables.html')
     context = {}
 
     return HttpResponse(template.render(context, request))

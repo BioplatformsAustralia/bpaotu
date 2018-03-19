@@ -16,4 +16,5 @@ urlpatterns = [
     url(r'^ingest/$', views.otu_log, name="otu_log"),
     url(r'^tables/$', views.tables, name="tables"),
     url(r'^required_table_headers/$', views.required_table_headers, name="required_table_headers"),
+    url(r'^contextual_csv_download_endpoint/$', views.contextual_csv_download_endpoint, name="contextual_csv_download_endpoint"),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

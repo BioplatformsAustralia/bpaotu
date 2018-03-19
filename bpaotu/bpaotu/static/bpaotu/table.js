@@ -362,6 +362,35 @@ $(document).ready(function() {
     ];
 
 
+    $("#export_button").click(function() {
+        const saveData = (function () {
+            const a = document.createElement("a");
+            document.body.appendChild(a);
+            a.style = "display: none";
+            return function (data, fileName) {
+                const blob = new Blob([data], {type: "octet/stream"}),
+                    url = window.URL.createObjectURL(blob);
+                a.href = url;
+                a.download = fileName;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            };
+        }());
+
+        const fileName = "my-csv.csv";
+
+        var header_data = { 'otu_query': JSON.stringify(describe_search()) };
+
+        $.ajax({
+            type: 'POST',
+            url: window.otu_search_config['ckan_base_url'] + '/contextual_csv_download_endpoint/',
+            data: header_data
+        }).done(function(data) {
+            saveData(data, fileName);
+        });
+    });
+
+
     var datatable_config = {
         'processing': true,
         'serverSide': true,
@@ -371,8 +400,6 @@ $(document).ready(function() {
             'data': set_search_data
         },
         columns: columns_config_default,
-        "dom": 'Blfrtip',
-        buttons: ['csv']
     };
 
 
@@ -381,8 +408,6 @@ $(document).ready(function() {
         $("#results").on('xhr.dt', function(e, settings, json, xhr) {
             set_errors(json.errors);
         });
-
-        // console.log(datatable_config);
 
         return datatable;
     };
@@ -440,10 +465,6 @@ $(document).ready(function() {
         $("#results > tfoot > tr > th").remove();
         $("#results").find('thead').find('tr').append(header_footer_str);
         $("#results").find('tfoot').find('tr').append(header_footer_str);
-
-        datatable_config.buttons.push('csv');
-
-        console.log(datatable_config);
 
         tbl_ptr = setup_datatables();
     }); // End click function()
