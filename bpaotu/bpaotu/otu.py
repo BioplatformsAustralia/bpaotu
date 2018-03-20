@@ -58,7 +58,11 @@ class SampleType(OntologyMixin, Base):
     pass
 
 
-class BPAProject(OntologyMixin, Base):
+class Environment(OntologyMixin, Base):
+    pass
+
+
+class OTUAmplicon(OntologyMixin, Base):
     pass
 
 
@@ -104,6 +108,7 @@ class OTU(SchemaMixin, Base):
     family_id = ontology_fkey(OTUFamily)
     genus_id = ontology_fkey(OTUGenus)
     species_id = ontology_fkey(OTUSpecies)
+    amplicon_id = ontology_fkey(OTUAmplicon, index=True)
 
     kingdom = relationship(OTUKingdom)
     phylum = relationship(OTUPhylum)
@@ -112,10 +117,12 @@ class OTU(SchemaMixin, Base):
     family = relationship(OTUFamily)
     genus = relationship(OTUGenus)
     species = relationship(OTUSpecies)
+    amplicon = relationship(OTUAmplicon)
 
     def __repr__(self):
-        return "<OTU(%d: %s,%s,%s,%s,%s,%s,%s)>" % (
+        return "<OTU(%d: %s,%s,%s,%s,%s,%s,%s,%s)>" % (
             self.id,
+            self.amplicon_id,
             self.kingdom_id,
             self.phylum_id,
             self.class_id,
@@ -167,7 +174,7 @@ class SampleColor(OntologyMixin, Base):
 
 class SampleContext(SchemaMixin, Base):
     __tablename__ = 'sample_context'
-    id = Column(Integer, primary_key=True)  # NB: we use the final component of the BPA ID here
+    id = Column(Integer, primary_key=True)  # NB: we use the final component of the ID here
 
     # There are a large number of contextual fields, we are merging together all fields from BASE and MM
     # so that they can be queried universally.
@@ -193,6 +200,7 @@ class SampleContext(SchemaMixin, Base):
     cantha = with_units('mg/m3', Float)
     chl_a_allomer = Column(Float)
     chl_a_epi = Column(Float)
+    chlf_ctd = Column(Float)
     chlorophyll_a = with_units('μg/L', Float)
     clay = with_units('% (<2 µm)', Float)
     coastal_id = Column(CIText)
@@ -273,8 +281,12 @@ class SampleContext(SchemaMixin, Base):
     nitrate_nitrogen = with_units('mg/Kg', Float)
     nitrite = Column(Float)
     notes = Column(CIText)
+    nrs_location_code_voyage_code = Column(CIText)
+    nrs_sample_code = Column(CIText)
+    nrs_trip_code = Column(CIText)
     organic_carbon = with_units('%', Float)
     organic_fraction = with_units('mg/L', Float)
+    organism = Column(CIText)
     oxygen = Column(Float)
     oxygen_ctd = with_units('ml/L', Float)
     oxygen_lab = with_units('μmol/L', Float)
@@ -287,6 +299,7 @@ class SampleContext(SchemaMixin, Base):
     per_total_nitrogen = with_units('%', Float)
     per_total_phosphorous = with_units('%', Float)
     perid = with_units('mg/m3', Float)
+    pressure_bottle = Column(Float)
     ph_level = Column(Float)
     ph_level_cacl2 = with_units('pH', Float)
     ph_level_h2o = with_units('pH', Float)
@@ -318,6 +331,7 @@ class SampleContext(SchemaMixin, Base):
     soil_moisture = with_units('%', Float)
     stratification = Column(Float)
     sulphur = with_units('mg/Kg', Float)
+    tax_id = Column(Integer)
     temp_from_ctd_file = Column(Float)
     temperature = with_units('ITS-90, deg C', Float)
     texture = Column(CIText)
@@ -350,7 +364,7 @@ class SampleContext(SchemaMixin, Base):
     horizon_classification_id = ontology_fkey(SampleHorizonClassification)
     immediate_previous_land_use_id = ontology_fkey(SampleLandUse)
     profile_position_id = ontology_fkey(SampleProfilePosition)
-    project_id = ontology_fkey(BPAProject)
+    environment_id = ontology_fkey(Environment)
     sample_type_id = ontology_fkey(SampleType)
     soil_sample_storage_method_id = ontology_fkey(SampleStorageMethod)
     tillage_id = ontology_fkey(SampleTillage)

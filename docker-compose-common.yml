@@ -30,8 +30,6 @@ services:
     runserver:
       image: muccg/bpaotu-dev
       environment:
-        - DJANGO_MAILGUN_API_KEY
-        - DJANGO_MAILGUN_SERVER_NAME
         - WAIT_FOR_DB=1
         - WAIT_FOR_CACHE=1
 
@@ -39,8 +37,6 @@ services:
       image: muccg/bpaotu-dev
       command: uwsgi_local
       environment:
-        - DJANGO_MAILGUN_API_KEY
-        - DJANGO_MAILGUN_SERVER_NAME
         - WAIT_FOR_DB=1
         - WAIT_FOR_CACHE=1
         - WAIT_FOR_RUNSERVER=1

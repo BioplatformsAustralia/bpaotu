@@ -29,9 +29,6 @@ services:
       extends:
         file: docker-compose-common.yml
         service: runserver
-      environment:
-        - DJANGO_MAILGUN_SERVER_NAME=mg.ccgapps.com.au
-        - DJANGO_MAILGUN_API_KEY=${DJANGO_MAILGUN_API_KEY}
       volumes_from:
         - datadev
       ports:

@@ -9,16 +9,17 @@ from collections import defaultdict
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
 from django.views.generic import TemplateView
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 from io import StringIO
 import traceback
 from .importer import DataImporter
 from .otu import (
-    BPAProject,
+    Environment,
     OTUKingdom,
     SampleContext,
-    OTU)
+    OTUAmplicon)
 from .query import (
+    OTUQueryParams,
     TaxonomyOptions,
     OntologyInfo,
     SampleQuery,
@@ -29,6 +30,12 @@ from .query import (
     ContextualFilterTermSampleID,
     ContextualFilterTermString,
     get_sample_ids)
+from django.template import loader
+from .models import (
+    ImportFileLog,
+    ImportOntologyLog,
+    ImportSamplesMissingMetadataLog)
+
 
 logger = logging.getLogger("rainbow")
 # See datatables.net serverSide documentation for details
@@ -36,9 +43,9 @@ ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
 
 
-def make_project_lookup():
+def make_environment_lookup():
     with OntologyInfo() as info:
-        return dict(info.get_values(BPAProject))
+        return dict(info.get_values(Environment))
 
 
 def format_bpa_id(int_id):
@@ -56,26 +63,28 @@ def display_name(field_name):
 
 
 class OTUSearch(TemplateView):
-    template_name = 'bpaotu/search_results.html'
+    template_name = 'bpaotu/search.html'
     ckan_base_url = settings.CKAN_SERVERS[0]['base_url']
-
-    project_filter = {
-        'marine-microbes': 'Marine Microbes',
-        'base': 'BASE',
-    }
 
     def get_context_data(self, **kwargs):
         context = super(OTUSearch, self).get_context_data(**kwargs)
         context['ckan_base_url'] = settings.CKAN_SERVERS[0]['base_url']
-
-        project_name = self.kwargs.get('project')
-        # note: project_name is constrained by the URL pattern, so we can assume it is valid
-        if project_name is not None:
-            project_lookup = make_project_lookup()
-            project_id = [k for (k, v) in project_lookup.items() if v == OTUSearch.project_filter[project_name]][0]
-            context['contextual_filter_project_id'] = project_id
-
         return context
+
+
+def int_if_not_already_none(v):
+    if v is None or v == '':
+        return None
+    v = str(v)  # let's not let anything odd through
+    return int(v)
+
+
+def clean_amplicon_filter(v):
+    return int_if_not_already_none(v)
+
+
+def clean_environment_filter(v):
+    return int_if_not_already_none(v)
 
 
 def clean_taxonomy_filter(state_vector):
@@ -83,10 +92,6 @@ def clean_taxonomy_filter(state_vector):
     take a taxonomy filter (a list of phylum, kingdom, ...) and clean it
     so that it is a simple list of ints or None of the correct length.
     """
-    def int_if_not_already_none(v):
-        if v is None or v == '':
-            return None
-        return int(v)
 
     assert(len(state_vector) == len(TaxonomyOptions.hierarchy))
     return list(map(
@@ -95,13 +100,26 @@ def clean_taxonomy_filter(state_vector):
 
 
 @require_http_methods(["GET"])
+def amplicon_options(request):
+    """
+    private API: return the possible amplicons
+    """
+    with OntologyInfo() as options:
+        vals = options.get_values(OTUAmplicon)
+    return JsonResponse({
+        'possibilities': vals
+    })
+
+
+@require_http_methods(["GET"])
 def taxonomy_options(request):
     """
     private API: given taxonomy constraints, return the possible options
     """
     with TaxonomyOptions() as options:
+        amplicon = clean_amplicon_filter(request.GET['amplicon'])
         selected = clean_taxonomy_filter(json.loads(request.GET['selected']))
-        possibilities = options.possibilities(selected)
+        possibilities = options.possibilities(amplicon, selected)
     return JsonResponse({
         'possibilities': possibilities
     })
@@ -115,7 +133,7 @@ def contextual_fields(request):
     """
     fields_by_type = defaultdict(list)
 
-    classifications = DataImporter.classify_fields(make_project_lookup())
+    classifications = DataImporter.classify_fields(make_environment_lookup())
 
     ontology_classes = {}
 
@@ -132,18 +150,18 @@ def contextual_fields(request):
         fields_by_type[ty].append((column.name, getattr(column, 'units', None)))
 
     def make_defn(typ, name, units, **kwargs):
-        project = classifications.get(name)
+        environment = classifications.get(name)
         r = kwargs.copy()
         r.update({
             'type': typ,
             'name': name,
-            'project': project
+            'environment': environment
         })
         if units:
             r['units'] = units
         return r
 
-    definitions = [make_defn('sample_id', 'id', None, display_name='Sample ID', values=get_sample_ids())]
+    definitions = [make_defn('sample_id', 'id', None, display_name='Sample ID', values=list(sorted(get_sample_ids())))]
     for field_name, units in fields_by_type['DATE']:
         definitions.append(make_defn('date', field_name, units))
     for field_name, units in fields_by_type['FLOAT']:
@@ -185,9 +203,10 @@ def param_to_filters(query_str):
 
     otu_query = json.loads(query_str)
     taxonomy_filter = clean_taxonomy_filter(otu_query['taxonomy_filters'])
+    amplicon_filter = clean_amplicon_filter(otu_query['amplicon_filter'])
 
     context_spec = otu_query['contextual_filters']
-    contextual_filter = ContextualFilter(context_spec['mode'])
+    contextual_filter = ContextualFilter(context_spec['mode'], context_spec['environment'])
 
     errors = []
 
@@ -219,7 +238,10 @@ def param_to_filters(query_str):
             errors.append("Invalid value provided for contextual field `%s'" % field_name)
             logger.critical("Exception parsing field: `%s':\n%s" % (field_name, traceback.format_exc()))
 
-    return contextual_filter, taxonomy_filter, errors
+    return (OTUQueryParams(
+        amplicon_filter=amplicon_filter,
+        contextual_filter=contextual_filter,
+        taxonomy_filter=taxonomy_filter), errors)
 
 
 # technically we should be using GET, but the specification
@@ -243,18 +265,18 @@ def otu_search(request):
     start = _int_get_param('start')
     length = _int_get_param('length')
 
-    project_lookup = make_project_lookup()
+    environment_lookup = make_environment_lookup()
 
-    contextual_filter, taxonomy_filter, errors = param_to_filters(request.POST['otu_query'])
-    with SampleQuery(contextual_filter, taxonomy_filter) as query:
-        results = query.matching_sample_ids_and_project()
+    params, errors = param_to_filters(request.POST['otu_query'])
+    with SampleQuery(params) as query:
+        results = query.matching_sample_ids_and_environment()
     result_count = len(results)
     results = results[start:start + length]
 
-    def get_project(project_id):
-        if project_id is None:
+    def get_environment(environment_id):
+        if environment_id is None:
             return None
-        return project_lookup[project_id]
+        return environment_lookup[environment_id]
 
     res = {
         'draw': draw,
@@ -268,7 +290,7 @@ def otu_search(request):
         })
     else:
         res.update({
-            'data': [{"bpa_id": t[0], "project": get_project(t[1])} for t in results],
+            'data': [{"bpa_id": t[0], "environment": get_environment(t[1])} for t in results],
             'recordsTotal': result_count,
             'recordsFiltered': result_count,
         })
@@ -336,8 +358,8 @@ def otu_export(request):
         return obj.value
 
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
-    contextual_filter, taxonomy_filter, errors = param_to_filters(request.GET['q'])
-    with SampleQuery(contextual_filter, taxonomy_filter) as query:
+    params, errors = param_to_filters(request.GET['q'])
+    with SampleQuery(params) as query:
         def sample_otu_csv_rows(kingdom_id):
             fd = StringIO()
             w = csv.writer(fd)
@@ -345,6 +367,7 @@ def otu_export(request):
                 'BPA ID',
                 'OTU',
                 'OTU Count',
+                'Amplicon',
                 'Kingdom',
                 'Phylum',
                 'Class',
@@ -355,13 +378,13 @@ def otu_export(request):
             yield fd.getvalue().encode('utf8')
             fd.seek(0)
             fd.truncate(0)
-            q = query.matching_sample_otus()
-            q = q.filter(OTU.kingdom_id == kingdom_id)
+            q = query.matching_sample_otus(kingdom_id)
             for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
                 w.writerow([
                     format_bpa_id(sample_otu.sample_id),
                     otu.code,
                     sample_otu.count,
+                    val_or_empty(otu.amplicon),
                     val_or_empty(otu.kingdom),
                     val_or_empty(otu.phylum),
                     val_or_empty(otu.klass),
@@ -376,9 +399,31 @@ def otu_export(request):
         zf.writestr('contextual.csv', contextual_csv(query.matching_samples()).encode('utf8'))
         with OntologyInfo() as info:
             for kingdom_id, kingdom_label in info.get_values(OTUKingdom):
+                if not query.has_matching_sample_otus(kingdom_id):
+                    continue
                 zf.write_iter('%s.csv' % (kingdom_label), sample_otu_csv_rows(kingdom_id))
 
     response = StreamingHttpResponse(zf, content_type='application/zip')
     filename = "BPASearchResultsExport.zip"
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     return response
+
+
+def otu_log(request):
+    template = loader.get_template('bpaotu/otu_log.html')
+    missing_sample_ids = []
+    from .query import Session
+    from .otu import (SampleContext, OTU, SampleOTU)
+    for obj in ImportSamplesMissingMetadataLog.objects.all():
+        missing_sample_ids += obj.samples_without_metadata
+    session = Session()
+    context = {
+        'files': ImportFileLog.objects.all(),
+        'ontology_errors': ImportOntologyLog.objects.all(),
+        'missing_samples': ', '.join(sorted(missing_sample_ids)),
+        'otu_count': session.query(OTU).count(),
+        'sampleotu_count': session.query(SampleOTU).count(),
+        'samplecontext_count': session.query(SampleContext).count(),
+    }
+    session.close()
+    return HttpResponse(template.render(context, request))

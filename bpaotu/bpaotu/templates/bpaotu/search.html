@@ -1,0 +1,179 @@
+{% extends 'bpaotu/base.html' %}
+{% load staticfiles %}
+{% load static from staticfiles %}
+
+{% block extra_head %}
+<script src="{% static 'bpaotu/bpaotu.js' %}"></script>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid">
+    <h4>For instructions on how to use this search tool, please see <a href="/organization/pages/australian-microbiome/search-instructions">the search documentation</a>.</h4>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <span class="glyphicon glyphicon-info-sign" aria-hidden="true" title="Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, Eukaryotes (v4 and v9) and Fungi.  To filter data from a single amplicon select that amplicon here.  To search all amplicons for a taxa select &quot;all&quot;.  Note the &quot;all&quot; search will return non-target sequences as well as target, for example searching &quot;Amplicon = all&quot; + &quot;Kingdom = Bacteria&quot; will return all sequences classified as bacteria in all assays."></span>
+                    Filter on Amplicon
+                </div>
+                
+                <div class="panel-body">
+                    <select class="form-control" id="amplicon"></select>
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <span class="glyphicon glyphicon-info-sign" aria-hidden="true" title="Taxonomy is assigned to sequences using consensus taxonomy of the top 3 hits against SILVA132 for rRNA targets and UNITE for ITS1 targets."></span>
+                    Filter on Taxonomy
+                </div>
+                <div class="panel-body">
+                    <table id="taxonomic_filter_table" class="table table-bordered table-striped table-condensed">
+                        <thead>
+                            <th>Level</th>
+                            <th>Value</th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td width="10%">Kingdom</td>
+                                <td>
+                                    <select class="form-control" id="taxonomy_kingdom"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Phylum</td>
+                                <td>
+                                    <select class="form-control" id="taxonomy_phylum"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Class</td>
+                                <td>
+                                    <select class="form-control" id="taxonomy_class"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Order</td>
+                                <td>
+                                    <select class="form-control" id="taxonomy_order"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Family</td>
+                                <td>
+                                    <select class="form-control" id="taxonomy_family"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Genus</td>
+                                <td>
+                                    <select class="form-control" id="taxonomy_genus"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Species</td>
+                                <td>
+                                    <select class="form-control" id="taxonomy_species"></select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="panel-footer">
+                    <div class="row">
+                        <div class="col-md-5"></div>
+                        <div class="col-md-2"><input class="btn btn-warning" type="button" id="clear_taxonomic_filters" value="Clear" /></div>
+                        <div class="col-md-5"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <span class="glyphicon glyphicon-info-sign" aria-hidden="true" title="Contextual filters allow data to be filtered on site specific chemical and physical data.   More than one filter may be used and combined with &quot;and/or&quot; functions."></span>
+                    Contextual Filters
+                </div>
+                <div id="contextual_filters" class="panel-body">
+                    <div class="row" id="environment-row">
+                        <div class="col-md-2"></div>
+                        <div class="col-md-4">
+                            Environment 
+                            <span class="glyphicon glyphicon-info-sign" aria-hidden="true" title="Data may be filtered on environment to restrict samples to either soil or marine environment sources.  Marine environment includes pelagic, coastal, sediment and host associated samples.  Within marine environment, samples may be further filtered by adding another filter and selecting the &quot;Sample Type&quot; filter."></span>
+                        </div>
+                        <div class="col-md-6 contextual-entry">
+                            <select class="form-control" id="environment"></select>
+                        </div>
+                    </div>
+                    <p id="contextual_filters_mode_para">
+                        Samples must match
+                        <select id="contextual_filters_mode">
+                            <option value="and">all</option>
+                            <option value="or">any</option>
+                        </select>
+                        of the following contextual filters.
+                    </p>
+                    <div id="contextual_filters_target">
+                    </div>
+                </div>
+                <div class="panel-footer">
+                    <div class="row">
+                        <div class="col-md-4"></div>
+                        <div class="col-md-2"><input class="form-control btn btn-success" type="button" id="add_contextual_filter" value="Add" /></div>
+                        <div class="col-md-2"><input class="btn btn-warning" type="button" id="clear_contextual_filters" value="Clear" /></div>
+                        <div class="col-md-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12" id="error-box">
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-5">
+        </div>
+        <div class="col-md-2">
+            <div class="panel panel-default">
+                <button type="button" class="btn btn-primary btn-block" id="search_button"><span class="glyphicon glyphicon-search" aria-hidden="true"></span> Search</button>
+            </div>
+            <div id="spinner" class="spinner"></div>
+        </div>
+        <div class="col-md-5">
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <button type="button" class="btn btn-default " id="export_button">
+                        <span class="glyphicon glyphicon-download" aria-hidden="true"></span> Export Search Results
+                    </button>
+                    <span class="glyphicon glyphicon-info-sign" title="Export an OTU abundance table, OTU taxonomy and representative OTU sequences for samples filling filtered search."></span>
+                    To sort by multiple columns, press and hold the Shift key.
+                </div>
+                <table id="results" class="table" width="100%">
+                    <thead>
+                        <tr>
+                            <th>BPA Sample ID</th>
+                            <th>BPA Project</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <th>BPA Sample ID</th>
+                            <th>BPA Project</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

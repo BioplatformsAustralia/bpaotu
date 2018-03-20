@@ -41,8 +41,6 @@ services:
         - CSRF_TRUSTED_ORIGINS=localhost nginxtest
         - CACHESERVER=cacheprod
         - DBSERVER=dbprod
-        - DJANGO_MAILGUN_API_KEY=${DJANGO_MAILGUN_API_KEY}
-        - DJANGO_MAILGUN_SERVER_NAME=mg.ccgapps.com.au
       volumes:
         - uwsgi-prod-data:/data
       depends_on:

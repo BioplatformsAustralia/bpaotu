@@ -12,4 +12,4 @@ class Command(BaseCommand):
         importer.load_soil_contextual_metadata()
         importer.load_marine_contextual_metadata()
         otu_lookup = importer.load_taxonomies()
-        importer.load_otu(otu_lookup)
+        importer.load_otu_abundance(otu_lookup)

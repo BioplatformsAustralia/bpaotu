@@ -1,6 +1,41 @@
 "use strict";
 
 $(document).ready(function() {
+    var theSpinner = null;
+
+    function stop_spinner() {
+        if (theSpinner) {
+            theSpinner.stop();
+            theSpinner = null;
+        }
+    }
+
+    function start_spinner() {
+        var opts = {
+            lines: 15, // The number of lines to draw
+            length: 14, // The length of each line
+            width: 10, // The line thickness
+            radius: 20, // The radius of the inner circle
+            corners: 1, // Corner roundness (0..1)
+            rotate: 60, // The rotation offset
+            direction: 1, // 1: clockwise, -1: counterclockwise
+            color: '#000', // #rgb or #rrggbb or array of colors
+            speed: 2.2, // Rounds per second
+            trail: 95, // Afterglow percentage
+            shadow: true, // Whether to render a shadow
+            hwaccel: false, // Whether to use hardware acceleration
+            className: 'spinner', // The CSS class to assign to the spinner
+            zIndex: 2e9, // The z-index (defaults to 2000000000)
+            top: '50%', // Top position relative to parent
+            left: '50%' // Left position relative to parent
+        };
+        var target = document.getElementById('spinner');
+
+        if (!theSpinner) {
+            theSpinner = new Spinner(opts).spin(target);
+        }
+    }
+
     var taxonomy_hierarchy = [
         "kingdom",
         "phylum",
@@ -15,7 +50,6 @@ $(document).ready(function() {
     // contextual metadata fields and their types
     var contextual_config;
     var next_contextual_filter_id = 1;
-    var implicit_project_id = window.otu_search_config['contextual_filter_project_id'];
     var datatable;
 
     var set_options = function(target, options) {
@@ -23,10 +57,27 @@ $(document).ready(function() {
         $.each(options, function(index, option) {
             $('<option/>').val(option.value).text(option.text).appendTo(target);
         });
-    }
+    };
 
     var taxonomy_selector = function(s) {
         return '#taxonomy_' + s;
+    };
+
+    var amplicon_set_possibilities = function(options) {
+        options.unshift([null, '- All -']);
+        set_options($('#amplicon'),  _.map(options, function(val) {
+            return {
+                'value': val[0],
+                'text': val[1]
+            }
+        }));
+    };
+
+    var taxonomy_clear_all = function() {
+        _.each(taxonomy_hierarchy, function(s) {
+            var target = $(taxonomy_selector(s));
+            set_options(target, [blank_option]);
+        });
     };
 
     var taxonomy_set_possibilities = function(result) {
@@ -48,7 +99,7 @@ $(document).ready(function() {
                 'text': val[1]
             }
         })));
-    }
+    };
 
     var taxonomy_get_state = function() {
         return _.map(taxonomy_hierarchy, function(s) {
@@ -62,6 +113,7 @@ $(document).ready(function() {
             dataType: 'json',
             url: window.otu_search_config['taxonomy_endpoint'],
             data: {
+                'amplicon': marshal_amplicon_filter(),
                 'selected': JSON.stringify(taxonomy_get_state())
             }
         }).done(function(result) {
@@ -77,6 +129,7 @@ $(document).ready(function() {
             });
         });
         $("#clear_taxonomic_filters").click(function () {
+            $("#amplicon").val(null);
             $.each(taxonomy_hierarchy, function(idx, s) {
                 $(taxonomy_selector(s)).val(null);
             });
@@ -86,14 +139,22 @@ $(document).ready(function() {
         taxonomy_refresh();
     };
 
+    var setup_amplicon = function() {
+        $("#amplicon").on('change', function() {
+            taxonomy_clear_all();
+            taxonomy_refresh();
+        });
+        $.ajax({
+            method: 'GET',
+            dataType: 'json',
+            url: window.otu_search_config['amplicon_endpoint'],
+        }).done(function(result) {
+            amplicon_set_possibilities(result['possibilities']);
+        });
+    };
+
     var update_contextual_controls = function() {
         var filters = $("#contextual_filters_target > div");
-        var target = $("#no_contextual_filters");
-        if (filters.length > 0) {
-            target.hide()
-        } else {
-            target.show()
-        }
         var target = $("#contextual_filters_mode_para");
         if (filters.length > 1) {
             target.show()
@@ -102,20 +163,12 @@ $(document).ready(function() {
         }
     };
 
-    var get_project_id = function() {
-        var contextual_state = marshal_contextual_filters();
-        var filters = contextual_state.filters;
-        var project_id = null;
-        $.each(filters, function(idx, filter) {
-            if (filter.field == 'project_id') {
-                project_id = filter.is;
-            }
-        });
-        return project_id;
+    var get_environment_id = function() {
+        return marshal_environment_filter();
     }
 
     var configure_unselected_contextual_filters = function() {
-        var current_project_id = get_project_id();
+        var current_environment_id = get_environment_id();
         $.each($("#contextual_filters_target > div"), function(idx, target) {
             var select_box = $(".contextual-item", target);
             var select_val = select_box.val();
@@ -123,23 +176,22 @@ $(document).ready(function() {
                 return;
             }
 
-            // if we have a project ID set, we filter the available options to those for that project ID
-            // and those which are cross-project
+            // if we have an environment ID set, we filter the available options to those for that environment ID and those which are cross-environment
             var applicable_definitions = _.filter(contextual_config['definitions'], function (val) {
-                // exclude project selector if we're pinned to an implicit project
-                if (implicit_project_id && (val.name == 'project_id')) {
+                // we don't ever select environment through the dynamic UI
+                if (val.name == "environment_id") {
                     return false;
                 }
-                // we don't have a project ID selected
-                if (current_project_id === null) {
+                // we don't have a environment ID selected
+                if (current_environment_id === null) {
                     return true;
                 }
-                // it's not a project specific field
-                if (val.project === null) {
+                // it's not a environment specific field
+                if (val.environment === null) {
                     return true;
                 }
-                // it matches current project
-                if (val.project == current_project_id) {
+                // it matches current environment
+                if (val.environment == current_environment_id) {
                     return true;
                 }
                 return false;
@@ -188,7 +240,7 @@ $(document).ready(function() {
                 set_options(widget, _.map(defn['values'], function(val) {
                     return {
                         'value': val,
-                        'text': '102.100.100/' + val,
+                        'text': val,
                     }
                 }));
             } else if (defn_type == 'date') {
@@ -216,17 +268,15 @@ $(document).ready(function() {
                 ].join("\n"));
             } else if (defn_type == 'ontology') {
                 widget = $('<select class="form-control cval_select"></select>');
-                set_options(widget, _.map(defn['values'], function(val) {
+                // clone
+                var options = defn['values'].slice(0);
+                options.unshift([null, '- All -']);
+                set_options(widget, _.map(options, function(val) {
                     return {
                         'value': val[0],
                         'text': val[1]
                     }
                 }));
-                if (defn_name == 'project_id') {
-                    widget.on('change', function() {
-                        configure_unselected_contextual_filters();
-                    });
-                }
             }
             target.append(widget);
             target.trigger('otu:filter_changed');
@@ -257,8 +307,34 @@ $(document).ready(function() {
             url: window.otu_search_config['contextual_endpoint'],
         }).done(function(result) {
             contextual_config = result;
+            // set up the environment filter
+            var widget = $("#environment");
+            var defn = _.find(contextual_config['definitions'], {'name': 'environment_id'});
+            var options = defn['values'].slice(0);
+            options.unshift([null, '- All -']);
+            set_options(widget, _.map(options, function(val) {
+                return {
+                    'value': val[0],
+                    'text': val[1]
+                }
+            }));
+            widget.on('change', function() {
+                configure_unselected_contextual_filters();
+            });
         });
         update_contextual_controls();
+    };
+
+    var marshal_amplicon_filter = function() {
+        return $("#amplicon").val();
+    };
+
+    var marshal_environment_filter = function() {
+        var val = $("#environment").val();
+        if (!val) {
+            return null;
+        }
+        return val;
     };
 
     var marshal_contextual_filters = function() {
@@ -266,7 +342,12 @@ $(document).ready(function() {
             var marshal_input = function(selector, obj_name) {
                 var matches = $(selector, target);
                 if (matches.length == 1) {
-                    obj[obj_name] = matches.val();
+                    var val = matches.val();
+                    if (!val) {
+                        obj['invalid'] = true;
+                    } else {
+                        obj[obj_name] = val;
+                    }
                 }
             }
             var obj = {};
@@ -277,26 +358,28 @@ $(document).ready(function() {
             marshal_input('.cval_select', 'is');
             return obj;
         });
-        if (implicit_project_id) {
-            filter_state.push({
-                'field': 'project_id',
-                'is': implicit_project_id
-            });
-        }
+        filter_state = _.filter(filter_state, function(o) {
+            return !o.invalid;
+        });
         return {
             'filters': filter_state,
+            'environment': marshal_environment_filter(),
             'mode': $('#contextual_filters_mode').val()
         };
-        return state;
     };
 
     var marshal_taxonomy_filters = function() {
         return taxonomy_get_state();
     };
 
+    var search_complete = function() {
+        stop_spinner();
+    };
+
     var setup_search = function() {
         $("#search_button").click(function() {
-            datatable.ajax.reload();
+            start_spinner()
+            datatable.ajax.reload(search_complete);
         });
     };
 
@@ -319,6 +402,7 @@ $(document).ready(function() {
         return {
             'taxonomy_filters': marshal_taxonomy_filters(),
             'contextual_filters': marshal_contextual_filters(),
+            'amplicon_filter': marshal_amplicon_filter(),
         };
     }
 
@@ -357,9 +441,9 @@ $(document).ready(function() {
                   'data': 'bpa_id',
                   'defaultContent': '',
                   'render': function(data, type, row) {
-                      var project = row.project;
+                      var environment = row.environment;
                       var org;
-                      if (project == 'BASE') {
+                      if (environment == 'Soil') {
                           org = 'bpa-base';
                       } else {
                           org = 'bpa-marine-microbes';
@@ -369,7 +453,7 @@ $(document).ready(function() {
                   }
               },
               {
-                  'data': 'project',
+                  'data': 'environment',
                   'defaultContent': ''
               }
             ]
@@ -391,10 +475,13 @@ $(document).ready(function() {
     };
 
     setup_csrf();
+    setup_amplicon();
     setup_taxonomic();
     setup_contextual();
     setup_search();
     setup_datatables();
     setup_export();
     set_errors(null);
+
+    $(document).tooltip();
 });

@@ -24,6 +24,12 @@ engine = make_engine()
 Session = sessionmaker(bind=engine)
 
 
+class OTUQueryParams:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+
 class TaxonomyOptions:
     hierarchy = [
         ('kingdom_id', OTUKingdom),
@@ -44,17 +50,17 @@ class TaxonomyOptions:
     def __exit__(self, exec_type, exc_value, traceback):
         self._session.close()
 
-    def possibilities(self, state):
+    def possibilities(self, amplicon, state):
         cache = caches['search_results']
-        hash_str = 'TaxonomyOptions:cached:' + repr(state)
+        hash_str = 'TaxonomyOptions:cached:' + repr(amplicon) + ':' + repr(state)
         key = sha256(hash_str.encode('utf8')).hexdigest()
         result = cache.get(key)
         if not result:
-            result = self._possibilities(state)
+            result = self._possibilities(amplicon, state)
             cache.set(key, result)
         return result
 
-    def _possibilities(self, state):
+    def _possibilities(self, amplicon, state):
         """
         state should be a list of integer IDs for the relevent model, in the order of
         TaxonomyOptions.hierarchy. a value of None indicates there is no selection.
@@ -67,6 +73,8 @@ class TaxonomyOptions:
         def determine_target():
             # this query is built up over time, and validates the hierarchy provided to us
             q = self._session.query(OTU.kingdom_id).group_by(OTU.kingdom_id)
+            if amplicon:
+                q = q.filter(OTU.amplicon_id == amplicon)
             for idx, ((otu_attr, ontology_class), value) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
                 valid = True
                 if value is None:
@@ -87,13 +95,15 @@ class TaxonomyOptions:
         if target_attr is None:
             return {}
         # performance: hard-code kingdom (it's the slowest query, and the most common)
-        elif target_class is OTUKingdom:
+        elif not amplicon and target_class is OTUKingdom:
             possibilities = self._session.query(target_class.id, target_class.value).all()
         else:
             # clear invalidated part of the state
             state = state[:target_idx] + [None] * (len(TaxonomyOptions.hierarchy) - target_idx)
             # build up a query of the OTUs for our target attribute
             q = self._session.query(getattr(OTU, target_attr), target_class.value).group_by(getattr(OTU, target_attr), target_class.value).order_by(target_class.value)
+            if amplicon:
+                q = q.filter(OTU.amplicon_id == amplicon)
             for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, state):
                 if value is None:
                     break
@@ -133,10 +143,14 @@ class SampleQuery:
     contextual filters
     """
 
-    def __init__(self, contextual_filter, taxonomy_filter):
+    def __init__(self, params):
         self._session = Session()
-        self._taxonomy_filter = taxonomy_filter
-        self._contextual_filter = contextual_filter
+        # amplicon filter is a master filter over the taxonomy; it's not
+        # a strict part of the hierarchy, but affects taxonomy options
+        # available
+        self._amplicon_filter = params.amplicon_filter
+        self._taxonomy_filter = params.taxonomy_filter
+        self._contextual_filter = params.contextual_filter
 
     def __enter__(self):
         return self
@@ -144,21 +158,26 @@ class SampleQuery:
     def __exit__(self, exec_type, exc_value, traceback):
         self._session.close()
 
-    def _q_all_cached(self, topic, q):
+    def _q_all_cached(self, topic, q, mutate_result=None):
         cache = caches['search_results']
-        hash_str = 'SampleQuery:cached:%s:' % (topic) + repr(self._taxonomy_filter) + ':' + repr(self._contextual_filter)
+        hash_str = 'SampleQuery:cached:%s:' % (topic) \
+            + repr(self._amplicon_filter) + ':' \
+            + repr(self._taxonomy_filter) + ':' \
+            + repr(self._contextual_filter)
         key = sha256(hash_str.encode('utf8')).hexdigest()
         result = cache.get(key)
         if not result:
             result = q.all()
+            if mutate_result:
+                result = mutate_result(result)
             cache.set(key, result)
         return result
 
-    def matching_sample_ids_and_project(self):
-        q = self._session.query(SampleContext.id, SampleContext.project_id)
+    def matching_sample_ids_and_environment(self):
+        q = self._session.query(SampleContext.id, SampleContext.environment_id)
         subq = self._build_taxonomy_subquery()
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
-        return self._q_all_cached('matching_sample_ids_and_project', q)
+        return self._q_all_cached('matching_sample_ids_and_environment', q)
 
     def matching_samples(self):
         q = self._session.query(SampleContext)
@@ -166,7 +185,14 @@ class SampleQuery:
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
         return self._q_all_cached('matching_samples', q)
 
-    def matching_sample_otus(self):
+    def has_matching_sample_otus(self, kingdom_id):
+        def to_boolean(result):
+            return result[0][0]
+
+        q = self._session.query(self.matching_sample_otus(kingdom_id).exists())
+        return self._q_all_cached('has_matching_sample_otus:%s' % (kingdom_id), q, to_boolean)
+
+    def matching_sample_otus(self, kingdom_id):
         # we do a cross-join, but convert to an inner-join with
         # filters. as SampleContext is in the main query, the
         # machinery for filtering above will just work
@@ -175,6 +201,8 @@ class SampleQuery:
             .filter(SampleContext.id == SampleOTU.sample_id)
         q = self._apply_taxonomy_filters(q)
         q = self._contextual_filter.apply(q)
+        if kingdom_id is not None:
+            q = q.filter(OTU.kingdom_id == kingdom_id)
         # we don't cache this query: the result size is enormous,
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
@@ -182,6 +210,8 @@ class SampleQuery:
         return q
 
     def _apply_taxonomy_filters(self, q):
+        if self._amplicon_filter:
+            q = q.filter(OTU.amplicon_id == self._amplicon_filter)
         for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter):
             if value is None:
                 break
@@ -194,7 +224,7 @@ class SampleQuery:
         matching the taxonomy filter
         """
         # shortcut: if we don't have any filters, don't produce a subquery
-        if self._taxonomy_filter[0] is None:
+        if not self._amplicon_filter and self._taxonomy_filter[0] is None:
             return None
         q = self._session.query(SampleOTU.sample_id).distinct().join(OTU)
         return self._apply_taxonomy_filters(q)
@@ -222,13 +252,14 @@ class ContextualFilter:
         'and': sqlalchemy.and_,
     }
 
-    def __init__(self, mode):
+    def __init__(self, mode, environment_filter):
         self.mode = mode
         self.mode_func = ContextualFilter.mode_operators[self.mode]
+        self.environment_filter = environment_filter
         self.terms = []
 
     def __repr__(self):
-        return '<ContextualFilter(%s,[%s]>' % (self.mode, ','.join(repr(t) for t in self.terms))
+        return '<ContextualFilter(%s,env[%s],[%s]>' % (self.mode, repr(self.environment_filter), ','.join(repr(t) for t in self.terms))
 
     def add_term(self, term):
         self.terms.append(term)
@@ -237,6 +268,10 @@ class ContextualFilter:
         """
         return q with contextual filter terms applied to it
         """
+        # if there's an environment filter, it applies prior to the filters
+        # below, so it's outside of the application of mode_func
+        if self.environment_filter:
+            q = q.filter(SampleContext.environment_id == self.environment_filter)
         # chain together the conditions provided by each term,
         # combine into a single expression using our mode,
         # then filter the query
