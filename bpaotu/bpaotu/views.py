@@ -5,6 +5,8 @@ import logging
 import zipstream
 import datetime
 from collections import defaultdict
+import csv
+import io
 
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
@@ -36,8 +38,10 @@ from .models import (
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
 
-
+import logging
 logger = logging.getLogger("rainbow")
+
+
 # See datatables.net serverSide documentation for details
 ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
@@ -244,6 +248,85 @@ def param_to_filters(query_str):
         taxonomy_filter=taxonomy_filter), errors)
 
 
+def param_to_filters_without_checks(query_str):
+    otu_query = json.loads(query_str)
+    taxonomy_filter = clean_taxonomy_filter(otu_query['taxonomy_filters'])
+    amplicon_filter = clean_amplicon_filter(otu_query['amplicon_filter'])
+
+    context_spec = otu_query['contextual_filters']
+    contextual_filter = ContextualFilter(context_spec['mode'], context_spec['environment'])
+
+    errors = []
+
+    return (OTUQueryParams(
+        amplicon_filter=amplicon_filter,
+        contextual_filter=contextual_filter,
+        taxonomy_filter=taxonomy_filter), errors)
+
+
+@require_http_methods(["POST"])
+def required_table_headers(request):
+    """
+    This is a modification of the otu_search method to populate the DataTable
+    """
+
+    def _int_get_param(param_name):
+        param = request.POST.get(param_name)
+        try:
+            return int(param) if param is not None else None
+        except ValueError:
+            return None
+
+    draw = _int_get_param('draw')
+    start = _int_get_param('start')
+    length = _int_get_param('length')
+
+    search_terms = json.loads(request.POST['otu_query'])
+    contextual_terms = search_terms['contextual_filters']['filters']
+
+    required_headers = []
+    for elem in contextual_terms:
+        required_headers.append(elem['field'])
+
+    results = []
+    result_count = len(results)
+
+    environment_lookup = make_environment_lookup()
+
+    params, errors = param_to_filters_without_checks(request.POST['otu_query'])
+    with SampleQuery(params) as query:
+        results = query.matching_sample_headers(required_headers)
+
+    result_count = len(results)
+    results = results[start:start + length]
+
+    def get_environment(environment_id):
+        if environment_id is None:
+            return None
+        return environment_lookup[environment_id]
+
+    data = []
+    for t in results:
+        count = 2
+        data_dict = {"bpa_id": t[0], "environment": get_environment(t[1])}
+
+        for rh in required_headers:
+            data_dict[rh] = t[count]
+            count = count + 1
+
+        data.append(data_dict)
+
+    res = {
+        'draw': draw,
+    }
+    res.update({
+        'data': data,
+        'recordsTotal': result_count,
+        'recordsFiltered': result_count,
+    })
+    return JsonResponse(res)
+
+
 # technically we should be using GET, but the specification
 # of the query (plus the datatables params) is large: so we
 # avoid the issues of long URLs by simply POSTing the query
@@ -426,4 +509,54 @@ def otu_log(request):
         'samplecontext_count': session.query(SampleContext).count(),
     }
     session.close()
+    return HttpResponse(template.render(context, request))
+
+
+@require_http_methods(["POST"])
+def contextual_csv_download_endpoint(request):
+    data = request.POST.get('otu_query')
+
+    search_terms = json.loads(data)
+    contextual_terms = search_terms['contextual_filters']['filters']
+
+    required_headers = []
+    for h in contextual_terms:
+        required_headers.append(h['field'])
+
+    params, errors = param_to_filters_without_checks(request.POST['otu_query'])
+    with SampleQuery(params) as query:
+        results = query.matching_sample_headers(required_headers)
+
+    header = ['sample_bpa_id', 'bpa_project'] + required_headers
+
+    file_buffer = io.StringIO()
+    csv_writer = csv.writer(file_buffer)
+
+    def read_and_flush():
+        data = file_buffer.getvalue()
+        file_buffer.seek(0)
+        file_buffer.truncate()
+        return data
+
+    def yield_csv_function():
+        csv_writer.writerow(header)
+        yield read_and_flush()
+
+        for r in results:
+            row = []
+            row.append(r)
+
+            csv_writer.writerow(r)
+            yield read_and_flush()
+
+    response = StreamingHttpResponse(yield_csv_function(), content_type="text/csv")
+    response['Content-Disposition'] = "application/download; filename=table.csv"
+
+    return response
+
+
+def tables(request):
+    template = loader.get_template('bpaotu/tables.html')
+    context = {}
+
     return HttpResponse(template.render(context, request))

@@ -1,0 +1,83 @@
+{% extends 'bpaotu/base.html' %}
+{% load staticfiles %}
+{% load static from staticfiles %}
+
+{% block title %}
+<title>Bioplatforms OTU Search Facility - Contextual Tables</title>
+{% endblock title %}
+
+{% block extra_head %}
+<script src="{% static 'bpaotu/table.js' %}"></script>
+{% endblock extra_head %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Select Table Columns
+            </div>
+            <div id="contextual_filters" class="panel-body">
+                <div id="contextual_filters_target">
+                </div>
+            </div>
+            <div class="panel-footer">
+                <div class="row">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-2"><input class="form-control btn btn-success" type="button" id="add_contextual_filter" value="Add" /></div>
+                    <div class="col-md-2"><input class="btn btn-warning" type="button" id="clear_contextual_filters" value="Clear" /></div>
+                    <div class="col-md-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12" id="error-box">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-5">
+        </div>
+        <div class="col-md-2">
+            <div class="panel panel-default">
+                <button type="button" class="btn btn-primary btn-block" id="search_button"><span class="glyphicon glyphicon-search" aria-hidden="true"></span>Search Table Column</button>
+            </div>
+            <div id="spinner" class="spinner"></div>
+        </div>
+        <div class="col-md-5">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <button type="button" class="btn btn-default " id="export_button">
+                        <span class="glyphicon glyphicon-download" aria-hidden="true"></span> Export Search Results
+                    </button>
+                    <span class="glyphicon glyphicon-info-sign" title="Export an OTU abundance table, OTU taxonomy and representative OTU sequences for samples filling filtered search."></span>
+                    To sort by multiple columns, press and hold the Shift key.
+                </div>
+                <table id="results" class="table" width="100%">
+                    <thead>
+                        <tr>
+                            <th>BPA Sample ID</th>
+                            <th>BPA Project</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <th>BPA Sample ID</th>
+                            <th>BPA Project</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

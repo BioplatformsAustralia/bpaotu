@@ -179,6 +179,18 @@ class SampleQuery:
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
         return self._q_all_cached('matching_sample_ids_and_environment', q)
 
+    def matching_sample_headers(self, required_headers=None):
+        query_headers = [SampleContext.id, SampleContext.environment_id]
+
+        cache_name = ['matching_sample_headers']
+        if required_headers:
+            cache_name += required_headers
+            for h in required_headers:
+                query_headers.append(getattr(SampleContext, h))
+
+        q = self._session.query(*query_headers)
+        return self._q_all_cached(':'.join(cache_name), q)
+
     def matching_samples(self):
         q = self._session.query(SampleContext)
         subq = self._build_taxonomy_subquery()
