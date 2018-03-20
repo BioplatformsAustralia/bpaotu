@@ -165,7 +165,7 @@ class SampleQuery:
             + repr(self._taxonomy_filter) + ':' \
             + repr(self._contextual_filter)
         key = sha256(hash_str.encode('utf8')).hexdigest()
-        result = None # cache.get(key) !!! CHANGE THIS BACK
+        result = cache.get(key)
         if not result:
             result = q.all()
             if mutate_result:
@@ -182,13 +182,14 @@ class SampleQuery:
     def matching_sample_headers(self, required_headers=None):
         query_headers = [SampleContext.id, SampleContext.environment_id]
 
+        cache_name = ['matching_sample_headers']
         if required_headers:
+            cache_name += required_headers
             for h in required_headers:
                 query_headers.append(getattr(SampleContext, h))
 
         q = self._session.query(*query_headers)
-
-        return self._q_all_cached('matching_sample_headers', q)
+        return self._q_all_cached(':'.join(cache_name), q)
 
     def matching_samples(self):
         q = self._session.query(SampleContext)
