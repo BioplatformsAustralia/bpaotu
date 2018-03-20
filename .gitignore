@@ -12,3 +12,5 @@ media/
 .vscode
 build
 data/
+*.tags
+*.tags1
