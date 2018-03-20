@@ -34,6 +34,7 @@ from .query import (
     get_sample_ids)
 from django.template import loader
 from .models import (
+    ImportFileLog,
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
 
@@ -66,7 +67,7 @@ def display_name(field_name):
 
 
 class OTUSearch(TemplateView):
-    template_name = 'bpaotu/search_results.html'
+    template_name = 'bpaotu/search.html'
     ckan_base_url = settings.CKAN_SERVERS[0]['base_url']
 
     def get_context_data(self, **kwargs):
@@ -494,12 +495,20 @@ def otu_export(request):
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
     missing_sample_ids = []
+    from .query import Session
+    from .otu import (SampleContext, OTU, SampleOTU)
     for obj in ImportSamplesMissingMetadataLog.objects.all():
         missing_sample_ids += obj.samples_without_metadata
+    session = Session()
     context = {
+        'files': ImportFileLog.objects.all(),
         'ontology_errors': ImportOntologyLog.objects.all(),
         'missing_samples': ', '.join(sorted(missing_sample_ids)),
+        'otu_count': session.query(OTU).count(),
+        'sampleotu_count': session.query(SampleOTU).count(),
+        'samplecontext_count': session.query(SampleContext).count(),
     }
+    session.close()
     return HttpResponse(template.render(context, request))
 
 
