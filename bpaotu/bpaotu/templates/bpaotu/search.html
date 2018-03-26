@@ -3,7 +3,33 @@
 {% load static from staticfiles %}
 
 {% block extra_head %}
-<script src="{% static 'bpaotu/bpaotu.js' %}"></script>
+<script>
+var authenticate_users = function() {
+    var bpa_endpoint = 'https://localhost:8443/user/me';
+    var bpaotu_endpoint = 'https://localhost:8443/bpa/otu/otu_verification_endpoint';
+
+    $.ajax({
+        url: bpa_endpoint,
+        success: function(result) {
+            $.ajax({
+                url: bpaotu_endpoint,
+                data: { 'result': result },
+                success: function(permission) {
+                }
+            });
+        },
+        error: function(result) {
+            console.log(result);
+            console.log('Unable to communicate with the BPA data portal.');
+        }
+    });
+}
+
+authenticate_users();
+</script>
+
+
+
 {% endblock extra_head %}
 
 {% block content %}
@@ -16,7 +42,7 @@
                     <span class="glyphicon glyphicon-info-sign" aria-hidden="true" title="Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, Eukaryotes (v4 and v9) and Fungi.  To filter data from a single amplicon select that amplicon here.  To search all amplicons for a taxa select &quot;all&quot;.  Note the &quot;all&quot; search will return non-target sequences as well as target, for example searching &quot;Amplicon = all&quot; + &quot;Kingdom = Bacteria&quot; will return all sequences classified as bacteria in all assays."></span>
                     Filter on Amplicon
                 </div>
-                
+
                 <div class="panel-body">
                     <select class="form-control" id="amplicon"></select>
                 </div>
@@ -88,7 +114,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading">
@@ -99,7 +125,7 @@
                     <div class="row" id="environment-row">
                         <div class="col-md-2"></div>
                         <div class="col-md-4">
-                            Environment 
+                            Environment
                             <span class="glyphicon glyphicon-info-sign" aria-hidden="true" title="Data may be filtered on environment to restrict samples to either soil or marine environment sources.  Marine environment includes pelagic, coastal, sediment and host associated samples.  Within marine environment, samples may be further filtered by adding another filter and selecting the &quot;Sample Type&quot; filter."></span>
                         </div>
                         <div class="col-md-6 contextual-entry">
@@ -128,12 +154,12 @@
             </div>
         </div>
     </div>
-    
+
     <div class="row">
         <div class="col-md-12" id="error-box">
         </div>
     </div>
-    
+
     <div class="row">
         <div class="col-md-5">
         </div>
@@ -146,7 +172,7 @@
         <div class="col-md-5">
         </div>
     </div>
-    
+
     <div class="row">
         <div class="col-md-12">
             <div class="panel panel-default">

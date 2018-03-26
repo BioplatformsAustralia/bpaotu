@@ -38,6 +38,8 @@ from .models import (
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
 
+from django.views.decorators.csrf import csrf_exempt
+
 import logging
 logger = logging.getLogger("rainbow")
 
@@ -553,6 +555,71 @@ def contextual_csv_download_endpoint(request):
     response['Content-Disposition'] = "application/download; filename=table.csv"
 
     return response
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# @require_http_methods(["POST"])
+@csrf_exempt
+def otu_verification_endpoint(request):
+    data = request.POST.get('result')
+
+    return HttpResponse(data)
+
+    import hmac
+    import json
+    import time
+
+    # data = 'fbfc4288aae71b1b91815b467f1d5035||{"timestamp": 1521776529, "organisations": ["ausmicro", "microbes"], "userid": "6f86914f-b8b7-43ff-855c-474c1e40ec1e"}'
+
+    hash_portion = data.split('||')[0]
+    data_portion = data.split('||')[1]
+
+    json_data = json.loads(data_portion)
+
+    secret_key = b'secret-key-foobarbaz'
+    digest_maker = hmac.new(secret_key)
+    digest_maker.update(data_portion.encode('utf8'))
+    digest = digest_maker.hexdigest()
+
+    SECS_IN_DAY = 60*60*24
+    response = ''
+
+
+    if digest == hash_portion:
+        if time.time() - json_data['timestamp'] < SECS_IN_DAY:
+            if 'ausmicro' in json_data['organisations']:
+                response = "Valid"
+            else:
+                response = "You do not have access to the Ausmicro data."
+        else:
+            response = "The timestamp is too old."
+    else:
+        response = "Secret key does not match."
+
+
+
+    return HttpResponse(response)
 
 
 def tables(request):
