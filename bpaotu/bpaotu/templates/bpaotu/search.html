@@ -4,31 +4,49 @@
 
 {% block extra_head %}
 <script>
-var authenticate_users = function() {
-    var bpa_endpoint = 'https://localhost:8443/user/me';
-    var bpaotu_endpoint = 'https://localhost:8443/bpa/otu/otu_verification_endpoint';
+// $(document).ready(function() {
+    var authenticate_users = function() {
+        // !!! NOTE: Do not hardcode the endpoints - so change it eventually.
+        // var bpa_endpoint = window.otu_search_config['ckan_base_url'] + '/user/me';
+        // var bpaotu_endpoint = window.otu_search_config['ckan_base_url'] + '/bpa/otu/otu_verification_endpoint';
+        var bpa_endpoint = 'https://localhost:8443/user/check_permissions';
+        var bpaotu_endpoint = 'https://localhost:8443/bpa/otu/otu_verification_endpoint';
 
-    $.ajax({
-        url: bpa_endpoint,
-        success: function(result) {
-            $.ajax({
-                url: bpaotu_endpoint,
-                data: { 'result': result },
-                success: function(permission) {
-                }
-            });
-        },
-        error: function(result) {
-            console.log(result);
-            console.log('Unable to communicate with the BPA data portal.');
-        }
-    });
-}
+        $.ajax({
+            url: bpa_endpoint,
+            success: function(result) {
+                $.ajax({
+                    url: bpaotu_endpoint,
+                    data: { 'result': result },
+                    success: function(permission) {
+                        if (permission == 'Valid') {
+                        } else {
+                            window.document.write("Please log in to the Bioplatforms data portal \
+                                                    and ensure that you have access to the Ausmicro data to use the search tool.");
+                            window.stop();
+                        }
+                    },
+                    error: function(permission) {
+                        window.document.write("Please log in to the Bioplatforms data portal \
+                                                and ensure that you have access to the Ausmicro data to use the search tool.");
+                        window.stop();                        
+                    }
+                });
+            },
+            error: function(result) {
+                window.document.write("Please log in to the Bioplatforms data portal \
+                                        and ensure that you have access to the Ausmicro data to use the search tool.");
+                window.stop();
+            }
+        });
+    }
 
-authenticate_users();
+    authenticate_users();
+// })
+
 </script>
 
-
+<script src="{% static 'bpaotu/bpaotu.js' %}"></script>
 
 {% endblock extra_head %}
 
