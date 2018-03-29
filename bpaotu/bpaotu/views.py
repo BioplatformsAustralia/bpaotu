@@ -7,6 +7,9 @@ import datetime
 from collections import defaultdict
 import csv
 import io
+import hmac
+import time
+import os
 
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
@@ -557,47 +560,23 @@ def contextual_csv_download_endpoint(request):
     return response
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# @require_http_methods(["POST"])
 @csrf_exempt
 def otu_verification_endpoint(request):
-    data = request.POST.get('result')
+    try:
+        data = request.GET.get('result')
 
-    return HttpResponse(data)
+        hash_portion = data.split('||')[0]
+        data_portion = data.split('||')[1]
 
-    import hmac
-    import json
-    import time
+        json_data = json.loads(data_portion)
 
-    # data = 'fbfc4288aae71b1b91815b467f1d5035||{"timestamp": 1521776529, "organisations": ["ausmicro", "microbes"], "userid": "6f86914f-b8b7-43ff-855c-474c1e40ec1e"}'
+        timestamp = json_data['timestamp']
+        organisations = json_data['organisations']
+    except:
+        return HttpResponse('There is an error with the authentication token.')
 
-    hash_portion = data.split('||')[0]
-    data_portion = data.split('||')[1]
+    secret_key = bytes(os.environ.get('BPAOTU_AUTH_SECRET_KEY'), encoding='utf-8')
 
-    json_data = json.loads(data_portion)
-
-    secret_key = b'secret-key-foobarbaz'
     digest_maker = hmac.new(secret_key)
     digest_maker.update(data_portion.encode('utf8'))
     digest = digest_maker.hexdigest()
@@ -605,10 +584,9 @@ def otu_verification_endpoint(request):
     SECS_IN_DAY = 60*60*24
     response = ''
 
-
     if digest == hash_portion:
-        if time.time() - json_data['timestamp'] < SECS_IN_DAY:
-            if 'ausmicro' in json_data['organisations']:
+        if time.time() - timestamp < SECS_IN_DAY:
+            if 'australian-microbiome' in organisations:
                 response = "Valid"
             else:
                 response = "You do not have access to the Ausmicro data."
@@ -616,8 +594,6 @@ def otu_verification_endpoint(request):
             response = "The timestamp is too old."
     else:
         response = "Secret key does not match."
-
-
 
     return HttpResponse(response)
 
