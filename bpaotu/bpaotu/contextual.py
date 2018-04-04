@@ -518,14 +518,11 @@ def marine_contextual_rows(metadata_path):
             header_length=1,
             column_name_row_index=0,
             additional_context={'sample_type': sheet_name, 'environment': 'Marine'})
-        objs += [t._asdict() for t in wrapper.get_all()]
-
-    objs = []
-    for row in wrapper.get_all():
-        obj = row._asdict()
-        if obj['bpa_id'] is None:
-            continue
-        objs.append(obj)
+        for row in wrapper.get_all():
+            obj = row._asdict()
+            if obj['bpa_id'] is None:
+                continue
+            objs.append(obj)
 
     valid_objs = [t for t in objs if context_valid(t)]
     ImportFileLog.make_file_log(metadata_path, file_type='Marine contextual metadata', rows_imported=len(valid_objs), rows_skipped=len(objs) - len(valid_objs))
