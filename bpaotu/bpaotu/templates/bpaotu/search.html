@@ -3,55 +3,18 @@
 {% load static from staticfiles %}
 
 {% block extra_head %}
-<script>
-// $(document).ready(function() {
-    var authenticate_users = function() {
-        // !!! NOTE: Do not hardcode the endpoints - so change it eventually.
-        // var bpa_endpoint = window.otu_search_config['ckan_base_url'] + '/user/me';
-        // var bpaotu_endpoint = window.otu_search_config['ckan_base_url'] + '/bpa/otu/otu_verification_endpoint';
-        var bpa_endpoint = 'https://localhost:8443/user/check_permissions';
-        var bpaotu_endpoint = 'https://localhost:8443/bpa/otu/otu_verification_endpoint';
-
-        $.ajax({
-            url: bpa_endpoint,
-            success: function(result) {
-                $.ajax({
-                    url: bpaotu_endpoint,
-                    data: { 'result': result },
-                    success: function(permission) {
-                        if (permission == 'Valid') {
-                        } else {
-                            window.document.write("Please log in to the Bioplatforms data portal \
-                                                    and ensure that you have access to the Ausmicro data to use the search tool.");
-                            window.stop();
-                        }
-                    },
-                    error: function(permission) {
-                        window.document.write("Please log in to the Bioplatforms data portal \
-                                                and ensure that you have access to the Ausmicro data to use the search tool.");
-                        window.stop();                        
-                    }
-                });
-            },
-            error: function(result) {
-                window.document.write("Please log in to the Bioplatforms data portal \
-                                        and ensure that you have access to the Ausmicro data to use the search tool.");
-                window.stop();
-            }
-        });
-    }
-
-    authenticate_users();
-// })
-
-</script>
 
 <script src="{% static 'bpaotu/bpaotu.js' %}"></script>
 
+
+<script>
+
+</script>
 {% endblock extra_head %}
 
 {% block content %}
 <div class="container-fluid">
+    <div id="token_error_message"></div>
     <h4>For instructions on how to use this search tool, please see <a href="/organization/pages/australian-microbiome/search-instructions">the search documentation</a>.</h4>
     <div class="row">
         <div class="col-md-6">

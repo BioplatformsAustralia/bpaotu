@@ -2,6 +2,10 @@
 
 $(document).ready(function() {
     var theSpinner = null;
+    var authentication_token = null;
+
+
+
 
     function stop_spinner() {
         if (theSpinner) {
@@ -108,11 +112,19 @@ $(document).ready(function() {
     };
 
     var taxonomy_refresh = function() {
+
+        // @@CHECK
+        // if (authentication_token == null) {
+        //     get_auth_token();
+        //     return;
+        // }
+
         $.ajax({
             method: 'GET',
             dataType: 'json',
             url: window.otu_search_config['taxonomy_endpoint'],
             data: {
+                'token': authentication_token,
                 'amplicon': marshal_amplicon_filter(),
                 'selected': JSON.stringify(taxonomy_get_state())
             }
@@ -144,10 +156,20 @@ $(document).ready(function() {
             taxonomy_clear_all();
             taxonomy_refresh();
         });
+
+        // @@CHECK
+        // if(authentication_token == null) {
+        //     get_auth_token();
+        //     return;
+        // }
+
         $.ajax({
             method: 'GET',
             dataType: 'json',
             url: window.otu_search_config['amplicon_endpoint'],
+            data: {
+                'token': authentication_token
+            }
         }).done(function(result) {
             amplicon_set_possibilities(result['possibilities']);
         });
@@ -300,11 +322,20 @@ $(document).ready(function() {
             update_contextual_controls();
         });
 
+        // @@CHECK
+        // if(authentication_token == null) {
+        //     get_auth_token();
+        //     return;
+        // }
+
         // get configuration of the various filters
         $.ajax({
             method: 'GET',
             dataType: 'json',
             url: window.otu_search_config['contextual_endpoint'],
+            data: {
+                'token': authentication_token,
+            }
         }).done(function(result) {
             contextual_config = result;
             // set up the environment filter
@@ -428,6 +459,11 @@ $(document).ready(function() {
     }
 
     var setup_datatables = function() {
+        if(authentication_token == null) {
+            get_auth_token();
+            return;
+        }
+
         datatable = $("#results").DataTable({
             'processing': true,
             'serverSide': true,
@@ -474,6 +510,39 @@ $(document).ready(function() {
         });
     };
 
+
+
+    function get_auth_token() {
+        var bpa_endpoint = '/user/private/api/bpa/check_permissions';
+
+        $.ajax({
+            url: bpa_endpoint,
+            async: true,
+            success: function(result) {
+                authentication_token = result;
+
+                setup_csrf();
+                setup_amplicon();
+                setup_taxonomic();
+                setup_contextual();
+                setup_search();
+                setup_datatables();
+                setup_export();
+                set_errors(null);
+
+                $(document).tooltip();
+
+                console.log('Successfully received token');
+                console.log(result);
+                console.log(authentication_token);
+            },
+            error: function(result) {
+                $("#token_error_message").html("<h4>Please log into CKAN and ensure that you have access to the AusMicro data.</h4>");
+            }
+        });
+    }
+
+
     setup_csrf();
     setup_amplicon();
     setup_taxonomic();
@@ -484,4 +553,7 @@ $(document).ready(function() {
     set_errors(null);
 
     $(document).tooltip();
+
+    // get_auth_token();
+
 });

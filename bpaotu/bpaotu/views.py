@@ -14,7 +14,7 @@ import os
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
 from django.views.generic import TemplateView
-from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse, HttpResponseForbidden
 from io import StringIO
 import traceback
 from .importer import DataImporter
@@ -113,6 +113,14 @@ def amplicon_options(request):
     """
     private API: return the possible amplicons
     """
+    # try:
+    #     token = request.GET['token']
+    # except:
+    #     return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
+    #
+    # if _otu_endpoint_verification(token):
+    #     pass
+
     with OntologyInfo() as options:
         vals = options.get_values(OTUAmplicon)
     return JsonResponse({
@@ -125,6 +133,19 @@ def taxonomy_options(request):
     """
     private API: given taxonomy constraints, return the possible options
     """
+    # try:
+    #     token = request.GET['token']
+    # except:
+    #     return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
+    #
+    # if _otu_endpoint_verification(token):
+    #     pass
+
+
+    print("===================================We are here.")
+
+
+
     with TaxonomyOptions() as options:
         amplicon = clean_amplicon_filter(request.GET['amplicon'])
         selected = clean_taxonomy_filter(json.loads(request.GET['selected']))
@@ -140,6 +161,14 @@ def contextual_fields(request):
     private API: return the available fields, and their types, so that
     the contextual filtering UI can be built
     """
+    # try:
+    #     token = request.GET['token']
+    # except:
+    #     return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
+    #
+    # if _otu_endpoint_verification(token):
+    #     pass
+
     fields_by_type = defaultdict(list)
 
     classifications = DataImporter.classify_fields(make_environment_lookup())
@@ -335,6 +364,7 @@ def required_table_headers(request):
 # technically we should be using GET, but the specification
 # of the query (plus the datatables params) is large: so we
 # avoid the issues of long URLs by simply POSTing the query
+@csrf_exempt
 @require_http_methods(["POST"])
 def otu_search(request):
     """
@@ -439,6 +469,9 @@ def otu_export(request):
       - an CSV of all the contextual data samples matching the query
       - an CSV of all the OTUs matching the query, with counts against Sample IDs
     """
+
+    # if _otu_endpoint_verification(request.GET['token']):
+    #     pass
 
     def val_or_empty(obj):
         if obj is None:
@@ -560,20 +593,14 @@ def contextual_csv_download_endpoint(request):
     return response
 
 
-@csrf_exempt
-def otu_verification_endpoint(request):
-    try:
-        data = request.GET.get('result')
+def _otu_endpoint_verification(data):
+    hash_portion = data.split('||')[0]
+    data_portion = data.split('||')[1]
 
-        hash_portion = data.split('||')[0]
-        data_portion = data.split('||')[1]
+    json_data = json.loads(data_portion)
 
-        json_data = json.loads(data_portion)
-
-        timestamp = json_data['timestamp']
-        organisations = json_data['organisations']
-    except:
-        return HttpResponse('There is an error with the authentication token.')
+    timestamp = json_data['timestamp']
+    organisations = json_data['organisations']
 
     secret_key = bytes(os.environ.get('BPAOTU_AUTH_SECRET_KEY'), encoding='utf-8')
 
@@ -582,20 +609,18 @@ def otu_verification_endpoint(request):
     digest = digest_maker.hexdigest()
 
     SECS_IN_DAY = 60*60*24
-    response = ''
 
     if digest == hash_portion:
         if time.time() - timestamp < SECS_IN_DAY:
             if 'australian-microbiome' in organisations:
-                response = "Valid"
+                return True
             else:
-                response = "You do not have access to the Ausmicro data."
+                return HttpResponseForbidden("You do not have access to the Ausmicro data.")
         else:
-            response = "The timestamp is too old."
+            return HttpResponseForbidden("The timestamp is too old.")
     else:
-        response = "Secret key does not match."
+        return HttpResponseForbidden("Secret key does not match.")
 
-    return HttpResponse(response)
 
 
 def tables(request):
