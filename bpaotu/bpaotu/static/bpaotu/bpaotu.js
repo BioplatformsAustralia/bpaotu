@@ -4,9 +4,6 @@ $(document).ready(function() {
     var theSpinner = null;
     var authentication_token = null;
 
-
-
-
     function stop_spinner() {
         if (theSpinner) {
             theSpinner.stop();
@@ -112,12 +109,7 @@ $(document).ready(function() {
     };
 
     var taxonomy_refresh = function() {
-
-        // @@CHECK
-        // if (authentication_token == null) {
-        //     get_auth_token();
-        //     return;
-        // }
+        check_for_auth_token();
 
         $.ajax({
             method: 'GET',
@@ -157,11 +149,7 @@ $(document).ready(function() {
             taxonomy_refresh();
         });
 
-        // @@CHECK
-        // if(authentication_token == null) {
-        //     get_auth_token();
-        //     return;
-        // }
+        check_for_auth_token();
 
         $.ajax({
             method: 'GET',
@@ -322,11 +310,7 @@ $(document).ready(function() {
             update_contextual_controls();
         });
 
-        // @@CHECK
-        // if(authentication_token == null) {
-        //     get_auth_token();
-        //     return;
-        // }
+        check_for_auth_token();
 
         // get configuration of the various filters
         $.ajax({
@@ -409,7 +393,7 @@ $(document).ready(function() {
 
     var setup_search = function() {
         $("#search_button").click(function() {
-            start_spinner()
+            start_spinner();
             datatable.ajax.reload(search_complete);
         });
     };
@@ -438,7 +422,11 @@ $(document).ready(function() {
     }
 
     var set_search_data = function(data, settings) {
+        check_for_auth_token();
+
         data['otu_query'] = JSON.stringify(describe_search());
+        data['token'] = authentication_token;
+
         return data;
     };
 
@@ -459,10 +447,7 @@ $(document).ready(function() {
     }
 
     var setup_datatables = function() {
-        if(authentication_token == null) {
-            get_auth_token();
-            return;
-        }
+        check_for_auth_token();
 
         datatable = $("#results").DataTable({
             'processing': true,
@@ -500,9 +485,12 @@ $(document).ready(function() {
     };
 
     var setup_export = function() {
+        check_for_auth_token();
+
         var target = $("#export_button");
         target.click(function() {
             var params = {
+                'token': authentication_token,
                 'q': JSON.stringify(describe_search())
             }
             var target_url = window.otu_search_config['export_endpoint'] + '?' + $.param(params);
@@ -510,7 +498,12 @@ $(document).ready(function() {
         });
     };
 
-
+    function check_for_auth_token() {
+        if (authentication_token == null) {
+            get_auth_token();
+            return;
+        }
+    }
 
     function get_auth_token() {
         var bpa_endpoint = '/user/private/api/bpa/check_permissions';
@@ -531,29 +524,12 @@ $(document).ready(function() {
                 set_errors(null);
 
                 $(document).tooltip();
-
-                console.log('Successfully received token');
-                console.log(result);
-                console.log(authentication_token);
             },
             error: function(result) {
-                $("#token_error_message").html("<h4>Please log into CKAN and ensure that you have access to the AusMicro data.</h4>");
+                $("#token_error_message").html("<h4>Please log into CKAN and ensure that you are authorised to access the AusMicro data.</h4>");
             }
         });
     }
 
-
-    setup_csrf();
-    setup_amplicon();
-    setup_taxonomic();
-    setup_contextual();
-    setup_search();
-    setup_datatables();
-    setup_export();
-    set_errors(null);
-
-    $(document).tooltip();
-
-    // get_auth_token();
-
+    get_auth_token();
 });
