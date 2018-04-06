@@ -113,13 +113,10 @@ def amplicon_options(request):
     """
     private API: return the possible amplicons
     """
-    # try:
-    #     token = request.GET['token']
-    # except:
-    #     return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
-    #
-    # if _otu_endpoint_verification(token):
-    #     pass
+    try:
+        _otu_endpoint_verification(request.GET['token'])
+    except:
+        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
 
     with OntologyInfo() as options:
         vals = options.get_values(OTUAmplicon)
@@ -133,18 +130,10 @@ def taxonomy_options(request):
     """
     private API: given taxonomy constraints, return the possible options
     """
-    # try:
-    #     token = request.GET['token']
-    # except:
-    #     return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
-    #
-    # if _otu_endpoint_verification(token):
-    #     pass
-
-
-    print("===================================We are here.")
-
-
+    try:
+        _otu_endpoint_verification(request.GET['token'])
+    except:
+        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
 
     with TaxonomyOptions() as options:
         amplicon = clean_amplicon_filter(request.GET['amplicon'])
@@ -161,13 +150,10 @@ def contextual_fields(request):
     private API: return the available fields, and their types, so that
     the contextual filtering UI can be built
     """
-    # try:
-    #     token = request.GET['token']
-    # except:
-    #     return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
-    #
-    # if _otu_endpoint_verification(token):
-    #     pass
+    try:
+        _otu_endpoint_verification(request.GET['token'])
+    except:
+        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
 
     fields_by_type = defaultdict(list)
 
@@ -371,6 +357,10 @@ def otu_search(request):
     private API: return the available fields, and their types, so that
     the contextual filtering UI can be built
     """
+    try:
+        _otu_endpoint_verification(request.POST['token'])
+    except:
+        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
 
     def _int_get_param(param_name):
         param = request.POST.get(param_name)
@@ -469,9 +459,10 @@ def otu_export(request):
       - an CSV of all the contextual data samples matching the query
       - an CSV of all the OTUs matching the query, with counts against Sample IDs
     """
-
-    # if _otu_endpoint_verification(request.GET['token']):
-    #     pass
+    try:
+        _otu_endpoint_verification(request.GET['token'])
+    except:
+        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
 
     def val_or_empty(obj):
         if obj is None:
@@ -620,7 +611,6 @@ def _otu_endpoint_verification(data):
             return HttpResponseForbidden("The timestamp is too old.")
     else:
         return HttpResponseForbidden("Secret key does not match.")
-
 
 
 def tables(request):
