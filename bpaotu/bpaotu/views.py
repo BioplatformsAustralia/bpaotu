@@ -585,13 +585,8 @@ def contextual_csv_download_endpoint(request):
 
 
 def _otu_endpoint_verification(data):
-    hash_portion = data.split('||')[0]
-    data_portion = data.split('||')[1]
-
-    json_data = json.loads(data_portion)
-
-    timestamp = json_data['timestamp']
-    organisations = json_data['organisations']
+    hash_portion, data_portion = data.split('||', 1)
+    # data_portion = data.split('||')[1]
 
     secret_key = bytes(os.environ.get('BPAOTU_AUTH_SECRET_KEY'), encoding='utf-8')
 
@@ -602,6 +597,11 @@ def _otu_endpoint_verification(data):
     SECS_IN_DAY = 60*60*24
 
     if digest == hash_portion:
+        json_data = json.loads(data_portion)
+
+        timestamp = json_data['timestamp']
+        organisations = json_data['organisations']
+
         if time.time() - timestamp < SECS_IN_DAY:
             if 'australian-microbiome' in organisations:
                 return True
