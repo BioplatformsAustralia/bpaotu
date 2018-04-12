@@ -593,23 +593,23 @@ def _otu_endpoint_verification(data):
     digest_maker.update(data_portion.encode('utf8'))
     digest = digest_maker.hexdigest()
 
-    if digest == hash_portion:
-        json_data = json.loads(data_portion)
-
-        SECS_IN_DAY = 60*60*24
-
-        timestamp = json_data['timestamp']
-        organisations = json_data['organisations']
-
-        if time.time() - timestamp < SECS_IN_DAY:
-            if 'australian-microbiome' in organisations:
-                return True
-            else:
-                return HttpResponseForbidden("You do not have access to the Ausmicro data.")
-        else:
-            return HttpResponseForbidden("The timestamp is too old.")
-    else:
+    if digest != hash_portion:
         return HttpResponseForbidden("Secret key does not match.")
+
+    json_data = json.loads(data_portion)
+
+    SECS_IN_DAY = 60*60*24
+
+    timestamp = json_data['timestamp']
+    organisations = json_data['organisations']
+
+    if time.time() - timestamp < SECS_IN_DAY:
+        if 'australian-microbiome' in organisations:
+            return True
+        else:
+            return HttpResponseForbidden("You do not have access to the Ausmicro data.")
+    else:
+        return HttpResponseForbidden("The timestamp is too old.")
 
 
 def tables(request):
