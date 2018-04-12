@@ -334,14 +334,13 @@ CACHES = {
 
     'default': {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": env.getlist("cache", ["redis://cache:6379/1"]),
+        "LOCATION": env.getlist("cache", ["redis://otucache:6379/1"]), # NOTE: Passing in via Docker yml does not work.
         "TIMEOUT": 3600,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient"
         },
         "KEY_PREFIX": "bpaotu_cache"
     }
-
 }
 CACHES['search_results'] = CACHES['default']
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
