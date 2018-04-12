@@ -109,19 +109,19 @@ $(document).ready(function() {
     };
 
     var taxonomy_refresh = function() {
-        check_for_auth_token();
-
-        $.ajax({
-            method: 'GET',
-            dataType: 'json',
-            url: window.otu_search_config['taxonomy_endpoint'],
-            data: {
-                'token': authentication_token,
-                'amplicon': marshal_amplicon_filter(),
-                'selected': JSON.stringify(taxonomy_get_state())
-            }
-        }).done(function(result) {
-            taxonomy_set_possibilities(result['possibilities']);
+        $.when(check_for_auth_token()).done(function() {
+            $.ajax({
+                method: 'GET',
+                dataType: 'json',
+                url: window.otu_search_config['taxonomy_endpoint'],
+                data: {
+                    'token': authentication_token,
+                    'amplicon': marshal_amplicon_filter(),
+                    'selected': JSON.stringify(taxonomy_get_state())
+                }
+            }).done(function(result) {
+                taxonomy_set_possibilities(result['possibilities']);
+            });
         });
     };
 
@@ -149,17 +149,17 @@ $(document).ready(function() {
             taxonomy_refresh();
         });
 
-        check_for_auth_token();
-
-        $.ajax({
-            method: 'GET',
-            dataType: 'json',
-            url: window.otu_search_config['amplicon_endpoint'],
-            data: {
-                'token': authentication_token
-            }
-        }).done(function(result) {
-            amplicon_set_possibilities(result['possibilities']);
+        $.when(check_for_auth_token()).done(function() {
+            $.ajax({
+                method: 'GET',
+                dataType: 'json',
+                url: window.otu_search_config['amplicon_endpoint'],
+                data: {
+                    'token': authentication_token
+                }
+            }).done(function(result) {
+                amplicon_set_possibilities(result['possibilities']);
+            });
         });
     };
 
@@ -310,34 +310,34 @@ $(document).ready(function() {
             update_contextual_controls();
         });
 
-        check_for_auth_token();
-
-        // get configuration of the various filters
-        $.ajax({
-            method: 'GET',
-            dataType: 'json',
-            url: window.otu_search_config['contextual_endpoint'],
-            data: {
-                'token': authentication_token,
-            }
-        }).done(function(result) {
-            contextual_config = result;
-            // set up the environment filter
-            var widget = $("#environment");
-            var defn = _.find(contextual_config['definitions'], {'name': 'environment_id'});
-            var options = defn['values'].slice(0);
-            options.unshift([null, '- All -']);
-            set_options(widget, _.map(options, function(val) {
-                return {
-                    'value': val[0],
-                    'text': val[1]
+        $.when(check_for_auth_token()).done(function() {
+            // get configuration of the various filters
+            $.ajax({
+                method: 'GET',
+                dataType: 'json',
+                url: window.otu_search_config['contextual_endpoint'],
+                data: {
+                    'token': authentication_token,
                 }
-            }));
-            widget.on('change', function() {
-                configure_unselected_contextual_filters();
+            }).done(function(result) {
+                contextual_config = result;
+                // set up the environment filter
+                var widget = $("#environment");
+                var defn = _.find(contextual_config['definitions'], {'name': 'environment_id'});
+                var options = defn['values'].slice(0);
+                options.unshift([null, '- All -']);
+                set_options(widget, _.map(options, function(val) {
+                    return {
+                        'value': val[0],
+                        'text': val[1]
+                    }
+                }));
+                widget.on('change', function() {
+                    configure_unselected_contextual_filters();
+                });
             });
+            update_contextual_controls();
         });
-        update_contextual_controls();
     };
 
     var marshal_amplicon_filter = function() {
@@ -422,12 +422,12 @@ $(document).ready(function() {
     }
 
     var set_search_data = function(data, settings) {
-        check_for_auth_token();
+        $.when(check_for_auth_token()).done(function() {
+            data['otu_query'] = JSON.stringify(describe_search());
+            data['token'] = authentication_token;
 
-        data['otu_query'] = JSON.stringify(describe_search());
-        data['token'] = authentication_token;
-
-        return data;
+            return data;
+        });
     };
 
     var set_errors = function(errors) {
@@ -447,62 +447,62 @@ $(document).ready(function() {
     }
 
     var setup_datatables = function() {
-        check_for_auth_token();
-
-        datatable = $("#results").DataTable({
-            'processing': true,
-            'serverSide': true,
-            'ajax': {
-                'url': window.otu_search_config['search_endpoint'],
-                'type': 'POST',
-                'data': set_search_data
-            },
-            columns: [
-              {
-                  'data': 'bpa_id',
-                  'defaultContent': '',
-                  'render': function(data, type, row) {
-                      var environment = row.environment;
-                      var org;
-                      if (environment == 'Soil') {
-                          org = 'bpa-base';
-                      } else {
-                          org = 'bpa-marine-microbes';
+        $.when(check_for_auth_token()).done(function() {
+            datatable = $("#results").DataTable({
+                'processing': true,
+                'serverSide': true,
+                'ajax': {
+                    'url': window.otu_search_config['search_endpoint'],
+                    'type': 'POST',
+                    'data': set_search_data
+                },
+                columns: [
+                  {
+                      'data': 'bpa_id',
+                      'defaultContent': '',
+                      'render': function(data, type, row) {
+                          var environment = row.environment;
+                          var org;
+                          if (environment == 'Soil') {
+                              org = 'bpa-base';
+                          } else {
+                              org = 'bpa-marine-microbes';
+                          }
+                          var url = window.otu_search_config['ckan_base_url'] + '/organization/' + org + '?q=bpa_id:102.100.100.' + data;
+                          return '<a href="' + url + '" target="_blank">' + data + '</a>';
                       }
-                      var url = window.otu_search_config['ckan_base_url'] + '/organization/' + org + '?q=bpa_id:102.100.100.' + data;
-                      return '<a href="' + url + '" target="_blank">' + data + '</a>';
+                  },
+                  {
+                      'data': 'environment',
+                      'defaultContent': ''
                   }
-              },
-              {
-                  'data': 'environment',
-                  'defaultContent': ''
-              }
-            ]
-        });
-        $("#results").on('xhr.dt', function(e, settings, json, xhr) {
-            set_errors(json.errors);
+                ]
+            });
+            $("#results").on('xhr.dt', function(e, settings, json, xhr) {
+                set_errors(json.errors);
+            });
         });
     };
 
     var setup_export = function() {
-        check_for_auth_token();
-
-        var target = $("#export_button");
-        target.click(function() {
-            var params = {
-                'token': authentication_token,
-                'q': JSON.stringify(describe_search())
-            }
-            var target_url = window.otu_search_config['export_endpoint'] + '?' + $.param(params);
-            window.open(target_url);
+        $.when(check_for_auth_token()).done(function() {
+            var target = $("#export_button");
+            target.click(function() {
+                var params = {
+                    'token': authentication_token,
+                    'q': JSON.stringify(describe_search())
+                }
+                var target_url = window.otu_search_config['export_endpoint'] + '?' + $.param(params);
+                window.open(target_url);
+            });
         });
     };
 
     function check_for_auth_token() {
         if (authentication_token == null) {
             get_auth_token();
-            return;
         }
+        return;
     }
 
     function get_auth_token() {

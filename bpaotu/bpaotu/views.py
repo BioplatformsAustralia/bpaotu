@@ -586,7 +586,6 @@ def contextual_csv_download_endpoint(request):
 
 def _otu_endpoint_verification(data):
     hash_portion, data_portion = data.split('||', 1)
-    # data_portion = data.split('||')[1]
 
     secret_key = bytes(os.environ.get('BPAOTU_AUTH_SECRET_KEY'), encoding='utf-8')
 
@@ -594,10 +593,10 @@ def _otu_endpoint_verification(data):
     digest_maker.update(data_portion.encode('utf8'))
     digest = digest_maker.hexdigest()
 
-    SECS_IN_DAY = 60*60*24
-
     if digest == hash_portion:
         json_data = json.loads(data_portion)
+
+        SECS_IN_DAY = 60*60*24
 
         timestamp = json_data['timestamp']
         organisations = json_data['organisations']
