@@ -212,7 +212,7 @@ $(document).ready(function() {
                 dataType: 'json',
                 url: window.otu_search_config['contextual_endpoint'],
                 data: {
-                    'token': authentication_token, 
+                    'token': authentication_token,
                 }
             }).done(function(result) {
                 contextual_config = result;
@@ -322,6 +322,7 @@ $(document).ready(function() {
 
     var set_search_data = function(data, settings) {
         data['otu_query'] = JSON.stringify(describe_search());
+        data['token'] = authentication_token;
         return data;
     };
 
