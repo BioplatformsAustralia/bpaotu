@@ -2,6 +2,8 @@
 
 $(document).ready(function() {
     var theSpinner = null;
+    var authentication_token = null;
+
 
     function stop_spinner() {
         if (theSpinner) {
@@ -203,28 +205,36 @@ $(document).ready(function() {
         });
 
         // get configuration of the various filters
-        $.ajax({
-            method: 'GET',
-            dataType: 'json',
-            url: window.otu_search_config['contextual_endpoint'],
-        }).done(function(result) {
-            contextual_config = result;
-            // set up the environment filter
-            var widget = $("#environment");
-            var defn = _.find(contextual_config['definitions'], {'name': 'environment_id'});
-            var options = defn['values'].slice(0);
-            options.unshift([null, '- All -']);
-            set_options(widget, _.map(options, function(val) {
-                return {
-                    'value': val[0],
-                    'text': val[1]
+
+        $.when(check_for_auth_token).done(function() {
+            $.ajax({
+                method: 'GET',
+                dataType: 'json',
+                url: window.otu_search_config['contextual_endpoint'],
+                data: {
+                    'token': authentication_token, 
                 }
-            }));
-            widget.on('change', function() {
-                configure_unselected_contextual_filters();
+            }).done(function(result) {
+                contextual_config = result;
+                // set up the environment filter
+                var widget = $("#environment");
+                var defn = _.find(contextual_config['definitions'], {'name': 'environment_id'});
+                var options = defn['values'].slice(0);
+                options.unshift([null, '- All -']);
+                set_options(widget, _.map(options, function(val) {
+                    return {
+                        'value': val[0],
+                        'text': val[1]
+                    }
+                }));
+                widget.on('change', function() {
+                    configure_unselected_contextual_filters();
+                });
             });
+            update_contextual_controls();
+
         });
-        update_contextual_controls();
+
     };
 
     var marshal_environment_filter = function() {
@@ -464,11 +474,40 @@ $(document).ready(function() {
     }); // End click function()
 
 
-    setup_csrf();
-    setup_contextual();
-    setup_search();
-    var tbl_ptr = setup_datatables();
-    set_errors(null);
 
-    $(document).tooltip();
+    function check_for_auth_token() {
+        if (authentication_token == null) {
+            get_auth_token();
+        }
+        return;
+    }
+
+
+    function get_auth_token() {
+        var bpa_endpoint = '/user/private/api/bpa/check_permissions';
+
+        $.ajax({
+            url: bpa_endpoint,
+            async: true,
+            success: function(result) {
+                authentication_token = result;
+
+                setup_csrf();
+                setup_contextual();
+                setup_search();
+                var tbl_ptr = setup_datatables();
+                set_errors(null);
+
+                $(document).tooltip();
+            },
+            error: function(result) {
+                $("#token_error_message").html("<h4>Please log into CKAN and ensure that you are authorised to access the AusMicro data.</h4>");
+            }
+        });
+    }
+
+    get_auth_token();
+
+
+
 });

@@ -283,7 +283,7 @@ def param_to_filters_without_checks(query_str):
         contextual_filter=contextual_filter,
         taxonomy_filter=taxonomy_filter), errors)
 
-
+@csrf_exempt
 @require_http_methods(["POST"])
 def required_table_headers(request):
     """
@@ -611,7 +611,7 @@ def _otu_endpoint_verification(data):
     else:
         return HttpResponseForbidden("The timestamp is too old.")
 
-
+@csrf_exempt
 def tables(request):
     template = loader.get_template('bpaotu/tables.html')
     context = {}
