@@ -540,7 +540,7 @@ def otu_log(request):
     session.close()
     return HttpResponse(template.render(context, request))
 
-
+@csrf_exempt
 @require_http_methods(["POST"])
 def contextual_csv_download_endpoint(request):
     data = request.POST.get('otu_query')

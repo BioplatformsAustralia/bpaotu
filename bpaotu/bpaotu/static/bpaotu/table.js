@@ -3,6 +3,7 @@
 $(document).ready(function() {
     var theSpinner = null;
     var authentication_token = null;
+    var tbl_ptr = null;
 
 
     function stop_spinner() {
@@ -384,11 +385,15 @@ $(document).ready(function() {
 
         const fileName = "my-csv.csv";
 
-        var header_data = { 'otu_query': JSON.stringify(describe_search()) };
+        var header_data = {
+            'otu_query': JSON.stringify(describe_search())
+        };
+
+        var url = window.otu_search_config['contextual_csv_download_endpoint'];
 
         $.ajax({
             type: 'POST',
-            url: window.otu_search_config['ckan_base_url'] + '/contextual_csv_download_endpoint/',
+            url: url,
             data: header_data
         }).done(function(data) {
             saveData(data, fileName);
@@ -496,7 +501,7 @@ $(document).ready(function() {
                 setup_csrf();
                 setup_contextual();
                 setup_search();
-                var tbl_ptr = setup_datatables();
+                tbl_ptr = setup_datatables();
                 set_errors(null);
 
                 $(document).tooltip();
@@ -508,7 +513,5 @@ $(document).ready(function() {
     }
 
     get_auth_token();
-
-
 
 });
