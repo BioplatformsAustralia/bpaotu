@@ -283,6 +283,13 @@ def param_to_filters_without_checks(query_str):
         contextual_filter=contextual_filter,
         taxonomy_filter=taxonomy_filter), errors)
 
+
+
+
+
+
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def required_table_headers(request):
@@ -302,11 +309,21 @@ def required_table_headers(request):
     length = _int_get_param('length')
 
     search_terms = json.loads(request.POST['otu_query'])
+
+    order_col = request.POST['order[0][column]']
+    order_type = request.POST['order[0][dir]']
+
     contextual_terms = search_terms['contextual_filters']['filters']
 
     required_headers = []
     for elem in contextual_terms:
         required_headers.append(elem['field'])
+
+
+
+
+
+
 
     results = []
     result_count = len(results)
@@ -315,7 +332,7 @@ def required_table_headers(request):
 
     params, errors = param_to_filters_without_checks(request.POST['otu_query'])
     with SampleQuery(params) as query:
-        results = query.matching_sample_headers(required_headers)
+        results = query.matching_sample_headers(required_headers, order_col, order_type)
 
     result_count = len(results)
     results = results[start:start + length]
@@ -345,6 +362,14 @@ def required_table_headers(request):
         'recordsFiltered': result_count,
     })
     return JsonResponse(res)
+
+
+
+
+
+
+
+
 
 
 # technically we should be using GET, but the specification

@@ -173,23 +173,54 @@ class SampleQuery:
             cache.set(key, result)
         return result
 
+
     def matching_sample_ids_and_environment(self):
         q = self._session.query(SampleContext.id, SampleContext.environment_id)
         subq = self._build_taxonomy_subquery()
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
         return self._q_all_cached('matching_sample_ids_and_environment', q)
 
-    def matching_sample_headers(self, required_headers=None):
+
+
+
+
+
+    def matching_sample_headers(self, required_headers=None, sort_col=None, sort_order=None):
         query_headers = [SampleContext.id, SampleContext.environment_id]
 
         cache_name = ['matching_sample_headers']
         if required_headers:
             cache_name += required_headers
             for h in required_headers:
-                query_headers.append(getattr(SampleContext, h))
+                if h != '':
+                    col = getattr(SampleContext, h)
 
-        q = self._session.query(*query_headers)
+                    if hasattr(col, "ontology_class"):
+                        ty = '_ontology'
+                        print('fooooooooooooooooooooooooooooooooo1212121oi2jo1ij2oi1joi2j')
+
+                    query_headers.append(getattr(SampleContext, h))
+
+        if sort_order == 'asc':
+            q = self._session.query(*query_headers).order_by(query_headers[int(sort_col)])
+            cache_name.append(str(query_headers[int(sort_col)]))
+            cache_name.append(sort_order)
+        elif sort_order == 'desc':
+            q = self._session.query(*query_headers).order_by(query_headers[int(sort_col)].desc())
+            cache_name.append(str(query_headers[int(sort_col)]))
+            cache_name.append(sort_order)
+        else:
+            q = self._session.query(*query_headers)
+
+
+
         return self._q_all_cached(':'.join(cache_name), q)
+
+
+
+
+
+
 
     def matching_samples(self):
         q = self._session.query(SampleContext)
