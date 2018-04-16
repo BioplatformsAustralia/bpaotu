@@ -1,10 +1,14 @@
-import logging
 import datetime
-import sqlalchemy
-from django.core.cache import caches
-from sqlalchemy.orm import sessionmaker
-from itertools import chain
+from functools import partial
 from hashlib import sha256
+from itertools import chain
+import logging
+
+import sqlalchemy
+from sqlalchemy.orm import sessionmaker
+
+from django.core.cache import caches
+
 from .otu import (
     OTU,
     OTUKingdom,
@@ -73,14 +77,13 @@ class TaxonomyOptions:
         def determine_target():
             # this query is built up over time, and validates the hierarchy provided to us
             q = self._session.query(OTU.kingdom_id).group_by(OTU.kingdom_id)
-            if amplicon:
-                q = q.filter(OTU.amplicon_id == amplicon)
-            for idx, ((otu_attr, ontology_class), value) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
+            q = apply_amplicon_filter(q, amplicon)
+            for idx, ((otu_attr, ontology_class), taxonomy) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
                 valid = True
-                if value is None:
+                if taxonomy is None or taxonomy.get('value') is None:
                     valid = False
                 else:
-                    q = q.filter(getattr(OTU, otu_attr) == value)
+                    q = apply_otu_filter(otu_attr, q, taxonomy)
                     valid = q.count() > 0
                 if not valid:
                     return otu_attr, ontology_class, idx
@@ -102,12 +105,10 @@ class TaxonomyOptions:
             state = state[:target_idx] + [None] * (len(TaxonomyOptions.hierarchy) - target_idx)
             # build up a query of the OTUs for our target attribute
             q = self._session.query(getattr(OTU, target_attr), target_class.value).group_by(getattr(OTU, target_attr), target_class.value).order_by(target_class.value)
-            if amplicon:
-                q = q.filter(OTU.amplicon_id == amplicon)
-            for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, state):
-                if value is None:
-                    break
-                q = q.filter(getattr(OTU, otu_attr) == value)
+
+            q = apply_amplicon_filter(q, amplicon)
+            for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, state):
+                q = apply_otu_filter(otu_attr, q, taxonomy)
             q = q.join(target_class)
             possibilities = q.all()
 
@@ -222,12 +223,9 @@ class SampleQuery:
         return q
 
     def _apply_taxonomy_filters(self, q):
-        if self._amplicon_filter:
-            q = q.filter(OTU.amplicon_id == self._amplicon_filter)
-        for (otu_attr, ontology_class), value in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter):
-            if value is None:
-                break
-            q = q.filter(getattr(OTU, otu_attr) == value)
+        q = apply_amplicon_filter(q, self._amplicon_filter)
+        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter):
+            q = apply_otu_filter(otu_attr, q, taxonomy)
         return q
 
     def _build_taxonomy_subquery(self):
@@ -282,81 +280,84 @@ class ContextualFilter:
         """
         # if there's an environment filter, it applies prior to the filters
         # below, so it's outside of the application of mode_func
-        if self.environment_filter:
-            q = q.filter(SampleContext.environment_id == self.environment_filter)
+        q = apply_environment_filter(q, self.environment_filter)
         # chain together the conditions provided by each term,
         # combine into a single expression using our mode,
         # then filter the query
         return q.filter(
             self.mode_func(
-                *(chain(*(t.get_conditions() for t in self.terms)))))
+                *(chain(*(t.conditions for t in self.terms)))))
 
 
 class ContextualFilterTerm:
-    def __init__(self, field_name):
+    def __init__(self, field_name, operator):
         self.field_name = field_name
         self.field = getattr(SampleContext, self.field_name)
+        self.operator = operator
+
+    @property
+    def conditions(self):
+        if self.operator in ('isnot', 'notbetween', 'containsnot'):
+            return [sqlalchemy.not_(c) for c in (self.get_conditions())]
+        return self.get_conditions()
 
 
 class ContextualFilterTermFloat(ContextualFilterTerm):
-    def __init__(self, field_name, val_from, val_to):
-        super(ContextualFilterTermFloat, self).__init__(field_name)
+    def __init__(self, field_name, operator, val_from, val_to):
+        super().__init__(field_name, operator)
         assert(type(val_from) is float)
         assert(type(val_to) is float)
         self.val_from = val_from
         self.val_to = val_to
 
     def __repr__(self):
-        return '<TermFloat(%s,%s,%s)>' % (self.field_name, self.val_from, self.val_to)
+        return '<TermFloat(%s,%s,%s,%s)>' % (self.field_name, self.operator, self.val_from, self.val_to)
 
     def get_conditions(self):
         return [
-            self.field >= self.val_from,
-            self.field <= self.val_to
+            self.field.between(self.val_from, self.val_to)
         ]
 
 
 class ContextualFilterTermDate(ContextualFilterTerm):
-    def __init__(self, field_name, val_from, val_to):
-        super(ContextualFilterTermDate, self).__init__(field_name)
+    def __init__(self, field_name, operator, val_from, val_to):
+        super().__init__(field_name, operator)
         assert(type(val_from) is datetime.date)
         assert(type(val_to) is datetime.date)
         self.val_from = val_from
         self.val_to = val_to
 
     def __repr__(self):
-        return '<TermDate(%s,%s,%s)>' % (self.field_name, self.val_from, self.val_to)
+        return '<TermDate(%s,%s,%s,%s)>' % (self.field_name, self.operator, self.val_from, self.val_to)
 
     def get_conditions(self):
         return [
-            self.field >= self.val_from,
-            self.field <= self.val_to
+            self.field.between(self.val_from, self.val_to)
         ]
 
 
 class ContextualFilterTermString(ContextualFilterTerm):
-    def __init__(self, field_name, val_contains):
-        super(ContextualFilterTermString, self).__init__(field_name)
+    def __init__(self, field_name, operator, val_contains):
+        super().__init__(field_name, operator)
         assert(type(val_contains) is str)
         self.val_contains = val_contains
 
     def __repr__(self):
-        return '<TermString(%s,%s)>' % (self.field_name, self.val_contains)
+        return '<TermString(%s,%s,%s)>' % (self.field_name, self.operator, self.val_contains)
 
     def get_conditions(self):
-        return [
-            self.field.contains(self.val_contains)
-        ]
+        cond = self.field.contains(self.val_contains)
+        return [cond]
 
 
 class ContextualFilterTermOntology(ContextualFilterTerm):
-    def __init__(self, field_name, val_is):
-        super(ContextualFilterTermOntology, self).__init__(field_name)
+    def __init__(self, field_name, operator, val_is):
+        super().__init__(field_name, operator)
         assert(type(val_is) is int)
         self.val_is = val_is
 
     def __repr__(self):
-        return '<TermOntology(%s,%s)>' % (self.field_name, self.val_is)
+        return '<TermOntology(%s,%s,%s)>' % (self.field_name, self.operator, self.val_is)
 
     def get_conditions(self):
         return [
@@ -365,15 +366,15 @@ class ContextualFilterTermOntology(ContextualFilterTerm):
 
 
 class ContextualFilterTermSampleID(ContextualFilterTerm):
-    def __init__(self, field_name, val_is_in):
-        super(ContextualFilterTermSampleID, self).__init__(field_name)
+    def __init__(self, field_name, operator, val_is_in):
+        super().__init__(field_name, operator)
         assert(type(val_is_in) is list)
         for t in val_is_in:
             assert(type(t) is int)
         self.val_is_in = val_is_in
 
     def __repr__(self):
-        return '<TermSampleID(%s,%s)>' % (self.field_name, self.val_is_in)
+        return '<TermSampleID(%s,%s,%s)>' % (self.field_name, self.operator, self.val_is_in)
 
     def get_conditions(self):
         return [
@@ -386,3 +387,22 @@ def get_sample_ids():
     ids = [t[0] for t in session.query(SampleContext.id).all()]
     session.close()
     return ids
+
+
+def apply_op_and_val_filter(attr, q, op_and_val):
+    if op_and_val is None or op_and_val.get('value') is None:
+        return q
+    value = op_and_val.get('value')
+    if op_and_val.get('operator', 'is') == 'isnot':
+        q = q.filter(attr != value)
+    else:
+        q = q.filter(attr == value)
+    return q
+
+
+def apply_otu_filter(otu_attr, q, op_and_val):
+    return apply_op_and_val_filter(getattr(OTU, otu_attr), q, op_and_val)
+
+
+apply_amplicon_filter = partial(apply_otu_filter, 'amplicon_id')
+apply_environment_filter = partial(apply_op_and_val_filter, SampleContext.environment_id)

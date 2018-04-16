@@ -4,8 +4,7 @@ import json
 import logging
 import zipstream
 import datetime
-from collections import defaultdict
-import csv
+from collections import defaultdict, OrderedDict
 import io
 
 from django.conf import settings
@@ -38,7 +37,7 @@ from .models import (
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
 
-import logging
+
 logger = logging.getLogger("rainbow")
 
 
@@ -83,12 +82,19 @@ def int_if_not_already_none(v):
     return int(v)
 
 
-def clean_amplicon_filter(v):
-    return int_if_not_already_none(v)
+def get_operator_and_int_value(v):
+    if v is None or v == '':
+        return None
+    if v.get('value', '') == '':
+        return None
+    return OrderedDict((
+        ('operator', v.get('operator', '=')),
+        ('value', int_if_not_already_none(v['value'])),
+    ))
 
 
-def clean_environment_filter(v):
-    return int_if_not_already_none(v)
+clean_amplicon_filter = get_operator_and_int_value
+clean_environment_filter = get_operator_and_int_value
 
 
 def clean_taxonomy_filter(state_vector):
@@ -99,7 +105,7 @@ def clean_taxonomy_filter(state_vector):
 
     assert(len(state_vector) == len(TaxonomyOptions.hierarchy))
     return list(map(
-        int_if_not_already_none,
+        get_operator_and_int_value,
         state_vector))
 
 
@@ -121,7 +127,7 @@ def taxonomy_options(request):
     private API: given taxonomy constraints, return the possible options
     """
     with TaxonomyOptions() as options:
-        amplicon = clean_amplicon_filter(request.GET['amplicon'])
+        amplicon = clean_amplicon_filter(json.loads(request.GET['amplicon']))
         selected = clean_taxonomy_filter(json.loads(request.GET['selected']))
         possibilities = options.possibilities(amplicon, selected)
     return JsonResponse({
@@ -219,26 +225,27 @@ def param_to_filters(query_str):
         if field_name not in SampleContext.__table__.columns:
             errors.append("Please select a contextual data field to filter upon.")
             continue
+        operator = filter_spec.get('operator')
         column = SampleContext.__table__.columns[field_name]
         typ = str(column.type)
         try:
             if column.name == 'id':
-                contextual_filter.add_term(ContextualFilterTermSampleID(field_name, [int(t) for t in filter_spec['is']]))
+                contextual_filter.add_term(ContextualFilterTermSampleID(field_name, operator, [int(t) for t in filter_spec['is']]))
             elif hasattr(column, 'ontology_class'):
                 contextual_filter.add_term(
-                    ContextualFilterTermOntology(field_name, int(filter_spec['is'])))
+                    ContextualFilterTermOntology(field_name, operator, int(filter_spec['is'])))
             elif typ == 'DATE':
                 contextual_filter.add_term(
-                    ContextualFilterTermDate(field_name, parse_date(filter_spec['from']), parse_date(filter_spec['to'])))
+                    ContextualFilterTermDate(field_name, operator, parse_date(filter_spec['from']), parse_date(filter_spec['to'])))
             elif typ == 'FLOAT':
                 contextual_filter.add_term(
-                    ContextualFilterTermFloat(field_name, parse_float(filter_spec['from']), parse_float(filter_spec['to'])))
+                    ContextualFilterTermFloat(field_name, operator, parse_float(filter_spec['from']), parse_float(filter_spec['to'])))
             elif typ == 'CITEXT':
                 contextual_filter.add_term(
-                    ContextualFilterTermString(field_name, str(filter_spec['contains'])))
+                    ContextualFilterTermString(field_name, operator, str(filter_spec['contains'])))
             else:
                 raise ValueError("invalid filter term type: %s", typ)
-        except Exception as ex:
+        except Exception:
             errors.append("Invalid value provided for contextual field `%s'" % field_name)
             logger.critical("Exception parsing field: `%s':\n%s" % (field_name, traceback.format_exc()))
 
