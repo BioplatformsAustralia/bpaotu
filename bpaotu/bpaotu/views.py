@@ -284,12 +284,6 @@ def param_to_filters_without_checks(query_str):
         taxonomy_filter=taxonomy_filter), errors)
 
 
-
-
-
-
-
-
 @csrf_exempt
 @require_http_methods(["POST"])
 def required_table_headers(request):
@@ -318,12 +312,6 @@ def required_table_headers(request):
     required_headers = []
     for elem in contextual_terms:
         required_headers.append(elem['field'])
-
-
-
-
-
-
 
     results = []
     result_count = len(results)
@@ -362,14 +350,6 @@ def required_table_headers(request):
         'recordsFiltered': result_count,
     })
     return JsonResponse(res)
-
-
-
-
-
-
-
-
 
 
 # technically we should be using GET, but the specification

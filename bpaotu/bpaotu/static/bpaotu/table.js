@@ -444,7 +444,7 @@ $(document).ready(function() {
                 var user_friendly = "";
 
                 for(var j=0; j<array.length; j++) {
-                    if(array[j] == 'id') { continue; } // For ontology foreign key cases
+                    if(array[j] == 'id' && j != 0) { continue; } // For ontology foreign key cases
                     user_friendly += (array[j].substr(0,1).toUpperCase() + array[j].substr(1) + ' ');
                 }
 
@@ -486,7 +486,6 @@ $(document).ready(function() {
 
         tbl_ptr = setup_datatables();
     }); // End click function()
-
 
 
     function check_for_auth_token() {
