@@ -64,6 +64,10 @@ $(document).ready(function() {
         return '#taxonomy_' + s;
     };
 
+    var taxonomy_op_selector = function(s) {
+        return '#taxonomy_' + s + '_op';
+    };
+
     var amplicon_set_possibilities = function(options) {
         options.unshift([null, '- All -']);
         set_options($('#amplicon'),  _.map(options, function(val) {
@@ -78,6 +82,8 @@ $(document).ready(function() {
         _.each(taxonomy_hierarchy, function(s) {
             var target = $(taxonomy_selector(s));
             set_options(target, [blank_option]);
+            var opTarget = $(taxonomy_op_selector(s));
+            opTarget.val('is');
         });
     };
 
@@ -104,7 +110,10 @@ $(document).ready(function() {
 
     var taxonomy_get_state = function() {
         return _.map(taxonomy_hierarchy, function(s) {
-            return $(taxonomy_selector(s)).val();
+          return {
+            'value': $(taxonomy_selector(s)).val(),
+            'operator': $(taxonomy_op_selector(s)).val()
+          };
         });
     };
 
@@ -116,7 +125,7 @@ $(document).ready(function() {
                 url: window.otu_search_config['taxonomy_endpoint'],
                 data: {
                     'token': authentication_token,
-                    'amplicon': marshal_amplicon_filter(),
+                    'amplicon': JSON.stringify(marshal_amplicon_filter()),
                     'selected': JSON.stringify(taxonomy_get_state())
                 }
             }).done(function(result) {
@@ -131,11 +140,16 @@ $(document).ready(function() {
             $(taxonomy_selector(s)).on('change', function() {
                 taxonomy_refresh();
             });
-        });
+            $(taxonomy_op_selector(s)).on('change', function() {
+                taxonomy_refresh();
+            });
+         });
         $("#clear_taxonomic_filters").click(function () {
             $("#amplicon").val(null);
+            $("#amplicon_op").val('is');
             $.each(taxonomy_hierarchy, function(idx, s) {
                 $(taxonomy_selector(s)).val(null);
+                $(taxonomy_op_selector(s)).val('is');
             });
             taxonomy_refresh();
         });
@@ -144,10 +158,12 @@ $(document).ready(function() {
     };
 
     var setup_amplicon = function() {
-        $("#amplicon").on('change', function() {
-            taxonomy_clear_all();
-            taxonomy_refresh();
-        });
+        function refresh_taxonomy() {
+          taxonomy_clear_all();
+          taxonomy_refresh();
+        };
+        $("#amplicon").on('change', refresh_taxonomy);
+        $("#amplicon_op").on('change', refresh_taxonomy);
 
         $.when(check_for_auth_token()).done(function() {
             $.ajax({
@@ -173,12 +189,12 @@ $(document).ready(function() {
         }
     };
 
-    var get_environment_id = function() {
+    var get_environment = function() {
         return marshal_environment_filter();
     }
 
     var configure_unselected_contextual_filters = function() {
-        var current_environment_id = get_environment_id();
+        var current_environment = get_environment();
         $.each($("#contextual_filters_target > div"), function(idx, target) {
             var select_box = $(".contextual-item", target);
             var select_val = select_box.val();
@@ -193,16 +209,17 @@ $(document).ready(function() {
                     return false;
                 }
                 // we don't have a environment ID selected
-                if (current_environment_id === null) {
+                if (current_environment === null || !current_environment.value) {
                     return true;
                 }
                 // it's not a environment specific field
                 if (val.environment === null) {
                     return true;
                 }
-                // it matches current environment
-                if (val.environment == current_environment_id) {
-                    return true;
+                if (current_environment.operator === 'isnot') {
+                    return current_environment.value != val.environment;
+                } else {
+                    return current_environment.value == val.environment;
                 }
                 return false;
             });
@@ -228,10 +245,10 @@ $(document).ready(function() {
         var new_filter_id = 'contextual-filter-' + next_contextual_filter_id;
         next_contextual_filter_id += 1;
         var d = $([
-            '<div class="row" id="' + new_filter_id + '">',
-            '<div class="col-md-2"><button class="form-control remove-button" type="button"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button></div>',
-            '<div class="col-md-4"><select class="form-control contextual-item"></select></div>',
-            '<div class="col-md-6 contextual-entry"></div>',
+            '<div class="row contextual-filter-row" id="' + new_filter_id + '">',
+            '<div class="col-md-1 no-padding-right"><button class="form-control remove-button" type="button"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button></div>',
+            '<div class="col-md-4 no-padding-right"><select class="form-control contextual-item"></select></div>',
+            '<div class="col-md-7 contextual-entry"></div>',
             '</div>'
         ].join("\n"));
         $("#contextual_filters_target").append(d);
@@ -256,32 +273,53 @@ $(document).ready(function() {
             } else if (defn_type == 'date') {
                 widget = $([
                     '<div class="row">',
-                    '<div class="col-md-5"><input class="form-control cval_from" /></div>',
-                    '<div class="col-md-2 form-label">-</div>',
-                    '<div class="col-md-5"><input class="form-control cval_to" /></div>',
+                    '<div class="col-md-4 no-padding-right">',
+                      '<select class="form-control cval_op">',
+                        '<option value="between">between</option>',
+                        '<option value="notbetween">not between</option>',
+                    '</select></div>',
+                    '<div class="col-md-4"><input class="form-control cval_from" /></div>',
+                    '<div class="col-md-4"><input class="form-control cval_to" /></div>',
                     '</div>'
                 ].join("\n"));
             } else if (defn_type == 'float') {
                 widget = $([
                     '<div class="row">',
-                    '<div class="col-md-5"><input class="form-control cval_from" /></div>',
-                    '<div class="col-md-2 form-label">-</div>',
-                    '<div class="col-md-5"><input class="form-control cval_to" /></div>',
+                    '<div class="col-md-4 no-padding-right">',
+                      '<select class="form-control cval_op">',
+                        '<option value="between">between</option>',
+                        '<option value="notbetween">not between</option>',
+                    '</select></div>',
+                     '<div class="col-md-4"><input class="form-control cval_from" /></div>',
+                    '<div class="col-md-4"><input class="form-control cval_to" /></div>',
                     '</div>'
                 ].join("\n"));
             } else if (defn_type == 'string') {
                 widget = $([
                     '<div class="row">',
-                    '<div class="col-md-4 form-label">Text contains:</div>',
+                    '<div class="col-md-4 no-padding-right">',
+                      '<select class="form-control cval_op">',
+                        '<option value="contains">contains</option>',
+                        '<option value="containsnot">doesn\'t contain</option>',
+                    '</select></div>',
                     '<div class="col-md-8"><input class="form-control cval_contains" /></div>',
                     '</div>'
                 ].join("\n"));
             } else if (defn_type == 'ontology') {
-                widget = $('<select class="form-control cval_select"></select>');
+                widget = $([
+                    '<div class="row">',
+                    '<div class="col-md-4 no-padding-right">',
+                      '<select class="form-control cval_op">',
+                        '<option value="is">is</option>',
+                        '<option value="isnot">isn\'t</option>',
+                      '</select></div>',
+                    '<div class="col-md-8"><select class="form-control cval_select"></select></div>',
+                    '</div>'
+                ].join("\n"));
                 // clone
                 var options = defn['values'].slice(0);
                 options.unshift([null, '- All -']);
-                set_options(widget, _.map(options, function(val) {
+                set_options(widget.find('.cval_select'), _.map(options, function(val) {
                     return {
                         'value': val[0],
                         'text': val[1]
@@ -341,15 +379,21 @@ $(document).ready(function() {
     };
 
     var marshal_amplicon_filter = function() {
-        return $("#amplicon").val();
+        return {
+          'value': $('#amplicon').val(),
+          'operator': $('#amplicon_op').val()
+        };
     };
 
     var marshal_environment_filter = function() {
-        var val = $("#environment").val();
-        if (!val) {
-            return null;
+        var value = $('#environment').val();
+        if (!value) {
+          return null;
         }
-        return val;
+        return {
+          'value': $('#environment').val(),
+          'operator': $('#environment_op').val()
+        };
     };
 
     var marshal_contextual_filters = function() {
@@ -367,6 +411,7 @@ $(document).ready(function() {
             }
             var obj = {};
             obj['field'] = $(".contextual-item", target).val();
+            marshal_input('.cval_op', 'operator');
             marshal_input('.cval_from', 'from');
             marshal_input('.cval_to', 'to');
             marshal_input('.cval_contains', 'contains');
