@@ -444,6 +444,7 @@ $(document).ready(function() {
                 var user_friendly = "";
 
                 for(var j=0; j<array.length; j++) {
+                    if(array[j] == 'id') { continue; } // For ontology foreign key cases
                     user_friendly += (array[j].substr(0,1).toUpperCase() + array[j].substr(1) + ' ');
                 }
 
@@ -461,7 +462,14 @@ $(document).ready(function() {
         for (var i = 0; i<datatable_headers.length; i++) {
             cols.push({
                 'data': datatable_headers[i],
-                'defaultContent': ''
+                'defaultContent': '',
+                'render': function(data, type, row) {
+                    if(data == null) {
+                        return '';
+                    } else {
+                        return data;
+                    }
+                }
             });
         }
 
