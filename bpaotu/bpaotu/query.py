@@ -16,6 +16,20 @@ from .otu import (
     OTUSpecies,
     SampleContext,
     SampleOTU,
+    SampleAustralianSoilClassification,
+    SampleLandUse,
+    SampleColor,
+    SampleLandUse,
+    SampleFAOSoilClassification,
+    SampleEcologicalZone,
+    SampleHorizonClassification,
+    SampleLandUse,
+    SampleProfilePosition,
+    Environment,
+    SampleType,
+    SampleStorageMethod,
+    SampleTillage,
+    SampleVegetationType,
     make_engine)
 
 
@@ -179,16 +193,40 @@ class SampleQuery:
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
         return self._q_all_cached('matching_sample_ids_and_environment', q)
 
-    def matching_sample_headers(self, required_headers=None):
+    def matching_sample_headers(self, required_headers=None, sort_col=None, sort_order=None):
         query_headers = [SampleContext.id, SampleContext.environment_id]
+        joins = []  # Keep track of any foreign ontology classes which may be needed to be joined to.
 
         cache_name = ['matching_sample_headers']
         if required_headers:
             cache_name += required_headers
             for h in required_headers:
-                query_headers.append(getattr(SampleContext, h))
+                if not h:
+                    continue
 
-        q = self._session.query(*query_headers)
+                col = getattr(SampleContext, h)
+
+                if hasattr(col, "ontology_class"):
+                    foreign_col = getattr(col.ontology_class, 'value')
+                    query_headers.append(foreign_col)
+                    joins.append(col.ontology_class)
+                else:
+                    query_headers.append(col)
+
+        q = self._session.query(*query_headers).outerjoin(*joins)
+
+        if sort_order == 'asc':
+            q = q.order_by(query_headers[int(sort_col)])
+
+            cache_name.append(str(query_headers[int(sort_col)]))
+            cache_name.append(sort_order)
+
+        elif sort_order == 'desc':
+            q = q.order_by(query_headers[int(sort_col)].desc())
+
+            cache_name.append(str(query_headers[int(sort_col)]))
+            cache_name.append(sort_order)
+
         return self._q_all_cached(':'.join(cache_name), q)
 
     def matching_samples(self):

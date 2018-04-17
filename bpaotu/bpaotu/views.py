@@ -284,6 +284,7 @@ def param_to_filters_without_checks(query_str):
         taxonomy_filter=taxonomy_filter), errors)
 
 
+@csrf_exempt
 @require_http_methods(["POST"])
 def required_table_headers(request):
     """
@@ -302,6 +303,10 @@ def required_table_headers(request):
     length = _int_get_param('length')
 
     search_terms = json.loads(request.POST['otu_query'])
+
+    order_col = request.POST['order[0][column]']
+    order_type = request.POST['order[0][dir]']
+
     contextual_terms = search_terms['contextual_filters']['filters']
 
     required_headers = []
@@ -315,7 +320,7 @@ def required_table_headers(request):
 
     params, errors = param_to_filters_without_checks(request.POST['otu_query'])
     with SampleQuery(params) as query:
-        results = query.matching_sample_headers(required_headers)
+        results = query.matching_sample_headers(required_headers, order_col, order_type)
 
     result_count = len(results)
     results = results[start:start + length]
@@ -540,7 +545,7 @@ def otu_log(request):
     session.close()
     return HttpResponse(template.render(context, request))
 
-
+@csrf_exempt
 @require_http_methods(["POST"])
 def contextual_csv_download_endpoint(request):
     data = request.POST.get('otu_query')
@@ -611,7 +616,7 @@ def _otu_endpoint_verification(data):
     else:
         return HttpResponseForbidden("The timestamp is too old.")
 
-
+@csrf_exempt
 def tables(request):
     template = loader.get_template('bpaotu/tables.html')
     context = {}
