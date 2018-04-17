@@ -81,6 +81,8 @@ class OTUSearch(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(OTUSearch, self).get_context_data(**kwargs)
         context['ckan_base_url'] = settings.CKAN_SERVERS[0]['base_url']
+        context['ckan_auth_integration'] = CKAN_AUTH_INTEGRATION
+
         return context
 
 
@@ -548,6 +550,7 @@ def otu_log(request):
     session.close()
     return HttpResponse(template.render(context, request))
 
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def contextual_csv_download_endpoint(request):
@@ -622,9 +625,12 @@ def _otu_endpoint_verification(data):
     else:
         return HttpResponseForbidden("The timestamp is too old.")
 
+
 @csrf_exempt
 def tables(request):
     template = loader.get_template('bpaotu/tables.html')
-    context = {}
+    context = {
+        'ckan_auth_integration': CKAN_AUTH_INTEGRATION
+    }
 
     return HttpResponse(template.render(context, request))
