@@ -187,48 +187,47 @@ class SampleQuery:
             cache.set(key, result)
         return result
 
-
     def matching_sample_ids_and_environment(self):
         q = self._session.query(SampleContext.id, SampleContext.environment_id)
         subq = self._build_taxonomy_subquery()
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
         return self._q_all_cached('matching_sample_ids_and_environment', q)
 
-
     def matching_sample_headers(self, required_headers=None, sort_col=None, sort_order=None):
         query_headers = [SampleContext.id, SampleContext.environment_id]
-        joins = [] # Keep track of any foreign ontology classes which may be needed to be joined to.
+        joins = []  # Keep track of any foreign ontology classes which may be needed to be joined to.
 
         cache_name = ['matching_sample_headers']
         if required_headers:
             cache_name += required_headers
             for h in required_headers:
-                if h != '':
-                    col = getattr(SampleContext, h)
+                if not h:
+                    continue
 
-                    if hasattr(col, "ontology_class"):
-                        foreign_col = getattr(col.ontology_class, 'value')
-                        query_headers.append(foreign_col)
-                        joins.append(col.ontology_class)
-                    else:
-                        query_headers.append(col)
+                col = getattr(SampleContext, h)
+
+                if hasattr(col, "ontology_class"):
+                    foreign_col = getattr(col.ontology_class, 'value')
+                    query_headers.append(foreign_col)
+                    joins.append(col.ontology_class)
+                else:
+                    query_headers.append(col)
+
+        q = self._session.query(*query_headers).outerjoin(*joins)
 
         if sort_order == 'asc':
-            q = self._session.query(*query_headers).outerjoin(*joins).order_by(query_headers[int(sort_col)])
+            q = q.order_by(query_headers[int(sort_col)])
 
             cache_name.append(str(query_headers[int(sort_col)]))
             cache_name.append(sort_order)
 
         elif sort_order == 'desc':
-            q = self._session.query(*query_headers).outerjoin(*joins).order_by(query_headers[int(sort_col)].desc())
+            q = q.order_by(query_headers[int(sort_col)].desc())
 
             cache_name.append(str(query_headers[int(sort_col)]))
             cache_name.append(sort_order)
-        else:
-            q = self._session.query(*query_headers).outerjoin(*joins)
 
         return self._q_all_cached(':'.join(cache_name), q)
-
 
     def matching_samples(self):
         q = self._session.query(SampleContext)
@@ -236,14 +235,12 @@ class SampleQuery:
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
         return self._q_all_cached('matching_samples', q)
 
-
     def has_matching_sample_otus(self, kingdom_id):
         def to_boolean(result):
             return result[0][0]
 
         q = self._session.query(self.matching_sample_otus(kingdom_id).exists())
         return self._q_all_cached('has_matching_sample_otus:%s' % (kingdom_id), q, to_boolean)
-
 
     def matching_sample_otus(self, kingdom_id):
         # we do a cross-join, but convert to an inner-join with
@@ -262,7 +259,6 @@ class SampleQuery:
         # it can be iterated over
         return q
 
-
     def _apply_taxonomy_filters(self, q):
         if self._amplicon_filter:
             q = q.filter(OTU.amplicon_id == self._amplicon_filter)
@@ -271,7 +267,6 @@ class SampleQuery:
                 break
             q = q.filter(getattr(OTU, otu_attr) == value)
         return q
-
 
     def _build_taxonomy_subquery(self):
         """
@@ -283,7 +278,6 @@ class SampleQuery:
             return None
         q = self._session.query(SampleOTU.sample_id).distinct().join(OTU)
         return self._apply_taxonomy_filters(q)
-
 
     def _apply_filters(self, sample_query, taxonomy_subquery):
         """
