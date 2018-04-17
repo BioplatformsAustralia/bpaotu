@@ -38,3 +38,17 @@ body {
     padding-bottom: 30px;
     padding-top: 30px;
 }
+
+.contextual-filter-row {
+    padding-bottom: 5px;
+}
+
+
+.no-padding-right {
+    padding-right: 0 !important;
+}
+
+.no-padding {
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+}
