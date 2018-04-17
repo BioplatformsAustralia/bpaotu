@@ -2,6 +2,9 @@
 
 $(document).ready(function() {
     var theSpinner = null;
+    var authentication_token = null;
+    var tbl_ptr = null;
+
 
     function stop_spinner() {
         if (theSpinner) {
@@ -203,28 +206,36 @@ $(document).ready(function() {
         });
 
         // get configuration of the various filters
-        $.ajax({
-            method: 'GET',
-            dataType: 'json',
-            url: window.otu_search_config['contextual_endpoint'],
-        }).done(function(result) {
-            contextual_config = result;
-            // set up the environment filter
-            var widget = $("#environment");
-            var defn = _.find(contextual_config['definitions'], {'name': 'environment_id'});
-            var options = defn['values'].slice(0);
-            options.unshift([null, '- All -']);
-            set_options(widget, _.map(options, function(val) {
-                return {
-                    'value': val[0],
-                    'text': val[1]
+
+        $.when(check_for_auth_token).done(function() {
+            $.ajax({
+                method: 'GET',
+                dataType: 'json',
+                url: window.otu_search_config['contextual_endpoint'],
+                data: {
+                    'token': authentication_token,
                 }
-            }));
-            widget.on('change', function() {
-                configure_unselected_contextual_filters();
+            }).done(function(result) {
+                contextual_config = result;
+                // set up the environment filter
+                var widget = $("#environment");
+                var defn = _.find(contextual_config['definitions'], {'name': 'environment_id'});
+                var options = defn['values'].slice(0);
+                options.unshift([null, '- All -']);
+                set_options(widget, _.map(options, function(val) {
+                    return {
+                        'value': val[0],
+                        'text': val[1]
+                    }
+                }));
+                widget.on('change', function() {
+                    configure_unselected_contextual_filters();
+                });
             });
+            update_contextual_controls();
+
         });
-        update_contextual_controls();
+
     };
 
     var marshal_environment_filter = function() {
@@ -312,6 +323,7 @@ $(document).ready(function() {
 
     var set_search_data = function(data, settings) {
         data['otu_query'] = JSON.stringify(describe_search());
+        data['token'] = authentication_token;
         return data;
     };
 
@@ -373,11 +385,15 @@ $(document).ready(function() {
 
         const fileName = "my-csv.csv";
 
-        var header_data = { 'otu_query': JSON.stringify(describe_search()) };
+        var header_data = {
+            'otu_query': JSON.stringify(describe_search())
+        };
+
+        var url = window.otu_search_config['contextual_csv_download_endpoint'];
 
         $.ajax({
             type: 'POST',
-            url: window.otu_search_config['ckan_base_url'] + '/contextual_csv_download_endpoint/',
+            url: url,
             data: header_data
         }).done(function(data) {
             saveData(data, fileName);
@@ -428,6 +444,7 @@ $(document).ready(function() {
                 var user_friendly = "";
 
                 for(var j=0; j<array.length; j++) {
+                    if(array[j] == 'id' && j != 0) { continue; } // For ontology foreign key cases
                     user_friendly += (array[j].substr(0,1).toUpperCase() + array[j].substr(1) + ' ');
                 }
 
@@ -445,7 +462,14 @@ $(document).ready(function() {
         for (var i = 0; i<datatable_headers.length; i++) {
             cols.push({
                 'data': datatable_headers[i],
-                'defaultContent': ''
+                'defaultContent': '',
+                'render': function(data, type, row) {
+                    if(data == null) {
+                        return '';
+                    } else {
+                        return data;
+                    }
+                }
             });
         }
 
@@ -463,12 +487,46 @@ $(document).ready(function() {
         tbl_ptr = setup_datatables();
     }); // End click function()
 
+    function check_for_auth_token() {
+        if (! window.otu_search_config['ckan_auth_integration']) {
+            return;
+        } else if (authentication_token == null) {
+            get_auth_token();
+        }
+        return;
+    }
 
-    setup_csrf();
-    setup_contextual();
-    setup_search();
-    var tbl_ptr = setup_datatables();
-    set_errors(null);
+    function run_setup_functions() {
+        setup_csrf();
+        setup_contextual();
+        setup_search();
+        tbl_ptr = setup_datatables();
+        set_errors(null);
 
-    $(document).tooltip();
+        $(document).tooltip();
+    }
+
+    function get_auth_token() {
+        if (! window.otu_search_config['ckan_auth_integration']) {
+            run_setup_functions();
+            return;
+        }
+
+        var bpa_endpoint = '/user/private/api/bpa/check_permissions';
+
+        $.ajax({
+            url: bpa_endpoint,
+            async: true,
+            success: function(result) {
+                authentication_token = result;
+                run_setup_functions();
+            },
+            error: function(result) {
+                $("#token_error_message").html("<h4>Please log into CKAN and ensure that you are authorised to access the AusMicro data.</h4>");
+            }
+        });
+    }
+
+    get_auth_token();
+
 });
