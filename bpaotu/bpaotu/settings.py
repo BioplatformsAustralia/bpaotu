@@ -363,5 +363,5 @@ EXPLORER_TASKS_ENABLED = True
 EXPLORER_TOKEN_AUTH_ENABLED = True
 EXPLORER_TOKEN = env.get('EXPLORER_TOKEN', "EXPLOREIT")
 
-# to make ckan authentication optional
+# enable integration with CKAN authentication (specific to the BPA data portal)
 CKAN_AUTH_INTEGRATION = False

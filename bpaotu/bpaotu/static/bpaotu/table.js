@@ -488,7 +488,7 @@ $(document).ready(function() {
     }); // End click function()
 
     function check_for_auth_token() {
-        if (window.otu_search_config['ckan_auth_integration'] == "False") {
+        if (! window.otu_search_config['ckan_auth_integration']) {
             return;
         } else if (authentication_token == null) {
             get_auth_token();
@@ -507,7 +507,7 @@ $(document).ready(function() {
     }
 
     function get_auth_token() {
-        if (window.otu_search_config['ckan_auth_integration'] == "False") {
+        if (! window.otu_search_config['ckan_auth_integration']) {
             run_setup_functions();
             return;
         }
