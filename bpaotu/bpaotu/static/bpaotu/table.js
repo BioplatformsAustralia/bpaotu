@@ -487,16 +487,31 @@ $(document).ready(function() {
         tbl_ptr = setup_datatables();
     }); // End click function()
 
-
     function check_for_auth_token() {
-        if (authentication_token == null) {
+        if (! window.otu_search_config['ckan_auth_integration']) {
+            return;
+        } else if (authentication_token == null) {
             get_auth_token();
         }
         return;
     }
 
+    function run_setup_functions() {
+        setup_csrf();
+        setup_contextual();
+        setup_search();
+        tbl_ptr = setup_datatables();
+        set_errors(null);
+
+        $(document).tooltip();
+    }
 
     function get_auth_token() {
+        if (! window.otu_search_config['ckan_auth_integration']) {
+            run_setup_functions();
+            return;
+        }
+
         var bpa_endpoint = '/user/private/api/bpa/check_permissions';
 
         $.ajax({
@@ -504,14 +519,7 @@ $(document).ready(function() {
             async: true,
             success: function(result) {
                 authentication_token = result;
-
-                setup_csrf();
-                setup_contextual();
-                setup_search();
-                tbl_ptr = setup_datatables();
-                set_errors(null);
-
-                $(document).tooltip();
+                run_setup_functions();
             },
             error: function(result) {
                 $("#token_error_message").html("<h4>Please log into CKAN and ensure that you are authorised to access the AusMicro data.</h4>");
