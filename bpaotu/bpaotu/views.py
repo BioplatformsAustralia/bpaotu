@@ -40,6 +40,9 @@ from .models import (
     ImportFileLog,
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
+from .settings import (
+    CKAN_AUTH_INTEGRATION
+)
 
 from django.views.decorators.csrf import csrf_exempt
 
@@ -585,6 +588,9 @@ def contextual_csv_download_endpoint(request):
 
 
 def _otu_endpoint_verification(data):
+    if not CKAN_AUTH_INTEGRATION:
+        return True
+
     hash_portion, data_portion = data.split('||', 1)
 
     secret_key = bytes(os.environ.get('BPAOTU_AUTH_SECRET_KEY'), encoding='utf-8')
