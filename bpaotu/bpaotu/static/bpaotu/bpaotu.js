@@ -164,7 +164,6 @@ $(document).ready(function() {
         };
         $("#amplicon").on('change', refresh_taxonomy);
         $("#amplicon_op").on('change', refresh_taxonomy);
-
         $.when(check_for_auth_token()).done(function() {
             $.ajax({
                 method: 'GET',
