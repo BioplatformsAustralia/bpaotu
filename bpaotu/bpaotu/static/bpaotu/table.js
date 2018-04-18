@@ -351,12 +351,7 @@ $(document).ready(function() {
             'defaultContent': '',
             'render': function(data, type, row) {
                 var environment = row.environment;
-                var org;
-                if (environment == 'Soil') {
-                    org = 'bpa-base';
-                } else {
-                    org = 'bpa-marine-microbes';
-                }
+                var org = 'australian-microbiome';
                 var url = window.otu_search_config['ckan_base_url'] + '/organization/' + org + '?q=bpa_id:102.100.100.' + data;
                 return '<a href="' + url + '" target="_blank">' + data + '</a>';
             }
@@ -522,7 +517,7 @@ $(document).ready(function() {
                 run_setup_functions();
             },
             error: function(result) {
-                $("#token_error_message").html("<h4>Please log into CKAN and ensure that you are authorised to access the AusMicro data.</h4>");
+                $("#token_error_message").html('<p class="lead"><b>Login required:</b> Please log in to the <a href="/user/login">Bioplatforms Data Portal</a>, or <a href="/user/register">request access.</a> If you still cannot access the data after logging in, contact <a href="mailto:help@bioplatforms.com">support</a>.</p>');
             }
         });
     }
