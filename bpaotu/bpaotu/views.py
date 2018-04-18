@@ -125,7 +125,7 @@ def amplicon_options(request):
     """
     try:
         _otu_endpoint_verification(request.GET['token'])
-    except:
+    except Exception:
         return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
 
     with OntologyInfo() as options:
@@ -142,7 +142,7 @@ def taxonomy_options(request):
     """
     try:
         _otu_endpoint_verification(request.GET['token'])
-    except:
+    except Exception:
         return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
 
     with TaxonomyOptions() as options:
@@ -162,7 +162,7 @@ def contextual_fields(request):
     """
     try:
         _otu_endpoint_verification(request.GET['token'])
-    except:
+    except Exception:
         return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
 
     fields_by_type = defaultdict(list)
@@ -375,7 +375,7 @@ def otu_search(request):
     """
     try:
         _otu_endpoint_verification(request.POST['token'])
-    except:
+    except Exception:
         return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
 
     def _int_get_param(param_name):
@@ -477,7 +477,7 @@ def otu_export(request):
     """
     try:
         _otu_endpoint_verification(request.GET['token'])
-    except:
+    except Exception:
         return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
 
     def val_or_empty(obj):
@@ -618,7 +618,7 @@ def _otu_endpoint_verification(data):
 
     json_data = json.loads(data_portion)
 
-    SECS_IN_DAY = 60*60*24
+    SECS_IN_DAY = 60 * 60 * 24
 
     timestamp = json_data['timestamp']
     organisations = json_data['organisations']
