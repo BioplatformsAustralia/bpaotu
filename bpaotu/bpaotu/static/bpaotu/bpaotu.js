@@ -505,13 +505,7 @@ $(document).ready(function() {
                       'data': 'bpa_id',
                       'defaultContent': '',
                       'render': function(data, type, row) {
-                          var environment = row.environment;
-                          var org;
-                          if (environment == 'Soil') {
-                              org = 'bpa-base';
-                          } else {
-                              org = 'bpa-marine-microbes';
-                          }
+                          var org = 'australian-microbiome';
                           var url = window.otu_search_config['ckan_base_url'] + '/organization/' + org + '?q=bpa_id:102.100.100.' + data;
                           return '<a href="' + url + '" target="_blank">' + data + '</a>';
                       }
