@@ -574,7 +574,7 @@ $(document).ready(function() {
                 run_setup_functions();
             },
             error: function(result) {
-                $("#token_error_message").html('<p class="lead"><b>Login required:</b> Please log in to the <a href="/user/login">Bioplatforms Data Portal</a>, or <a href="/user/register">request access">request access.</a> If you still cannot access the data after logging in, contact <a href="mailto:help@bioplatforms.com">support</a></p>');
+                $("#token_error_message").html('<p class="lead"><b>Login required:</b> Please log in to the <a href="/user/login">Bioplatforms Data Portal</a>, or <a href="/user/register">request access.</a> If you still cannot access the data after logging in, contact <a href="mailto:help@bioplatforms.com">support</a>.</p>');
             }
         });
     }
