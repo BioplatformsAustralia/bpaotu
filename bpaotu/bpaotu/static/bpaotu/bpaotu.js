@@ -574,7 +574,7 @@ $(document).ready(function() {
                 run_setup_functions();
             },
             error: function(result) {
-                $("#token_error_message").html("<h4>Please log into CKAN and ensure that you are authorised to access the AusMicro data.</h4>");
+                $("#token_error_message").html('<p class="lead"><b>Login required:</b> Please log into CKAN and ensure that you are authorised to access the Australian Microbiome data.</p>');
             }
         });
     }
