@@ -43,7 +43,6 @@ body {
     padding-bottom: 5px;
 }
 
-
 .no-padding-right {
     padding-right: 0 !important;
 }
@@ -51,4 +50,12 @@ body {
 .no-padding {
     padding-right: 0 !important;
     padding-left: 0 !important;
+}
+
+label {
+    font-weight: normal;
+}
+
+label.disabled {
+    color: lightgray;
 }
