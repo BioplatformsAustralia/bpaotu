@@ -47,6 +47,7 @@ $(document).ready(function() {
         "species"
     ];
     var blank_option = {'text': '----', 'value': null};
+    var loading_option = {'text': 'Loading ....', 'value': null};
     // this is populated via an ajax call, and specifies the
     // contextual metadata fields and their types
     var contextual_config;
@@ -64,6 +65,10 @@ $(document).ready(function() {
         return '#taxonomy_' + s;
     };
 
+    var taxonomy_label_selector = function(s) {
+        return '[for="taxonomy_' + s + '"]';
+    };
+
     var taxonomy_op_selector = function(s) {
         return '#taxonomy_' + s + '_op';
     };
@@ -78,22 +83,43 @@ $(document).ready(function() {
         }));
     };
 
-    var taxonomy_clear_all = function() {
-        _.each(taxonomy_hierarchy, function(s) {
-            var target = $(taxonomy_selector(s));
-            set_options(target, [blank_option]);
-            var opTarget = $(taxonomy_op_selector(s));
-            opTarget.val('is');
-        });
+    var taxonomy_clear = function(taxonomy) {
+        var target = $(taxonomy_selector(taxonomy));
+        set_options(target, [blank_option]);
+        var opTarget = $(taxonomy_op_selector(taxonomy));
+        opTarget.val('is');
+    };
+
+    var taxonomy_set_enabled = function(taxonomy, enabled) {
+        var lblTarget = $(taxonomy_label_selector(taxonomy));
+        if (enabled) {
+          lblTarget.removeClass('disabled')
+        } else {
+          lblTarget.addClass('disabled')
+        }
+        $(taxonomy_op_selector(taxonomy)).prop('disabled', !enabled);
+        $(taxonomy_selector(taxonomy)).prop('disabled', !enabled);
+    };
+
+    var taxonomy_enable = _.partialRight(taxonomy_set_enabled, true);
+    var taxonomy_disable = _.partialRight(taxonomy_set_enabled, false);
+
+    var taxonomies_disable_clear = function(taxonomies) {
+      _.each(taxonomies, function(s) {
+          taxonomy_disable(s);
+          taxonomy_clear(s);
+      });
+    }
+
+    var taxonomy_set_loading = function(taxonomy) {
+        var target = $(taxonomy_selector(taxonomy));
+        set_options(target, [loading_option]);
     };
 
     var taxonomy_set_possibilities = function(result) {
         // first, we clear any drop-downs invalidated by this
         // new information
-        _.each(result['clear'], function(s) {
-            var target = $(taxonomy_selector(s));
-            set_options(target, [blank_option]);
-        });
+        taxonomies_disable_clear(result['clear']);
         // then set possibilities for the target we've been given
         var new_options = result['new_options'];
         if (!new_options) {
@@ -106,6 +132,7 @@ $(document).ready(function() {
                 'text': val[1]
             }
         })));
+        taxonomy_enable(new_options['target']);
     };
 
     var taxonomy_get_state = function() {
@@ -117,31 +144,52 @@ $(document).ready(function() {
         });
     };
 
-    var taxonomy_refresh = function() {
-        $.when(check_for_auth_token()).done(function() {
-            $.ajax({
-                method: 'GET',
-                dataType: 'json',
-                url: window.otu_search_config['taxonomy_endpoint'],
-                data: {
-                    'token': authentication_token,
-                    'amplicon': JSON.stringify(marshal_amplicon_filter()),
-                    'selected': JSON.stringify(taxonomy_get_state())
-                }
-            }).done(function(result) {
-                taxonomy_set_possibilities(result['possibilities']);
-            });
-        });
+    var taxonomy_all_after = function(taxonomy) {
+        var idx = taxonomy_hierarchy.indexOf(taxonomy);
+        return taxonomy_hierarchy.slice(idx + 1);
+    }
+
+    var taxonomy_refresh = function(taxonomy) {
+        var allAfter = taxonomy_all_after(taxonomy);
+
+        taxonomies_disable_clear(allAfter);
+
+        var refreshAll = (typeof taxonomy === "undefined");
+        var wasUnset = ($(taxonomy_selector(taxonomy)).val() == "");
+
+        if (refreshAll || !wasUnset) {
+          var nextTaxonomy = _.first(allAfter);
+          loadTaxonomy(nextTaxonomy);
+        }
+
+        function loadTaxonomy(taxonomy) {
+          taxonomy_set_loading(taxonomy);
+
+          $.when(check_for_auth_token()).done(function() {
+              $.ajax({
+                  method: 'GET',
+                  dataType: 'json',
+                  url: window.otu_search_config['taxonomy_endpoint'],
+                  data: {
+                      'token': authentication_token,
+                      'amplicon': JSON.stringify(marshal_amplicon_filter()),
+                      'selected': JSON.stringify(taxonomy_get_state())
+                  }
+              }).done(function(result) {
+                  taxonomy_set_possibilities(result['possibilities']);
+              });
+          });
+        };
     };
 
     var setup_taxonomic = function() {
         // hook up all of our events
-        $.each(taxonomy_hierarchy, function(idx, s) {
+        $.each(taxonomy_hierarchy.slice(0, -1), function(idx, s) {
             $(taxonomy_selector(s)).on('change', function() {
-                taxonomy_refresh();
+                taxonomy_refresh(s);
             });
             $(taxonomy_op_selector(s)).on('change', function() {
-                taxonomy_refresh();
+                taxonomy_refresh(s);
             });
          });
         $("#clear_taxonomic_filters").click(function () {
@@ -158,12 +206,8 @@ $(document).ready(function() {
     };
 
     var setup_amplicon = function() {
-        function refresh_taxonomy() {
-          taxonomy_clear_all();
-          taxonomy_refresh();
-        };
-        $("#amplicon").on('change', refresh_taxonomy);
-        $("#amplicon_op").on('change', refresh_taxonomy);
+        $("#amplicon").on('change', function() { taxonomy_refresh() });
+        $("#amplicon_op").on('change', function() { taxonomy_refresh() });
         $.when(check_for_auth_token()).done(function() {
             $.ajax({
                 method: 'GET',
@@ -505,13 +549,7 @@ $(document).ready(function() {
                       'data': 'bpa_id',
                       'defaultContent': '',
                       'render': function(data, type, row) {
-                          var environment = row.environment;
-                          var org;
-                          if (environment == 'Soil') {
-                              org = 'bpa-base';
-                          } else {
-                              org = 'bpa-marine-microbes';
-                          }
+                          var org = 'australian-microbiome';
                           var url = window.otu_search_config['ckan_base_url'] + '/organization/' + org + '?q=bpa_id:102.100.100.' + data;
                           return '<a href="' + url + '" target="_blank">' + data + '</a>';
                       }

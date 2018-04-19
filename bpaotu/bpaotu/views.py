@@ -125,8 +125,8 @@ def amplicon_options(request):
     """
     try:
         _otu_endpoint_verification(request.GET['token'])
-    except:
-        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
+    except Exception:
+        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
 
     with OntologyInfo() as options:
         vals = options.get_values(OTUAmplicon)
@@ -142,8 +142,8 @@ def taxonomy_options(request):
     """
     try:
         _otu_endpoint_verification(request.GET['token'])
-    except:
-        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
+    except Exception:
+        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
 
     with TaxonomyOptions() as options:
         amplicon = clean_amplicon_filter(json.loads(request.GET['amplicon']))
@@ -162,8 +162,8 @@ def contextual_fields(request):
     """
     try:
         _otu_endpoint_verification(request.GET['token'])
-    except:
-        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
+    except Exception:
+        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
 
     fields_by_type = defaultdict(list)
 
@@ -375,8 +375,8 @@ def otu_search(request):
     """
     try:
         _otu_endpoint_verification(request.POST['token'])
-    except:
-        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
+    except Exception:
+        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
 
     def _int_get_param(param_name):
         param = request.POST.get(param_name)
@@ -477,8 +477,8 @@ def otu_export(request):
     """
     try:
         _otu_endpoint_verification(request.GET['token'])
-    except:
-        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the AusMicro data.')
+    except Exception:
+        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
 
     def val_or_empty(obj):
         if obj is None:
@@ -618,7 +618,7 @@ def _otu_endpoint_verification(data):
 
     json_data = json.loads(data_portion)
 
-    SECS_IN_DAY = 60*60*24
+    SECS_IN_DAY = 60 * 60 * 24
 
     timestamp = json_data['timestamp']
     organisations = json_data['organisations']
