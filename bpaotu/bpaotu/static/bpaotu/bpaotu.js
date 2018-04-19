@@ -577,10 +577,22 @@ $(document).ready(function() {
             async: true,
             success: function(result) {
                 authentication_token = result;
+
                 run_setup_functions();
+
+                var data_portion = $.parseJSON(authentication_token.split("||")[1]);
+                var username = (data_portion.email).split("@")[0];
+                var user_string = username + " | " + '<a href="/user/_logout">Sign Out</a>';
+
+                $("#user_id").html(user_string);
+                $("#token_error_message").hide();
+
             },
             error: function(result) {
-                $("#token_error_message").html("<h4>Please log into CKAN and ensure that you are authorised to access the AusMicro data.</h4>");
+                $("#token_error_message").html("<span class='error_text bg-warning'>\
+                                                <b>Login required: </b>Please log into the <a href='/user/login'>Bioplatforms Data Portal</a>, \
+                                                or <a href='/user/register'>request access</a>. \
+                                                If you still cannot access the data after logging in, contact <a href='help@bioplatforms.com'>support</a>.</span>").toggle();
             }
         });
     }

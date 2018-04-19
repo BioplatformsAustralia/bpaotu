@@ -605,6 +605,9 @@ def _otu_endpoint_verification(data):
     if not CKAN_AUTH_INTEGRATION:
         return True
 
+    from time import sleep
+    sleep(5)
+
     hash_portion, data_portion = data.split('||', 1)
 
     secret_key = bytes(os.environ.get('BPAOTU_AUTH_SECRET_KEY'), encoding='utf-8')
