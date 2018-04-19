@@ -52,10 +52,34 @@ body {
     padding-left: 0 !important;
 }
 
-label {
-    font-weight: normal;
+#token_error_message {
+    position: fixed;
+    padding: 0px;
+    margin: 0;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+    background:rgba(140,140,140,0.7);
+
+    text-align: center;
+    vertical-align: middle;
+
+    z-index: 1000;
+
+    display: none;
 }
 
-label.disabled {
-    color: lightgray;
+.error_text {
+    display: block;
+    padding: 20px;
+}
+
+#user_id {
+    font-size: 16px;
+    float: right;
+    padding-top: 12px;
+    padding-right: 12px;
 }

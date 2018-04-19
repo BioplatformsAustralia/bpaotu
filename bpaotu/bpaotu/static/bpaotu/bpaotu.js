@@ -615,10 +615,20 @@ $(document).ready(function() {
             async: true,
             success: function(result) {
                 authentication_token = result;
+
                 run_setup_functions();
+
+                var data_portion = $.parseJSON(authentication_token.split("||")[1]);
+                $("#user_id").append(data_portion.email + " | " + '<a href="/user/_logout">Sign Out</a>');
+
+                $("#token_error_message").hide();
+
             },
             error: function(result) {
-                $("#token_error_message").html('<p class="lead"><b>Login required:</b> Please log in to the <a href="/user/login">Bioplatforms Data Portal</a>, or <a href="/user/register">request access.</a> If you still cannot access the data after logging in, contact <a href="mailto:help@bioplatforms.com">support</a>.</p>');
+                $("#token_error_message").html("<span class='error_text bg-warning'>\
+                                                <b>Login required: </b>Please log into the <a href='/user/login'>Bioplatforms Data Portal</a>, \
+                                                or <a href='/user/register'>request access</a>. \
+                                                If you still cannot access the data after logging in, contact <a href='help@bioplatforms.com'>support</a>.</span>").toggle();
             }
         });
     }
