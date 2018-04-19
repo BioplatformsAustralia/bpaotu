@@ -581,10 +581,8 @@ $(document).ready(function() {
                 run_setup_functions();
 
                 var data_portion = $.parseJSON(authentication_token.split("||")[1]);
-                var username = (data_portion.email).split("@")[0];
-                var user_string = username + " | " + '<a href="/user/_logout">Sign Out</a>';
+                $("#user_id").append(data_portion.email + " | " + '<a href="/user/_logout">Sign Out</a>');
 
-                $("#user_id").html(user_string);
                 $("#token_error_message").hide();
 
             },
