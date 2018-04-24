@@ -580,6 +580,63 @@ $(document).ready(function() {
         });
     };
 
+    var get_sample_sites = function(samplesMap) {
+        var info = $('#sample-sites-info');
+        info.text('Processing...');
+        $.when(check_for_auth_token()).done(function() {
+            var data = {
+                'token': authentication_token,
+                'otu_query': JSON.stringify(describe_search())
+            }
+
+            $.ajax({
+                url: window.otu_search_config['search_sample_sites_endpoint'],
+                method: 'POST',
+                data: data,
+                success: function(result) {
+                    var markers = L.markerClusterGroup();
+                    _.each(result.data, function(sample) {
+                        var title = sample.bpa_id + ' [' + sample.latitude + ', ' + sample.longitude + ']';
+                        var marker = L.marker([sample.latitude, sample.longitude],
+                                              {title: title, riseOnHover: true});
+                        markers.addLayer(marker);
+                    });
+                    samplesMap.addLayer(markers);
+
+                    info.text('Showing ' + result.data.length + ' samples');
+                }
+            });
+        });
+    }
+
+    var setup_map = function() {
+        var modal = $('#map-modal');
+
+        var removePreviousMap = function() {
+            _.each(window.maps, function(map) {
+                map.off();
+                map.remove();
+            });
+           window.maps = [];
+        };
+
+        var displayMap = function() {
+          loadmapsamples_map();
+          get_sample_sites(window.maps[0]);
+        };
+
+        modal.on('shown.bs.modal', function() {
+          displayMap();
+        });
+        modal.on('hidden.bs.modal', function() {
+          removePreviousMap();
+        });
+
+        $("#show_map_button").click(function() {
+           modal.modal('show');
+        });
+    };
+
     function check_for_auth_token() {
         if (! window.otu_search_config['ckan_auth_integration']) {
             return;
@@ -597,6 +654,7 @@ $(document).ready(function() {
         setup_search();
         setup_datatables();
         setup_export();
+        setup_map();
         set_errors(null);
 
         $(document).tooltip();
