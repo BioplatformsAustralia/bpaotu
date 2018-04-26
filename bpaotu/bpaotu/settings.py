@@ -334,7 +334,7 @@ CACHES = {
 
     'default': {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": env.getlist("cache", ["redis://otucache:6379/1"]), # NOTE: Passing in via Docker yml does not work.
+        "LOCATION": env.getlist("cache", ["redis://cache:6379/1"]),
         "TIMEOUT": 3600,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient"
