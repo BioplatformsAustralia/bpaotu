@@ -1,8 +1,15 @@
 {% extends 'bpaotu/base.html' %}
+{% load leaflet_tags %}
 {% load staticfiles %}
 {% load static from staticfiles %}
 
 {% block extra_head %}
+{% leaflet_js %}
+{% leaflet_css %}
+
+<script src="{% static 'bpaotu/leaflet.marketcluster-1.3.0/leaflet.markercluster.js' %}"></script>
+<link rel="stylesheet" type="text/css" href="{% static 'bpaotu/leaflet.marketcluster-1.3.0/MarkerCluster.Default.css' %}"/>
+<link rel="stylesheet" type="text/css" href="{% static 'bpaotu/leaflet.marketcluster-1.3.0/MarkerCluster.css' %}"/>
 <script src="{% static 'bpaotu/bpaotu.js' %}"></script>
 {% endblock extra_head %}
 
@@ -227,6 +234,9 @@
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
+                    <button type="button" class="btn btn-default " id="show_map_button">
+                        <span class="glyphicon glyphicon-map-marker" aria-hidden="true"></span> Show results on Map
+                    </button>
                     <button type="button" class="btn btn-default " id="export_button">
                         <span class="glyphicon glyphicon-download" aria-hidden="true"></span> Export Search Results
                     </button>
@@ -251,5 +261,23 @@
             </div>
         </div>
     </div>
-</div>
+
+    <div id="map-modal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="title text-center">
+              Sample Collection Sites
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+            </h4>
+          </div>
+          <div class="modal-body">
+            <p id="sample-sites-info" class="text-center"></p>
+            {% leaflet_map "samples_map" loadevent="do-NOT-initialise" %}
+          </div>
+        </div>
+      </div>
+    </div> <!-- map-model -->
 {% endblock content %}

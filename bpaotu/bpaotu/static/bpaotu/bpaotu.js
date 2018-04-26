@@ -1,41 +1,50 @@
 "use strict";
 
 $(document).ready(function() {
-    var theSpinner = null;
     var authentication_token = null;
+    var spinner = setupSpinner('spinner');
+    var modalSpinner = setupSpinner('modal-spinner');
 
-    function stop_spinner() {
-        if (theSpinner) {
-            theSpinner.stop();
-            theSpinner = null;
+    function setupSpinner(elementId) {
+        var theSpinner = null;
+
+        function stop_spinner() {
+            if (theSpinner) {
+                theSpinner.stop();
+                theSpinner = null;
+            }
         }
-    }
 
-    function start_spinner() {
-        var opts = {
-            lines: 15, // The number of lines to draw
-            length: 14, // The length of each line
-            width: 10, // The line thickness
-            radius: 20, // The radius of the inner circle
-            corners: 1, // Corner roundness (0..1)
-            rotate: 60, // The rotation offset
-            direction: 1, // 1: clockwise, -1: counterclockwise
-            color: '#000', // #rgb or #rrggbb or array of colors
-            speed: 2.2, // Rounds per second
-            trail: 95, // Afterglow percentage
-            shadow: true, // Whether to render a shadow
-            hwaccel: false, // Whether to use hardware acceleration
-            className: 'spinner', // The CSS class to assign to the spinner
-            zIndex: 2e9, // The z-index (defaults to 2000000000)
-            top: '50%', // Top position relative to parent
-            left: '50%' // Left position relative to parent
-        };
-        var target = document.getElementById('spinner');
+        function start_spinner() {
+            var opts = {
+                lines: 15, // The number of lines to draw
+                length: 14, // The length of each line
+                width: 10, // The line thickness
+                radius: 20, // The radius of the inner circle
+                corners: 1, // Corner roundness (0..1)
+                rotate: 60, // The rotation offset
+                direction: 1, // 1: clockwise, -1: counterclockwise
+                color: '#000', // #rgb or #rrggbb or array of colors
+                speed: 2.2, // Rounds per second
+                trail: 95, // Afterglow percentage
+                shadow: true, // Whether to render a shadow
+                hwaccel: false, // Whether to use hardware acceleration
+                className: 'spinner', // The CSS class to assign to the spinner
+                zIndex: 2e9, // The z-index (defaults to 2000000000)
+                top: '50%', // Top position relative to parent
+                left: '50%' // Left position relative to parent
+            };
+            var target = document.getElementById(elementId);
 
-        if (!theSpinner) {
-            theSpinner = new Spinner(opts).spin(target);
+            if (!theSpinner) {
+                theSpinner = new Spinner(opts).spin(target);
+            }
         }
-    }
+        return {
+          start: start_spinner,
+          stop: stop_spinner
+        }
+    };
 
     var taxonomy_hierarchy = [
         "kingdom",
@@ -476,12 +485,12 @@ $(document).ready(function() {
     };
 
     var search_complete = function() {
-        stop_spinner();
+        spinner.stop();
     };
 
     var setup_search = function() {
         $("#search_button").click(function() {
-            start_spinner();
+            spinner.start();
             datatable.ajax.reload(search_complete);
         });
     };
@@ -580,6 +589,65 @@ $(document).ready(function() {
         });
     };
 
+    var get_sample_sites = function(samplesMap) {
+        var info = $('#sample-sites-info');
+        info.text('Processing...');
+        modalSpinner.start();
+        $.when(check_for_auth_token()).done(function() {
+            var data = {
+                'token': authentication_token,
+                'otu_query': JSON.stringify(describe_search())
+            }
+
+            $.ajax({
+                url: window.otu_search_config['search_sample_sites_endpoint'],
+                method: 'POST',
+                data: data,
+                success: function(result) {
+                    var markers = L.markerClusterGroup();
+                    _.each(result.data, function(sample) {
+                        var title = sample.bpa_id + ' [' + sample.latitude + ', ' + sample.longitude + ']';
+                        var marker = L.marker([sample.latitude, sample.longitude],
+                                              {title: title, riseOnHover: true});
+                        markers.addLayer(marker);
+                    });
+                    samplesMap.addLayer(markers);
+
+                    info.text('Showing ' + result.data.length + ' samples');
+                    modalSpinner.stop();
+                }
+            });
+        });
+    }
+
+    var setup_map = function() {
+        var modal = $('#map-modal');
+
+        var removePreviousMap = function() {
+            _.each(window.maps, function(map) {
+                map.off();
+                map.remove();
+            });
+           window.maps = [];
+        };
+
+        var displayMap = function() {
+          loadmapsamples_map();
+          get_sample_sites(window.maps[0]);
+        };
+
+        modal.on('shown.bs.modal', function() {
+          displayMap();
+        });
+        modal.on('hidden.bs.modal', function() {
+          removePreviousMap();
+        });
+
+        $("#show_map_button").click(function() {
+           modal.modal('show');
+        });
+    };
+
     function check_for_auth_token() {
         if (! window.otu_search_config['ckan_auth_integration']) {
             return;
@@ -597,6 +665,7 @@ $(document).ready(function() {
         setup_search();
         setup_datatables();
         setup_export();
+        setup_map();
         set_errors(null);
 
         $(document).tooltip();

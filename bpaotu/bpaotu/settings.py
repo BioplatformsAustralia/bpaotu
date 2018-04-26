@@ -196,6 +196,7 @@ INSTALLED_APPS = ('bpaotu',
                   'django_extensions',
                   'django.contrib.admin',
                   'django.contrib.admindocs',
+                  'leaflet',
                   'bootstrap3',
                   )
 
@@ -365,3 +366,28 @@ EXPLORER_TOKEN = env.get('EXPLORER_TOKEN', "EXPLOREIT")
 
 # enable integration with CKAN authentication (specific to the BPA data portal)
 CKAN_AUTH_INTEGRATION = env.get('ckan_auth_integration', False)
+
+LEAFLET_CONFIG = {
+    'DEFAULT_CENTER': (-25.27, 133.775),
+    'DEFAULT_ZOOM': 4,
+    'ATTRIBUTION_PREFIX': '',
+    'TILES': [
+        ('ESRI',
+         '//server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+         {'attribution':
+          '&copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+          }, ),
+        ('OSM B&W',
+         '//{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png',
+         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
+        ('Thunderforest Landscape',
+         '//{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png',
+         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
+        ('ISM Seamark',
+         '//tiles.openseamap.org/seamark/{z}/{x}/{y}.png',
+         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
+    ],
+    'MINIMAP': True,
+    'NO_GLOBALS': False,
+    'RESET_VIEW': False,
+}

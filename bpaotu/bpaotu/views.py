@@ -363,6 +363,36 @@ def required_table_headers(request):
     return JsonResponse(res)
 
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def otu_search_sample_sites(request):
+    try:
+        _otu_endpoint_verification(request.POST['token'])
+    except Exception:
+        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
+
+    params, errors = param_to_filters(request.POST['otu_query'])
+    if errors:
+        return JsonResponse({
+            'errors': [str(e) for e in errors],
+            'data': [],
+        })
+
+    with SampleQuery(params) as query:
+        results = query.matching_samples()
+
+    def format(sample):
+        return {
+            'bpa_id': sample.id,
+            'latitude': sample.latitude,
+            'longitude': sample.longitude,
+        }
+
+    return JsonResponse({
+        'data': [format(sample) for sample in results]
+    })
+
+
 # technically we should be using GET, but the specification
 # of the query (plus the datatables params) is large: so we
 # avoid the issues of long URLs by simply POSTing the query
