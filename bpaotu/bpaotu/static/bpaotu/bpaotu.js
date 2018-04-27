@@ -570,7 +570,9 @@ $(document).ready(function() {
                 ]
             });
             $("#results").on('xhr.dt', function(e, settings, json, xhr) {
-                set_errors(json.errors);
+                if (json) {
+                    set_errors(json.errors);
+                }
             });
         });
     };
