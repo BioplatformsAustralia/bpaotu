@@ -2,6 +2,7 @@
 # Django settings for bpa metadata project.
 
 import os
+from contextlib import suppress
 from ccg_django_utils.conf import EnvConfig
 
 env = EnvConfig()
@@ -204,11 +205,9 @@ INSTALLED_APPS = ('bpaotu',
 # # LOGGING
 # #
 LOG_DIRECTORY = env.get('log_directory', os.path.join(WEBAPP_ROOT, "log"))
-try:
+with suppress(OSError):
     if not os.path.exists(LOG_DIRECTORY):
         os.mkdir(LOG_DIRECTORY)
-except:
-    pass
 os.path.exists(LOG_DIRECTORY), "No log directory, please create one: %s" % LOG_DIRECTORY
 
 LOGGING = {
@@ -366,6 +365,14 @@ EXPLORER_TOKEN = env.get('EXPLORER_TOKEN', "EXPLOREIT")
 
 # enable integration with CKAN authentication (specific to the BPA data portal)
 CKAN_AUTH_INTEGRATION = env.get('ckan_auth_integration', False)
+# email to use in development when CKAN auth integration isn't enabled
+# used only when CKAN_AUTH_INTEGRATION is set to False
+CKAN_DEVELOPMENT_USER_EMAIL = env.get('ckan_devel_user_email', 'devops@ccg.murdoch.edu.au')
+
+GALAXY_BASE_URL = env.get('galaxy_base_url', 'https://galaxy-aust-dev.genome.edu.au')
+# This will fail late, only when the user is trying to submit workflows to galaxy
+# Leaving it as optional as not sure if all installations will use Galaxy
+GALAXY_ADMIN_USER_API_KEY = env.get('galaxy_admin_user_api_key', '')
 
 LEAFLET_CONFIG = {
     'DEFAULT_CENTER': (-25.27, 133.775),
