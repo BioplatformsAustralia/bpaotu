@@ -15,7 +15,7 @@ services:
         - POSTGRES_PASSWORD=webapp
       ports:
         - "5432"
-    
+
     cache:
       image: redis:3-alpine
 
@@ -29,6 +29,13 @@ services:
 
     runserver:
       image: muccg/bpaotu-dev
+      environment:
+        - WAIT_FOR_DB=1
+        - WAIT_FOR_CACHE=1
+
+    celeryworker:
+      image: muccg/bpaotu-dev
+      command: celery_worker
       environment:
         - WAIT_FOR_DB=1
         - WAIT_FOR_CACHE=1

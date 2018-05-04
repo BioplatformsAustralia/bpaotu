@@ -290,6 +290,11 @@ LOGGING = {
             'level': 'CRITICAL',
             'propagate': True,
         },
+        'rainbow': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
         'bpaotu': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
@@ -332,7 +337,6 @@ USE_X_FORWARDED_HOST = env.get("use_x_forwarded_host", True)
 
 # cache using redis
 CACHES = {
-
     'default': {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": env.getlist("cache", ["redis://cache:6379/1"]),
@@ -343,6 +347,21 @@ CACHES = {
         "KEY_PREFIX": "bpaotu_cache"
     }
 }
+
+# Celery
+
+CELERY_BROKER_URL = env.get('CELERY_BROKER_URL', 'redis://cache')
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+# CELERY_TASK_IGNORE_RESULT = True
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+CELERY_TIMEZONE = TIME_ZONE
+
+# End Celery
+
 CACHES['search_results'] = CACHES['default']
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 

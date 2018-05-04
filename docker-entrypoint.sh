@@ -223,6 +223,15 @@ if [ "$1" = 'runserver_plus' ]; then
     _runserver
 fi
 
+# celery_worker entrypoint
+if [ "$1" = 'celery_worker' ]; then
+    info "[Run] Starting celery_worker"
+
+    set -x
+    exec celery -A bpaotu worker -l info
+fi
+
+
 # runtests entrypoint
 if [ "$1" = 'runtests' ]; then
     info "[Run] Starting tests"

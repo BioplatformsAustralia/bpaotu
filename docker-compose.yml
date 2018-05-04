@@ -1,6 +1,6 @@
 version: '2'
 services:
-      
+
     datadev:
       extends:
         file: docker-compose-common.yml
@@ -40,6 +40,16 @@ services:
         default:
           aliases:
             - web
+
+    celeryworker:
+      extends:
+        file: docker-compose-common.yml
+        service: celeryworker
+      volumes_from:
+        - datadev
+      depends_on:
+        - db
+        - cache
 
     uwsgi:
       extends:
