@@ -644,7 +644,9 @@ $(document).ready(function() {
                     galaxyLoading.hide();
                     target.removeAttr('disabled');
                   },
-                  error: handleError
+                  error: function(resp) {
+                    handleError(resp.responseText || resp);
+                  }
              });
             });
         });
