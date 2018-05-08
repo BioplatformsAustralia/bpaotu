@@ -29,6 +29,8 @@ services:
 
     runserver:
       image: muccg/bpaotu-dev
+      env_file:
+        - .env_local
       environment:
         - WAIT_FOR_DB=1
         - WAIT_FOR_CACHE=1

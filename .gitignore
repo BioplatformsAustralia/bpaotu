@@ -14,3 +14,4 @@ build
 data/
 *.tags
 *.tags1
+.env_local
