@@ -496,6 +496,13 @@ def contextual_csv(samples):
 
 
 @require_http_methods(["GET"])
+def otu_biom_export(request):
+    print('foobarbaz')
+    return HttpResponse('blah blah blah')
+    pass
+
+
+@require_http_methods(["GET"])
 def otu_export(request):
     """
     this view takes:

@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^private/api/v1/search$', views.otu_search, name="otu_search"),
     url(r'^private/api/v1/search-sample-sites$', views.otu_search_sample_sites, name="otu_search_sample_sites"),
     url(r'^private/api/v1/export$', views.otu_export, name="otu_export"),
+    url(r'^private/api/v1/export_biom$', views.otu_biom_export, name="otu_biom_export"),
     url(r'^ingest/$', views.otu_log, name="otu_log"),                                                                               # Display ingest names that do not match list.
     url(r'^tables/$', views.tables, name="tables"),                                                                                 # Custom datatables columns.
     url(r'^private/api/v1/required_table_headers/$', views.required_table_headers, name="required_table_headers"),                  # Custom datatables columns.

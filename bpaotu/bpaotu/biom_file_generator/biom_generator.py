@@ -10,7 +10,7 @@ from biom import parse_table
 
 OTU_FILE = "./Bacteria.csv"
 METADATA_FILE = "./contextual.csv"
-OUTPUT_FILE = "./FINAL.HDF5.BIOM"
+OUTPUT_FILE = "./FINAL.HDF5.biom"
 
 
 def generate_biom_file(otu_file, metadata_file, output_file):
