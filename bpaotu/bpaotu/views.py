@@ -554,7 +554,7 @@ def submit_to_galaxy(request):
     def _get_users_galaxy_api_key(email):
         galaxy_user = galaxy.users.get_by_email(email)
         if galaxy_user is None:
-            galaxy_user = galaxy.users.create_user(email)
+            galaxy_user = galaxy.users.create(email)
 
         api_key = galaxy.users.get_api_key(galaxy_user['id'])
         if api_key is None:
