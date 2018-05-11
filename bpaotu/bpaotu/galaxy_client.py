@@ -63,7 +63,7 @@ class UserAPI(GalaxyAPI):
         username = email.replace('@', '_at_')
         password = generate_password()
         response = self.client.post('users', username=username, email=email, password=password)
-        return response.json()
+        return response
 
     def get_api_key(self, user_id):
         response = self.client.get('users/%s/api_key/inputs' % user_id)
