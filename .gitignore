@@ -15,3 +15,8 @@ data/
 *.tags
 *.tags1
 .env_local
+
+node_modules
+yarn-error.log
+bpaotu/bpaotu/frontend/dist
+bpaotu/bpaotu/static/bpaotu/js/bundle*.js

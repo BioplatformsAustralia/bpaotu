@@ -170,7 +170,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.template.context_processors.static",
                 "django.template.context_processors.tz",
-                "django.contrib.messages.context_processors.messages"
+                "django.contrib.messages.context_processors.messages",
+                "bpaotu.context_processors.production",
             ],
             "debug": DEBUG,
             "loaders": [
