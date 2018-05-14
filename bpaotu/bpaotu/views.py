@@ -600,13 +600,20 @@ def otu_biom_export(request):
             fd.truncate(0)
 
             for sample in q.yield_per(50):
+                sample_id = '"id": "102.100.100/{}",'.format(sample.id)
+
                 sample_data = '{'
-                sample_data += '"id": "102.100.100/{}",'.format(sample.id)
+                sample_data += sample_id
                 sample_data += '"metadata": {'
 
-                for col in sample.__table__.columns:
-                    logger.critical(col.value)
+                for key in sample.__table__.columns._data:
+                    if key == "id":
+                        continue
+                    if getattr(sample, key) is None or getattr(sample, key) == "":
+                        continue
+                    sample_data += '"{}": "{}",'.format(key, getattr(sample, key))
 
+                sample_data = sample_data[:-1]
                 sample_data += '}}'
 
                 fd.write(sample_data)
@@ -614,7 +621,7 @@ def otu_biom_export(request):
                 fd.seek(0)
                 fd.truncate(0)
 
-                break
+                break  # <<<<<<<<<< REMOVE ME
 
             sample_footer = '],'
 
@@ -626,9 +633,10 @@ def otu_biom_export(request):
             logger.critical("--------------------------------------------------------------------------------")
 
             # Write out the abundance table
+            q = query.matching_sample_otus()
 
-            # q = query.matching_sample_otus()
-            # for i in q.yield_per(50):
+            for i in q.yield_per(50):
+                pass
             #     # logger.critical(len(i))
             #     # logger.critical(dir(i))
             #     logger.critical(repr(i))
