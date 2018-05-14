@@ -19,7 +19,6 @@ if [ "$1" = 'build' ]; then
     exit 0
 fi
 
-# prepare a tarball of build
 if [ "$1" = 'watch' ]; then
     info "[Run] Watch source and recompile on change"
 
