@@ -9,6 +9,7 @@ BPA-OTU is a web-based portal into Operational Taxonomic Unit (OTU) data, develo
 * `./develop.sh build base`
 * `./develop.sh build builder`
 * `./develop.sh build dev`
+* `./develop.sh build node`
 
 `develop.sh up` will spin up the stack. See `./develop.sh` for some utility methods, which typically are simple
 wrappers arround docker and docker-compose.

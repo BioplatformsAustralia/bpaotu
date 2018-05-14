@@ -20,3 +20,5 @@ node_modules
 yarn-error.log
 bpaotu/bpaotu/frontend/dist
 bpaotu/bpaotu/static/bpaotu/js/bundle*.js
+
+yarn_cache/
