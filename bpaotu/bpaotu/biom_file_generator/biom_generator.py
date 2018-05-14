@@ -10,10 +10,11 @@ from biom import parse_table
 
 OTU_FILE = "./Bacteria.csv"
 METADATA_FILE = "./contextual.csv"
+JSON_OUTPUT_FILE = "./FINAL.JSON.biom"
 OUTPUT_FILE = "./FINAL.HDF5.biom"
 
 
-def generate_biom_file(otu_file, metadata_file, output_file):
+def generate_biom_file(otu_file, metadata_file, output_file, json_output_file):
     otu_file_header = None
 
     bpa_sample_ids = []  # Rows
@@ -83,8 +84,11 @@ def generate_biom_file(otu_file, metadata_file, output_file):
     output_json_biom_file = json.dumps(biom_file, indent=4)
     # print(output_json_biom_file)
 
+    with biom_open()
+
     # Convert file into hdf5 format
-    table = parse_table(output_json_biom_file)
+    # table = parse_table(json_output_file, "w") as fp:
+    #     output_json_biom_file = table.to_json(fp, "table")
 
     with biom_open(output_file, "w") as fp:
         output_hdf5_biom_file = table.to_hdf5(fp, "table")

@@ -495,11 +495,182 @@ def contextual_csv(samples):
         return csv_fd.getvalue()
 
 
+
+
 @require_http_methods(["GET"])
 def otu_biom_export(request):
-    print('foobarbaz')
-    return HttpResponse('blah blah blah')
-    pass
+    def val_or_empty(obj):
+        if obj is None:
+            return ''
+        return obj.value
+
+    with open('biomfile.txt', 'w') as biom_fp:
+        # Write out the JSON file header first
+        fd = StringIO()
+
+        biom_file = OrderedDict()
+
+        biom_file['id'] = None
+        biom_file['format'] = "1.0.0"
+        biom_file['format_url'] = "http://biom-format.org"
+        biom_file['type'] = "OTU table"
+        biom_file['generated_by'] = "Bioplatforms Australia"
+        biom_file['date'] = datetime.datetime.now().replace(microsecond=0).isoformat()
+        biom_file['matrix_type'] = "sparse"
+        biom_file['matrix_element_type'] = "int"
+
+        biom_header = "{"
+
+        for key, val in biom_file.items():
+            biom_header += '"{}": "{}",\n'.format(key, val)
+
+        fd.write(biom_header)
+        biom_fp.write(fd.getvalue())
+        fd.seek(0)
+        fd.truncate(0)
+
+        rows = []
+        columns = []
+
+        params, errors = param_to_filters(request.GET['q'])
+        with SampleQuery(params) as query:
+
+            logger.critical("--------------------------------------------------------------------------------")
+
+            # Write out the OTU list (which form the rows)
+            q = query.matching_otus()
+
+            otu_header = '"rows": ['
+
+            fd.write(otu_header)
+            biom_fp.write(fd.getvalue())
+            fd.seek(0)
+            fd.truncate(0)
+
+            for otu in q.yield_per(50):
+                if otu.code not in rows:
+                    rows.append(otu.code)
+
+                otu_details = OrderedDict()
+
+                # otu_details['id'] = otu.code  # Write out the otu code separately as it is the id of the entry
+                otu_details['amplicon'] = val_or_empty(otu.amplicon)
+                otu_details['kingdom'] = val_or_empty(otu.kingdom)
+                otu_details['phylum'] = val_or_empty(otu.phylum)
+                otu_details['class'] = val_or_empty(otu.klass)
+                otu_details['order'] = val_or_empty(otu.order)
+                otu_details['family'] = val_or_empty(otu.family)
+                otu_details['genus'] = val_or_empty(otu.genus)
+                otu_details['species'] = val_or_empty(otu.species)
+
+                otu_data = '{'
+                otu_data += '"id": "{}",'.format(otu.code)
+                otu_data += '"metadata": {'
+                for key, val in otu_details.items():
+                    if val is "":
+                        continue
+
+                    otu_data += '"{}": "{}",'.format(key, val)
+                otu_data = otu_data[:-1]  # Remove the comma from the last element before closing the brace
+                otu_data += '}}'  # Close off the entry brace and the metadata brace
+
+                fd.write(otu_data)
+                biom_fp.write(fd.getvalue())
+                fd.seek(0)
+                fd.truncate(0)
+
+                break  # <<<<<<<<<< REMOVE ME
+
+            otu_footer = '],'
+
+            fd.write(otu_footer)
+            biom_fp.write(fd.getvalue())
+            fd.seek(0)
+            fd.truncate(0)
+
+            logger.critical("--------------------------------------------------------------------------------")
+
+            # Write out the Sample list (which form the columns)
+            q = query.matching_samples()
+
+            sample_header = '"columns": ['
+            fd.write(sample_header)
+            biom_fp.write(fd.getvalue())
+            fd.seek(0)
+            fd.truncate(0)
+
+            for sample in q.yield_per(50):
+                sample_data = '{'
+                sample_data += '"id": "102.100.100/{}",'.format(sample.id)
+                sample_data += '"metadata": {'
+
+                for col in sample.__table__.columns:
+                    logger.critical(col.value)
+
+                sample_data += '}}'
+
+                fd.write(sample_data)
+                biom_fp.write(fd.getvalue())
+                fd.seek(0)
+                fd.truncate(0)
+
+                break
+
+            sample_footer = '],'
+
+            fd.write(sample_footer)
+            biom_fp.write(fd.getvalue())
+            fd.seek(0)
+            fd.truncate(0)
+
+            logger.critical("--------------------------------------------------------------------------------")
+
+            # Write out the abundance table
+
+            # q = query.matching_sample_otus()
+            # for i in q.yield_per(50):
+            #     # logger.critical(len(i))
+            #     # logger.critical(dir(i))
+            #     logger.critical(repr(i))
+                # logger.critical(i.sample_id)
+                # logger.critical(i.otu_id)
+                # logger.critical(repr(i.count))
+
+                # logger.critical(dir(i.count))
+                # logger.critical(val_or_empty(i.count))
+                # break
+
+            # for result in q:
+            #     logger.critical(result)
+            #
+            #     break
+
+            # for result in q.yield_per(50):
+            #     print(result)
+            #     quit()
+
+            # for blah in q.yield_per(50):
+            #     logger.critical(blah)
+            #     break
+
+
+
+        # Create biom file (in JSON)
+
+
+        # biom_file['rows'] = formatted_bpa_sample_ids # need to stream the rows
+        # biom_file['columns'] = formatted_otu_codes # need to stream the columns
+        # biom_file['shape'] = [len(formatted_bpa_sample_ids), len(formatted_otu_codes)]
+        # biom_file['data'] = data_matrix # need to stream the data
+
+        # yield and flush out the json here
+        #
+
+
+
+        # Use the same algorithm used to build the JSON here.
+
+    return HttpResponse('foobarbaz')
 
 
 @require_http_methods(["GET"])
