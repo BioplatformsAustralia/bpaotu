@@ -499,12 +499,23 @@ def contextual_csv(samples):
 
 @require_http_methods(["GET"])
 def otu_biom_export(request):
+    SAMPLE_RUN_VAL = 1
+    TRIAL_SWITCH = False
+
+
+
     def val_or_empty(obj):
         if obj is None:
             return ''
         return obj.value
 
-    with open('biomfile.txt', 'w') as biom_fp:
+    def write_output(val, stream, file_ptr):
+        stream.write(val)
+        file_ptr.write(stream.getvalue())
+        stream.seek(0)
+        stream.truncate(0)
+
+    with open('json_biomfile.biom', 'w') as biom_fp:
         # Write out the JSON file header first
         fd = StringIO()
 
@@ -524,10 +535,7 @@ def otu_biom_export(request):
         for key, val in biom_file.items():
             biom_header += '"{}": "{}",\n'.format(key, val)
 
-        fd.write(biom_header)
-        biom_fp.write(fd.getvalue())
-        fd.seek(0)
-        fd.truncate(0)
+        write_output(biom_header, fd, biom_fp)
 
         rows = []
         columns = []
@@ -535,150 +543,176 @@ def otu_biom_export(request):
         params, errors = param_to_filters(request.GET['q'])
         with SampleQuery(params) as query:
 
+
+
             logger.critical("--------------------------------------------------------------------------------")
+
+
 
             # Write out the OTU list (which form the rows)
             q = query.matching_otus()
+            result_length = q.distinct('code').count()
+            logger.critical(">>>>>>>>>>>>>>>>>>>>>>>>>{}".format(result_length))
+            if TRIAL_SWITCH:
+                result_length = SAMPLE_RUN_VAL
 
             otu_header = '"rows": ['
+            write_output(otu_header, fd, biom_fp)
 
-            fd.write(otu_header)
-            biom_fp.write(fd.getvalue())
-            fd.seek(0)
-            fd.truncate(0)
-
+            cnt = 1
             for otu in q.yield_per(50):
-                if otu.code not in rows:
-                    rows.append(otu.code)
+                if otu.id not in rows:
+                    rows.append(otu.id)
 
-                otu_details = OrderedDict()
+                    otu_details = OrderedDict()
 
-                # otu_details['id'] = otu.code  # Write out the otu code separately as it is the id of the entry
-                otu_details['amplicon'] = val_or_empty(otu.amplicon)
-                otu_details['kingdom'] = val_or_empty(otu.kingdom)
-                otu_details['phylum'] = val_or_empty(otu.phylum)
-                otu_details['class'] = val_or_empty(otu.klass)
-                otu_details['order'] = val_or_empty(otu.order)
-                otu_details['family'] = val_or_empty(otu.family)
-                otu_details['genus'] = val_or_empty(otu.genus)
-                otu_details['species'] = val_or_empty(otu.species)
+                    # otu_details['id'] = otu.code  # Write out the otu code separately as it is the id of the entry
+                    otu_details['amplicon'] = val_or_empty(otu.amplicon)
+                    otu_details['kingdom'] = val_or_empty(otu.kingdom)
+                    otu_details['phylum'] = val_or_empty(otu.phylum)
+                    otu_details['class'] = val_or_empty(otu.klass)
+                    otu_details['order'] = val_or_empty(otu.order)
+                    otu_details['family'] = val_or_empty(otu.family)
+                    otu_details['genus'] = val_or_empty(otu.genus)
+                    otu_details['species'] = val_or_empty(otu.species)
 
-                otu_data = '{'
-                otu_data += '"id": "{}",'.format(otu.code)
-                otu_data += '"metadata": {'
-                for key, val in otu_details.items():
-                    if val is "":
-                        continue
+                    otu_data = '{'
+                    otu_data += '"id": "{}",'.format(otu.code)
+                    otu_data += '"metadata": {'
+                    for key, val in otu_details.items():
+                        if val is "":
+                            continue
 
-                    otu_data += '"{}": "{}",'.format(key, val)
-                otu_data = otu_data[:-1]  # Remove the comma from the last element before closing the brace
-                otu_data += '}}'  # Close off the entry brace and the metadata brace
+                        otu_data += '"{}": "{}",'.format(key, val)
+                    otu_data = otu_data[:-1]  # Remove the comma from the last element before closing the brace
+                    otu_data += '}},'  # Close off the entry brace and the metadata brace  # <<<<< But need to remove trailing "," for the last entry
 
-                fd.write(otu_data)
-                biom_fp.write(fd.getvalue())
-                fd.seek(0)
-                fd.truncate(0)
+                    if cnt == result_length:
+                        otu_data = otu_data[:-1]
 
-                break  # <<<<<<<<<< REMOVE ME
+                    write_output(otu_data, fd, biom_fp)
+
+                    cnt = cnt + 1
+                    if TRIAL_SWITCH:
+                        if cnt > SAMPLE_RUN_VAL:
+                            break
 
             otu_footer = '],'
+            write_output(otu_footer, fd, biom_fp)
 
-            fd.write(otu_footer)
-            biom_fp.write(fd.getvalue())
-            fd.seek(0)
-            fd.truncate(0)
+
 
             logger.critical("--------------------------------------------------------------------------------")
+
+
 
             # Write out the Sample list (which form the columns)
             q = query.matching_samples()
+            result_length = q.distinct('id').count()
+            logger.critical("!!!!!!!!{}".format(result_length))
+            if TRIAL_SWITCH:
+                result_length = SAMPLE_RUN_VAL
+
 
             sample_header = '"columns": ['
-            fd.write(sample_header)
-            biom_fp.write(fd.getvalue())
-            fd.seek(0)
-            fd.truncate(0)
+            write_output(sample_header, fd, biom_fp)
 
+            cnt = 1
             for sample in q.yield_per(50):
-                sample_id = '"id": "102.100.100/{}",'.format(sample.id)
+                if sample.id not in columns:
+                    columns.append(sample.id)
 
-                sample_data = '{'
-                sample_data += sample_id
-                sample_data += '"metadata": {'
+                    sample_data = '{'
+                    sample_data += '"id": "102.100.100/{}",'.format(sample.id)
+                    sample_data += '"metadata": {'
 
-                for key in sample.__table__.columns._data:
-                    if key == "id":
-                        continue
-                    if getattr(sample, key) is None or getattr(sample, key) == "":
-                        continue
-                    sample_data += '"{}": "{}",'.format(key, getattr(sample, key))
+                    for key in sample.__table__.columns._data:
+                        if key == "id":
+                            continue
+                        if getattr(sample, key) is None or getattr(sample, key) == "":
+                            continue
+                        sample_data += '"{}": "{}",'.format(key, getattr(sample, key))
 
-                sample_data = sample_data[:-1]
-                sample_data += '}}'
+                    sample_data = sample_data[:-1]
+                    sample_data += '}},'  # <<<<< But need to remove trailing "," for the last entry
 
-                fd.write(sample_data)
-                biom_fp.write(fd.getvalue())
-                fd.seek(0)
-                fd.truncate(0)
+                    if cnt == result_length:
+                        sample_data = sample_data[:-1]
 
-                break  # <<<<<<<<<< REMOVE ME
+                    write_output(sample_data, fd, biom_fp)
+
+                    cnt = cnt + 1
+                    if TRIAL_SWITCH:
+                        if cnt > SAMPLE_RUN_VAL:
+                            break  # <<<<<<<<<< REMOVE ME
 
             sample_footer = '],'
+            write_output(sample_footer, fd, biom_fp)
 
-            fd.write(sample_footer)
-            biom_fp.write(fd.getvalue())
-            fd.seek(0)
-            fd.truncate(0)
+
 
             logger.critical("--------------------------------------------------------------------------------")
 
+
+
+            shape = "[{}, {}]".format(len(rows), len(columns))
+            otu_data = '"{}": {}, '.format("shape", shape)
+            write_output(otu_data, fd, biom_fp)
+
+
+
+            logger.critical("--------------------------------------------------------------------------------")
+
+
+
             # Write out the abundance table
             q = query.matching_sample_otus()
+            result_length = q.count()
+            logger.critical("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@{}".format(result_length))
+            if TRIAL_SWITCH:
+                result_length = SAMPLE_RUN_VAL
 
-            for i in q.yield_per(50):
-                pass
-            #     # logger.critical(len(i))
-            #     # logger.critical(dir(i))
-            #     logger.critical(repr(i))
-                # logger.critical(i.sample_id)
-                # logger.critical(i.otu_id)
-                # logger.critical(repr(i.count))
+            data_header = '"data": ['
 
-                # logger.critical(dir(i.count))
-                # logger.critical(val_or_empty(i.count))
-                # break
+            write_output(data_header, fd, biom_fp)
 
-            # for result in q:
-            #     logger.critical(result)
-            #
-            #     break
+            cnt = 1
+            for otu, sampleotu, samplecontext in q.yield_per(50):
+                try:
+                    row_idx = rows.index(sampleotu.otu_id)
+                    col_idx = columns.index(sampleotu.sample_id)
+                    count = sampleotu.count
 
-            # for result in q.yield_per(50):
-            #     print(result)
-            #     quit()
+                    data_entry = '[{},{},{}],'.format(row_idx, col_idx, count)
 
-            # for blah in q.yield_per(50):
-            #     logger.critical(blah)
-            #     break
+                    if cnt == result_length:
+                        data_entry = data_entry[:-1]
 
+                    write_output(data_entry, fd, biom_fp)
+                except:
+                    data_entry = '[{},{},{}],'.format(-1, -1, -1)  # If this appears there has been an error finding the corresponding otu_id and/or sample_id
 
+                    if cnt == result_length:
+                        data_entry = data_entry[:-1]
 
-        # Create biom file (in JSON)
+                    write_output(data_entry, fd, biom_fp)
+                    logger.critical("No corresponding entry found for: {} {} {}".format(sampleotu.otu_id, sampleotu.sample_id, sampleotu.count))
 
+                cnt = cnt + 1
 
-        # biom_file['rows'] = formatted_bpa_sample_ids # need to stream the rows
-        # biom_file['columns'] = formatted_otu_codes # need to stream the columns
-        # biom_file['shape'] = [len(formatted_bpa_sample_ids), len(formatted_otu_codes)]
-        # biom_file['data'] = data_matrix # need to stream the data
+                if TRIAL_SWITCH:
+                    if cnt > SAMPLE_RUN_VAL:
+                        break
 
-        # yield and flush out the json here
-        #
-
-
-
-        # Use the same algorithm used to build the JSON here.
+            data_footer = ']}'
+            write_output(data_footer, fd, biom_fp)
 
     return HttpResponse('foobarbaz')
+
+
+
+
+
 
 
 @require_http_methods(["GET"])
