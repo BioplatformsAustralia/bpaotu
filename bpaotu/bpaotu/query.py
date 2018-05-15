@@ -235,8 +235,6 @@ class SampleQuery:
         subq = self._build_taxonomy_subquery()
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
         return q
-        return q.all()
-        return self._q_all_cached('matching_samples', q)
 
     def has_matching_sample_otus(self, kingdom_id):
         def to_boolean(result):
@@ -254,7 +252,6 @@ class SampleQuery:
         q = self._contextual_filter.apply(q)
         if kingdom_id is not None:
             q = q.filter(OTU.kingdom_id == kingdom_id)
-        # logger.critical(str(q))
         return q
 
     def matching_sample_otus(self, kingdom_id=None):
@@ -272,7 +269,6 @@ class SampleQuery:
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
         # it can be iterated over
-        # return q.all()
         return q
 
     def _apply_taxonomy_filters(self, q):
