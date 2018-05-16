@@ -43,6 +43,7 @@ from .models import (
 from .settings import (
     CKAN_AUTH_INTEGRATION
 )
+from .util import val_or_empty
 
 
 logger = logging.getLogger("rainbow")
@@ -495,32 +496,16 @@ def contextual_csv(samples):
         return csv_fd.getvalue()
 
 
-
-
 @require_http_methods(["GET"])
 def otu_biom_export(request):
-    SAMPLE_RUN_VAL = 1
-    TRIAL_SWITCH = False
+    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+    fd = StringIO()
 
-
-
-    def val_or_empty(obj):
-        if obj is None:
-            return ''
-        return obj.value
-
-    def write_output(val, stream, file_ptr):
-        stream.write(val)
-        file_ptr.write(stream.getvalue())
-        stream.seek(0)
-        stream.truncate(0)
-
-    with open('json_biomfile.biom', 'w') as biom_fp:
-        # Write out the JSON file header first
-        fd = StringIO()
-
+    def generate_biom_file():
+        '''
+        Write out the JSON file header first
+        '''
         biom_file = OrderedDict()
-
         biom_file['id'] = None
         biom_file['format'] = "1.0.0"
         biom_file['format_url'] = "http://biom-format.org"
@@ -535,7 +520,10 @@ def otu_biom_export(request):
         for key, val in biom_file.items():
             biom_header += '"{}": "{}",\n'.format(key, val)
 
-        write_output(biom_header, fd, biom_fp)
+        fd.write(biom_header)
+        yield fd.getvalue().encode('utf8')
+        fd.seek(0)
+        fd.truncate(0)
 
         rows = []
         columns = []
@@ -543,21 +531,18 @@ def otu_biom_export(request):
         params, errors = param_to_filters(request.GET['q'])
         with SampleQuery(params) as query:
 
-
-
-            logger.critical("--------------------------------------------------------------------------------")
-
-
-
-            # Write out the OTU list (which form the rows)
+            '''
+            Write out the OTU list (which form the rows)
+            '''
             q = query.matching_otus()
             result_length = q.distinct('code').count()
-            logger.critical(">>>>>>>>>>>>>>>>>>>>>>>>>{}".format(result_length))
-            if TRIAL_SWITCH:
-                result_length = SAMPLE_RUN_VAL
 
             otu_header = '"rows": ['
-            write_output(otu_header, fd, biom_fp)
+
+            fd.write(otu_header)
+            yield fd.getvalue().encode('utf8')
+            fd.seek(0)
+            fd.truncate(0)
 
             cnt = 1
             for otu in q.yield_per(50):
@@ -584,38 +569,37 @@ def otu_biom_export(request):
                             continue
 
                         otu_data += '"{}": "{}",'.format(key, val)
-                    otu_data = otu_data[:-1]  # Remove the comma from the last element before closing the brace
-                    otu_data += '}},'  # Close off the entry brace and the metadata brace  # <<<<< But need to remove trailing "," for the last entry
+                    otu_data = otu_data[:-1]  # Remove the comma from the last element before closing the brace.
+                    otu_data += '}},'  # Close off the entry brace and the metadata brace. But need to remove trailing "," for the last entry
 
                     if cnt == result_length:
                         otu_data = otu_data[:-1]
 
-                    write_output(otu_data, fd, biom_fp)
+                    fd.write(otu_data)
+                    yield fd.getvalue().encode('utf8')
+                    fd.seek(0)
+                    fd.truncate(0)
 
                     cnt = cnt + 1
-                    if TRIAL_SWITCH:
-                        if cnt > SAMPLE_RUN_VAL:
-                            break
-
             otu_footer = '],'
-            write_output(otu_footer, fd, biom_fp)
 
+            fd.write(otu_footer)
+            yield fd.getvalue().encode('utf8')
+            fd.seek(0)
+            fd.truncate(0)
 
-
-            logger.critical("--------------------------------------------------------------------------------")
-
-
-
-            # Write out the Sample list (which form the columns)
+            '''
+            Write out the Sample list (which form the columns)
+            '''
             q = query.matching_samples()
             result_length = q.distinct('id').count()
-            logger.critical("!!!!!!!!{}".format(result_length))
-            if TRIAL_SWITCH:
-                result_length = SAMPLE_RUN_VAL
-
 
             sample_header = '"columns": ['
-            write_output(sample_header, fd, biom_fp)
+
+            fd.write(sample_header)
+            yield fd.getvalue().encode('utf8')
+            fd.seek(0)
+            fd.truncate(0)
 
             cnt = 1
             for sample in q.yield_per(50):
@@ -634,47 +618,44 @@ def otu_biom_export(request):
                         sample_data += '"{}": "{}",'.format(key, getattr(sample, key))
 
                     sample_data = sample_data[:-1]
-                    sample_data += '}},'  # <<<<< But need to remove trailing "," for the last entry
+                    sample_data += '}},'
 
                     if cnt == result_length:
                         sample_data = sample_data[:-1]
 
-                    write_output(sample_data, fd, biom_fp)
+                    fd.write(sample_data)
+                    yield fd.getvalue().encode('utf8')
+                    fd.seek(0)
+                    fd.truncate(0)
 
                     cnt = cnt + 1
-                    if TRIAL_SWITCH:
-                        if cnt > SAMPLE_RUN_VAL:
-                            break  # <<<<<<<<<< REMOVE ME
 
             sample_footer = '],'
-            write_output(sample_footer, fd, biom_fp)
-
-
-
-            logger.critical("--------------------------------------------------------------------------------")
-
-
+            fd.write(sample_footer)
+            yield fd.getvalue().encode('utf8')
+            fd.seek(0)
+            fd.truncate(0)
 
             shape = "[{}, {}]".format(len(rows), len(columns))
             otu_data = '"{}": {}, '.format("shape", shape)
-            write_output(otu_data, fd, biom_fp)
 
+            fd.write(otu_data)
+            yield fd.getvalue().encode('utf8')
+            fd.seek(0)
+            fd.truncate(0)
 
-
-            logger.critical("--------------------------------------------------------------------------------")
-
-
-
-            # Write out the abundance table
+            '''
+            Write out the abundance table
+            '''
             q = query.matching_sample_otus()
             result_length = q.count()
-            logger.critical("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@{}".format(result_length))
-            if TRIAL_SWITCH:
-                result_length = SAMPLE_RUN_VAL
 
             data_header = '"data": ['
 
-            write_output(data_header, fd, biom_fp)
+            fd.write(data_header)
+            yield fd.getvalue().encode('utf8')
+            fd.seek(0)
+            fd.truncate(0)
 
             cnt = 1
             for otu, sampleotu, samplecontext in q.yield_per(50):
@@ -688,31 +669,38 @@ def otu_biom_export(request):
                     if cnt == result_length:
                         data_entry = data_entry[:-1]
 
-                    write_output(data_entry, fd, biom_fp)
+                    fd.write(data_entry)
+                    yield fd.getvalue().encode('utf8')
+                    fd.seek(0)
+                    fd.truncate(0)
                 except:
                     data_entry = '[{},{},{}],'.format(-1, -1, -1)  # If this appears there has been an error finding the corresponding otu_id and/or sample_id
 
                     if cnt == result_length:
                         data_entry = data_entry[:-1]
 
-                    write_output(data_entry, fd, biom_fp)
+                    fd.write(data_entry)
+                    yield fd.getvalue().encode('utf8')
+                    fd.seek(0)
+                    fd.truncate(0)
+
                     logger.critical("No corresponding entry found for: {} {} {}".format(sampleotu.otu_id, sampleotu.sample_id, sampleotu.count))
 
                 cnt = cnt + 1
 
-                if TRIAL_SWITCH:
-                    if cnt > SAMPLE_RUN_VAL:
-                        break
-
             data_footer = ']}'
-            write_output(data_footer, fd, biom_fp)
 
-    return HttpResponse('foobarbaz')
+            fd.write(data_footer)
+            yield fd.getvalue().encode('utf8')
+            fd.seek(0)
+            fd.truncate(0)
 
+    zf.write_iter("json_biom_file.biom", generate_biom_file())
 
-
-
-
+    response = StreamingHttpResponse(zf, content_type='application/zip')
+    filename = 'Biom.zip'
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+    return response
 
 
 @require_http_methods(["GET"])
@@ -729,11 +717,6 @@ def otu_export(request):
         _otu_endpoint_verification(request.GET['token'])
     except Exception:
         return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
-
-    def val_or_empty(obj):
-        if obj is None:
-            return ''
-        return obj.value
 
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     params, errors = param_to_filters(request.GET['q'])
