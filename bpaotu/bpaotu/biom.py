@@ -8,12 +8,13 @@ import logging
 logger = logging.getLogger("rainbow")
 
 
-def generate_biom_file(query):
-    fd = StringIO()
-
+def _write_biom_header():
     '''
     Write out the JSON file header first
     '''
+
+    fd = StringIO()
+
     biom_file = OrderedDict()
     biom_file['id'] = None
     biom_file['format'] = "1.0.0"
@@ -34,12 +35,14 @@ def generate_biom_file(query):
     fd.seek(0)
     fd.truncate(0)
 
-    rows = []
-    columns = []
 
+def _write_otus(query, rows):
     '''
     Write out the OTU list (which form the rows)
     '''
+
+    fd = StringIO()
+
     q = query.matching_otus()
     result_length = q.distinct('code').count()
 
@@ -94,9 +97,12 @@ def generate_biom_file(query):
     fd.seek(0)
     fd.truncate(0)
 
+
+def _write_samples(query, columns):
     '''
     Write out the Sample list (which form the columns)
     '''
+
     q = query.matching_samples()
 
     sample_header = '"columns": ['
@@ -150,9 +156,12 @@ def generate_biom_file(query):
     fd.seek(0)
     fd.truncate(0)
 
+
+def _write_abundance_table(query, rows, columns):
     '''
     Write out the abundance table
     '''
+
     q = query.matching_sample_otus()
     result_length = q.count()
 
@@ -200,3 +209,13 @@ def generate_biom_file(query):
     yield fd.getvalue().encode('utf8')
     fd.seek(0)
     fd.truncate(0)
+
+
+def generate_biom_file(query):
+    rows = []
+    columns = []
+
+    yield _write_biom_header()
+    yield _write_otus(query, rows)
+    yield _write_samples(query, columns)
+    yield _write_abundance_table(query, rows, columns)
