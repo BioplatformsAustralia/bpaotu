@@ -1,23 +1,22 @@
-import re
+from collections import defaultdict, OrderedDict
 import csv
+import datetime
+import io
 import json
 import logging
+import re
+import traceback
 import zipstream
-import datetime
-from collections import defaultdict, OrderedDict
-import io
-import hmac
-import time
-import os
 
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import TemplateView
-from django.http import JsonResponse, StreamingHttpResponse, HttpResponse, HttpResponseForbidden
-from io import StringIO
-import traceback
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
+
+from .ckan_auth import require_CKAN_auth
 from .importer import DataImporter
+from .galaxy_client import Galaxy
 from .otu import (
     Environment,
     OTUKingdom,
@@ -45,6 +44,8 @@ from .settings import (
 )
 from .util import val_or_empty
 from .biom import generate_biom_file
+
+from .util import temporary_file
 
 
 logger = logging.getLogger("rainbow")
@@ -81,7 +82,7 @@ class OTUSearch(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(OTUSearch, self).get_context_data(**kwargs)
         context['ckan_base_url'] = settings.CKAN_SERVERS[0]['base_url']
-        context['ckan_auth_integration'] = CKAN_AUTH_INTEGRATION
+        context['ckan_auth_integration'] = settings.CKAN_AUTH_INTEGRATION
 
         return context
 
@@ -120,16 +121,12 @@ def clean_taxonomy_filter(state_vector):
         state_vector))
 
 
-@require_http_methods(["GET"])
+@require_CKAN_auth
+@require_GET
 def amplicon_options(request):
     """
     private API: return the possible amplicons
     """
-    try:
-        _otu_endpoint_verification(request.GET['token'])
-    except Exception:
-        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
-
     with OntologyInfo() as options:
         vals = options.get_values(OTUAmplicon)
     return JsonResponse({
@@ -137,16 +134,12 @@ def amplicon_options(request):
     })
 
 
-@require_http_methods(["GET"])
+@require_CKAN_auth
+@require_GET
 def taxonomy_options(request):
     """
     private API: given taxonomy constraints, return the possible options
     """
-    try:
-        _otu_endpoint_verification(request.GET['token'])
-    except Exception:
-        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
-
     with TaxonomyOptions() as options:
         amplicon = clean_amplicon_filter(json.loads(request.GET['amplicon']))
         selected = clean_taxonomy_filter(json.loads(request.GET['selected']))
@@ -156,17 +149,13 @@ def taxonomy_options(request):
     })
 
 
-@require_http_methods(["GET"])
+@require_CKAN_auth
+@require_GET
 def contextual_fields(request):
     """
     private API: return the available fields, and their types, so that
     the contextual filtering UI can be built
     """
-    try:
-        _otu_endpoint_verification(request.GET['token'])
-    except Exception:
-        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
-
     fields_by_type = defaultdict(list)
 
     classifications = DataImporter.classify_fields(make_environment_lookup())
@@ -298,7 +287,7 @@ def param_to_filters_without_checks(query_str):
 
 
 @csrf_exempt
-@require_http_methods(["POST"])
+@require_POST
 def required_table_headers(request):
     """
     This is a modification of the otu_search method to populate the DataTable
@@ -366,13 +355,9 @@ def required_table_headers(request):
 
 
 @csrf_exempt
-@require_http_methods(["POST"])
+@require_CKAN_auth
+@require_POST
 def otu_search_sample_sites(request):
-    try:
-        _otu_endpoint_verification(request.POST['token'])
-    except Exception:
-        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
-
     params, errors = param_to_filters(request.POST['otu_query'])
     if errors:
         return JsonResponse({
@@ -399,17 +384,13 @@ def otu_search_sample_sites(request):
 # of the query (plus the datatables params) is large: so we
 # avoid the issues of long URLs by simply POSTing the query
 @csrf_exempt
-@require_http_methods(["POST"])
+@require_CKAN_auth
+@require_POST
 def otu_search(request):
     """
     private API: return the available fields, and their types, so that
     the contextual filtering UI can be built
     """
-    try:
-        _otu_endpoint_verification(request.POST['token'])
-    except Exception:
-        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
-
     def _int_get_param(param_name):
         param = request.POST.get(param_name)
         try:
@@ -469,7 +450,7 @@ def contextual_csv(samples):
                 return ''
             return str(v)
 
-        csv_fd = StringIO()
+        csv_fd = io.StringIO()
         w = csv.writer(csv_fd)
         fields = []
         heading = []
@@ -497,7 +478,8 @@ def contextual_csv(samples):
         return csv_fd.getvalue()
 
 
-@require_http_methods(["GET"])
+@require_CKAN_auth
+@require_GET
 def otu_biom_export(request):
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
 
@@ -511,7 +493,8 @@ def otu_biom_export(request):
     return response
 
 
-@require_http_methods(["GET"])
+@require_CKAN_auth
+@require_GET
 def otu_export(request):
     """
     this view takes:
@@ -521,16 +504,12 @@ def otu_export(request):
       - an CSV of all the contextual data samples matching the query
       - an CSV of all the OTUs matching the query, with counts against Sample IDs
     """
-    try:
-        _otu_endpoint_verification(request.GET['token'])
-    except Exception:
-        return HttpResponseForbidden('Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.')
 
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     params, errors = param_to_filters(request.GET['q'])
     with SampleQuery(params) as query:
         def sample_otu_csv_rows(kingdom_id):
-            fd = StringIO()
+            fd = io.StringIO()
             w = csv.writer(fd)
             w.writerow([
                 'BPA ID',
@@ -578,6 +557,69 @@ def otu_export(request):
     return response
 
 
+@csrf_exempt
+@require_CKAN_auth
+@require_POST
+def submit_to_galaxy(request):
+    WORKFLOW_NAME = 'Hello world'
+    HELLO_CONTENTS = 'Hello, world!\nGoodbye, world!\n'
+    HISTORY_NAME = 'Hello World'
+
+    ckan_data = request.ckan_data
+    galaxy = Galaxy()
+
+    def _get_users_galaxy_api_key(email):
+        galaxy_user = galaxy.users.get_by_email(email)
+        if galaxy_user is None:
+            galaxy_user = galaxy.users.create(email)
+
+        api_key = galaxy.users.get_api_key(galaxy_user['id'])
+        if api_key is None:
+            api_key = galaxy.users.create_api_key(galaxy_user['id'])
+        return api_key
+
+    def _handle():
+        workflow = galaxy.workflows.get_by_name(WORKFLOW_NAME)
+        if workflow is None:
+            raise Exception("Couldn't find workflow '%s' for current user" % WORKFLOW_NAME)
+
+        email = ckan_data.get('email')
+        if not email:
+            raise Exception("Could not retrieve user's email")
+
+        users_api_key = _get_users_galaxy_api_key(email)
+
+        users_galaxy = Galaxy(api_key=users_api_key)
+
+        history = users_galaxy.histories.create(HISTORY_NAME)
+
+        with temporary_file(HELLO_CONTENTS) as path:
+            file_id = users_galaxy.histories.upload_file(history.get('id'), path, filename='hello_world.txt')
+            users_galaxy.histories.wait_for_file_upload_to_finish(history.get('id'), file_id)
+
+        wfl = users_galaxy.workflows.submit(
+            workflow_id=workflow.get('id'),
+            history_id=history.get('id'),
+            file_ids={'0': file_id})
+
+        wfl_data = {k: v for k, v in wfl.items() if k in ('workflow_id', 'history', 'state')}
+        return {
+            'success': True,
+            'workflow': wfl_data,
+        }
+
+    try:
+        response = _handle()
+    except Exception as exc:
+        logger.exception('Error in submit to Galaxy')
+        response = {
+            'success': False,
+            'errors': str(exc),
+        }
+
+    return JsonResponse(response)
+
+
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
     missing_sample_ids = []
@@ -599,7 +641,7 @@ def otu_log(request):
 
 
 @csrf_exempt
-@require_http_methods(["POST"])
+@require_POST
 def contextual_csv_download_endpoint(request):
     data = request.POST.get('otu_query')
 
@@ -642,42 +684,11 @@ def contextual_csv_download_endpoint(request):
     return response
 
 
-def _otu_endpoint_verification(data):
-    if not CKAN_AUTH_INTEGRATION:
-        return True
-
-    hash_portion, data_portion = data.split('||', 1)
-
-    secret_key = bytes(os.environ.get('BPAOTU_AUTH_SECRET_KEY'), encoding='utf-8')
-
-    digest_maker = hmac.new(secret_key)
-    digest_maker.update(data_portion.encode('utf8'))
-    digest = digest_maker.hexdigest()
-
-    if digest != hash_portion:
-        return HttpResponseForbidden("Secret key does not match.")
-
-    json_data = json.loads(data_portion)
-
-    SECS_IN_DAY = 60 * 60 * 24
-
-    timestamp = json_data['timestamp']
-    organisations = json_data['organisations']
-
-    if time.time() - timestamp < SECS_IN_DAY:
-        if 'australian-microbiome' in organisations:
-            return True
-        else:
-            return HttpResponseForbidden("You do not have access to the Ausmicro data.")
-    else:
-        return HttpResponseForbidden("The timestamp is too old.")
-
-
 @csrf_exempt
 def tables(request):
     template = loader.get_template('bpaotu/tables.html')
     context = {
-        'ckan_auth_integration': CKAN_AUTH_INTEGRATION
+        'ckan_auth_integration': settings.CKAN_AUTH_INTEGRATION
     }
 
     return HttpResponse(template.render(context, request))

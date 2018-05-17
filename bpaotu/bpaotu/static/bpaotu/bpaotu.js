@@ -591,6 +591,7 @@ $(document).ready(function() {
         });
     };
 
+
     var setup_biom_export = function() {
         $.when(check_for_auth_token()).done(function() {
             var target = $("#export_biom_button");
@@ -601,6 +602,68 @@ $(document).ready(function() {
                 }
                 var target_url = window.otu_search_config['export_biom_endpoint'] + '?' + $.param(params);
                 window.open(target_url);
+            });
+        });
+    };
+
+
+    var setup_galaxy = function() {
+        var galaxyLoading = $('#galaxy-loading');
+        var allAlertTypes = _.join(_.map(_.split(
+          'primary secondary success danger warning info light dark', ' '),
+          function(n) { return 'alert-' + n; }), ' ');
+
+        function displayMsg(txt, type) {
+            type = type || 'alert-success';
+            var alert = $('#search-alert');
+            alert.find('.text').text(txt);
+            alert.removeClass(allAlertTypes).addClass(type);
+            alert.show();
+            alert.alert();
+            if (!_.includes(['alert-warning', 'alert-danger'], type)) {
+                setTimeout(function() {alert.hide()}, 3000);
+            }
+        }
+
+        $.when(check_for_auth_token()).done(function() {
+            var target = $("#submit_galaxy_button");
+            target.click(function() {
+                target.attr('disabled', 'disabled');
+                galaxyLoading.show();
+                var data = {
+                    'token': authentication_token,
+                    // TODO which workflow
+                    // 'q': JSON.stringify(describe_search())
+                }
+
+              var handleError = function(errMsg) {
+                  var msg = 'Error in submitting Galaxy workflow!';
+                  console.error(msg);
+                  if (errMsg) {
+                      console.error('    ', errMsg);
+                  }
+                  displayMsg(msg, 'alert-danger');
+                  galaxyLoading.hide();
+                  target.removeAttr('disabled');
+              }
+
+              $.ajax({
+                  url: window.otu_search_config['submit_to_galaxy_endpoint'],
+                  method: 'POST',
+                  data: data,
+                  success: function(result) {
+                    if (!result.success) {
+                        handleError(result.errors);
+                        return;
+                    }
+                    displayMsg('Submitted to Galaxy');
+                    galaxyLoading.hide();
+                    target.removeAttr('disabled');
+                  },
+                  error: function(resp) {
+                    handleError(resp.responseText || resp);
+                  }
+             });
             });
         });
     };
@@ -683,6 +746,8 @@ $(document).ready(function() {
         setup_export();
         setup_biom_export();
         setup_map();
+        setup_galaxy();
+        setup_export();
         set_errors(null);
 
         $(document).tooltip();

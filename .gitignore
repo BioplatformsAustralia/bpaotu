@@ -14,4 +14,5 @@ build
 data/
 *.tags
 *.tags1
-*.biom
+.biom
+.env_local
