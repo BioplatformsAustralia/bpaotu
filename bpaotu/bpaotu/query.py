@@ -234,7 +234,7 @@ class SampleQuery:
         q = self._session.query(SampleContext)
         subq = self._build_taxonomy_subquery()
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
-        return q
+        return self._q_all_cached('matching_samples', q)
 
     def has_matching_sample_otus(self, kingdom_id):
         def to_boolean(result):
