@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from io import StringIO
 import datetime
+import itertools
 
 from .util import val_or_empty
 
@@ -12,9 +13,6 @@ def _write_biom_header():
     '''
     Write out the JSON file header first
     '''
-
-    fd = StringIO()
-
     biom_file = OrderedDict()
     biom_file['id'] = None
     biom_file['format'] = "1.0.0"
@@ -30,28 +28,19 @@ def _write_biom_header():
     for key, val in biom_file.items():
         biom_header += '"{}": "{}",\n'.format(key, val)
 
-    fd.write(biom_header)
-    yield fd.getvalue().encode('utf8')
-    fd.seek(0)
-    fd.truncate(0)
+    yield biom_header.encode('utf8')
 
 
 def _write_otus(query, rows):
     '''
     Write out the OTU list (which form the rows)
     '''
-
-    fd = StringIO()
-
     q = query.matching_otus()
     result_length = q.distinct('code').count()
 
     otu_header = '"rows": ['
 
-    fd.write(otu_header)
-    yield fd.getvalue().encode('utf8')
-    fd.seek(0)
-    fd.truncate(0)
+    yield otu_header.encode('utf8')
 
     cnt = 1
     for otu in q.yield_per(50):
@@ -84,33 +73,24 @@ def _write_otus(query, rows):
             if cnt == result_length:
                 otu_data = otu_data[:-1]
 
-            fd.write(otu_data)
-            yield fd.getvalue().encode('utf8')
-            fd.seek(0)
-            fd.truncate(0)
+            yield otu_data.encode('utf8')
 
             cnt = cnt + 1
     otu_footer = '],'
 
-    fd.write(otu_footer)
-    yield fd.getvalue().encode('utf8')
-    fd.seek(0)
-    fd.truncate(0)
+    yield otu_footer.encode('utf8')
 
 
-def _write_samples(query, columns):
+def _write_samples(query, rows, columns):
     '''
     Write out the Sample list (which form the columns)
     '''
-
     q = query.matching_samples()
+    result_length = len(q)
 
     sample_header = '"columns": ['
 
-    fd.write(sample_header)
-    yield fd.getvalue().encode('utf8')
-    fd.seek(0)
-    fd.truncate(0)
+    yield sample_header.encode('utf8')
 
     cnt = 1
     for sample in q:  # This is a cached query so all results are returned. Just iterate through without chunking.
@@ -134,43 +114,30 @@ def _write_samples(query, columns):
             if cnt == result_length:
                 sample_data = sample_data[:-1]
 
-            fd.write(sample_data)
-            yield fd.getvalue().encode('utf8')
-            fd.seek(0)
-            fd.truncate(0)
+            yield sample_data.encode('utf8')
 
             cnt = cnt + 1
 
     sample_footer = '],'
 
-    fd.write(sample_footer)
-    yield fd.getvalue().encode('utf8')
-    fd.seek(0)
-    fd.truncate(0)
+    yield sample_footer.encode('utf8')
 
     shape = "[{}, {}]".format(len(rows), len(columns))
     otu_data = '"{}": {}, '.format("shape", shape)
 
-    fd.write(otu_data)
-    yield fd.getvalue().encode('utf8')
-    fd.seek(0)
-    fd.truncate(0)
+    yield otu_data.encode('utf8')
 
 
 def _write_abundance_table(query, rows, columns):
     '''
     Write out the abundance table
     '''
-
     q = query.matching_sample_otus()
     result_length = q.count()
 
     data_header = '"data": ['
 
-    fd.write(data_header)
-    yield fd.getvalue().encode('utf8')
-    fd.seek(0)
-    fd.truncate(0)
+    yield data_header.encode('utf8')
 
     cnt = 1
     for otu, sampleotu, samplecontext in q.yield_per(50):
@@ -184,20 +151,15 @@ def _write_abundance_table(query, rows, columns):
             if cnt == result_length:
                 data_entry = data_entry[:-1]
 
-            fd.write(data_entry)
-            yield fd.getvalue().encode('utf8')
-            fd.seek(0)
-            fd.truncate(0)
+            yield data_entry.encode('utf8')
+
         except:
             data_entry = '[{},{},{}],'.format(-1, -1, -1)  # If this appears there has been an error finding the corresponding otu_id and/or sample_id
 
             if cnt == result_length:
                 data_entry = data_entry[:-1]
 
-            fd.write(data_entry)
-            yield fd.getvalue().encode('utf8')
-            fd.seek(0)
-            fd.truncate(0)
+            yield data_entry.encode('utf8')
 
             logger.critical("No corresponding entry found for: {} {} {}".format(sampleotu.otu_id, sampleotu.sample_id, sampleotu.count))
 
@@ -205,17 +167,15 @@ def _write_abundance_table(query, rows, columns):
 
     data_footer = ']}'
 
-    fd.write(data_footer)
-    yield fd.getvalue().encode('utf8')
-    fd.seek(0)
-    fd.truncate(0)
+    yield data_footer.encode('utf8')
+
 
 
 def generate_biom_file(query):
     rows = []
     columns = []
 
-    yield _write_biom_header()
-    yield _write_otus(query, rows)
-    yield _write_samples(query, columns)
-    yield _write_abundance_table(query, rows, columns)
+    output = list(itertools.chain(_write_biom_header(), _write_otus(query, rows), _write_samples(query, rows, columns), _write_abundance_table(query, rows, columns)))
+
+    for elem in output:
+        yield elem
