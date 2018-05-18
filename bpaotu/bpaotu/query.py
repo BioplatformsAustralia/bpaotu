@@ -243,7 +243,18 @@ class SampleQuery:
         q = self._session.query(self.matching_sample_otus(kingdom_id).exists())
         return self._q_all_cached('has_matching_sample_otus:%s' % (kingdom_id), q, to_boolean)
 
-    def matching_sample_otus(self, kingdom_id):
+    def matching_otus(self, kingdom_id=None):
+        # we do a cross-join, but convert to an inner-join with
+        # filters. as SampleContext is in the main query, the
+        # machinery for filtering above will just work
+        q = self._session.query(OTU)
+        q = self._apply_taxonomy_filters(q)
+        q = self._contextual_filter.apply(q)
+        if kingdom_id is not None:
+            q = q.filter(OTU.kingdom_id == kingdom_id)
+        return q
+
+    def matching_sample_otus(self, kingdom_id=None):
         # we do a cross-join, but convert to an inner-join with
         # filters. as SampleContext is in the main query, the
         # machinery for filtering above will just work

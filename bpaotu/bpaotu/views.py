@@ -39,6 +39,12 @@ from .models import (
     ImportFileLog,
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
+from .settings import (
+    CKAN_AUTH_INTEGRATION
+)
+from .util import val_or_empty
+from .biom import generate_biom_file
+
 from .util import temporary_file
 
 
@@ -474,6 +480,21 @@ def contextual_csv(samples):
 
 @require_CKAN_auth
 @require_GET
+def otu_biom_export(request):
+    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+
+    params, errors = param_to_filters(request.GET['q'])
+    with SampleQuery(params) as query:
+        zf.write_iter("json_biom_file.biom", (s.encode('utf8') for s in generate_biom_file(query)))
+
+    response = StreamingHttpResponse(zf, content_type='application/zip')
+    filename = 'Biom.zip'
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+    return response
+
+
+@require_CKAN_auth
+@require_GET
 def otu_export(request):
     """
     this view takes:
@@ -483,10 +504,6 @@ def otu_export(request):
       - an CSV of all the contextual data samples matching the query
       - an CSV of all the OTUs matching the query, with counts against Sample IDs
     """
-    def val_or_empty(obj):
-        if obj is None:
-            return ''
-        return obj.value
 
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     params, errors = param_to_filters(request.GET['q'])
