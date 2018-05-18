@@ -85,7 +85,6 @@ def sample_columns(query, columns):
 def abundance_tbl(query, rows, columns):
     q = query.matching_sample_otus()
 
-    # This is a cached query so all results are returned. Just iterate through without chunking.
     for otu, sampleotu, samplecontext in q.yield_per(50):
         try:
             row_idx = rows.index(sampleotu.otu_id)
