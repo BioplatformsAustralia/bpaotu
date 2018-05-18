@@ -485,7 +485,7 @@ def otu_biom_export(request):
 
     params, errors = param_to_filters(request.GET['q'])
     with SampleQuery(params) as query:
-        zf.write_iter("json_biom_file.biom", generate_biom_file(query))
+        zf.write_iter("json_biom_file.biom", (s.encode('utf8') for s in generate_biom_file(query)))
 
     response = StreamingHttpResponse(zf, content_type='application/zip')
     filename = 'Biom.zip'

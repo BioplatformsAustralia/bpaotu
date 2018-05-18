@@ -17,13 +17,12 @@ def generate_biom_file(query):
     abundance_table = abundance_tbl(query, rows, columns)
     shape = (str(len(x)) for x in (rows, columns))
 
-    return (s.encode('utf8')
-            for s in itertools.chain(
-                biom_header(),
-                wrap('"rows": [', otus, '],'),
-                wrap('"columns": [', samples, '],'),
-                wrap('"shape": [', shape, '],'),
-                wrap('"data": [', abundance_table, ']}')))
+    return itertools.chain(
+        biom_header(),
+        wrap('"rows": [', otus, '],'),
+        wrap('"columns": [', samples, '],'),
+        wrap('"shape": [', shape, '],'),
+        wrap('"data": [', abundance_table, ']}'))
 
 
 def biom_header():
