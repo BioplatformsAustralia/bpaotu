@@ -389,6 +389,8 @@ CKAN_AUTH_INTEGRATION = env.get('ckan_auth_integration', False)
 # used only when CKAN_AUTH_INTEGRATION is set to False
 CKAN_DEVELOPMENT_USER_EMAIL = env.get('ckan_devel_user_email', 'devops@ccg.murdoch.edu.au')
 
+CKAN_AUTH_TOKEN_HEADER_NAME = env.get('ckan_auth_token_header_name', 'HTTP_X_BPAOTU_CKAN_TOKEN')
+
 GALAXY_BASE_URL = env.get('galaxy_base_url', 'https://galaxy-aust-dev.genome.edu.au')
 # This will fail late, only when the user is trying to submit workflows to galaxy
 # Leaving it as optional as not sure if all installations will use Galaxy

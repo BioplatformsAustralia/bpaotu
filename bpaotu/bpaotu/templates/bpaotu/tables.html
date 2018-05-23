@@ -1,4 +1,4 @@
-{% extends 'bpaotu/base.html' %}
+{% extends 'bpaotu/base_new.html' %}
 {% load staticfiles %}
 {% load static from staticfiles %}
 
@@ -7,7 +7,9 @@
 {% endblock title %}
 
 {% block extra_head %}
-<script src="{% static 'bpaotu/table.js' %}"></script>
+  <script>
+    otu.init_tables();
+  </script>
 {% endblock extra_head %}
 
 {% block content %}
@@ -26,8 +28,8 @@
             <div class="panel-footer">
                 <div class="row">
                     <div class="col-md-4"></div>
-                    <div class="col-md-2"><input class="form-control btn btn-success" type="button" id="add_contextual_filter" value="Add" /></div>
-                    <div class="col-md-2"><input class="btn btn-warning" type="button" id="clear_contextual_filters" value="Clear" /></div>
+                    <div class="col-md-2"><input class="form-control btn btn-success" type="button" id="add_contextual_filter" value="Add" disabled /></div>
+                    <div class="col-md-2"><input class="btn btn-warning" type="button" id="clear_contextual_filters" value="Clear" disabled /></div>
                     <div class="col-md-4"></div>
                 </div>
             </div>
@@ -44,9 +46,9 @@
         </div>
         <div class="col-md-2">
             <div class="panel panel-default">
-                <button type="button" class="btn btn-primary btn-block" id="search_button"><span class="glyphicon glyphicon-search" aria-hidden="true"></span>Search Table Column</button>
+                <button type="button" class="btn btn-primary btn-block" id="search_button" disabled><span class="glyphicon glyphicon-search" aria-hidden="true"></span>Search</button>
             </div>
-            <div id="spinner" class="spinner"></div>
+            <div id="spin-container"></div>
         </div>
         <div class="col-md-5">
         </div>
@@ -63,19 +65,6 @@
                     To sort by multiple columns, press and hold the Shift key.
                 </div>
                 <table id="results" class="table" width="100%">
-                    <thead>
-                        <tr>
-                            <th>BPA Sample ID</th>
-                            <th>BPA Project</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                    <tfoot>
-                        <tr>
-                            <th>BPA Sample ID</th>
-                            <th>BPA Project</th>
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
         </div>

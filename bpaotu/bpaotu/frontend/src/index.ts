@@ -1,10 +1,14 @@
-import * as _ from 'lodash';
-import { info } from './print';
+import 'bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import * as search from './search';
 
-const greeter = (person: string) => "Hello, " + person;
 
-let user = "Tim";
+declare global {
+    interface Window {
+      otu_search_config: search.SearchConfig
+    }
+};
 
-// info(greeter(user));
-info(greeter(_.join(_.map(user, ch => ch.toUpperCase()), '')));
-
+// TODO revise if we should switch to multiple entry points instead.
+// ie. one entrypoint for each page
+export { init as init_tables } from './tables';

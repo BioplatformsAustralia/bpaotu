@@ -2,10 +2,10 @@
   "compilerOptions": {
     "sourceMap": true,
     "noImplicitAny": true,
-    "module": "es6",
     "target": "es5",
+    "lib": ["es2015", "es2017", "dom"],
     "jsx": "preserve",
-    "allowJs": true
+    "allowJs": true,
   },
   "files": [
     "src/index.ts"
