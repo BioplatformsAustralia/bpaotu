@@ -39,9 +39,6 @@ from .models import (
     ImportFileLog,
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
-from .settings import (
-    CKAN_AUTH_INTEGRATION
-)
 from .util import val_or_empty
 from .biom import generate_biom_file
 

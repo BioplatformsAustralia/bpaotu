@@ -20,20 +20,6 @@ from .otu import (
     OTUSpecies,
     SampleContext,
     SampleOTU,
-    SampleAustralianSoilClassification,
-    SampleLandUse,
-    SampleColor,
-    SampleLandUse,
-    SampleFAOSoilClassification,
-    SampleEcologicalZone,
-    SampleHorizonClassification,
-    SampleLandUse,
-    SampleProfilePosition,
-    Environment,
-    SampleType,
-    SampleStorageMethod,
-    SampleTillage,
-    SampleVegetationType,
     make_engine)
 
 
@@ -247,9 +233,13 @@ class SampleQuery:
         # we do a cross-join, but convert to an inner-join with
         # filters. as SampleContext is in the main query, the
         # machinery for filtering above will just work
-        q = self._session.query(OTU)
+        q = self._session.query(OTU) \
+            .filter(SampleOTU.otu_id == OTU.id) \
+            .filter(SampleOTU.sample_id == SampleContext.id)
         q = self._apply_taxonomy_filters(q)
         q = self._contextual_filter.apply(q)
+        q = q.distinct()
+        q = q.order_by(OTU.id)
         if kingdom_id is not None:
             q = q.filter(OTU.kingdom_id == kingdom_id)
         return q
