@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger('rainbow')
 
 
-def generate_biom_file(query):
+def generate_biom_file(query, timestamp):
     rows = []
     columns = []
 
@@ -35,7 +35,7 @@ def biom_header():
         ('format_url', 'http://biom-format.org'),
         ('type', 'OTU table'),
         ('generated_by', 'Bioplatforms Australia'),
-        ('date', datetime.datetime.now().replace(microsecond=0).isoformat()),
+        ('date', timestamp),
         ('matrix_type', 'sparse'),
         ('matrix_element_type', 'int')))
 
