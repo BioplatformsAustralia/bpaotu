@@ -38,7 +38,7 @@ export function getAuthToken() {
     // be much closer to prod.
 
     return new Promise((resolve, reject) => {
-        if (! window.otu_search_config['ckan_auth_integration']) {
+        if (! window.otu_search_config.ckan_auth_integration) {
             resolve('');
             return;
         }

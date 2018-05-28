@@ -39,6 +39,7 @@ function initPage() {
     setupContextual();
     $('#search_button').click(() => datatable.ajax.reload());
     setupExportButton();
+    setupBIOMExportButton();
     setupMap();
     setupGalaxy();
 }
@@ -469,6 +470,19 @@ function setupExportButton() {
         window.open(url)
     });
 }
+
+function setupBIOMExportButton() {
+    $("#export_biom_button").click(() => {
+        const params = $.param({
+            token: window.CKANAuthToken,
+            q: JSON.stringify(describeSearch())
+        });
+        const baseURL = window.otu_search_config.export_biom_endpoint;
+        const url = `${baseURL}?${params}`;
+
+        window.open(url)
+    });
+};
 
 function getSampleSites(samplesMap: any) {
     const info = $('#sample-sites-info');
