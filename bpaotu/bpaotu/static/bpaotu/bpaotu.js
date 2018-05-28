@@ -591,6 +591,22 @@ $(document).ready(function() {
         });
     };
 
+
+    var setup_biom_export = function() {
+        $.when(check_for_auth_token()).done(function() {
+            var target = $("#export_biom_button");
+            target.click(function() {
+                var params = {
+                    'token': authentication_token,
+                    'q': JSON.stringify(describe_search())
+                }
+                var target_url = window.otu_search_config['export_biom_endpoint'] + '?' + $.param(params);
+                window.open(target_url);
+            });
+        });
+    };
+
+
     var setup_galaxy = function() {
         var galaxyLoading = $('#galaxy-loading');
         var allAlertTypes = _.join(_.map(_.split(
@@ -727,6 +743,8 @@ $(document).ready(function() {
         setup_contextual();
         setup_search();
         setup_datatables();
+        setup_export();
+        setup_biom_export();
         setup_map();
         setup_galaxy();
         setup_export();
