@@ -75,7 +75,7 @@ class OTUSearch(TemplateView):
     ckan_base_url = settings.CKAN_SERVERS[0]['base_url']
 
     def get_context_data(self, **kwargs):
-        context = super(OTUSearch, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['ckan_base_url'] = settings.CKAN_SERVERS[0]['base_url']
         context['ckan_auth_integration'] = settings.CKAN_AUTH_INTEGRATION
 

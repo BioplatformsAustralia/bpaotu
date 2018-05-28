@@ -19,6 +19,7 @@ export function ckanAuth() {
 
     return new Promise((resolve, reject) => {
         getAuthToken().then((authToken: string) => {
+            window.CKANAuthToken = authToken;
             loggedIn(authToken);
             setupGlobalAjax(authToken);
             resolve();
@@ -28,7 +29,7 @@ export function ckanAuth() {
     });
 }
 
-function getAuthToken() {
+export function getAuthToken() {
     // TODO clarify this CKAN_AUTH_INTEGRATION stuff with the others
     // is CKAN_AUTH_INTEGRATION always needed for the app to work properly
     // if possible to have an app without it should we downgrade the UI?

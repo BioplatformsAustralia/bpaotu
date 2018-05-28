@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import * as $ from 'jquery';
 
 // TODO Bootstrap alerts would be more appropriate - common for all pages
 
