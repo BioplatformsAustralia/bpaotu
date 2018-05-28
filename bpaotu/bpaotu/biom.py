@@ -9,13 +9,13 @@ logger = logging.getLogger('rainbow')
 
 
 def generate_biom_file(query):
-    rows = []
-    columns = []
+    otu_to_row = {}
+    sample_to_column = {}
 
-    otus = otu_rows(query, rows)
-    samples = sample_columns(query, columns)
-    abundance_table = abundance_tbl(query, rows, columns)
-    shape = (str(len(x)) for x in (rows, columns))
+    otus = otu_rows(query, otu_to_row)
+    samples = sample_columns(query, sample_to_column)
+    abundance_table = abundance_tbl(query, otu_to_row, sample_to_column)
+    shape = (str(len(x)) for x in (otu_to_row, sample_to_column))
 
     return itertools.chain(
         biom_header(),
@@ -46,13 +46,11 @@ def biom_header():
     yield biom_header
 
 
-def otu_rows(query, rows):
+def otu_rows(query, otu_to_row):
     q = query.matching_otus()
-
-    for otu in (r for r in q.yield_per(50) if r.id not in rows):
-        rows.append(otu.id)
-
-        fields = ('amplicon', 'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species')
+    fields = ('amplicon', 'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species')
+    for idx, otu in enumerate(q.yield_per(50)):
+        otu_to_row[otu.id] = idx
 
         def get_value(attr):
             if attr == 'class':
@@ -60,18 +58,15 @@ def otu_rows(query, rows):
             return val_or_empty(getattr(otu, attr))
 
         metadata = ','.join(k_v(f, get_value(f)) for f in fields if get_value(f) != '')
-
-        otu_data = '{"id": "%s","metadata": {%s}}' % (otu.code, metadata)
-
-        yield otu_data
+        yield '{"id": "%s","metadata": {%s}}' % (otu.code, metadata)
 
 
-def sample_columns(query, columns):
+def sample_columns(query, sample_to_column):
     q = query.matching_samples()
 
     # This is a cached query so all results are returned. Just iterate through without chunking.
-    for sample in (s for s in q if s.id not in columns):
-        columns.append(sample.id)
+    for idx, sample in enumerate(s for s in q if s.id not in sample_to_column):
+        sample_to_column[sample.id] = idx
 
         fields = (k for k in sample.__table__.columns._data if k != 'id')
         metadata = ','.join(k_v(f, getattr(sample, f)) for f in fields if getattr(sample, f))
@@ -81,19 +76,19 @@ def sample_columns(query, columns):
         yield sample_data
 
 
-def abundance_tbl(query, rows, columns):
+def abundance_tbl(query, otu_to_row, sample_to_column):
     q = query.matching_sample_otus()
 
     for otu, sampleotu, samplecontext in q.yield_per(50):
-        try:
-            row_idx = rows.index(sampleotu.otu_id)
-            col_idx = columns.index(sampleotu.sample_id)
-            count = sampleotu.count
-        except ValueError:
-            logger.critical('No corresponding entry found for: {} {} {}'.format(sampleotu.otu_id, sampleotu.sample_id, sampleotu.count))
-            row_idx, col_idx, count = -1, -1, -1
-
-        yield '[{},{},{}]'.format(row_idx, col_idx, count)
+        # a little messy, but this is our busiest bit of code in the
+        # entire BIOM output process
+        yield '[' + \
+            str(otu_to_row[sampleotu.otu_id]) + \
+            ',' + \
+            str(sample_to_column[sampleotu.sample_id]) + \
+            ',' + \
+            str(sampleotu.count) + \
+            ']'
 
 
 def k_v(k, v):
