@@ -2,6 +2,7 @@ from collections import defaultdict, OrderedDict
 import csv
 import datetime
 import io
+import itertools
 import json
 import logging
 import re
@@ -77,7 +78,7 @@ class OTUSearch(TemplateView):
     ckan_base_url = settings.CKAN_SERVERS[0]['base_url']
 
     def get_context_data(self, **kwargs):
-        context = super(OTUSearch, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['ckan_base_url'] = settings.CKAN_SERVERS[0]['base_url']
         context['ckan_auth_integration'] = settings.CKAN_AUTH_INTEGRATION
 
@@ -291,9 +292,9 @@ def required_table_headers(request):
     """
 
     def _int_get_param(param_name):
-        param = request.POST.get(param_name)
+        param = request.POST.get(param_name, '')
         try:
-            return int(param) if param is not None else None
+            return int(param)
         except ValueError:
             return None
 
@@ -301,19 +302,15 @@ def required_table_headers(request):
     start = _int_get_param('start')
     length = _int_get_param('length')
 
-    search_terms = json.loads(request.POST['otu_query'])
-
     order_col = request.POST['order[0][column]']
     order_type = request.POST['order[0][dir]']
 
-    contextual_terms = search_terms['contextual_filters']['filters']
+    column_names = itertools.takewhile(
+        lambda x: x is not None,
+        (request.POST.get('columns[%d][data]' % i) for i in itertools.count()))
+    added_column_names = (n for n in column_names if n not in ('bpa_id', 'environment'))
 
-    required_headers = []
-    for elem in contextual_terms:
-        required_headers.append(elem['field'])
-
-    results = []
-    result_count = len(results)
+    required_headers = list(added_column_names)
 
     environment_lookup = make_environment_lookup()
 
@@ -646,11 +643,7 @@ def contextual_csv_download_endpoint(request):
     data = request.POST.get('otu_query')
 
     search_terms = json.loads(data)
-    contextual_terms = search_terms['contextual_filters']['filters']
-
-    required_headers = []
-    for h in contextual_terms:
-        required_headers.append(h['field'])
+    required_headers = search_terms['required_headers']
 
     params, errors = param_to_filters_without_checks(request.POST['otu_query'])
     with SampleQuery(params) as query:

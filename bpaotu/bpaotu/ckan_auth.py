@@ -22,7 +22,9 @@ class OTUVerificationError(Exception):
 def require_CKAN_auth(func):
     @wraps(func)
     def inner(request, *args, **kwargs):
-        token = request.POST.get('token') if request.method == 'POST' else request.GET.get('token')
+        token = request.META.get(settings.CKAN_AUTH_TOKEN_HEADER_NAME)
+        if token is None:
+            token = request.POST.get('token') if request.method == 'POST' else request.GET.get('token')
         if token is None:
             return HttpResponseForbidden(FORBIDDEN_RESPONSE_MSG)
         try:

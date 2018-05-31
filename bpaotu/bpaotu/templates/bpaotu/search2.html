@@ -1,4 +1,4 @@
-{% extends 'bpaotu/base.html' %}
+{% extends 'bpaotu/base_new.html' %}
 {% load leaflet_tags %}
 {% load staticfiles %}
 {% load static from staticfiles %}
@@ -11,9 +11,13 @@
 <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/leaflet.marketcluster-1.3.0/MarkerCluster.Default.css' %}"/>
 <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/leaflet.marketcluster-1.3.0/MarkerCluster.css' %}"/>
 
+{% comment %}
+    <script src="{% static 'bpaotu/bpaotu.js' %}"></script>
+{% endcomment %}
 <script>
     otu.init_search();
 </script>
+
 
 {% endblock extra_head %}
 
@@ -246,10 +250,7 @@
                         <span id="galaxy-loading" class="glyphicon glyphicon-refresh spinning" style="display: none"></span>
                     </button>
                     <button type="button" class="btn btn-default " id="export_button">
-                        <span class="glyphicon glyphicon-download" aria-hidden="true"></span> Export Search Results (CSV)
-                    </button>
-                    <button type="button" class="btn btn-default " id="export_biom_button">
-                        <span class="glyphicon glyphicon-download" aria-hidden="true"></span> Export Search Results (BIOM)
+                        <span class="glyphicon glyphicon-download" aria-hidden="true"></span> Export Search Results
                     </button>
                     <span class="glyphicon glyphicon-info-sign" title="Export an OTU abundance table, OTU taxonomy and representative OTU sequences for samples filling filtered search."></span>
                     To sort by multiple columns, press and hold the Shift key.
@@ -282,9 +283,9 @@
     </div>
 
     <div id="map-modal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
+      <div class="map modal-dialog">
+        <div class="map modal-content">
+          <div class="map modal-header">
             <h4 class="title text-center">
               Sample Collection Sites
               <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -292,7 +293,7 @@
               </button>
             </h4>
           </div>
-          <div class="modal-body">
+          <div class="map modal-body">
             <p id="sample-sites-info" class="text-center"></p>
             {% leaflet_map "samples_map" loadevent="do-NOT-initialise" %}
           </div>
