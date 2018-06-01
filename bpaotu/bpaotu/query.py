@@ -178,6 +178,7 @@ class SampleQuery:
         q = self._session.query(SampleContext.id, SampleContext.environment_id)
         subq = self._build_taxonomy_subquery()
         q = self._apply_filters(q, subq).order_by(SampleContext.id)
+        log_query(q)
         return self._q_all_cached('matching_sample_ids_and_environment', q)
 
     def matching_sample_headers(self, required_headers=None, sort_col=None, sort_order=None):
@@ -445,3 +446,9 @@ def apply_otu_filter(otu_attr, q, op_and_val):
 
 apply_amplicon_filter = partial(apply_otu_filter, 'amplicon_id')
 apply_environment_filter = partial(apply_op_and_val_filter, SampleContext.environment_id)
+
+
+def log_query(q):
+    from sqlalchemy.dialects import postgresql
+    s = q.statement.compile(dialect=postgresql.dialect())
+    logger.debug('Query: \n%s', s)

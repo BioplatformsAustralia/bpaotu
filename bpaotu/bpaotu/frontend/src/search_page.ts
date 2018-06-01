@@ -10,7 +10,6 @@ import { createSpinner } from './spinner';
 import { ErrorBox } from './errors';
 import { ckanAuth, getAuthToken } from './auth';
 import { setupDatatables } from './samples_table';
-import * as search from './search';
 import { setOptions, HTMLSelectOption } from './utils';
 
 // On datatables.net Ajax errors don't display alert box.
