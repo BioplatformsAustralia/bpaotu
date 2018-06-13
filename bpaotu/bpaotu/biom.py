@@ -61,8 +61,8 @@ def otu_rows(query, otu_to_row):
         taxonomy_array = [get_value(f) for f in taxonomy_fields]
         yield '{"id": "%s","metadata": {%s,%s}}' % (
             otu.code,
-            k_v("amplicon", get_value("amplicon")),
-            k_v("taxonomy", taxonomy_array))
+            k_v('amplicon', get_value('amplicon')),
+            k_v('taxonomy', taxonomy_array))
 
 
 def sample_columns(query, sample_to_column):
