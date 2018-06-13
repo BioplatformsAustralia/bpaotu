@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import datetime
 import itertools
+import json
 
 from .util import val_or_empty
 
@@ -19,10 +20,10 @@ def generate_biom_file(query):
 
     return itertools.chain(
         biom_header(),
-        wrap('"rows": [', otus, '],'),
-        wrap('"columns": [', samples, '],'),
-        wrap('"shape": [', shape, '],'),
-        wrap('"data": [', abundance_table, ']}'))
+        wrap('"rows": [', otus, '],\n'),
+        wrap('"columns": [', samples, '],\n'),
+        wrap('"shape": [', shape, '],\n'),
+        wrap('"data": [', abundance_table, ']}\n'))
 
 
 def biom_header():
@@ -48,17 +49,20 @@ def biom_header():
 
 def otu_rows(query, otu_to_row):
     q = query.matching_otus()
-    fields = ('amplicon', 'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species')
-    for idx, otu in enumerate(q.yield_per(50)):
-        otu_to_row[otu.id] = idx
+    taxonomy_fields = ('kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species')
 
+    for idx, otu in enumerate(q.yield_per(50)):
         def get_value(attr):
             if attr == 'class':
                 attr = 'klass'
             return val_or_empty(getattr(otu, attr))
 
-        metadata = ','.join(k_v(f, get_value(f)) for f in fields if get_value(f) != '')
-        yield '{"id": "%s","metadata": {%s}}' % (otu.code, metadata)
+        otu_to_row[otu.id] = idx
+        taxonomy_array = [get_value(f) for f in taxonomy_fields]
+        yield '{"id": "%s","metadata": {%s,%s}}' % (
+            otu.code,
+            k_v("amplicon", get_value("amplicon")),
+            k_v("taxonomy", taxonomy_array))
 
 
 def sample_columns(query, sample_to_column):
@@ -92,7 +96,9 @@ def abundance_tbl(query, otu_to_row, sample_to_column):
 
 
 def k_v(k, v):
-    return '"{}": "{}"'.format(k, v)
+    if isinstance(v, datetime.date):
+        v = str(v)
+    return json.dumps(k) + ':' + json.dumps(v)
 
 
 def wrap(pre, it, post, sep=','):
