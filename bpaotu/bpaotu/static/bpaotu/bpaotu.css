@@ -118,3 +118,15 @@ body {
     from { -webkit-transform: rotate(0deg); }
     to { -webkit-transform: rotate(360deg); }
 }
+
+.octicon {
+    fill: currentColor;
+}
+
+.space-above {
+    margin-top: 12px;
+}
+
+.rt-thead {
+    padding: 16px;
+}

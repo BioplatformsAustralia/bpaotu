@@ -119,7 +119,8 @@ def clean_taxonomy_filter(state_vector):
         state_vector))
 
 
-@require_CKAN_auth
+# TODO
+#@require_CKAN_auth
 @require_GET
 def amplicon_options(request):
     """
@@ -132,7 +133,8 @@ def amplicon_options(request):
     })
 
 
-@require_CKAN_auth
+# TODO
+# @require_CKAN_auth
 @require_GET
 def taxonomy_options(request):
     """
@@ -141,6 +143,8 @@ def taxonomy_options(request):
     with TaxonomyOptions() as options:
         amplicon = clean_amplicon_filter(json.loads(request.GET['amplicon']))
         selected = clean_taxonomy_filter(json.loads(request.GET['selected']))
+        logger.debug('amplicon is %s', amplicon)
+        logger.debug('selected is %s', selected)
         possibilities = options.possibilities(amplicon, selected)
     return JsonResponse({
         'possibilities': possibilities
@@ -378,7 +382,8 @@ def otu_search_sample_sites(request):
 # of the query (plus the datatables params) is large: so we
 # avoid the issues of long URLs by simply POSTing the query
 @csrf_exempt
-@require_CKAN_auth
+# TODO
+# @require_CKAN_auth
 @require_POST
 def otu_search(request):
     """
