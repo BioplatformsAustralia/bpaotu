@@ -2,7 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 
 module.exports = {
-  entry: './src/index.ts',
+  entry: './src/react/init.tsx',
   plugins: [
     new webpack.ProvidePlugin({
       $: 'jquery',
@@ -12,10 +12,10 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.ts$/,
+        test: /\.(ts|tsx)$/,
         loader: 'ts-loader',
         options: {
-          configFile: path.resolve(__dirname, 'tsconfig.js')
+          configFile: path.resolve(__dirname, 'tsconfig.json')
         }
       },
       {

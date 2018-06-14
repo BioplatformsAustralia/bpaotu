@@ -1,5 +1,4 @@
-import * as _ from 'lodash'
-
+import * as _ from 'lodash';
 
 export interface SearchConfig {
     ckan_auth_integration: boolean,

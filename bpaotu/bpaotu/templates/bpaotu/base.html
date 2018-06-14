@@ -19,16 +19,6 @@
 
     <link rel="icon" href="{% static 'bpa-logos/favicon.ico' %}" type="image/x-icon">
 
-    {% if production %}
-      <script src="{% static 'bpaotu/js/runtime-bundle.min.js' %}"></script>
-      <script src="{% static 'bpaotu/js/vendors-bundle.min.js' %}"></script>
-      <script src="{% static 'bpaotu/js/main-bundle.min.js' %}"></script>
-    {% else %}
-      <script src="{% static 'bpaotu/js/runtime-bundle.js' %}"></script>
-      <script src="{% static 'bpaotu/js/vendors-bundle.js' %}"></script>
-      <script src="{% static 'bpaotu/js/main-bundle.js' %}"></script>
-    {% endif %}
-
     <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/common.css' %}"/>
     <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/bpaotu.css' %}"/>
 
@@ -53,7 +43,6 @@
             </div>
             {% endif %}
         </header>
-        <div class="hide container" id="error-bar"></div>
 
         <div class="content-div">
 
@@ -64,7 +53,7 @@
         </div>
     </div>
 
-    <footer class="site-footer">
+    <footer class="site-footer space-above">
         <div class="site-footer-links container-fluid">
             <a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a>
             <a href="https://github.com/muccg/bpaotu">Source Code</a>
@@ -89,10 +78,23 @@
                 'search_sample_sites_endpoint': "{% url 'otu_search_sample_sites' %}",
                 'required_table_headers_endpoint': "{% url 'required_table_headers' %}",
                 'contextual_csv_download_endpoint': "{% url 'contextual_csv_download_endpoint' %}",
+                'static_base_url': "{% static 'bpaotu' %}",
                 'ckan_base_url': "{{ ckan_base_url }}",
                 'ckan_auth_integration': ckan_auth_integration, 
                 'ckan_check_permissions': '/user/private/api/bpa/check_permissions'
             };
         </script>
+
+
+    {% if production %}
+      <script src="{% static 'bpaotu/js/runtime-bundle.min.js' %}"></script>
+      <script src="{% static 'bpaotu/js/vendors-bundle.min.js' %}"></script>
+      <script src="{% static 'bpaotu/js/main-bundle.min.js' %}"></script>
+    {% else %}
+      <script src="{% static 'bpaotu/js/runtime-bundle.js' %}"></script>
+      <script src="{% static 'bpaotu/js/vendors-bundle.js' %}"></script>
+      <script src="{% static 'bpaotu/js/main-bundle.js' %}"></script>
+    {% endif %}
+ 
 </body>
 </html>
