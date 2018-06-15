@@ -3,10 +3,21 @@ import axios from 'axios';
 
 import '../../interfaces';
 import { EmptyOTUQuery } from '../../search';
+import { CKAN_AUTH_INFO_ERROR, ckanAuthError } from '../actions';
+import { store } from '../init';
 
+axios.defaults.xsrfHeaderName = "X-CSRFTOKEN";
+axios.defaults.xsrfCookieName = "csrftoken";
 
-// TODO global config for CKAN auth and CSRF
+axios.interceptors.response.use(null, err => {
+    if (err.status = 403) {
+        store.dispatch(ckanAuthError(err));
+    }
+});
 
+export function ckanAuthInfo() {
+    return axios.get(window.otu_search_config.ckan_check_permissions);
+}
 
 export function getAmplicons() {
     return axios.get(window.otu_search_config.amplicon_endpoint);
@@ -29,10 +40,9 @@ export function executeSearch(filters, options) {
     formData.append('length', options.pageSize);
     formData.append('otu_query', JSON.stringify(filters));
 
-
     return axios({
         method: 'post',
-        url: window.otu_search_config.search_endpoint, 
+        url: window.otu_search_config.search_endpoint,
         data: formData,
         headers: {
             'Content-Type': 'multipart/form-data',

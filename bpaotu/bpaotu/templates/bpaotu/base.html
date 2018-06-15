@@ -81,7 +81,7 @@
                 'static_base_url': "{% static 'bpaotu' %}",
                 'ckan_base_url': "{{ ckan_base_url }}",
                 'ckan_auth_integration': ckan_auth_integration, 
-                'ckan_check_permissions': '/user/private/api/bpa/check_permissions'
+                'ckan_check_permissions': "{{ ckan_check_permissions_url }}"
             };
         </script>
 

@@ -200,12 +200,16 @@ const searchResultsReducer = (state = initialState.results, action) => {
                 isLoading: true,
             }
         case SEARCH_SUCCESS:
+            const rowsCount = action.data.data.rowsCount;
+            const pages =  Math.ceil(rowsCount / state.pageSize);
+            const newPage = Math.min(pages - 1, state.page);
             return {
                 ...state,
                 isLoading: false,
                 data: action.data.data.data,
-                rowsCount: action.data.data.recordsFiltered,
-                pages: Math.ceil(action.data.data.recordsFiltered / state.pageSize),
+                rowsCount,
+                pages,
+                page: newPage,
             }
     }
     return state;

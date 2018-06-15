@@ -9,7 +9,7 @@ import { createStore, applyMiddleware } from 'redux';
 import App from './app';
 import reducers from './reducers'
 
-const store = createStore(
+export const store = createStore(
     reducers,
     applyMiddleware(thunk)
 );

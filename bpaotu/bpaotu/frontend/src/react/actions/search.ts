@@ -14,19 +14,23 @@ export const changeTableProperties = (props) => ({
     props
 })
 
+export const describeSearch = (stateFilters) => {
+    const selectedAmplicon = stateFilters.selectedAmplicon;
+    const selectedTaxonomies = _.map(taxonomies, taxonomy => stateFilters.taxonomy[taxonomy].selected);
+
+    return {
+        amplicon_filter: selectedAmplicon,
+        taxonomy_filters: selectedTaxonomies,
+        contextual_filters: EmptyOTUQuery.contextual_filters, // TODO
+    }
+}
+
 export const search = () => (dispatch, getState) => {
     const state = getState();
 
     dispatch({type: SEARCH_STARTED});
 
-    const selectedAmplicon = state.searchPage.filters.selectedAmplicon;
-    const selectedTaxonomies = _.map(taxonomies, taxonomy => state.searchPage.filters.taxonomy[taxonomy].selected);
-
-    const filters = {
-        amplicon_filter: selectedAmplicon,
-        taxonomy_filters: selectedTaxonomies,
-        contextual_filters: EmptyOTUQuery.contextual_filters, // TODO
-    }
+    const filters = describeSearch(state.searchPage.filters);
 
     executeSearch(filters, state.searchPage.results)
     .then(data => {

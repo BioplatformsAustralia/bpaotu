@@ -1,19 +1,22 @@
 from collections import defaultdict, OrderedDict
 import csv
 import datetime
+import hmac
 import io
 import itertools
 import json
 import logging
+import os
 import re
+import time
 import traceback
 import zipstream
 
 from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import TemplateView
-from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpResponse
 
 from .ckan_auth import require_CKAN_auth
 from .importer import DataImporter
@@ -80,6 +83,7 @@ class OTUSearch(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['ckan_base_url'] = settings.CKAN_SERVERS[0]['base_url']
+        context['ckan_check_permissions_url'] = settings.CKAN_CHECK_PERMISSIONS_URL if settings.PRODUCTION else reverse('dev_only_ckan_check_permissions')
         context['ckan_auth_integration'] = settings.CKAN_AUTH_INTEGRATION
 
         return context
@@ -119,8 +123,7 @@ def clean_taxonomy_filter(state_vector):
         state_vector))
 
 
-# TODO
-#@require_CKAN_auth
+@require_CKAN_auth
 @require_GET
 def amplicon_options(request):
     """
@@ -133,8 +136,7 @@ def amplicon_options(request):
     })
 
 
-# TODO
-# @require_CKAN_auth
+@require_CKAN_auth
 @require_GET
 def taxonomy_options(request):
     """
@@ -288,7 +290,6 @@ def param_to_filters_without_checks(query_str):
         taxonomy_filter=taxonomy_filter), errors)
 
 
-@csrf_exempt
 @require_POST
 def required_table_headers(request):
     """
@@ -352,7 +353,6 @@ def required_table_headers(request):
     return JsonResponse(res)
 
 
-@csrf_exempt
 @require_CKAN_auth
 @require_POST
 def otu_search_sample_sites(request):
@@ -381,9 +381,7 @@ def otu_search_sample_sites(request):
 # technically we should be using GET, but the specification
 # of the query (plus the datatables params) is large: so we
 # avoid the issues of long URLs by simply POSTing the query
-@csrf_exempt
-# TODO
-# @require_CKAN_auth
+@require_CKAN_auth
 @require_POST
 def otu_search(request):
     """
@@ -397,7 +395,6 @@ def otu_search(request):
         except ValueError:
             return None
 
-    draw = _int_get_param('draw')
     start = _int_get_param('start')
     length = _int_get_param('length')
 
@@ -407,6 +404,8 @@ def otu_search(request):
     with SampleQuery(params) as query:
         results = query.matching_sample_ids_and_environment()
     result_count = len(results)
+    if start >= result_count:
+        start = (result_count // length) * length
     results = results[start:start + length]
 
     def get_environment(environment_id):
@@ -414,22 +413,17 @@ def otu_search(request):
             return None
         return environment_lookup[environment_id]
 
-    res = {
-        'draw': draw,
-    }
     if errors:
-        res.update({
+        res = {
             'errors': [str(t) for t in errors],
             'data': [],
-            'recordsTotal': 0,
-            'recordsFiltered': 0,
-        })
+            'rowsCount': 0,
+        }
     else:
-        res.update({
+        res = {
             'data': [{"bpa_id": t[0], "environment": get_environment(t[1])} for t in results],
-            'recordsTotal': result_count,
-            'recordsFiltered': result_count,
-        })
+            'rowsCount': result_count,
+        }
     return JsonResponse(res)
 
 
@@ -559,7 +553,6 @@ def otu_export(request):
     return response
 
 
-@csrf_exempt
 @require_CKAN_auth
 @require_POST
 def submit_to_galaxy(request):
@@ -642,7 +635,6 @@ def otu_log(request):
     return HttpResponse(template.render(context, request))
 
 
-@csrf_exempt
 @require_POST
 def contextual_csv_download_endpoint(request):
     data = request.POST.get('otu_query')
@@ -682,7 +674,6 @@ def contextual_csv_download_endpoint(request):
     return response
 
 
-@csrf_exempt
 def tables(request):
     template = loader.get_template('bpaotu/tables.html')
     context = {
@@ -690,3 +681,34 @@ def tables(request):
     }
 
     return HttpResponse(template.render(context, request))
+
+
+def dev_only_ckan_check_permissions(request):
+    if settings.PRODUCTION:
+        raise Http404('View does not exist in production')
+
+    # Uncomment to simulate user not logged in to CKAN
+    # from django.http import HttpResponseForbidden
+    # return HttpResponseForbidden()
+
+    # organisations = [
+    #     'anu-abc-upload', 'bpa-sepsis', 'australian-microbiome', 'bpa-project-documentation', 'bpa-barcode',
+    #     'bioplatforms-australia', 'bpa-base', 'bpa-great-barrier-reef', 'incoming-data', 'bpa-marine-microbes',
+    #     'bpa-melanoma', 'bpa-omg', 'bpa-stemcells', 'bpa-wheat-cultivars', 'bpa-wheat-pathogens-genomes', 'bpa-wheat-pathogens-transcript']
+    organisations = ['australian-microbiome']
+
+    data = json.dumps({
+        'email': settings.CKAN_DEVELOPMENT_USER_EMAIL,
+        'timestamp': time.time(),
+        'organisations': organisations,
+    })
+
+    secret_key = os.environ.get('BPAOTU_AUTH_SECRET_KEY').encode('utf8')
+    logger.debug(secret_key)
+    digest_maker = hmac.new(secret_key)
+    digest_maker.update(data.encode('utf8'))
+    digest = digest_maker.hexdigest()
+
+    response = '||'.join([digest, data])
+
+    return HttpResponse(response)

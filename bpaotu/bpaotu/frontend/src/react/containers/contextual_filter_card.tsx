@@ -28,7 +28,7 @@ class AmpliconTaxonomyFilterCard extends React.Component<any> {
         return (
             <Card>
                 <CardHeader>Contextual Filters</CardHeader>
-                <CardBody>
+                <CardBody className="filters">
                     <EnvironmentFilter />
 
                     <hr />

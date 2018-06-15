@@ -384,9 +384,10 @@ EXPLORER_TOKEN_AUTH_ENABLED = True
 EXPLORER_TOKEN = env.get('EXPLORER_TOKEN', "EXPLOREIT")
 
 # enable integration with CKAN authentication (specific to the BPA data portal)
-CKAN_AUTH_INTEGRATION = env.get('ckan_auth_integration', False)
-# email to use in development when CKAN auth integration isn't enabled
-# used only when CKAN_AUTH_INTEGRATION is set to False
+CKAN_AUTH_INTEGRATION = env.get('ckan_auth_integration', True)
+CKAN_CHECK_PERMISSIONS_URL = env.get('ckan_check_permissions_url', '/user/private/api/bpa/check_permissions')
+
+# email to use in development when CKAN auth integration is enabled
 CKAN_DEVELOPMENT_USER_EMAIL = env.get('ckan_devel_user_email', 'devops@ccg.murdoch.edu.au')
 
 CKAN_AUTH_TOKEN_HEADER_NAME = env.get('ckan_auth_token_header_name', 'HTTP_X_BPAOTU_CKAN_TOKEN')

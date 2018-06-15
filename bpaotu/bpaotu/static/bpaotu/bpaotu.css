@@ -130,3 +130,7 @@ body {
 .rt-thead {
     padding: 16px;
 }
+
+.filters .form-group {
+    margin-bottom: 4px;
+}
