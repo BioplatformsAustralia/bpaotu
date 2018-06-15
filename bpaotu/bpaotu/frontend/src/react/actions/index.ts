@@ -5,6 +5,7 @@ import { buildValueSelector, buildOperatorSelector } from './common';
 import { taxonomies } from './taxonomy_filters';
 
 export * from './amplicon';
-export * from './taxonomy_filters';
+export * from './auth';
 export * from './search';
+export * from './taxonomy_filters';
 

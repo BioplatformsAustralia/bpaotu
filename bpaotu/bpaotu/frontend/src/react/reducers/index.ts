@@ -1,6 +1,7 @@
 import { combineReducers } from 'redux';
 import AmpliconsReducer from './amplicons';
 import SearchPageReducer from './search_page';
+import AuthReducer from './auth';
 
 const referenceDataReducer = combineReducers({
     amplicons: AmpliconsReducer
@@ -8,7 +9,8 @@ const referenceDataReducer = combineReducers({
 
 const rootReducer = combineReducers({
     referenceData: referenceDataReducer,
-    searchPage: SearchPageReducer
+    searchPage: SearchPageReducer,
+    auth: AuthReducer,
 });
 
 export default rootReducer;

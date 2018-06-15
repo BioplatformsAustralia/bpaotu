@@ -43,7 +43,7 @@ class AmpliconTaxonomyFilterCard extends React.Component<any> {
         return (
             <Card>
                 <CardHeader>Filter by Amplicon and Taxonomy</CardHeader>
-                <CardBody>
+                <CardBody className="filters">
                     <AmpliconFilter />
 
                     <hr />
