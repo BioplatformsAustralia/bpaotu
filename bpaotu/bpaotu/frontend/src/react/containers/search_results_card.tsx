@@ -1,44 +1,53 @@
 import * as React from 'react';
+import { bindActionCreators } from 'redux';
+import { connect } from 'react-redux';
+
 import {
     Card,
     CardBody,
     CardHeader,
     Container,
     Col,
+    Modal,
+    ModalBody,
+    ModalHeader,
     Row,
     Button,
 } from 'reactstrap';
 
-import SearchResultsTable from './search_results_table';
 import Octicon from '../components/octicon';
-import { describeSearch } from '../actions/search';
-import { connect } from 'react-redux';
+import SamplesMapModal from './samples_map_modal';
+import SearchResultsTable from './search_results_table';
+import { describeSearch, openSamplesMapModal } from '../actions';
 
 const HeaderButton = (props) => (
     <Button style={{ marginRight: 10 }} outline color="primary" onClick={props.onClick} >
-        {(props.octicon) ? (<span><Octicon name={props.octicon} />&nbsp;</span>): ''}
+        {(props.octicon) ? (<span><Octicon name={props.octicon} />&nbsp;</span>) : ''}
         {props.text}
     </Button>
 );
 
-class SearchResultsCard extends React.Component<any> {
+class SearchResultsCard extends React.Component<any, any> {
     render() {
         return (
-            <Card>
-                <CardHeader>
-                    <div >
-                        <HeaderButton octicon="globe" text="Show results on Map" />
-                        { window.otu_search_config.ckan_auth_integration && ( 
-                            <HeaderButton octicon="clippy" text="Submit to Galaxy" />
-                        )}
-                        <HeaderButton octicon="desktop-download" text="Export Search Results (CSV)" onClick={this.exportCSV.bind(this)} />
-                        <HeaderButton octicon="desktop-download" text="Export Search Results (BIOM)" onClick={this.exportBIOM.bind(this)} />
-                    </div>
-                </CardHeader>
-                <CardBody>
-                    <SearchResultsTable />
-                </CardBody>
-            </Card>
+            <div>
+                <Card>
+                    <CardHeader>
+                        <div >
+                            <HeaderButton octicon="globe" text="Show results on Map" onClick={this.props.openSamplesMapModal} />
+                            {window.otu_search_config.ckan_auth_integration && (
+                                <HeaderButton octicon="clippy" text="Submit to Galaxy" />
+                            )}
+                            <HeaderButton octicon="desktop-download" text="Export Search Results (CSV)" onClick={this.exportCSV.bind(this)} />
+                            <HeaderButton octicon="desktop-download" text="Export Search Results (BIOM)" onClick={this.exportBIOM.bind(this)} />
+                        </div>
+                    </CardHeader>
+                    <CardBody>
+                        <SearchResultsTable />
+                    </CardBody>
+                </Card>
+                <SamplesMapModal />
+            </div>
         );
     }
 
@@ -67,12 +76,10 @@ function mapStateToProps(state) {
     };
 }
 
-/*
 function mapDispatchToProps(dispatch) {
     return bindActionCreators({
-        search,
+        openSamplesMapModal,
     }, dispatch);
 }
-*/
 
-export default connect(mapStateToProps)(SearchResultsCard);
+export default connect(mapStateToProps, mapDispatchToProps)(SearchResultsCard);

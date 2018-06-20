@@ -50,6 +50,19 @@ export function executeSearch(filters, options) {
     });
 }
 
+export function executeSampleSitesSearch(filters, options) {
+    let formData = new FormData();
+    formData.append('otu_query', JSON.stringify(filters));
+
+    return axios({
+        method: 'post',
+        url: window.otu_search_config.search_sample_sites_endpoint,
+        data: formData,
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        }
+    });
+}
 
 const makeArray = (length, fillValue) => _.map(Array(length), () => fillValue);
 const completeArray = (arr, length, fillValue) => arr.concat(makeArray(length - arr.length, fillValue));

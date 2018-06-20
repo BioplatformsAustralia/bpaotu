@@ -1,7 +1,10 @@
 {% extends 'bpaotu/base.html' %}
-{% load leaflet_tags %}
 {% load staticfiles %}
 {% load static from staticfiles %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'bpaotu/leaflet/leaflet.css' %}" />
+{% endblock %}
 
 {% block content %}
 

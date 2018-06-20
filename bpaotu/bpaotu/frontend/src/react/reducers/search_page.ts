@@ -7,7 +7,11 @@ import {
     selectAmplicon,
     SEARCH_SUCCESS,
     SEARCH_STARTED,
-    CHANGE_TABLE_PROPERTIES
+    CHANGE_TABLE_PROPERTIES,
+    OPEN_SAMPLES_MAP_MODAL,
+    CLOSE_SAMPLES_MAP_MODAL,
+    FETCH_SAMPLES_MAP_MODAL_SAMPLES_STARTED,
+    FETCH_SAMPLES_MAP_MODAL_SAMPLES_SUCCESS,
 } from '../actions/index';
 import { combineReducers } from 'redux';
 
@@ -39,6 +43,11 @@ interface PageState {
             species: SelectableLoadableValues
         }
     },
+    samplesMapModal: {
+        isOpen: boolean
+        isLoading: boolean
+        markers: SampleMarker[]
+    }
     results: {
         isLoading: boolean
         data: any[]
@@ -47,6 +56,12 @@ interface PageState {
         rowsCount: number
         sorted: any[]
     }
+}
+
+interface SampleMarker {
+    title: string
+    lat: number
+    lng: number
 }
 
 const EmptyOperatorAndValue: OperatorAndValue = { value: '', operator: 'is' };
@@ -70,6 +85,11 @@ const initialState: PageState = {
             genus: EmptySelectableLoadableValues,
             species: EmptySelectableLoadableValues
         }
+    },
+    samplesMapModal: {
+        isOpen: false,
+        isLoading: false,
+        markers: []
     },
     results: {
         isLoading: false,
@@ -184,6 +204,35 @@ function taxonomyReducer(state = initialState.filters.taxonomy, action) {
     }
 }
 
+const samplesMapModalReducer = (state = initialState.samplesMapModal, action) => {
+    switch (action.type) {
+        case OPEN_SAMPLES_MAP_MODAL:
+            return {
+                ...state,
+                isOpen: true,
+            }
+        case CLOSE_SAMPLES_MAP_MODAL:
+            return {
+                ...state,
+                isOpen: false,
+            }
+        case FETCH_SAMPLES_MAP_MODAL_SAMPLES_STARTED:
+            return {
+                ...state,
+                isLoading: true,
+                markers: [],
+            }
+        case FETCH_SAMPLES_MAP_MODAL_SAMPLES_SUCCESS:
+            const markers = _.map(action.data.data.data, sample => ({title: sample.bpa_id, lat: sample.latitude, lng: sample.longitude}));
+            return {
+                ...state,
+                isLoading: false,
+                markers,
+            }
+      }
+    return state;
+}
+
 const searchResultsReducer = (state = initialState.results, action) => {
     switch (action.type) {
         case CHANGE_TABLE_PROPERTIES:
@@ -222,6 +271,7 @@ const filtersReducer = combineReducers({
 
 const pageReducer = combineReducers({
     filters: filtersReducer,
+    samplesMapModal: samplesMapModalReducer,
     results: searchResultsReducer,
 });
 

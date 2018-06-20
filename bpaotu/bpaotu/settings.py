@@ -198,8 +198,6 @@ INSTALLED_APPS = ('bpaotu',
                   'django_extensions',
                   'django.contrib.admin',
                   'django.contrib.admindocs',
-                  'leaflet',
-                  'bootstrap3',
                   )
 
 # #
@@ -396,28 +394,3 @@ GALAXY_BASE_URL = env.get('galaxy_base_url', 'https://galaxy-aust-dev.genome.edu
 # This will fail late, only when the user is trying to submit workflows to galaxy
 # Leaving it as optional as not sure if all installations will use Galaxy
 GALAXY_ADMIN_USER_API_KEY = env.get('galaxy_admin_user_api_key', '')
-
-LEAFLET_CONFIG = {
-    'DEFAULT_CENTER': (-25.27, 133.775),
-    'DEFAULT_ZOOM': 4,
-    'ATTRIBUTION_PREFIX': '',
-    'TILES': [
-        ('ESRI',
-         '//server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-         {'attribution':
-          '&copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-          }, ),
-        ('OSM B&W',
-         '//{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png',
-         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
-        ('Thunderforest Landscape',
-         '//{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png',
-         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
-        ('ISM Seamark',
-         '//tiles.openseamap.org/seamark/{z}/{x}/{y}.png',
-         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
-    ],
-    'MINIMAP': True,
-    'NO_GLOBALS': False,
-    'RESET_VIEW': False,
-}
