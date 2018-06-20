@@ -35,6 +35,9 @@ if [ "$1" = 'releasetarball' ]; then
     pip install --upgrade -r requirements/runtime-requirements.txt
     pip install --upgrade -r requirements/biom-requirements.txt
     pip install -e "${PROJECT_NAME}"
+
+    ## FIXME: this is a temporary workaround (GB)
+    echo '/app/bpaotu' > /env/lib/python3.6/site-packages/bpaotu.egg-link
     set +x
 
     cd /data
