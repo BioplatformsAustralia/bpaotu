@@ -8,10 +8,14 @@ const style = {
 }
 
 export default (props) =>  {
-    let width = 20;
-    if (props.size === 'larger') width = 32;
-    if (props.size === 'large') width = 48;
-    const options = { width };
+    const Sizes = {
+        'small': 12,
+        'large': 32,
+        'larger': 48,
+    };
+    const width = Sizes[props.size] || 20;
+
+    const options = { width, height: width};
     return (
         <div style={style}
             dangerouslySetInnerHTML={{ __html: octicons[props.name].toSVG(options)}}>

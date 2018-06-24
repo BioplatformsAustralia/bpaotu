@@ -14,6 +14,50 @@ export const changeTableProperties = (props) => ({
     props
 })
 
+function marshallContextualFilters(filtersState, dataDefinitions) {
+    const filterDataDefinition = name => _.find(dataDefinitions.filters, dd => dd.name === name)
+    const filters = _.map(
+        _.reject(filtersState, filter => filter.name === ''),
+        filter => {
+            const dataDefinition = filterDataDefinition(filter.name);
+
+            let values: any = {};
+            switch (dataDefinition.type) {
+                case 'string':
+                    values.contains = filter.value;
+                    break;
+                case 'float':
+                case 'date':
+                    values.from = filter.value;
+                    values.to = filter.value2;
+                    break;
+                case 'ontology':
+                    values.is = filter.value;
+                    break;
+                case 'sample_id':
+                    values.is = filter.values;
+                    break;
+            }
+            return {
+                field: filter.name,
+                operator: filter.operator,
+                ...values,
+            };
+        });
+
+    return filters;
+}
+
+function marshallContextual(state) {
+    const { selectedEnvironment, filtersMode } = state;
+
+    return {
+        environment: (selectedEnvironment.value === '') ? null : selectedEnvironment,
+        mode: filtersMode,
+        filters: marshallContextualFilters(state.filters, state.dataDefinitions),
+    }
+}
+
 export const describeSearch = (stateFilters) => {
     const selectedAmplicon = stateFilters.selectedAmplicon;
     const selectedTaxonomies = _.map(taxonomies, taxonomy => stateFilters.taxonomy[taxonomy].selected);
@@ -21,22 +65,26 @@ export const describeSearch = (stateFilters) => {
     return {
         amplicon_filter: selectedAmplicon,
         taxonomy_filters: selectedTaxonomies,
-        contextual_filters: EmptyOTUQuery.contextual_filters, // TODO
+        contextual_filters: marshallContextual(stateFilters.contextual),
     }
 }
 
 export const search = () => (dispatch, getState) => {
     const state = getState();
 
-    dispatch({type: SEARCH_STARTED});
+    dispatch({ type: SEARCH_STARTED });
 
     const filters = describeSearch(state.searchPage.filters);
 
     executeSearch(filters, state.searchPage.results)
-    .then(data => {
-        dispatch({type: SEARCH_SUCCESS, data});
-    })
-    .catch(error => {
-        dispatch({type: SEARCH_ERROR, msg: error});
-    })
+        .then(data => {
+            if (_.get(data, 'data.errors', []).length > 0) {
+                dispatch({ type: SEARCH_ERROR, errors: data.data.errors });
+                return;
+            }
+            dispatch({ type: SEARCH_SUCCESS, data });
+        })
+        .catch(error => {
+            dispatch({ type: SEARCH_ERROR, errors: ['Unhandled server-side error!'] });
+        })
 }

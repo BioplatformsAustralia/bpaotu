@@ -12,6 +12,7 @@ import {
 import AmpliconTaxonomyFilterCard from './containers/amplicon_taxonomy_filter_card';
 import ContextualFilterCard from './containers/contextual_filter_card';
 import SearchButton from './containers/search_button';
+import SearchErrors from './containers/search_errors';
 import SearchResultsCard from './containers/search_results_card';
 
 import { getCKANAuthInfo } from './actions/index';
@@ -47,6 +48,13 @@ class App extends React.Component<any> {
                             <ContextualFilterCard />
                         </Col>
                     </Row>
+
+                    <Row className="space-above">
+                        <Col sm={{ size: 6, offset: 3 }}>
+                            <SearchErrors />
+                        </Col>
+                    </Row>
+
                     <Row className="space-above">
                         <Col sm={{ size: 2, offset: 5 }}>
                             <SearchButton />

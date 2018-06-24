@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { 
+import {
     fetchAmplicons,
     fetchKingdoms,
     selectAmplicon,
@@ -22,7 +22,7 @@ import {
 } from 'reactstrap';
 
 import AmpliconFilter from '../containers/amplicon_filter';
-import { 
+import {
     KingdomFilter,
     PhylumFilter,
     ClassFilter,
@@ -31,7 +31,11 @@ import {
     GenusFilter,
     SpeciesFilter
 } from '../containers/taxonomy_filters';
+import Octicon from '../components/octicon';
 
+
+const AmpliconFilterInfo = 'Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, Eukaryotes (v4 and v9) and Fungi.  To filter data from a single amplicon select that amplicon here.  To search all amplicons for a taxa select "all".  Note the "all" search will return non-target sequences as well as target, for example searching "Amplicon = all" + "Kingdom = Bacteria" will return all sequences classified as bacteria in all assays.';
+const TaxonomyFilterInfo = 'Taxonomy is assigned to sequences using consensus taxonomy of the top 3 hits against SILVA132 for rRNA targets and UNITE for ITS1 targets.';
 
 class AmpliconTaxonomyFilterCard extends React.Component<any> {
     componentDidMount() {
@@ -42,7 +46,10 @@ class AmpliconTaxonomyFilterCard extends React.Component<any> {
     render() {
         return (
             <Card>
-                <CardHeader>Filter by Amplicon and Taxonomy</CardHeader>
+                <CardHeader>Filter by
+                    Amplicon <span title={AmpliconFilterInfo}><Octicon name="info" /></span> and
+                    Taxonomy <span title={TaxonomyFilterInfo}><Octicon name="info" /></span>
+                </CardHeader>
                 <CardBody className="filters">
                     <AmpliconFilter />
 

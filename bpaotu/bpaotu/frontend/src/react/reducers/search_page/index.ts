@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { combineReducers } from 'redux';
 
 import {
     CLEAR_FILTERS,
@@ -12,25 +13,35 @@ import {
     CLOSE_SAMPLES_MAP_MODAL,
     FETCH_SAMPLES_MAP_MODAL_SAMPLES_STARTED,
     FETCH_SAMPLES_MAP_MODAL_SAMPLES_SUCCESS,
-} from '../actions/index';
-import { combineReducers } from 'redux';
+    SELECT_ENVIRONMENT,
+    SELECT_ENVIRONMENT_OPERATOR,
+    SELECT_CONTEXTUAL_FILTERS_MODE,
+    ADD_CONTEXTUAL_FILTER,
+    REMOVE_CONTEXTUAL_FILTER,
+    SELECT_CONTEXTUAL_FILTER,
+    SEARCH_ERROR,
+} from '../../actions/index';
+
+import contextualDataDefinitionsReducer from '../contextual_data_definitions';
+import { selectedAmpliconReducer } from './amplicon';
+import contextualReducer from './contextual';
 
 export interface OperatorAndValue {
     value: string
     operator: 'is' | 'isnot'
 }
 
-interface LoadableValues {
+export interface LoadableValues {
     isLoading: boolean
     options: any[]
 }
 
-interface SelectableLoadableValues extends LoadableValues {
+export interface SelectableLoadableValues extends LoadableValues {
     isDisabled: boolean
     selected: OperatorAndValue
 }
 
-interface PageState {
+export interface PageState {
     filters: {
         selectedAmplicon: OperatorAndValue
         taxonomy: {
@@ -41,7 +52,8 @@ interface PageState {
             family: SelectableLoadableValues
             genus: SelectableLoadableValues
             species: SelectableLoadableValues
-        }
+        },
+        contextual: any, // TODO
     },
     samplesMapModal: {
         isOpen: boolean
@@ -50,6 +62,7 @@ interface PageState {
     }
     results: {
         isLoading: boolean
+        errors: string[]
         data: any[]
         page: number
         pageSize: number
@@ -58,22 +71,22 @@ interface PageState {
     }
 }
 
-interface SampleMarker {
+export interface SampleMarker {
     title: string
     lat: number
     lng: number
 }
 
-const EmptyOperatorAndValue: OperatorAndValue = { value: '', operator: 'is' };
-const EmptyLoadableValues: LoadableValues = { isLoading: null, options: [] };
-const EmptySelectableLoadableValues: SelectableLoadableValues = {
+export const EmptyOperatorAndValue: OperatorAndValue = { value: '', operator: 'is' };
+export const EmptyLoadableValues: LoadableValues = { isLoading: null, options: [] };
+export const EmptySelectableLoadableValues: SelectableLoadableValues = {
     selected: EmptyOperatorAndValue,
     isDisabled: true,
     isLoading: false,
     options: []
 };
 
-const initialState: PageState = {
+export const initialState: PageState = {
     filters: {
         selectedAmplicon: EmptyOperatorAndValue,
         taxonomy: {
@@ -84,6 +97,16 @@ const initialState: PageState = {
             family: EmptySelectableLoadableValues,
             genus: EmptySelectableLoadableValues,
             species: EmptySelectableLoadableValues
+        },
+        contextual: {
+            dataDefinitions: {
+                isLoading: false,
+                environment: [],
+                filters: [],
+            },
+            selectedEnvironment: EmptyOperatorAndValue,
+            filtersMode: 'and',
+            filters: [],
         }
     },
     samplesMapModal: {
@@ -93,6 +116,7 @@ const initialState: PageState = {
     },
     results: {
         isLoading: false,
+        errors: [],
         data: [],
         page: 0,
         pageSize: 10,
@@ -101,24 +125,7 @@ const initialState: PageState = {
     }
 }
 
-function selectedAmpliconReducer(state = EmptyOperatorAndValue, action) {
-    switch (action.type) {
-        case CLEAR_FILTERS:
-            return EmptyOperatorAndValue;
-
-        case SELECT_AMPLICON:
-            return {
-                ...state,
-                value: action.id
-            };
-        case SELECT_AMPLICON_OPERATOR:
-            return {
-                ...state,
-                operator: action.operator
-            };
-    }
-    return state;
-}
+// TODO move taxonomy reducers to their own file
 
 function makeTaxonomyReducer(taxonomyName) {
     return (state = EmptySelectableLoadableValues, action) => {
@@ -246,12 +253,13 @@ const searchResultsReducer = (state = initialState.results, action) => {
         case SEARCH_STARTED:
             return {
                 ...state,
+                errors: [],
                 isLoading: true,
             }
         case SEARCH_SUCCESS:
             const rowsCount = action.data.data.rowsCount;
             const pages =  Math.ceil(rowsCount / state.pageSize);
-            const newPage = Math.min(pages - 1, state.page);
+            const newPage = Math.min(pages - 1 < 0 ? 0 : pages - 1, state.page);
             return {
                 ...state,
                 isLoading: false,
@@ -260,13 +268,20 @@ const searchResultsReducer = (state = initialState.results, action) => {
                 pages,
                 page: newPage,
             }
+        case SEARCH_ERROR:
+            return {
+                ...state,
+                isLoading: false,
+                errors: action.errors,
+            }
     }
     return state;
 }
 
 const filtersReducer = combineReducers({
     selectedAmplicon: selectedAmpliconReducer,
-    taxonomy: taxonomyReducer
+    taxonomy: taxonomyReducer,
+    contextual: contextualReducer,
 })
 
 const pageReducer = combineReducers({

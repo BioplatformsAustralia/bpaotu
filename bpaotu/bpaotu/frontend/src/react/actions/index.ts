@@ -6,6 +6,7 @@ import { taxonomies } from './taxonomy_filters';
 
 export * from './amplicon';
 export * from './auth';
+export * from './contextual';
 export * from './samples_map_modal';
 export * from './search';
 export * from './taxonomy_filters';

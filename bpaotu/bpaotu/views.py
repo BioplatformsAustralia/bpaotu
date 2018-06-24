@@ -249,6 +249,8 @@ def param_to_filters(query_str):
         typ = str(column.type)
         try:
             if column.name == 'id':
+                if len(filter_spec['is']) == 0:
+                    raise ValueError("Value can't be empty")
                 contextual_filter.add_term(ContextualFilterTermSampleID(field_name, operator, [int(t) for t in filter_spec['is']]))
             elif hasattr(column, 'ontology_class'):
                 contextual_filter.add_term(
@@ -260,8 +262,11 @@ def param_to_filters(query_str):
                 contextual_filter.add_term(
                     ContextualFilterTermFloat(field_name, operator, parse_float(filter_spec['from']), parse_float(filter_spec['to'])))
             elif typ == 'CITEXT':
+                value = str(filter_spec['contains'])
+                if value == '':
+                    raise ValueError("Value can't be empty")
                 contextual_filter.add_term(
-                    ContextualFilterTermString(field_name, operator, str(filter_spec['contains'])))
+                    ContextualFilterTermString(field_name, operator, value))
             else:
                 raise ValueError("invalid filter term type: %s", typ)
         except Exception:

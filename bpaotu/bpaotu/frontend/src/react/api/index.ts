@@ -10,9 +10,11 @@ axios.defaults.xsrfHeaderName = "X-CSRFTOKEN";
 axios.defaults.xsrfCookieName = "csrftoken";
 
 axios.interceptors.response.use(null, err => {
-    if (err.status = 403) {
+    if (err.status === 403) {
         store.dispatch(ckanAuthError(err));
+        return;
     }
+    return Promise.reject(err);
 });
 
 export function ckanAuthInfo() {
@@ -21,6 +23,10 @@ export function ckanAuthInfo() {
 
 export function getAmplicons() {
     return axios.get(window.otu_search_config.amplicon_endpoint);
+}
+
+export function getContextualDataDefinitions() {
+    return axios.get(window.otu_search_config.contextual_endpoint);
 }
 
 export function getTaxonomy(selectedAmplicon = {value: ''}, selectedTaxonomies) {

@@ -337,7 +337,7 @@ class ContextualFilterTerm:
 
     @property
     def conditions(self):
-        if self.operator in ('isnot', 'notbetween', 'containsnot'):
+        if self.operator == 'complement':
             return [sqlalchemy.not_(c) for c in (self.get_conditions())]
         return self.get_conditions()
 
