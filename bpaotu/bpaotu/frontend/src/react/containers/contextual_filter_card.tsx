@@ -12,6 +12,7 @@ import {
     changeContextualFilterValue,
     changeContextualFilterValue2,
     changeContextualFilterValues,
+    clearContextualFilters,
 } from '../actions/index';
 import {
     Button,
@@ -91,7 +92,7 @@ class ContextualFilterCard extends React.Component<any> {
                </CardBody>
                 <CardFooter className="text-center">
                     <Button color="success" onClick={this.props.addContextualFilter}>Add</Button>
-                    <Button color="warning">Clear</Button>
+                    <Button color="warning" onClick={this.props.clearContextualFilters}>Clear</Button>
                 </CardFooter>
             </Card>
         );
@@ -129,6 +130,7 @@ function mapDispatchToProps(dispatch: any) {
         changeContextualFilterValue,
         changeContextualFilterValue2,
         changeContextualFilterValues,
+        clearContextualFilters,
     }, dispatch);
 }
 

@@ -12,6 +12,7 @@ import {
     CHANGE_CONTEXTUAL_FILTER_VALUE,
     CHANGE_CONTEXTUAL_FILTER_VALUE2,
     CHANGE_CONTEXTUAL_FILTER_VALUES,
+    CLEAR_CONTEXTUAL_FILTERS,
 } from '../../actions/index';
 
 import contextualDataDefinitionsReducer from '../contextual_data_definitions';
@@ -63,6 +64,8 @@ function contextualFiltersReducer(state, action, dataDefinitions) {
                 ...state,
                 EmptyContextualFilter,
             ]
+        case CLEAR_CONTEXTUAL_FILTERS:
+            return []
         case REMOVE_CONTEXTUAL_FILTER:
             return removeElementAtIndex(state, action.index);
         case SELECT_CONTEXTUAL_FILTER:

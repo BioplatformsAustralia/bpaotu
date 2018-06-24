@@ -19,6 +19,8 @@ export const CHANGE_CONTEXTUAL_FILTER_VALUE = 'CHANGE_CONTEXTUAL_FILTER_VALUE';
 export const CHANGE_CONTEXTUAL_FILTER_VALUE2 = 'CHANGE_CONTEXTUAL_FILTER_VALUE2';
 export const CHANGE_CONTEXTUAL_FILTER_VALUES = 'CHANGE_CONTEXTUAL_FILTER_VALUES';
 
+export const CLEAR_CONTEXTUAL_FILTERS = 'CLEAR_CONTEXTUAL_FILTERS';
+
 export const fetchContextualDataDefinitionsStarted = () => ({ type: FETCH_CONTEXTUAL_DATA_DEFINITIONS_STARTED });
 export const fetchContextualDataDefinitionsSuccess = (data: any) => ({ type: FETCH_CONTEXTUAL_DATA_DEFINITIONS_SUCCESS, payload: data });
 export const fetchContextualDataDefinitionsError = (msg: string) => ({ type: FETCH_CONTEXTUAL_DATA_DEFINITIONS_ERROR, payload: msg });
@@ -48,3 +50,5 @@ export const changeContextualFilterOperator = (index, operator) => ({ type: CHAN
 export const changeContextualFilterValue = (index, value) => ({ type: CHANGE_CONTEXTUAL_FILTER_VALUE, index, value });
 export const changeContextualFilterValue2 = (index, value) => ({ type: CHANGE_CONTEXTUAL_FILTER_VALUE2, index, value });
 export const changeContextualFilterValues = (index, values) => ({ type: CHANGE_CONTEXTUAL_FILTER_VALUES, index, values });
+
+export const clearContextualFilters = () => ({ type: CLEAR_CONTEXTUAL_FILTERS });
