@@ -6,7 +6,7 @@ import {
     SELECT_AMPLICON,
     SELECT_AMPLICON_OPERATOR,
 } from '../../actions/index';
-import { EmptyOperatorAndValue } from '.';
+import { EmptyOperatorAndValue } from './index';
 
 
 export function selectedAmpliconReducer(state = EmptyOperatorAndValue, action) {

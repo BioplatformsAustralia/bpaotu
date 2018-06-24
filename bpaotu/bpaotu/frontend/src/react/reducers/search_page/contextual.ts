@@ -15,7 +15,7 @@ import {
 } from '../../actions/index';
 
 import contextualDataDefinitionsReducer from '../contextual_data_definitions';
-import { initialState } from '.';
+import { initialState } from './index';
 
 function selectedEnvironmentReducer(state = initialState.filters.contextual.selectedEnvironment, action) {
     switch (action.type) {
