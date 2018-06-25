@@ -198,8 +198,6 @@ INSTALLED_APPS = ('bpaotu',
                   'django_extensions',
                   'django.contrib.admin',
                   'django.contrib.admindocs',
-                  'leaflet',
-                  'bootstrap3',
                   )
 
 # #
@@ -384,9 +382,10 @@ EXPLORER_TOKEN_AUTH_ENABLED = True
 EXPLORER_TOKEN = env.get('EXPLORER_TOKEN', "EXPLOREIT")
 
 # enable integration with CKAN authentication (specific to the BPA data portal)
-CKAN_AUTH_INTEGRATION = env.get('ckan_auth_integration', False)
-# email to use in development when CKAN auth integration isn't enabled
-# used only when CKAN_AUTH_INTEGRATION is set to False
+CKAN_AUTH_INTEGRATION = env.get('ckan_auth_integration', True)
+CKAN_CHECK_PERMISSIONS_URL = env.get('ckan_check_permissions_url', '/user/private/api/bpa/check_permissions')
+
+# email to use in development when CKAN auth integration is enabled
 CKAN_DEVELOPMENT_USER_EMAIL = env.get('ckan_devel_user_email', 'devops@ccg.murdoch.edu.au')
 
 CKAN_AUTH_TOKEN_HEADER_NAME = env.get('ckan_auth_token_header_name', 'HTTP_X_BPAOTU_CKAN_TOKEN')
@@ -395,28 +394,3 @@ GALAXY_BASE_URL = env.get('galaxy_base_url', 'https://galaxy-aust-dev.genome.edu
 # This will fail late, only when the user is trying to submit workflows to galaxy
 # Leaving it as optional as not sure if all installations will use Galaxy
 GALAXY_ADMIN_USER_API_KEY = env.get('galaxy_admin_user_api_key', '')
-
-LEAFLET_CONFIG = {
-    'DEFAULT_CENTER': (-25.27, 133.775),
-    'DEFAULT_ZOOM': 4,
-    'ATTRIBUTION_PREFIX': '',
-    'TILES': [
-        ('ESRI',
-         '//server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-         {'attribution':
-          '&copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-          }, ),
-        ('OSM B&W',
-         '//{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png',
-         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
-        ('Thunderforest Landscape',
-         '//{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png',
-         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
-        ('ISM Seamark',
-         '//tiles.openseamap.org/seamark/{z}/{x}/{y}.png',
-         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
-    ],
-    'MINIMAP': True,
-    'NO_GLOBALS': False,
-    'RESET_VIEW': False,
-}

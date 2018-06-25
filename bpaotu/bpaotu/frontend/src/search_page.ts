@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 
-import 'bootstrap'
+import 'bootstrap';
 
 import 'datatables.net';
 import 'datatables.net-bs';

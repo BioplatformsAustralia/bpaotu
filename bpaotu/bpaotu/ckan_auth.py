@@ -20,6 +20,8 @@ class OTUVerificationError(Exception):
 
 
 def require_CKAN_auth(func):
+    if not settings.CKAN_AUTH_INTEGRATION:
+        return func
     @wraps(func)
     def inner(request, *args, **kwargs):
         token = request.META.get(settings.CKAN_AUTH_TOKEN_HEADER_NAME)
@@ -39,11 +41,6 @@ def require_CKAN_auth(func):
 
 
 def _otu_endpoint_verification(data):
-    if not settings.CKAN_AUTH_INTEGRATION:
-        return {
-            'email': settings.CKAN_DEVELOPMENT_USER_EMAIL
-        }
-
     hash_portion, data_portion = data.split('||', 1)
 
     secret_key = bytes(os.environ.get('BPAOTU_AUTH_SECRET_KEY'), encoding='utf-8')

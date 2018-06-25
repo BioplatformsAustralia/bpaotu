@@ -85,23 +85,24 @@ body {
 }
 
 .modal-dialog {
-  width: 90%;
-  height: 90%;
+    max-width: none!important;
+    width: 94%!important;
+    height: 94%;
+    padding: 0;
 }
 
 .modal-content {
-  width: 100%;
-  height: 100%;
+    height: 99%;
 }
 
 .modal-body {
-  width: 100%;
-  height: 90%;
+    width: 100%;
+    height: 90%;
 }
 
 .leaflet-container {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 96%;
 }
 
 .glyphicon.spinning {
@@ -117,4 +118,25 @@ body {
 @-webkit-keyframes spin2 {
     from { -webkit-transform: rotate(0deg); }
     to { -webkit-transform: rotate(360deg); }
+}
+
+.octicon {
+    fill: currentColor;
+}
+
+.space-above {
+    margin-top: 12px;
+}
+
+.rt-thead {
+    padding: 16px;
+}
+
+.filters .form-group {
+    margin-bottom: 4px;
+}
+
+.card-footer  .btn {
+    margin-left: 12px;
+    margin-right: 12px;
 }

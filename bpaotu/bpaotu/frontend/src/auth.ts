@@ -30,13 +30,6 @@ export function ckanAuth() {
 }
 
 export function getAuthToken() {
-    // TODO clarify this CKAN_AUTH_INTEGRATION stuff with the others
-    // is CKAN_AUTH_INTEGRATION always needed for the app to work properly
-    // if possible to have an app without it should we downgrade the UI?
-    // I would prefer to have a development only view returning a dummy token and email
-    // instead of shortcutting the ckan_auth functions everywhere. This way dev would
-    // be much closer to prod.
-
     return new Promise((resolve, reject) => {
         if (! window.otu_search_config.ckan_auth_integration) {
             resolve('');
@@ -58,7 +51,6 @@ function setupGlobalAjax(authToken: string) {
     $.ajaxSetup({
         beforeSend: function(xhr: JQueryXHR, settings: JQueryAjaxSettings) {
             if (settings.crossDomain) return;
-            // TODO xhr.setRequestHeader("X-CSRFToken", csrftoken);
             xhr.setRequestHeader("X-BPAOTU-CKAN-Token", authToken);
 
             if (isUnsafeCSRFMethod(settings.type)) {
