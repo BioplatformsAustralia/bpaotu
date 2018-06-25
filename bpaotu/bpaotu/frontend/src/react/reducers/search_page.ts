@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 
 import {
-    CLEAR_FILTERS,
+    CLEAR_ALL_TAXONOMY_FILTERS,
     SELECT_AMPLICON,
     SELECT_AMPLICON_OPERATOR,
     selectAmplicon,
@@ -83,7 +83,7 @@ const initialState: PageState = {
 
 function selectedAmpliconReducer(state = EmptyOperatorAndValue, action) {
     switch (action.type) {
-        case CLEAR_FILTERS:
+        case CLEAR_ALL_TAXONOMY_FILTERS:
             return EmptyOperatorAndValue;
 
         case SELECT_AMPLICON:
@@ -113,7 +113,7 @@ function makeTaxonomyReducer(taxonomyName) {
             selectOperator: `SELECT_${ taxonomyU }_OPERATOR`
         }
         switch (action.type) {
-            case CLEAR_FILTERS:
+            case CLEAR_ALL_TAXONOMY_FILTERS:
             case actionTypes.clear:
                 return EmptySelectableLoadableValues;
 

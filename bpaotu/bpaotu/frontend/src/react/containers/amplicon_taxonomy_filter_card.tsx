@@ -7,7 +7,7 @@ import {
     fetchKingdoms,
     selectAmplicon,
     selectAmpliconOperator,
-    clearFilters
+    clearAllTaxonomyFilters
 } from '../actions/index';
 import {
     Button,
@@ -72,7 +72,7 @@ class AmpliconTaxonomyFilterCard extends React.Component<any> {
     }
 
     clearFilters() {
-        this.props.clearFilters();
+        this.props.clearAllTaxonomyFilters();
         this.props.fetchAmplicons();
         this.props.fetchKingdoms();
     }
@@ -80,7 +80,7 @@ class AmpliconTaxonomyFilterCard extends React.Component<any> {
 
 function mapDispatchToProps(dispatch: any) {
     return bindActionCreators({
-        fetchAmplicons, fetchKingdoms, clearFilters }, dispatch);
+        fetchAmplicons, fetchKingdoms, clearAllTaxonomyFilters }, dispatch);
 }
 
 export default connect(null, mapDispatchToProps)(AmpliconTaxonomyFilterCard);

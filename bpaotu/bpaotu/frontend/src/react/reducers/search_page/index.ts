@@ -2,10 +2,6 @@ import * as _ from 'lodash';
 import { combineReducers } from 'redux';
 
 import {
-    CLEAR_FILTERS,
-    SELECT_AMPLICON,
-    SELECT_AMPLICON_OPERATOR,
-    selectAmplicon,
     SEARCH_SUCCESS,
     SEARCH_STARTED,
     CHANGE_TABLE_PROPERTIES,
@@ -13,18 +9,13 @@ import {
     CLOSE_SAMPLES_MAP_MODAL,
     FETCH_SAMPLES_MAP_MODAL_SAMPLES_STARTED,
     FETCH_SAMPLES_MAP_MODAL_SAMPLES_SUCCESS,
-    SELECT_ENVIRONMENT,
-    SELECT_ENVIRONMENT_OPERATOR,
-    SELECT_CONTEXTUAL_FILTERS_MODE,
-    ADD_CONTEXTUAL_FILTER,
-    REMOVE_CONTEXTUAL_FILTER,
-    SELECT_CONTEXTUAL_FILTER,
     SEARCH_ERROR,
 } from '../../actions/index';
 
 import contextualDataDefinitionsReducer from '../contextual_data_definitions';
 import { selectedAmpliconReducer } from './amplicon';
 import contextualReducer from './contextual';
+import taxonomyReducer from './taxonomy';
 
 export interface OperatorAndValue {
     value: string
@@ -86,7 +77,7 @@ export const EmptySelectableLoadableValues: SelectableLoadableValues = {
     options: []
 };
 
-export const initialState: PageState = {
+export const searchPageInitialState: PageState = {
     filters: {
         selectedAmplicon: EmptyOperatorAndValue,
         taxonomy: {
@@ -125,93 +116,7 @@ export const initialState: PageState = {
     }
 }
 
-// TODO move taxonomy reducers to their own file
-
-function makeTaxonomyReducer(taxonomyName) {
-    return (state = EmptySelectableLoadableValues, action) => {
-        const taxonomyU = taxonomyName.toUpperCase();
-        const actionTypes = {
-            clear: 'CLEAR_' + taxonomyU,
-            disable: 'DISABLE_' + taxonomyU,
-            fetchStarted: `FETCH_${ taxonomyU }_STARTED`,
-            fetchSuccess: `FETCH_${ taxonomyU }_SUCCESS`,
-            fetchError: `FETCH_${ taxonomyU }_ERROR`,
-            select: 'SELECT_' + taxonomyU,
-            selectOperator: `SELECT_${ taxonomyU }_OPERATOR`
-        }
-        switch (action.type) {
-            case CLEAR_FILTERS:
-            case actionTypes.clear:
-                return EmptySelectableLoadableValues;
-
-            case actionTypes.disable:
-                return {
-                    ...state,
-                    isDisabled: true
-                }
-
-            case actionTypes.fetchStarted:
-                return {
-                    ...state,
-                    options: [],
-                    isLoading: true
-                }
-
-            case actionTypes.fetchSuccess:
-                const possibilites = action.payload.data.possibilities.new_options.possibilities;
-                const options = _.map(
-                    possibilites,
-                    (option: any) => ({ id: option[0], value: option[1] }));
-
-                const isSelectedStillInOptions = selected => {
-                    if (selected.value == '') 
-                        return true;
-                    return _.findIndex(options, k => k.id == selected.value) != -1;
-                }
-
-                const selected = isSelectedStillInOptions(state.selected) ? state.selected: EmptyOperatorAndValue;
-
-                return {
-                    isLoading: false,
-                    options,
-                    selected
-                }
-
-            case actionTypes.select:
-                return {
-                    ...state,
-                    selected: {
-                        ...state.selected,
-                        value: action.id
-                    }
-                };
-            case actionTypes.selectOperator:
-                return {
-                    ...state,
-                    selected: {
-                        ...state.selected,
-                        operator: action.operator
-                    }
-                };
-        }
-        return state;
-    }
-}
-
-function taxonomyReducer(state = initialState.filters.taxonomy, action) {
-    return {
-        ...state,
-        kingdom: makeTaxonomyReducer('kingdom')(state.kingdom, action),
-        phylum: makeTaxonomyReducer('phylum')(state.phylum, action),
-        class: makeTaxonomyReducer('class')(state.class, action),
-        order: makeTaxonomyReducer('order')(state.order, action),
-        family: makeTaxonomyReducer('family')(state.family, action),
-        genus: makeTaxonomyReducer('genus')(state.genus, action),
-        species: makeTaxonomyReducer('species')(state.species, action)
-    }
-}
-
-const samplesMapModalReducer = (state = initialState.samplesMapModal, action) => {
+const samplesMapModalReducer = (state = searchPageInitialState.samplesMapModal, action) => {
     switch (action.type) {
         case OPEN_SAMPLES_MAP_MODAL:
             return {
@@ -240,7 +145,7 @@ const samplesMapModalReducer = (state = initialState.samplesMapModal, action) =>
     return state;
 }
 
-const searchResultsReducer = (state = initialState.results, action) => {
+const searchResultsReducer = (state = searchPageInitialState.results, action) => {
     switch (action.type) {
         case CHANGE_TABLE_PROPERTIES:
             const { page, pageSize, sorted } = action.props;

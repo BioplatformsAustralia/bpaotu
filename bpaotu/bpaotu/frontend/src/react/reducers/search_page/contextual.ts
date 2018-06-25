@@ -16,9 +16,9 @@ import {
 } from '../../actions/index';
 
 import contextualDataDefinitionsReducer from '../contextual_data_definitions';
-import { initialState } from './index';
+import { searchPageInitialState } from './index';
 
-function selectedEnvironmentReducer(state = initialState.filters.contextual.selectedEnvironment, action) {
+function selectedEnvironmentReducer(state = searchPageInitialState.filters.contextual.selectedEnvironment, action) {
     switch (action.type) {
         case SELECT_ENVIRONMENT:
             return {
@@ -34,7 +34,7 @@ function selectedEnvironmentReducer(state = initialState.filters.contextual.sele
     return state;
 }
 
-function contextualFiltersModeReducer(state = initialState.filters.contextual.filtersMode, action) {
+function contextualFiltersModeReducer(state = searchPageInitialState.filters.contextual.filtersMode, action) {
     switch (action.type) {
         case SELECT_CONTEXTUAL_FILTERS_MODE:
             return action.value;
@@ -98,7 +98,7 @@ function contextualFiltersReducer(state, action, dataDefinitions) {
     return state;
 }
 
-const contextualReducer = (state = initialState.filters.contextual, action) => {
+const contextualReducer = (state = searchPageInitialState.filters.contextual, action) => {
     return {
         selectedEnvironment: selectedEnvironmentReducer(state.selectedEnvironment, action),
         dataDefinitions: contextualDataDefinitionsReducer(state.dataDefinitions, action),

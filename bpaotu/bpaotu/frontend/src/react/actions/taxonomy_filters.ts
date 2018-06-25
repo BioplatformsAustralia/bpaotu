@@ -3,7 +3,7 @@ import * as _ from "lodash";
 import { getTaxonomy } from "../api";
 import { buildValueSelector, buildOperatorSelector } from "./common";
 
-export const CLEAR_FILTERS = 'CLEAR_FILTERS';
+export const CLEAR_ALL_TAXONOMY_FILTERS = 'CLEAR_TAXONOMY_FILTERS';
 
 export const taxonomies = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'];
 const taxonomiesBefore = target => _.takeWhile(taxonomies, t => t != target);
@@ -66,4 +66,4 @@ export const updateTaxonomyDropDowns = taxonomy => () => (dispatch, getState) =>
 
 export const fetchKingdoms = makeTaxonomyFetcher(taxonomyConfigFor('kingdom'));
 
-export const clearFilters = () => ({ type: CLEAR_FILTERS });
+export const clearAllTaxonomyFilters = () => ({ type: CLEAR_ALL_TAXONOMY_FILTERS });
