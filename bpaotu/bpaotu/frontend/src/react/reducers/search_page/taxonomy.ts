@@ -47,7 +47,7 @@ function makeTaxonomyReducer(taxonomyName) {
                     (option: any) => ({ id: option[0], value: option[1] }));
 
                 const isSelectedStillInOptions = selected => {
-                    if (selected.value == '') 
+                    if (selected.value == '')
                         return true;
                     return _.findIndex(options, k => k.id == selected.value) != -1;
                 }
