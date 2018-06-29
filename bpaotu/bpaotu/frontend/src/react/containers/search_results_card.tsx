@@ -1,8 +1,10 @@
+import * as _ from 'lodash';
 import * as React from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 
 import {
+    Alert,
     Card,
     CardBody,
     CardHeader,
@@ -18,10 +20,11 @@ import {
 import Octicon from '../components/octicon';
 import SamplesMapModal from './samples_map_modal';
 import SearchResultsTable from './search_results_table';
-import { describeSearch, openSamplesMapModal } from '../actions';
+import { describeSearch, openSamplesMapModal, submitToGalaxy, dismissGalaxyAlert } from '../actions';
+import { GalaxySubmission } from '../reducers/search_page/index';
 
 const HeaderButton = (props) => (
-    <Button style={{ marginRight: 10 }} outline color="primary" onClick={props.onClick} >
+    <Button style={{ marginRight: 10 }} outline color="primary" disabled={props.disabled} onClick={props.onClick} >
         {(props.octicon) ? (<span><Octicon name={props.octicon} />&nbsp;</span>) : ''}
         {props.text}
     </Button>
@@ -36,19 +39,37 @@ class SearchResultsCard extends React.Component<any, any> {
                         <div >
                             <HeaderButton octicon="globe" text="Show results on Map" onClick={this.props.openSamplesMapModal} />
                             {window.otu_search_config.ckan_auth_integration && (
-                                <HeaderButton octicon="clippy" text="Submit to Galaxy" />
+                                <HeaderButton
+                                    octicon="clippy"
+                                    text="Submit to Galaxy"
+                                    disabled={this.isGalaxySubmissionDisabled()}
+                                    onClick={this.props.submitToGalaxy} />
                             )}
                             <HeaderButton octicon="desktop-download" text="Export Search Results (CSV)" onClick={this.exportCSV.bind(this)} />
                             <HeaderButton octicon="desktop-download" text="Export Search Results (BIOM)" onClick={this.exportBIOM.bind(this)} />
                         </div>
                     </CardHeader>
                     <CardBody>
+                        <div>
+                            { this.props.galaxy.alerts.map((alert, idx) =>
+                                (<Alert key={idx} color={alert.color} className="text-center" toggle={() => this.props.dismissGalaxyAlert(idx)}>
+                                    {alert.text}
+                                 </Alert>))}
+                        </div>
                         <SearchResultsTable />
                     </CardBody>
                 </Card>
                 <SamplesMapModal />
             </div>
         );
+    }
+
+    isGalaxySubmissionDisabled() {
+        if (this.props.galaxy.isSubmitting) {
+            return true;
+        }
+        const lastSubmission: GalaxySubmission = _.last(this.props.galaxy.submissions);
+        return (lastSubmission && !lastSubmission.finished)
     }
 
     export(baseURL) {
@@ -72,6 +93,7 @@ class SearchResultsCard extends React.Component<any, any> {
 function mapStateToProps(state) {
     return {
         ckanAuthToken: state.auth.ckanAuthToken,
+        galaxy: state.searchPage.galaxy,
         filters: state.searchPage.filters,
     };
 }
@@ -79,6 +101,8 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
     return bindActionCreators({
         openSamplesMapModal,
+        submitToGalaxy,
+        dismissGalaxyAlert,
     }, dispatch);
 }
 

@@ -20,7 +20,6 @@ from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpRespon
 
 from .ckan_auth import require_CKAN_auth
 from .importer import DataImporter
-from .galaxy_client import Galaxy
 from .otu import (
     Environment,
     OTUKingdom,
@@ -44,9 +43,9 @@ from .models import (
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
 from .util import val_or_empty
-from .biom import generate_biom_file
+from .biom import biom_zip_file_generator
 
-from .util import temporary_file
+from . import tasks
 
 
 logger = logging.getLogger("rainbow")
@@ -55,6 +54,11 @@ logger = logging.getLogger("rainbow")
 # See datatables.net serverSide documentation for details
 ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
+
+
+class OTUError(Exception):
+    def __init__(self, *errors):
+        self.errors = errors
 
 
 def make_environment_lookup():
@@ -479,15 +483,9 @@ def contextual_csv(samples):
 @require_CKAN_auth
 @require_GET
 def otu_biom_export(request):
-    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
-
-    timestamp = datetime.datetime.now().replace(microsecond=0).isoformat()
-    timestamp = timestamp.replace(':', '')
-
+    timestamp = datetime.datetime.now().replace(microsecond=0).isoformat().replace(':', '')
     params, errors = param_to_filters(request.GET['q'])
-    with SampleQuery(params) as query:
-        zf.write_iter("BiomExport-{}.biom".format(timestamp), (s.encode('utf8') for s in generate_biom_file(query)))
-
+    zf = biom_zip_file_generator(params, timestamp)
     response = StreamingHttpResponse(zf, content_type='application/zip')
     filename = 'BiomExport-{}.zip'.format(timestamp)
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
@@ -561,63 +559,52 @@ def otu_export(request):
 @require_CKAN_auth
 @require_POST
 def submit_to_galaxy(request):
-    WORKFLOW_NAME = 'Hello world'
-    HELLO_CONTENTS = 'Hello, world!\nGoodbye, world!\n'
-    HISTORY_NAME = 'Hello World'
-
-    ckan_data = request.ckan_data
-    galaxy = Galaxy()
-
-    def _get_users_galaxy_api_key(email):
-        galaxy_user = galaxy.users.get_by_email(email)
-        if galaxy_user is None:
-            galaxy_user = galaxy.users.create(email)
-
-        api_key = galaxy.users.get_api_key(galaxy_user['id'])
-        if api_key is None:
-            api_key = galaxy.users.create_api_key(galaxy_user['id'])
-        return api_key
-
-    def _handle():
-        workflow = galaxy.workflows.get_by_name(WORKFLOW_NAME)
-        if workflow is None:
-            raise Exception("Couldn't find workflow '%s' for current user" % WORKFLOW_NAME)
+    try:
+        ckan_data = request.ckan_data
 
         email = ckan_data.get('email')
         if not email:
-            raise Exception("Could not retrieve user's email")
+            raise OTUError("Could not retrieve user's email")
 
-        users_api_key = _get_users_galaxy_api_key(email)
+        params, errors = param_to_filters(request.POST['query'])
 
-        users_galaxy = Galaxy(api_key=users_api_key)
+        if errors:
+            raise OTUError(*errors)
 
-        history = users_galaxy.histories.create(HISTORY_NAME)
+        submission_id = tasks.submit_to_galaxy(email, request.POST['query'])
 
-        with temporary_file(HELLO_CONTENTS) as path:
-            file_id = users_galaxy.histories.upload_file(history.get('id'), path, filename='hello_world.txt')
-            users_galaxy.histories.wait_for_file_upload_to_finish(history.get('id'), file_id)
-
-        wfl = users_galaxy.workflows.submit(
-            workflow_id=workflow.get('id'),
-            history_id=history.get('id'),
-            file_ids={'0': file_id})
-
-        wfl_data = {k: v for k, v in wfl.items() if k in ('workflow_id', 'history', 'state')}
-        return {
+        return JsonResponse({
             'success': True,
-            'workflow': wfl_data,
-        }
-
-    try:
-        response = _handle()
-    except Exception as exc:
+            'submission_id': submission_id,
+        })
+    except OTUError as exc:
         logger.exception('Error in submit to Galaxy')
-        response = {
+        return JsonResponse({
             'success': False,
-            'errors': str(exc),
-        }
+            'errors': exc.errors,
+        })
 
-    return JsonResponse(response)
+
+@require_CKAN_auth
+@require_GET
+def galaxy_submission(request):
+    submission_id = request.GET['submission_id']
+    submission = tasks.Submission(submission_id)
+
+    if not submission.history_id or not submission.file_id:
+        state = 'pending'
+    else:
+        state = submission.upload_state
+
+    return JsonResponse({
+        'success': True,
+        'submission': {
+            'id': submission_id,
+            'history_id': submission.history_id,
+            'file_id': submission.file_id,
+            'state': state,
+        }
+    })
 
 
 def otu_log(request):

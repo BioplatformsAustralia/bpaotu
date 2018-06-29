@@ -19,7 +19,7 @@ export const fetchSampleMapModalSamples = () => (dispatch, getState) => {
 
     const filters = describeSearch(state.searchPage.filters);
 
-    executeSampleSitesSearch(filters, state.searchPage.results)
+    executeSampleSitesSearch(filters)
     .then(data => {
         dispatch({type: FETCH_SAMPLES_MAP_MODAL_SAMPLES_SUCCESS, data});
     })

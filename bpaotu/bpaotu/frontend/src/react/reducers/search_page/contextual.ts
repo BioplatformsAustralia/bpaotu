@@ -17,6 +17,7 @@ import {
 
 import contextualDataDefinitionsReducer from '../contextual_data_definitions';
 import { searchPageInitialState } from './index';
+import { changeElementAtIndex, removeElementAtIndex } from './utils';
 
 function selectedEnvironmentReducer(state = searchPageInitialState.filters.contextual.selectedEnvironment, action) {
     switch (action.type) {
@@ -106,19 +107,5 @@ const contextualReducer = (state = searchPageInitialState.filters.contextual, ac
         filters: contextualFiltersReducer(state.filters, action, state.dataDefinitions),
     }
 }
-
-const changeElementAtIndex = (arr, idx, fn) => {
-    const changedElement = fn(arr[idx]);
-    if (arr[idx] === changedElement) {
-        return arr;
-    }
-    let result = arr.slice(0, idx);
-    if (changedElement) {
-        result.push(changedElement);
-    }
-    result = result.concat(arr.slice(idx + 1));
-    return result;
-}
-const removeElementAtIndex = _.partialRight(changeElementAtIndex, () => null);
 
 export default contextualReducer; 

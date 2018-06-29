@@ -38,6 +38,8 @@ services:
     celeryworker:
       image: muccg/bpaotu-dev
       command: celery_worker
+      env_file:
+        - .env_local
       environment:
         - WAIT_FOR_DB=1
         - WAIT_FOR_CACHE=1

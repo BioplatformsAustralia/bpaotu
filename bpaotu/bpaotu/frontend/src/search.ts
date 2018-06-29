@@ -1,18 +1,19 @@
 import * as _ from 'lodash';
 
 export interface SearchConfig {
-    ckan_auth_integration: boolean,
-    ckan_base_url: string,
-    amplicon_endpoint: string,
-    taxonomy_endpoint: string,
-    contextual_endpoint: string,
-    search_endpoint: string,
-    export_endpoint: string,
-    export_biom_endpoint: string,
-    submit_to_galaxy_endpoint: string,
-    search_sample_sites_endpoint: string,
-    required_table_headers_endpoint: string,
-    contextual_csv_download_endpoint: string,
+    ckan_auth_integration: boolean
+    ckan_base_url: string
+    amplicon_endpoint: string
+    taxonomy_endpoint: string
+    contextual_endpoint: string
+    search_endpoint: string
+    export_endpoint: string
+    export_biom_endpoint: string
+    submit_to_galaxy_endpoint: string
+    galaxy_submission_endpoint: string
+    search_sample_sites_endpoint: string
+    required_table_headers_endpoint: string
+    contextual_csv_download_endpoint: string
     ckan_check_permissions: string
 }
 
