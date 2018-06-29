@@ -8,6 +8,7 @@ import zipstream
 
 from .query import SampleQuery
 from .util import val_or_empty
+from .otu import SampleContext
 
 logger = logging.getLogger('rainbow')
 
@@ -88,13 +89,14 @@ def otu_rows(query, otu_to_row):
 
 def sample_columns(query, sample_to_column):
     q = query.matching_samples()
-
+    fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
+    fields.sort()
     # This is a cached query so all results are returned. Just iterate through without chunking.
     for idx, sample in enumerate(s for s in q if s.id not in sample_to_column):
         sample_to_column[sample.id] = idx
 
-        fields = (k for k in sample.__table__.columns._data if k != 'id')
-        metadata = ','.join(k_v(f, getattr(sample, f)) for f in fields if getattr(sample, f))
+        
+        metadata = ','.join(k_v(f, getattr(sample, f)) for f in fields)
 
         sample_data = '{"id": "102.100.100/%s","metadata": {%s}}' % (sample.id, metadata)
 

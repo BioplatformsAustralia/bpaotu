@@ -44,7 +44,6 @@ from .models import (
     ImportSamplesMissingMetadataLog)
 from .util import val_or_empty
 from .biom import biom_zip_file_generator
-
 from . import tasks
 
 
