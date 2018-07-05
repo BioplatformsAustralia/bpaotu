@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 
 export interface SearchConfig {
     ckan_auth_integration: boolean
+    static_base_url: string
     ckan_base_url: string
     amplicon_endpoint: string
     taxonomy_endpoint: string

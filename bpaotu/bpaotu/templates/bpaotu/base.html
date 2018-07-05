@@ -24,67 +24,49 @@
 
     {% block extra_head %}
     {% endblock %}
-
-
 </head>
+
 <body>
-    <div id="wrap">
-        <header class="navbar navbar-static-top">
-            <div id="user_id"></div>
-            <div class="container">
-                <a class="logo" href="https://data.bioplatforms.com/">
-                    <img src="{% static 'bpa-logos/bpalogo_withdataportal.png' %}" alt="Bioplatform Australia" />
-                </a>
-            </div>
-
-            {% if DEBUG_ONLY_VIEW %}
-            <div class="alert alert-warning text-center">
-                This page should be accessible only in <strong>DEBUG</strong> mode.
-            </div>
-            {% endif %}
-        </header>
-
         <div class="content-div">
-
             {% csrf_token %}
 
             {% block content %}
             {% endblock %}
         </div>
-    </div>
 
-    <footer class="site-footer space-above">
-        <div class="site-footer-links container-fluid">
-            <a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a>
-            <a href="https://github.com/muccg/bpaotu">Source Code</a>
-            <a href="mailto:help@bioplatforms.com">Contact</a>
-        </div>
-        <div class="site-footer-logo container-fluid">
-        <span><a href="https://www.bioplatforms.com"><img class="footer-logos" src="{% static 'bpa-logos/bpa-footer.png' %}" alt="Bioplatforms Australia" /></a></span>
-        <span style="padding-left: 30px;"><a href="https://www.education.gov.au/national-collaborative-research-infrastructure-strategy-ncris"><img class="footer-logos" src="{% static 'bpa-logos/ncris-footer.png' %}" /></a></span>
-        </div>
-      </footer>
+        <footer class="site-footer space-above">
+                <div class="site-footer-links container-fluid">
+                    <a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a>
+                    <a href="https://github.com/muccg/bpaotu">Source Code</a>
+                    <a href="mailto:help@bioplatforms.com">Contact</a>
+                </div>
+                <div class="site-footer-logo container-fluid">
+                <span><a href="https://www.bioplatforms.com"><img class="footer-logos" src="{% static 'bpa-logos/bpa-footer.png' %}" alt="Bioplatforms Australia" /></a></span>
+                <span style="padding-left: 30px;"><a href="https://www.education.gov.au/national-collaborative-research-infrastructure-strategy-ncris"><img class="footer-logos" src="{% static 'bpa-logos/ncris-footer.png' %}" /></a></span>
+                </div>
+        </footer>
 
-        <script>
-            var ckan_auth_integration = '{{ ckan_auth_integration }}' === 'True';
-            window.otu_search_config = {
-                'amplicon_endpoint': "{% url 'amplicon_options' %}",
-                'taxonomy_endpoint': "{% url 'taxonomy_options' %}",
-                'contextual_endpoint': "{% url 'contextual_fields' %}",
-                'search_endpoint': "{% url 'otu_search' %}",
-                'export_endpoint': "{% url 'otu_export' %}",
-                'export_biom_endpoint': "{% url 'otu_biom_export' %}",
-                'submit_to_galaxy_endpoint': "{% url 'submit_to_galaxy' %}",
-                'galaxy_submission_endpoint': "{% url 'galaxy_submission' %}",
-                'search_sample_sites_endpoint': "{% url 'otu_search_sample_sites' %}",
-                'required_table_headers_endpoint': "{% url 'required_table_headers' %}",
-                'contextual_csv_download_endpoint': "{% url 'contextual_csv_download_endpoint' %}",
-                'static_base_url': "{% static 'bpaotu' %}",
-                'ckan_base_url': "{{ ckan_base_url }}",
-                'ckan_auth_integration': ckan_auth_integration, 
-                'ckan_check_permissions': "{{ ckan_check_permissions_url }}"
-            };
-        </script>
+
+    <script>
+        var ckan_auth_integration = '{{ ckan_auth_integration }}' === 'True';
+        window.otu_search_config = {
+            'amplicon_endpoint': "{% url 'amplicon_options' %}",
+            'taxonomy_endpoint': "{% url 'taxonomy_options' %}",
+            'contextual_endpoint': "{% url 'contextual_fields' %}",
+            'search_endpoint': "{% url 'otu_search' %}",
+            'export_endpoint': "{% url 'otu_export' %}",
+            'export_biom_endpoint': "{% url 'otu_biom_export' %}",
+            'submit_to_galaxy_endpoint': "{% url 'submit_to_galaxy' %}",
+            'galaxy_submission_endpoint': "{% url 'galaxy_submission' %}",
+            'search_sample_sites_endpoint': "{% url 'otu_search_sample_sites' %}",
+            'required_table_headers_endpoint': "{% url 'required_table_headers' %}",
+            'contextual_csv_download_endpoint': "{% url 'contextual_csv_download_endpoint' %}",
+            'static_base_url': "{% static '' %}",
+            'ckan_base_url': "{{ ckan_base_url }}",
+            'ckan_auth_integration': ckan_auth_integration,
+            'ckan_check_permissions': "{{ ckan_check_permissions_url }}"
+        };
+    </script>
 
 
     {% if production %}
