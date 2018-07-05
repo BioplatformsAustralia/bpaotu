@@ -2,11 +2,14 @@ from collections import OrderedDict
 import datetime
 import itertools
 import json
+import logging
+import os
+import zipstream
 
+from .query import SampleQuery
 from .util import val_or_empty
 from .otu import SampleContext
 
-import logging
 logger = logging.getLogger('rainbow')
 
 
@@ -25,6 +28,24 @@ def generate_biom_file(query):
         wrap('"columns": [', samples, '],\n'),
         wrap('"shape": [', shape, '],\n'),
         wrap('"data": [', abundance_table, ']}\n'))
+
+
+def biom_zip_file_generator(params, timestamp):
+    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+    with SampleQuery(params) as query:
+        zf.write_iter("BiomExport-{}.biom".format(timestamp), (s.encode('utf8') for s in generate_biom_file(query)))
+    return zf
+
+
+def save_biom_zip_file(params, dir='/data'):
+    timestamp = datetime.datetime.now().replace(microsecond=0).isoformat().replace(':', '')
+
+    filename = os.path.join(dir, 'BiomExport-{}.zip'.format(timestamp))
+    zf = biom_zip_file_generator(params, timestamp)
+    with open(filename, 'wb') as f:
+         for data in zf:
+             f.write(data)
+    return filename
 
 
 def biom_header():
@@ -95,6 +116,7 @@ def abundance_tbl(query, otu_to_row, sample_to_column):
             ',' + \
             str(sampleotu.count) + \
             ']'
+
 
 
 def k_v(k, v):

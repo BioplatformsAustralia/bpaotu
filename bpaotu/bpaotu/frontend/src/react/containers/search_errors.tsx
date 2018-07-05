@@ -12,7 +12,7 @@ const SearchErrors = ({ errors }) => {
     }
     return (
         <Alert color="danger">
-            <h4 className="alert-heading">Search Error</h4>
+            <h4 className="alert-heading">Errors</h4>
             <ul>
                 {errors.map((err, idx) => 
                     (<li key={idx}>{err}</li>))}
@@ -20,7 +20,6 @@ const SearchErrors = ({ errors }) => {
         </Alert>
     );
 };
-    
 
 function mapStateToProps(state) {
     return {

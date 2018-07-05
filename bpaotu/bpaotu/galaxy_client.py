@@ -103,14 +103,17 @@ class HistoryAPI(GalaxyAPI):
             response = self.client.post_ll('tools', data=payload, files=files)
             return response['outputs'][0]['id']
 
+    def get_file_state(self, history_id, file_id):
+        hda_details = self.client.get('histories/%s/contents/%s' % (history_id, file_id))
+        return hda_details['state']
+
     def wait_for_file_upload_to_finish(self, history_id, file_id):
         def get_state():
             hda_details = self.client.get('histories/%s/contents/%s' % (history_id, file_id))
             return hda_details['state']
 
         state = get_state()
-        # TODO also stop on error
-        while state != 'ok':
+        while state not in ('ok', 'error'):
             time.sleep(3)
             state = get_state()
         return state
@@ -135,6 +138,25 @@ class Galaxy:
         self.users = UserAPI(self.client)
         self.histories = HistoryAPI(self.client)
         self.workflows = WorkflowAPI(self.client)
+
+
+def get_users_galaxy(email):
+    '''Returns a galaxy client configured for the user who has the passed in email address.'''
+    admins_galaxy = Galaxy()
+    users_api_key = _get_users_galaxy_api_key(admins_galaxy, email)
+    users_galaxy = Galaxy(api_key=users_api_key)
+    return users_galaxy
+
+
+def _get_users_galaxy_api_key(admins_galaxy, email):
+    galaxy_user = admins_galaxy.users.get_by_email(email)
+    if galaxy_user is None:
+        galaxy_user = admins_galaxy.users.create(email)
+
+    api_key = admins_galaxy.users.get_api_key(galaxy_user['id'])
+    if api_key is None:
+        api_key = admins_galaxy.users.create_api_key(galaxy_user['id'])
+    return api_key
 
 
 def generate_password(length=32):

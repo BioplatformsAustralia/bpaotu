@@ -56,7 +56,7 @@ export function executeSearch(filters, options) {
     });
 }
 
-export function executeSampleSitesSearch(filters, options) {
+export function executeSampleSitesSearch(filters) {
     let formData = new FormData();
     formData.append('otu_query', JSON.stringify(filters));
 
@@ -70,5 +70,28 @@ export function executeSampleSitesSearch(filters, options) {
     });
 }
 
+export function executeSubmitToGalaxy(filters) {
+    let formData = new FormData();
+    formData.append('query', JSON.stringify(filters));
+
+    return axios({
+        method: 'post',
+        url: window.otu_search_config.submit_to_galaxy_endpoint,
+        data: formData,
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        }
+    });
+}
+
+export function getGalaxySubmission(submissionId) {
+    return axios.get(window.otu_search_config.galaxy_submission_endpoint, {
+        params: {
+            submission_id: submissionId
+        }
+    });
+}
+
 const makeArray = (length, fillValue) => _.map(Array(length), () => fillValue);
 const completeArray = (arr, length, fillValue) => arr.concat(makeArray(length - arr.length, fillValue));
+
