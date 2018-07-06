@@ -17,7 +17,7 @@ export const store = createStore(
 
 ReactDOM.render(
     <Provider store={store}>
-        <Router>
+        <Router basename={window.location.pathname}>
             <App />
         </Router>
     </Provider>,
