@@ -4,6 +4,7 @@ import tempfile
 import traceback
 import logging
 import sqlalchemy
+import gzip
 from sqlalchemy.schema import CreateSchema, DropSchema
 from sqlalchemy.sql.expression import text
 from hashlib import md5
@@ -123,11 +124,6 @@ class DataImporter:
                 if 'already exists' not in str(e):
                     logger.critical("couldn't create extension: %s (%s)" % (extension, e))
 
-    def _read_tab_file(self, fname):
-        with open(fname) as fd:
-            reader = csv.DictReader(fd, dialect="excel-tab")
-            yield from reader
-
     def _build_ontology(self, db_class, vals):
         for val in sorted(vals):
             instance = db_class(value=val)
@@ -197,10 +193,10 @@ class DataImporter:
         ])
 
         def _taxon_rows_iter():
-            for fname in glob(self._import_base + '/*/*.taxonomy'):
+            for fname in glob(self._import_base + '/*/*.taxonomy.gz'):
                 logger.warning('reading taxonomy file: %s' % fname)
                 imported = 0
-                with open(fname) as fd:
+                with gzip.open(fname, 'rt') as fd:
                     for row in csv.reader(fd, dialect='excel-tab'):
                         if row[0].startswith('#'):
                             continue
@@ -315,7 +311,7 @@ class DataImporter:
 
         def _missing_bpa_ids(fname):
             have_bpaids = set([t[0] for t in self._session.query(SampleContext.id)])
-            with open(fname, 'r') as fd:
+            with gzip.open(fname, 'rt') as fd:
                 bpa_ids, _ = otu_rows(fd)
                 for bpa_id in bpa_ids:
                     if bpa_id not in have_bpaids:
@@ -324,7 +320,7 @@ class DataImporter:
         def _make_sample_otus(fname, skip_missing):
             # note: (for now) we have to cope with duplicate columns in the input files.
             # we just make sure they don't clash, and this can be reported to CSIRO
-            with open(fname, 'r') as fd:
+            with gzip.open(fname, 'rt') as fd:
                 bpa_ids, reader = otu_rows(fd)
                 for (imported, row) in enumerate(reader):
                     otu_id = otu_lookup[otu_hash(row[0])]
@@ -344,7 +340,7 @@ class DataImporter:
 
         logger.warning('Loading OTU abundance tables')
         missing_bpa_ids = set()
-        for fname in glob(self._import_base + '/*/*.txt'):
+        for fname in glob(self._import_base + '/*/*.txt.gz'):
             logger.warning("first pass, reading from: %s" % (fname))
             missing_bpa_ids |= set(_missing_bpa_ids(fname))
 
@@ -352,7 +348,7 @@ class DataImporter:
             il = ImportSamplesMissingMetadataLog(samples_without_metadata=list(sorted(missing_bpa_ids)))
             il.save()
 
-        for sampleotu_fname in glob(self._import_base + '/*/*.txt'):
+        for sampleotu_fname in glob(self._import_base + '/*/*.txt.gz'):
             try:
                 logger.warning("second pass, reading from: %s" % (sampleotu_fname))
                 with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
