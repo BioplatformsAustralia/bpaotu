@@ -3,7 +3,7 @@ import redis
 from django.conf import settings
 
 
-redis_client = redis.StrictRedis(host=settings.REDIS_HOST)
+redis_client = redis.StrictRedis(host=settings.REDIS_HOST, db=settings.REDIS_DB)
 
 
 class Submission:
