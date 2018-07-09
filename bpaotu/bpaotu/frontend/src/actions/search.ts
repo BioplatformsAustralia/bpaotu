@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { EmptyOTUQuery } from '../../search';
+import { EmptyOTUQuery } from '../search';
 import { executeSearch } from '../api';
 import { taxonomies } from './taxonomy_filters';
 
