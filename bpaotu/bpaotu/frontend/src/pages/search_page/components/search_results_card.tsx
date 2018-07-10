@@ -17,11 +17,16 @@ import {
     Button,
 } from 'reactstrap';
 
-import Octicon from '../components/octicon';
+import Octicon from '../../../components/octicon';
 import SamplesMapModal from './samples_map_modal';
 import SearchResultsTable from './search_results_table';
-import { describeSearch, openSamplesMapModal, submitToGalaxy, dismissGalaxyAlert } from '../actions';
-import { GalaxySubmission } from '../reducers/search_page/index';
+import {
+    describeSearch,
+    openSamplesMapModal,
+    submitToGalaxy,
+    dismissGalaxyAlert
+} from '../../../actions';
+import { GalaxySubmission } from '../../../reducers/search_page/index';
 
 const HeaderButton = (props) => (
     <Button style={{ marginRight: 10 }} outline color="primary" disabled={props.disabled} onClick={props.onClick} >

@@ -1,14 +1,11 @@
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { changeTableProperties, search } from '../actions/index';
+import { changeTableProperties, search } from '../../../actions/index';
 
 import * as React from 'react';
 import ReactTable from 'react-table';
 import 'react-table/react-table.css';
 
-
-const bpaIDToCKANURL = (bpaId) => 
-    `${window.otu_search_config.ckan_base_url}/organization/australian-microbiome?q=bpa_id:102.100.100.${bpaId}`
 
 class SearchResultsTable extends React.Component<any> {
     componentDidMount() {
@@ -72,6 +69,10 @@ class SearchResultsTable extends React.Component<any> {
         });
         this.props.search();
     }
+}
+
+function bpaIDToCKANURL(bpaId) { 
+    return `${window.otu_search_config.ckan_base_url}/organization/australian-microbiome?q=bpa_id:102.100.100.${bpaId}`;
 }
 
 function mapStateToProps(state) {

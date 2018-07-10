@@ -1,8 +1,12 @@
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { selectAmplicon, selectAmpliconOperator, updateTaxonomyDropDowns } from '../actions/index';
+import {
+    selectAmplicon,
+    selectAmpliconOperator,
+    updateTaxonomyDropDowns
+} from '../../../actions/index';
 
-import DropDownFilter from '../components/drop_down_filter';
+import DropDownFilter from '../../../components/drop_down_filter';
 
 
 function mapStateToProps(state) {

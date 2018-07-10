@@ -13,7 +13,7 @@ import {
     changeContextualFilterValue2,
     changeContextualFilterValues,
     clearContextualFilters,
-} from '../actions/index';
+} from '../../../actions/index';
 import {
     Button,
     Card,
@@ -28,9 +28,9 @@ import {
     Row,
 } from 'reactstrap';
 
-import EnvironmentFilter from './environment_filter';
-import Octicon from '../components/octicon';
-import ContextualFilter from '../components/contextual_filter';
+import Octicon from '../../../components/octicon';
+import EnvironmentFilter from '../../../components/environment_filter';
+import ContextualFilter from '../../../components/contextual_filter';
 
 
 const ContextualFilterInfo = 'Contextual filters allow data to be filtered on site specific chemical and physical data. More than one filter may be used and combined with "and/or" functions.';

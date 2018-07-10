@@ -8,7 +8,7 @@ import {
     selectAmplicon,
     selectAmpliconOperator,
     clearAllTaxonomyFilters
-} from '../actions/index';
+} from '../../../actions';
 import {
     Button,
     Card,
@@ -21,7 +21,8 @@ import {
     Label,
 } from 'reactstrap';
 
-import AmpliconFilter from '../containers/amplicon_filter';
+import Octicon from '../../../components/octicon';
+import AmpliconFilter from './amplicon_filter';
 import {
     KingdomFilter,
     PhylumFilter,
@@ -30,13 +31,12 @@ import {
     FamilyFilter,
     GenusFilter,
     SpeciesFilter
-} from '../containers/taxonomy_filters';
-import Octicon from '../components/octicon';
+} from '../../../components/taxonomy_filters';
 
 const AmpliconFilterInfo = 'Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, Eukaryotes (v4 and v9) and Fungi.  To filter data from a single amplicon select that amplicon here.  To search all amplicons for a taxa select "all".  Note the "all" search will return non-target sequences as well as target, for example searching "Amplicon = all" + "Kingdom = Bacteria" will return all sequences classified as bacteria in all assays.';
 const TaxonomyFilterInfo = 'Taxonomy is assigned to sequences using consensus taxonomy of the top 3 hits against SILVA132 for rRNA targets and UNITE for ITS1 targets.';
 
-class AmpliconTaxonomyFilterCard extends React.Component<any> {
+export class AmpliconTaxonomyFilterCard extends React.Component<any> {
     componentDidMount() {
         this.props.fetchAmplicons();
         this.props.fetchKingdoms();

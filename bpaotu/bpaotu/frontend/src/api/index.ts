@@ -2,7 +2,6 @@ import * as _ from 'lodash';
 import axios from 'axios';
 
 import '../interfaces';
-import { EmptyOTUQuery } from '../search';
 import { CKAN_AUTH_INFO_ERROR, ckanAuthError } from '../actions';
 import { store } from '../init';
 

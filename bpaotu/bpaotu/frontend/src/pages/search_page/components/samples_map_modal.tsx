@@ -24,7 +24,7 @@ import {
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import * as MiniMap from 'leaflet-minimap';
 import * as L from 'leaflet';
-import { closeSamplesMapModal, fetchSampleMapModalSamples } from '../actions';
+import { closeSamplesMapModal, fetchSampleMapModalSamples } from '../../../actions';
 
 /*
 Unfortunately, react-leaflet fails to load markers if the css isn't included in the html file, so
