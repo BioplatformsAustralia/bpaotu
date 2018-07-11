@@ -22,6 +22,7 @@ class OTUVerificationError(Exception):
 def require_CKAN_auth(func):
     if not settings.CKAN_AUTH_INTEGRATION:
         return func
+
     @wraps(func)
     def inner(request, *args, **kwargs):
         token = request.META.get(settings.CKAN_AUTH_TOKEN_HEADER_NAME)

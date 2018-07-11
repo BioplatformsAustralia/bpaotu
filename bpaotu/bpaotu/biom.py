@@ -43,8 +43,8 @@ def save_biom_zip_file(params, dir='/data'):
     filename = os.path.join(dir, 'BiomExport-{}.zip'.format(timestamp))
     zf = biom_zip_file_generator(params, timestamp)
     with open(filename, 'wb') as f:
-         for data in zf:
-             f.write(data)
+        for data in zf:
+            f.write(data)
     return filename
 
 
@@ -88,16 +88,31 @@ def otu_rows(query, otu_to_row):
 
 
 def sample_columns(query, sample_to_column):
-    q = query.matching_samples()
-    fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
+    def empty_to_none(v):
+        # FIXME: push this back in the core metadata handling
+        if v == '':
+            return None
+        return v
+
+    def get_context_value(sample, field):
+        return empty_to_none(getattr(sample, field))
+
+    all_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
+    non_empty = set()
+
+    # do a first pass through and determine the relevant metadata fields for this export
+    for sample in query.matching_samples():
+        for field in all_fields:
+            if get_context_value(sample, field) is not None:
+                non_empty.add(field)
+
+    fields = list(non_empty)
     fields.sort()
+
     # This is a cached query so all results are returned. Just iterate through without chunking.
-    for idx, sample in enumerate(s for s in q if s.id not in sample_to_column):
+    for idx, sample in enumerate(s for s in query.matching_samples() if s.id not in sample_to_column):
         sample_to_column[sample.id] = idx
-
-        
-        metadata = ','.join(k_v(f, getattr(sample, f)) for f in fields)
-
+        metadata = ','.join(k_v(f, get_context_value(sample, f)) for f in fields)
         sample_data = '{"id": "102.100.100/%s","metadata": {%s}}' % (sample.id, metadata)
 
         yield sample_data
@@ -116,7 +131,6 @@ def abundance_tbl(query, otu_to_row, sample_to_column):
             ',' + \
             str(sampleotu.count) + \
             ']'
-
 
 
 def k_v(k, v):
