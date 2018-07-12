@@ -40,7 +40,7 @@ def biom_zip_file_generator(params, timestamp):
 def save_biom_zip_file(params, dir='/data'):
     timestamp = datetime.datetime.now().replace(microsecond=0).isoformat().replace(':', '')
 
-    filename = os.path.join(dir, 'BiomExport-{}.zip'.format(timestamp))
+    filename = os.path.join(dir, 'BiomExport-{}.biom.zip'.format(timestamp))
     zf = biom_zip_file_generator(params, timestamp)
     with open(filename, 'wb') as f:
         for data in zf:
