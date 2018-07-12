@@ -177,8 +177,7 @@ class SampleQuery:
     def matching_sample_ids_and_environment(self):
         q = self._session.query(SampleContext.id, SampleContext.environment_id)
         subq = self._build_taxonomy_subquery()
-        q = self._apply_filters(q, subq).order_by(SampleContext.id)
-        log_query(q)
+        q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
         return self._q_all_cached('matching_sample_ids_and_environment', q)
 
     def matching_sample_headers(self, required_headers=None, sort_col=None, sort_order=None):
@@ -220,8 +219,14 @@ class SampleQuery:
     def matching_samples(self):
         q = self._session.query(SampleContext)
         subq = self._build_taxonomy_subquery()
-        q = self._apply_filters(q, subq).order_by(SampleContext.id)
+        q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
         return self._q_all_cached('matching_samples', q)
+
+    def matching_otus(self, kingdom_id=None):
+        q = self._session.query(OTU)
+        subq = self._build_contextual_subquery()
+        q = self._assemble_otu_query(q, subq, kingdom_id).order_by(OTU.id)
+        return q
 
     def has_matching_sample_otus(self, kingdom_id):
         def to_boolean(result):
@@ -229,21 +234,6 @@ class SampleQuery:
 
         q = self._session.query(self.matching_sample_otus(kingdom_id).exists())
         return self._q_all_cached('has_matching_sample_otus:%s' % (kingdom_id), q, to_boolean)
-
-    def matching_otus(self, kingdom_id=None):
-        # we do a cross-join, but convert to an inner-join with
-        # filters. as SampleContext is in the main query, the
-        # machinery for filtering above will just work
-        q = self._session.query(OTU) \
-            .filter(SampleOTU.otu_id == OTU.id) \
-            .filter(SampleOTU.sample_id == SampleContext.id)
-        q = self._apply_taxonomy_filters(q)
-        q = self._contextual_filter.apply(q)
-        q = q.distinct()
-        q = q.order_by(OTU.id)
-        if kingdom_id is not None:
-            q = q.filter(OTU.kingdom_id == kingdom_id)
-        return q
 
     def matching_sample_otus(self, kingdom_id=None):
         # we do a cross-join, but convert to an inner-join with
@@ -276,12 +266,28 @@ class SampleQuery:
         # shortcut: if we don't have any filters, don't produce a subquery
         if not self._amplicon_filter and self._taxonomy_filter[0] is None:
             return None
-        q = self._session.query(SampleOTU.sample_id).distinct().join(OTU)
+        q = self._session.query(SampleOTU.sample_id) \
+            .distinct() \
+            .join(OTU) \
+            .filter(OTU.id == SampleOTU.otu_id)
         return self._apply_taxonomy_filters(q)
 
-    def _apply_filters(self, sample_query, taxonomy_subquery):
+    def _build_contextual_subquery(self):
         """
-        run a contextual query, returning the BPA IDs which match.
+        return the OTU ID (as ints) which have a non-zero OTU count for Samples
+        matching the contextual filter
+        """
+        # shortcut: if we don't have any filters, don't produce a subquery
+        if self._contextual_filter.is_empty():
+            return None
+        q = self._session.query(SampleOTU.otu_id) \
+            .distinct() \
+            .join(SampleContext) \
+            .filter(SampleContext.id == SampleOTU.sample_id)
+        return self._contextual_filter.apply(q)
+
+    def _assemble_sample_query(self, sample_query, taxonomy_subquery):
+        """
         applies the passed taxonomy_subquery to apply taxonomy filters.
 
         paging support: applies limit and offset, and returns (count, [bpa_id, ...])
@@ -293,6 +299,23 @@ class SampleQuery:
             q = q.filter(SampleContext.id.in_(taxonomy_subquery))
         # apply contextual filter terms
         q = self._contextual_filter.apply(q)
+        return q
+
+    def _assemble_otu_query(self, otu_query, contextual_subquery, kingdom_id):
+        """
+        applies the passed contextual_subquery to apply taxonomy filters.
+
+        paging support: applies limit and offset, and returns (count, [bpa_id, ...])
+        """
+        # we use a window function here, to get count() over the whole query without having to
+        # run it twice
+        q = otu_query
+        if contextual_subquery is not None:
+            q = q.filter(OTU.id.in_(contextual_subquery))
+        # apply taxonomic filter terms
+        q = self._apply_taxonomy_filters(q)
+        if kingdom_id is not None:
+            q = q.filter(OTU.kingdom_id == kingdom_id)
         return q
 
 
@@ -310,6 +333,9 @@ class ContextualFilter:
 
     def __repr__(self):
         return '<ContextualFilter(%s,env[%s],[%s]>' % (self.mode, repr(self.environment_filter), ','.join(repr(t) for t in self.terms))
+
+    def is_empty(self):
+        return len(self.terms) == 0 and not self.environment_filter
 
     def add_term(self, term):
         self.terms.append(term)

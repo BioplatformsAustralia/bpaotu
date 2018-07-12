@@ -67,7 +67,7 @@ def create_history_with_file(submission_id):
     submission.history_id = history.get('id')
 
     filename = os.path.split(full_file_name)[1]
-    file_id = galaxy.histories.upload_file(history.get('id'), full_file_name, filename)
+    file_id = galaxy.histories.upload_file(history.get('id'), full_file_name, filename, file_type='biom1')
 
     submission.file_id = file_id
 
