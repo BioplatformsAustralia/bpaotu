@@ -486,7 +486,7 @@ def otu_biom_export(request):
     params, errors = param_to_filters(request.GET['q'])
     zf = biom_zip_file_generator(params, timestamp)
     response = StreamingHttpResponse(zf, content_type='application/zip')
-    filename = 'BiomExport-{}.zip'.format(timestamp)
+    filename = 'BiomExport-{}.biom.zip'.format(timestamp)
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     return response
 

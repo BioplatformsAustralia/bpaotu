@@ -14,5 +14,4 @@ Dockerfile*
 develop.sh
 docker-compose*
 lib.sh
-build
 yarn_cache

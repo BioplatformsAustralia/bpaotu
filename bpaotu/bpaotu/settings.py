@@ -348,6 +348,7 @@ CACHES = {
 
 # TODO used temporarily for galaxy submission stuff. Removed when switched over to SqlAlchemy
 REDIS_HOST = env.get('REDIS_HOST', 'cache')
+REDIS_DB = env.get('REDIS_DB', '0')
 
 # Celery
 

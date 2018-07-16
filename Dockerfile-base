@@ -1,4 +1,4 @@
-FROM muccg/python-base:3.6-debian-8
+FROM muccg/python-base:3.6-debian-9
 MAINTAINER https://github.com/muccg/bpaotu
 
 ENV PROJECT_NAME bpaotu
@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libpcre3 \
   libpq5 \
   gdal-bin \
-  libgeos-c1 \
+  libgeos-3.5.1 \
   libproj-dev \
   mime-support \
   unixodbc \
