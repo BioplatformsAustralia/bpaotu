@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import axios from 'axios';
 
 import '../interfaces';
-import { CKAN_AUTH_INFO_ERROR, ckanAuthError } from '../actions';
+import { ckanAuthInfoEnded } from '../reducers/auth';
 import { store } from '../init';
 
 axios.defaults.xsrfHeaderName = "X-CSRFTOKEN";
@@ -10,7 +10,7 @@ axios.defaults.xsrfCookieName = "csrftoken";
 
 axios.interceptors.response.use(null, err => {
     if (err.status === 403) {
-        store.dispatch(ckanAuthError(err));
+        store.dispatch(ckanAuthInfoEnded(new Error(err)));
         return;
     }
     return Promise.reject(err);

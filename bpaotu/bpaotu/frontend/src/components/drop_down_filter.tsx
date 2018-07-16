@@ -6,7 +6,7 @@ import {
     Input,
     Label
 } from 'reactstrap';
-import { OperatorAndValue } from '../reducers/search_page';
+import { OperatorAndValue } from '../pages/search_page/reducers/types';
 
 interface Props {
     label: string,
@@ -36,7 +36,8 @@ export default class DropDownFilter extends React.Component<any> {
                 <Col sm={6}>
                     <Input type="select"
                         name="value"
-                        disabled={this.props.isDisabled}
+                        invalid={this.props.optionsLoadingError}
+                        disabled={this.props.isDisabled || this.props.optionsLoadingError}
                         value={this.props.selected.value}
                         onChange={this.onValueChange.bind(this)}>
                             { this.renderOptions() }
@@ -47,6 +48,9 @@ export default class DropDownFilter extends React.Component<any> {
     }
 
     renderOptions() {
+        if (this.props.optionsLoadingError) {
+            return (<option key="error" value="">Couldn't load values!</option>);
+        }
         if (this.props.optionsLoading) {
             return (<option key="loading" value="">Loading...</option>);
         }

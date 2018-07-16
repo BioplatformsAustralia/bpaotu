@@ -29,7 +29,7 @@ import Footer from './footer';
 import LoginInProgressPage from '../pages/login_in_progress_page';
 import LoginRequiredPage from '../pages/login_required_page';
 
-import { getCKANAuthInfo } from '../actions/index';
+import { getCKANAuthInfo } from '../reducers/auth';
 
 class App extends React.Component<any> {
     componentWillMount() {

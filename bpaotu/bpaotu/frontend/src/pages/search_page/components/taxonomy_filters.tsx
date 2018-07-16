@@ -1,10 +1,10 @@
 import * as _ from 'lodash';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { updateTaxonomyDropDowns } from '../actions/index';
+import { createAction } from 'redux-actions';
 
-import DropDownFilter from '../components/drop_down_filter';
-import { buildValueSelector, buildOperatorSelector } from '../actions/common';
+import { updateTaxonomyDropDowns } from '../reducers/taxonomy';
+import DropDownFilter from '../../../components/drop_down_filter';
 
 const taxonomyFilterStateToProps = name => state => { 
     const {options, isDisabled, isLoading, selected} = state.searchPage.filters.taxonomy[name];
@@ -19,8 +19,8 @@ const taxonomyFilterStateToProps = name => state => {
 const taxonomyDispatchToProps = name => dispatch => {
     const nameU = name.toUpperCase();
     return bindActionCreators({
-        selectValue: buildValueSelector('SELECT_' + nameU),
-        selectOperator: buildOperatorSelector(`SELECT_${ nameU }_OPERATOR`),
+        selectValue: createAction('SELECT_' + nameU),
+        selectOperator: createAction(`SELECT_${ nameU }_OPERATOR`),
         onChange: updateTaxonomyDropDowns(name)
     }, dispatch)
 }

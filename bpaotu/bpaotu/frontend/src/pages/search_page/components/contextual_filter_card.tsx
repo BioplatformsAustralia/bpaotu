@@ -2,8 +2,8 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
+import { fetchContextualDataDefinitions } from '../reducers/contextual_data_definitions';
 import {
-    fetchContextualDataDefinitions,
     selectContextualFiltersMode,
     addContextualFilter,
     removeContextualFilter,
@@ -13,7 +13,8 @@ import {
     changeContextualFilterValue2,
     changeContextualFilterValues,
     clearContextualFilters,
-} from '../../../actions/index';
+    doesFilterMatchEnvironment,
+} from '../reducers/contextual';
 import {
     Button,
     Card,
@@ -29,7 +30,7 @@ import {
 } from 'reactstrap';
 
 import Octicon from '../../../components/octicon';
-import EnvironmentFilter from '../../../components/environment_filter';
+import EnvironmentFilter from './environment_filter';
 import ContextualFilter from '../../../components/contextual_filter';
 
 
@@ -99,15 +100,7 @@ class ContextualFilterCard extends React.Component<any> {
     }
 }
 
-const getFilterOptions = (filters, selectedEnvironment) => {
-    if (selectedEnvironment.value === '') {
-        return filters;
-    }
-    const eq = filter => filter.environment == selectedEnvironment.value;
-    const op = selectedEnvironment.operator === 'is' ? eq : _.negate(eq);
-    const pred = filter => (_.isNull(filter.environment) || op(filter));
-    return _.filter(filters, pred);
-}
+const getFilterOptions = (filters, selectedEnvironment) => _.filter(filters, doesFilterMatchEnvironment(selectedEnvironment));
 
 function mapStateToProps(state) {
     return {

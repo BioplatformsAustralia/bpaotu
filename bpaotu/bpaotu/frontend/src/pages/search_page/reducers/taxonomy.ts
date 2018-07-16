@@ -1,14 +1,79 @@
 import * as _ from 'lodash';
 import { combineReducers } from 'redux';
+import { createAction } from 'redux-actions';
 
-import {
-    CLEAR_ALL_TAXONOMY_FILTERS,
-} from '../../actions/index';
 import {
     searchPageInitialState,
     EmptyOperatorAndValue,
     EmptySelectableLoadableValues,
-} from './index';
+    taxonomies,
+} from './types';
+
+import { getTaxonomy } from "../../../api";
+
+
+// Generic Taxonomy Actions
+
+
+const taxonomiesBefore = target => _.takeWhile(taxonomies, t => t != target);
+const taxonomiesAfter = target => taxonomies.slice(_.findIndex(taxonomies, t => t == target) + 1);
+
+const fetchStarted = (type) => `FETCH_${type.toUpperCase()}_STARTED`;
+const fetchEnded = (type) => `FETCH_${type.toUpperCase()}_ENDED`;
+
+const fetchTaxonomyOptionsStarted = type => () => ({ type: fetchStarted(type) });
+
+const fetchTaxonomyOptionsEnded = type => (data => ({
+    type: fetchEnded(type), payload: data
+}))
+
+const clearTaxonomyFilter = type => () => ({ type: `CLEAR_${ type.toUpperCase() }` });
+const disableTaxonomyFilter = type => () => ({ type: `DISABLE_${ type.toUpperCase() }` });
+
+const taxonomyConfigFor = target => ({ type: target, taxonomies: taxonomiesBefore(target) });
+
+const makeTaxonomyFetcher = config => () => (dispatch, getState) => {
+    const state = getState();
+
+    const selectedAmplicon = state.searchPage.filters.selectedAmplicon;
+    const selectedTaxonomies = _.map(config.taxonomies, taxonomy => state.searchPage.filters.taxonomy[taxonomy].selected);
+
+    if (selectedTaxonomies.length > 0 && _.last(selectedTaxonomies).value == '') {
+        dispatch(clearTaxonomyFilter(config.type)());
+        return Promise.resolve();
+    }
+
+    dispatch(fetchTaxonomyOptionsStarted(config.type)());
+    return getTaxonomy(selectedAmplicon, selectedTaxonomies)
+        .then(data => {
+            dispatch(fetchTaxonomyOptionsEnded(config.type)(data));
+        }).catch(err => {
+            dispatch(fetchTaxonomyOptionsEnded(config.type)(err));
+        });
+}
+
+export const updateTaxonomyDropDowns = taxonomy => () => (dispatch, getState) => {
+    const rest = taxonomy == '' ? taxonomies : taxonomiesAfter(taxonomy);
+
+    if (_.isEmpty(rest))
+        return Promise.resolve();
+
+    rest.forEach(t => dispatch(disableTaxonomyFilter(t)()));
+
+    const nextTaxonomy = _.first(rest);
+
+    const fetcher = makeTaxonomyFetcher(taxonomyConfigFor(nextTaxonomy));
+    dispatch(fetcher()).then(() => {
+        return dispatch(updateTaxonomyDropDowns(nextTaxonomy)());
+    });
+}
+
+export const clearAllTaxonomyFilters = createAction('CLEAR_ALL_TAXONOMY_FILTERS');
+export const fetchKingdoms = makeTaxonomyFetcher(taxonomyConfigFor('kingdom'));
+
+
+// Generic taxonomy reducers
+
 
 function makeTaxonomyReducer(taxonomyName) {
     return (state = EmptySelectableLoadableValues, action) => {
@@ -17,13 +82,12 @@ function makeTaxonomyReducer(taxonomyName) {
             clear: 'CLEAR_' + taxonomyU,
             disable: 'DISABLE_' + taxonomyU,
             fetchStarted: `FETCH_${ taxonomyU }_STARTED`,
-            fetchSuccess: `FETCH_${ taxonomyU }_SUCCESS`,
-            fetchError: `FETCH_${ taxonomyU }_ERROR`,
+            fetchEnded: `FETCH_${ taxonomyU }_ENDED`,
             select: 'SELECT_' + taxonomyU,
             selectOperator: `SELECT_${ taxonomyU }_OPERATOR`
         }
         switch (action.type) {
-            case CLEAR_ALL_TAXONOMY_FILTERS:
+            case clearAllTaxonomyFilters.toString():
             case actionTypes.clear:
                 return EmptySelectableLoadableValues;
 
@@ -40,7 +104,7 @@ function makeTaxonomyReducer(taxonomyName) {
                     isLoading: true
                 }
 
-            case actionTypes.fetchSuccess:
+            case actionTypes.fetchEnded:
                 const possibilites = action.payload.data.possibilities.new_options.possibilities;
                 const options = _.map(
                     possibilites,
@@ -65,7 +129,7 @@ function makeTaxonomyReducer(taxonomyName) {
                     ...state,
                     selected: {
                         ...state.selected,
-                        value: action.id
+                        value: action.payload
                     }
                 };
             case actionTypes.selectOperator:
@@ -73,7 +137,7 @@ function makeTaxonomyReducer(taxonomyName) {
                     ...state,
                     selected: {
                         ...state.selected,
-                        operator: action.operator
+                        operator: action.payload
                     }
                 };
         }

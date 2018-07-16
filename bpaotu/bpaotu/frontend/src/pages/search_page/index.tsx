@@ -14,7 +14,7 @@ import SearchButton from './components/search_button';
 import SearchErrors from './components/search_errors';
 import SearchResultsCard from './components/search_results_card';
 
-import { search } from '../../actions';
+import { search } from './reducers/search';
 
 
 export const SearchPage = props => (

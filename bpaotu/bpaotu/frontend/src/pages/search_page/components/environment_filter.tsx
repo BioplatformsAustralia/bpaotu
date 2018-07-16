@@ -1,16 +1,16 @@
 import * as _ from 'lodash';
 import * as React from 'react';
+import { bindActionCreators } from 'redux';
+import { connect } from 'react-redux';
 import {
     Col,
     FormGroup,
     Input,
     Label
 } from 'reactstrap';
-import { OperatorAndValue } from '../reducers/search_page/index';
-import { bindActionCreators } from 'redux';
-import { connect } from 'react-redux';
-import { selectEnvironmentOperator, selectEnvironment } from '../actions';
-import Octicon from '../components/octicon';
+import { OperatorAndValue } from '../reducers/types';
+import Octicon from '../../../components/octicon';
+import { selectEnvironment, selectEnvironmentOperator } from '../reducers/contextual';
 
 const EnvironmentInfo = 'Data may be filtered on environment to restrict samples to either soil or marine environment sources.  Marine environment includes pelagic, coastal, sediment and host associated samples.  Within marine environment, samples may be further filtered by adding another filter and selecting the "Sample Type" filter.';
 

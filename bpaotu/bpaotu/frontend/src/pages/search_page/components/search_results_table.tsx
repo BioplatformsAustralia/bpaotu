@@ -1,6 +1,6 @@
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { changeTableProperties, search } from '../../../actions/index';
+import { changeTableProperties, search } from '../reducers/search';
 
 import * as React from 'react';
 import ReactTable from 'react-table';

@@ -2,13 +2,17 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
+
+import { fetchAmplicons } from '../../../reducers/reference_data/amplicons';
+
 import {
-    fetchAmplicons,
+    clearAllTaxonomyFilters,
     fetchKingdoms,
+ } from '../reducers/taxonomy';
+import {
     selectAmplicon,
     selectAmpliconOperator,
-    clearAllTaxonomyFilters
-} from '../../../actions';
+} from '../reducers/amplicon';
 import {
     Button,
     Card,
@@ -31,7 +35,7 @@ import {
     FamilyFilter,
     GenusFilter,
     SpeciesFilter
-} from '../../../components/taxonomy_filters';
+} from './taxonomy_filters';
 
 const AmpliconFilterInfo = 'Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, Eukaryotes (v4 and v9) and Fungi.  To filter data from a single amplicon select that amplicon here.  To search all amplicons for a taxa select "all".  Note the "all" search will return non-target sequences as well as target, for example searching "Amplicon = all" + "Kingdom = Bacteria" will return all sequences classified as bacteria in all assays.';
 const TaxonomyFilterInfo = 'Taxonomy is assigned to sequences using consensus taxonomy of the top 3 hits against SILVA132 for rRNA targets and UNITE for ITS1 targets.';

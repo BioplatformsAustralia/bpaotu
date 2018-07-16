@@ -695,7 +695,6 @@ def dev_only_ckan_check_permissions(request):
     })
 
     secret_key = os.environ.get('BPAOTU_AUTH_SECRET_KEY').encode('utf8')
-    logger.debug(secret_key)
     digest_maker = hmac.new(secret_key)
     digest_maker.update(data.encode('utf8'))
     digest = digest_maker.hexdigest()

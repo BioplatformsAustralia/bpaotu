@@ -1,16 +1,12 @@
 import { combineReducers } from 'redux';
-import AmpliconsReducer from './amplicons';
-import SearchPageReducer from './search_page/index';
-import AuthReducer from './auth';
-
-const referenceDataReducer = combineReducers({
-    amplicons: AmpliconsReducer,
-});
+import referenceDataReducer from './reference_data';
+import searchPageReducer from '../pages/search_page/reducers';
+import authReducer from './auth';
 
 const rootReducer = combineReducers({
     referenceData: referenceDataReducer,
-    searchPage: SearchPageReducer,
-    auth: AuthReducer,
+    searchPage: searchPageReducer,
+    auth: authReducer,
 });
 
 export default rootReducer;

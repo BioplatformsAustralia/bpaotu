@@ -1,18 +1,19 @@
 import * as _ from 'lodash';
-import { EmptyOTUQuery } from '../search';
-import { executeSearch } from '../api';
-import { taxonomies } from './taxonomy_filters';
+import { createActions, handleActions } from 'redux-actions';
 
+import { executeSearch } from '../../../api';
+import { searchPageInitialState, ErrorList, taxonomies } from './types';
+import { submitToGalaxyEnded, submitToGalaxyStarted } from './submit_to_galaxy';
 
-export const CHANGE_TABLE_PROPERTIES = 'CHANGE_TABLE_PROPERTIES';
-export const SEARCH_STARTED = 'SEARCH_STARTED';
-export const SEARCH_SUCCESS = 'SEARCH_SUCCESS';
-export const SEARCH_ERROR = 'SEARCH_ERROR';
-
-export const changeTableProperties = (props) => ({
-    type: CHANGE_TABLE_PROPERTIES,
-    props
-})
+export const {
+    changeTableProperties,
+    searchStarted,
+    searchEnded,
+} = createActions (
+    'CHANGE_TABLE_PROPERTIES',
+    'SEARCH_STARTED',
+    'SEARCH_ENDED',
+);
 
 function marshallContextualFilters(filtersState, dataDefinitions) {
     const filterDataDefinition = name => _.find(dataDefinitions.filters, dd => dd.name === name)
@@ -72,19 +73,66 @@ export const describeSearch = (stateFilters) => {
 export const search = () => (dispatch, getState) => {
     const state = getState();
 
-    dispatch({ type: SEARCH_STARTED });
+    dispatch(searchStarted());
 
     const filters = describeSearch(state.searchPage.filters);
-
     executeSearch(filters, state.searchPage.results)
         .then(data => {
             if (_.get(data, 'data.errors', []).length > 0) {
-                dispatch({ type: SEARCH_ERROR, errors: data.data.errors });
+                dispatch(searchEnded(new ErrorList(...data.data.errors)));
                 return;
             }
-            dispatch({ type: SEARCH_SUCCESS, data });
+            dispatch(searchEnded(data));
         })
         .catch(error => {
-            dispatch({ type: SEARCH_ERROR, errors: ['Unhandled server-side error!'] });
+            dispatch(searchEnded(new ErrorList('Unhandled server-side error!')));
         })
 }
+
+export default handleActions({
+    [changeTableProperties as any]: (state, action: any) => {
+        const { page, pageSize, sorted } = action.props;
+        return {
+            ...state,
+            page,
+            pageSize,
+            sorted,
+        };
+    },
+    [searchStarted as any]: (state, action: any) => ({
+            ...state,
+            errors: [],
+            isLoading: true,
+    }),
+    [searchEnded as any]: {
+        next: (state, action: any) => {
+            const rowsCount = action.payload.data.rowsCount;
+            const pages =  Math.ceil(rowsCount / state.pageSize);
+            const newPage = Math.min(pages - 1 < 0 ? 0 : pages - 1, state.page);
+            return {
+                ...state,
+                isLoading: false,
+                data: action.payload.data.data,
+                rowsCount,
+                pages,
+                page: newPage,
+            }
+        },
+        throw: (state, action: any) => ({
+            ...state,
+            isLoading: false,
+            errors: action.payload.msgs,
+        })
+    },
+    [submitToGalaxyStarted as any]: (state, action) => ({
+        ...state,
+        errors: [],
+    }),
+    [submitToGalaxyEnded as any]: {
+        next: (state, action: any) => state,
+        throw: (state, action: any) => ({
+            ...state,
+            errors: action.payload.msgs,
+        })
+    },
+}, searchPageInitialState.results);

@@ -20,13 +20,10 @@ import {
 import Octicon from '../../../components/octicon';
 import SamplesMapModal from './samples_map_modal';
 import SearchResultsTable from './search_results_table';
-import {
-    describeSearch,
-    openSamplesMapModal,
-    submitToGalaxy,
-    dismissGalaxyAlert
-} from '../../../actions';
-import { GalaxySubmission } from '../../../reducers/search_page/index';
+import { describeSearch } from '../reducers/search';
+import { openSamplesMapModal } from '../reducers/samples_map_modal';
+import { GalaxySubmission } from '../reducers/types';
+import { submitToGalaxy, clearGalaxyAlert } from '../reducers/submit_to_galaxy';
 
 const HeaderButton = (props) => (
     <Button style={{ marginRight: 10 }} outline color="primary" disabled={props.disabled} onClick={props.onClick} >
@@ -57,7 +54,7 @@ class SearchResultsCard extends React.Component<any, any> {
                     <CardBody>
                         <div>
                             { this.props.galaxy.alerts.map((alert, idx) =>
-                                (<Alert key={idx} color={alert.color} className="text-center" toggle={() => this.props.dismissGalaxyAlert(idx)}>
+                                (<Alert key={idx} color={alert.color} className="text-center" toggle={() => this.props.clearGalaxyAlert(idx)}>
                                     {alert.text}
                                  </Alert>))}
                         </div>
@@ -107,7 +104,7 @@ function mapDispatchToProps(dispatch) {
     return bindActionCreators({
         openSamplesMapModal,
         submitToGalaxy,
-        dismissGalaxyAlert,
+        clearGalaxyAlert,
     }, dispatch);
 }
 
