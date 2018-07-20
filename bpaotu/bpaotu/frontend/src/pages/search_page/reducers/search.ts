@@ -1,0 +1,138 @@
+import * as _ from 'lodash';
+import { createActions, handleActions } from 'redux-actions';
+
+import { executeSearch } from '../../../api';
+import { searchPageInitialState, ErrorList, taxonomies } from './types';
+import { submitToGalaxyEnded, submitToGalaxyStarted } from './submit_to_galaxy';
+
+export const {
+    changeTableProperties,
+    searchStarted,
+    searchEnded,
+} = createActions (
+    'CHANGE_TABLE_PROPERTIES',
+    'SEARCH_STARTED',
+    'SEARCH_ENDED',
+);
+
+function marshallContextualFilters(filtersState, dataDefinitions) {
+    const filterDataDefinition = name => _.find(dataDefinitions.filters, dd => dd.name === name)
+    const filters = _.map(
+        _.reject(filtersState, filter => filter.name === ''),
+        filter => {
+            const dataDefinition = filterDataDefinition(filter.name);
+
+            let values: any = {};
+            switch (dataDefinition.type) {
+                case 'string':
+                    values.contains = filter.value;
+                    break;
+                case 'float':
+                case 'date':
+                    values.from = filter.value;
+                    values.to = filter.value2;
+                    break;
+                case 'ontology':
+                    values.is = filter.value;
+                    break;
+                case 'sample_id':
+                    values.is = filter.values;
+                    break;
+            }
+            return {
+                field: filter.name,
+                operator: filter.operator,
+                ...values,
+            };
+        });
+
+    return filters;
+}
+
+function marshallContextual(state) {
+    const { selectedEnvironment, filtersMode } = state;
+
+    return {
+        environment: (selectedEnvironment.value === '') ? null : selectedEnvironment,
+        mode: filtersMode,
+        filters: marshallContextualFilters(state.filters, state.dataDefinitions),
+    }
+}
+
+export const describeSearch = (stateFilters) => {
+    const selectedAmplicon = stateFilters.selectedAmplicon;
+    const selectedTaxonomies = _.map(taxonomies, taxonomy => stateFilters.taxonomy[taxonomy].selected);
+
+    return {
+        amplicon_filter: selectedAmplicon,
+        taxonomy_filters: selectedTaxonomies,
+        contextual_filters: marshallContextual(stateFilters.contextual),
+    }
+}
+
+export const search = () => (dispatch, getState) => {
+    const state = getState();
+
+    dispatch(searchStarted());
+
+    const filters = describeSearch(state.searchPage.filters);
+    executeSearch(filters, state.searchPage.results)
+        .then(data => {
+            if (_.get(data, 'data.errors', []).length > 0) {
+                dispatch(searchEnded(new ErrorList(...data.data.errors)));
+                return;
+            }
+            dispatch(searchEnded(data));
+        })
+        .catch(error => {
+            dispatch(searchEnded(new ErrorList('Unhandled server-side error!')));
+        })
+}
+
+export default handleActions({
+    [changeTableProperties as any]: (state, action: any) => {
+        const { page, pageSize, sorted } = action.props;
+        return {
+            ...state,
+            page,
+            pageSize,
+            sorted,
+        };
+    },
+    [searchStarted as any]: (state, action: any) => ({
+            ...state,
+            errors: [],
+            isLoading: true,
+    }),
+    [searchEnded as any]: {
+        next: (state, action: any) => {
+            const rowsCount = action.payload.data.rowsCount;
+            const pages =  Math.ceil(rowsCount / state.pageSize);
+            const newPage = Math.min(pages - 1 < 0 ? 0 : pages - 1, state.page);
+            return {
+                ...state,
+                isLoading: false,
+                data: action.payload.data.data,
+                rowsCount,
+                pages,
+                page: newPage,
+            }
+        },
+        throw: (state, action: any) => ({
+            ...state,
+            isLoading: false,
+            errors: action.payload.msgs,
+        })
+    },
+    [submitToGalaxyStarted as any]: (state, action) => ({
+        ...state,
+        errors: [],
+    }),
+    [submitToGalaxyEnded as any]: {
+        next: (state, action: any) => state,
+        throw: (state, action: any) => ({
+            ...state,
+            errors: action.payload.msgs,
+        })
+    },
+}, searchPageInitialState.results);
