@@ -91,7 +91,7 @@ export const search = () => (dispatch, getState) => {
 
 export default handleActions({
     [changeTableProperties as any]: (state, action: any) => {
-        const { page, pageSize, sorted } = action.props;
+        const { page, pageSize, sorted } = action.payload;
         return {
             ...state,
             page,

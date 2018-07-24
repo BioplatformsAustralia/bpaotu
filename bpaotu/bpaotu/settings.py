@@ -13,6 +13,10 @@ BPA_VERSION = VERSION
 SCRIPT_NAME = env.get("script_name", os.environ.get("HTTP_SCRIPT_NAME", ""))
 FORCE_SCRIPT_NAME = env.get("force_script_name", "") or SCRIPT_NAME or None
 
+# This should be the path under the webapp is installed on the server ex. /bpa/otu on staging
+# TODO I think this is alwasy SCRIPT_NAME if not get separately from enviroment
+BASE_URL = SCRIPT_NAME
+
 WEBAPP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # a directory that will be writable by the webserver, for storing various files...

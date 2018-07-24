@@ -34,6 +34,14 @@ const HeaderButton = (props) => (
 
 class SearchResultsCard extends React.Component<any, any> {
     render() {
+        /*
+        TODO
+        The UI for the galaxy submission will probably change, so showing the history link inside the Alert box might not
+        be necessary later on.
+        In case, we keep this code, we should probably use something like sanitize-html to make sure we don't end up with
+        anything dangerous in the text.
+        */
+        const wrapText = (text) => ({__html: text});
         return (
             <div>
                 <Card>
@@ -54,8 +62,12 @@ class SearchResultsCard extends React.Component<any, any> {
                     <CardBody>
                         <div>
                             { this.props.galaxy.alerts.map((alert, idx) =>
-                                (<Alert key={idx} color={alert.color} className="text-center" toggle={() => this.props.clearGalaxyAlert(idx)}>
-                                    {alert.text}
+                                (<Alert
+                                    key={idx}
+                                    color={alert.color}
+                                    className="text-center"
+                                    toggle={() => this.props.clearGalaxyAlert(idx)}>
+                                        <div dangerouslySetInnerHTML={wrapText(alert.text)} />
                                  </Alert>))}
                         </div>
                         <SearchResultsTable />
