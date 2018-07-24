@@ -5,13 +5,12 @@ import { describeSearch } from "./search";
 import { createActions, handleActions } from 'redux-actions';
 import { handleSimpleAPIResponse } from '../../../reducers/utils';
 
-
 export const {
     openSamplesMapModal,
     closeSamplesMapModal,
 
     samplesMapModalFetchSamplesStarted,
-    samplesMapModalSamplesFetchEnded,
+    samplesMapModalFetchSamplesEnded,
 
 } = createActions(
     'OPEN_SAMPLES_MAP_MODAL',
@@ -25,7 +24,7 @@ export const fetchSampleMapModalSamples = () => (dispatch, getState) => {
     const filters = describeSearch(getState().searchPage.filters);
 
     dispatch(samplesMapModalFetchSamplesStarted());
-    handleSimpleAPIResponse(dispatch, _.partial(executeSampleSitesSearch, filters), samplesMapModalSamplesFetchEnded);
+    handleSimpleAPIResponse(dispatch, _.partial(executeSampleSitesSearch, filters), samplesMapModalFetchSamplesEnded);
 }
 
 export default handleActions({
@@ -42,9 +41,9 @@ export default handleActions({
         isLoading: true,
         markers: [],
     }),
-    [samplesMapModalSamplesFetchEnded as any]: (state, action: any) => ({
+    [samplesMapModalFetchSamplesEnded as any]: (state, action: any) => ({
         ...state,
-        isLoading: true,
+        isLoading: false,
         markers: _.map(action.payload.data.data, sample => ({title: sample.bpa_id, lat: sample.latitude, lng: sample.longitude})),
     }),
 }, searchPageInitialState.samplesMapModal);

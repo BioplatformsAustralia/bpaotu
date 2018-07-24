@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { changeTableProperties, search } from '../reducers/search';
@@ -9,11 +10,12 @@ import 'react-table/react-table.css';
 
 class SearchResultsTable extends React.Component<any> {
     componentDidMount() {
-        this.props.search();
+        if (_.isEmpty(this.props.results.data)) {
+            this.props.search();
+        }
     }
 
     render() {
-        const linkToBPASample = window.otu_search_config.ckan_base_url
         const columns = [
             {
                 Header: "BPA Sample ID",
