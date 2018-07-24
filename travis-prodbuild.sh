@@ -14,5 +14,6 @@ fi
 ./develop.sh run-builder checkout
 ./develop.sh run build node
 ./develop.sh run-builder releasetarball
+sudo chown -R 1000 build
 ./develop.sh build prod
 ./develop.sh push prod
