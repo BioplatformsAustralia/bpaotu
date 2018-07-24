@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 export interface SearchConfig {
     base_url: string
     static_base_url: string
+    galaxy_base_url: string
 
     ckan_auth_integration: boolean
     ckan_base_url: string

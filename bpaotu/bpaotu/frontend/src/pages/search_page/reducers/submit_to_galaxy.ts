@@ -56,13 +56,7 @@ export const autoUpdateGalaxySubmission = () => (dispatch, getState) => {
     .then(data => {
         dispatch(galaxySubmissionUpdateEnded(data));
         const newLastSubmission = getLastSubmission();
-        if (newLastSubmission.finished) {
-            if (!lastSubmission.finished) {
-                // submission just finished as the result of this update
-                // auto-dismiss the alerts
-                setTimeout(() => dispatch(clearGalaxyAlert()), ALERT_AUTO_HIDE_MS);
-            }
-        } else {
+        if (!newLastSubmission.finished) {
             setTimeout(() => dispatch(autoUpdateGalaxySubmission()), GALAXY_SUBMISSION_POLL_FREQUENCY_MS)
         }
     })
@@ -77,7 +71,6 @@ function alert(text, color='primary') {
 }
 
 const GALAXY_ALERT_IN_PROGRESS = alert('Submission to Galaxy in Progress ...');
-const GALAXY_ALERT_SUCCESS = alert('Successfully submitted to Galaxy.', 'success');
 const GALAXY_ALERT_ERROR = alert('An error occured while submiting to Galaxy.', 'danger');
 
 export default handleActions({
@@ -111,9 +104,10 @@ export default handleActions({
         next: (state, action: any) => {
             const lastSubmission = _.last(state.submissions);
             const newLastSubmissionState = (submission => {
-                const { state, error } = action.payload.data.submission;
+                const { state, error, history_id } = action.payload.data.submission;
                 let newState = {
                     ...submission,
+                    historyId: history_id,
                     finished: state === 'ok' || state === 'error',
                     succeeded: state === 'ok'
                 }
@@ -124,12 +118,17 @@ export default handleActions({
             })(lastSubmission);
 
             let newAlerts = state.alerts;
+
             if (newLastSubmissionState.finished && !lastSubmission.finished) {
+                const linkToHistory = `${window.otu_search_config.galaxy_base_url}/histories/view?id=${newLastSubmissionState.historyId}`;
+                const GALAXY_ALERT_SUCCESS = alert(
+                    'Successfully submitted to Galaxy.' +
+                    ` File uploaded to your <a href="${linkToHistory}" className="alert-link">Galaxy history.</a>`, 'success');
                 newAlerts = [newLastSubmissionState.succeeded ? GALAXY_ALERT_SUCCESS : GALAXY_ALERT_ERROR];
             }
             return {
                 ...state,
-                submissions: changeElementAtIndex(state.submissions, state.submissions.length - 1, submission => newLastSubmissionState),
+                submissions: changeElementAtIndex(state.submissions, state.submissions.length - 1, _ => newLastSubmissionState),
                 alerts: newAlerts,
             }
         },
