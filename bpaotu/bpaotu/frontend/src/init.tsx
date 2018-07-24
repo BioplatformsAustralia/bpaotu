@@ -7,7 +7,7 @@ import thunk from 'redux-thunk';
 import { createStore, applyMiddleware } from 'redux';
 import { BrowserRouter as Router} from 'react-router-dom';
 
-import App from './app/index';
+import App from './app';
 import reducers from './reducers'
 
 export const store = createStore(
@@ -17,7 +17,7 @@ export const store = createStore(
 
 ReactDOM.render(
     <Provider store={store}>
-        <Router basename={window.location.pathname}>
+        <Router basename={window.otu_search_config.base_url}>
             <App />
         </Router>
     </Provider>,

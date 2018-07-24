@@ -1,9 +1,14 @@
 import * as _ from 'lodash';
 
 export interface SearchConfig {
-    ckan_auth_integration: boolean
+    base_url: string
     static_base_url: string
+    galaxy_base_url: string
+
+    ckan_auth_integration: boolean
     ckan_base_url: string
+    ckan_check_permissions: string
+
     amplicon_endpoint: string
     taxonomy_endpoint: string
     contextual_endpoint: string
@@ -15,7 +20,6 @@ export interface SearchConfig {
     search_sample_sites_endpoint: string
     required_table_headers_endpoint: string
     contextual_csv_download_endpoint: string
-    ckan_check_permissions: string
 }
 
 export enum BooleanOperator {
