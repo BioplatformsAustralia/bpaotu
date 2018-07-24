@@ -8,8 +8,8 @@ set -e
 
 # ccg-composer runs as this UID, and needs to be able to
 # create output directories within it
-mkdir -p data/
-sudo chown 1000:1000 data/
+mkdir -p data/ build/
+sudo chown 1000:1000 data/ build/
 
 ./develop.sh build base
 ./develop.sh build builder
