@@ -36,30 +36,6 @@ const ArcGIS = {
     attribution: "&amp;copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
 }
 
-
-class ProcessBPADetails extends React.Component<any, any> {
-    constructor(props: any) {
-        super(props);
-
-        this.state = {
-            bpadetails: this.props.bpadetails
-        };
-    }
-
-    public render() {
-        var rows = [];
-
-        var data = this.props.bpadetails;
-
-        return (
-            <div>
-                foobar
-            </div>
-        )
-    }
-}
-
-
 class BPASamples extends React.Component<any, any> {
     constructor(props: any) {
         super(props);
@@ -133,7 +109,6 @@ export default class SamplesMap extends React.Component<any> {
                 <div className="text-center">{this.props.isLoading ? 'Processing...' : `Showing ${this.props.markers.length} samples`}</div>
                 <Map className="space-above" center={position} zoom={this.state.zoom} ref={m => { this.leafletMap = m }}>
                     <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
-
                     <MarkerClusterGroup>
                         {this.props.markers.map((marker, index) =>
                             <Marker key={`marker-${index}`} position={marker}>

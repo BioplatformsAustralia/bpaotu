@@ -389,6 +389,7 @@ def otu_search_sample_sites(request):
         }]
     })
 
+
 # technically we should be using GET, but the specification
 # of the query (plus the datatables params) is large: so we
 # avoid the issues of long URLs by simply POSTing the query
