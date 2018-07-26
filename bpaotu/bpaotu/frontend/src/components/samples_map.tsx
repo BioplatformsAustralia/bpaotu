@@ -47,13 +47,7 @@ export default class SamplesMap extends React.Component<any> {
                 <div className="text-center">{this.props.isLoading ? 'Processing...' : `Showing ${this.props.markers.length} samples`}</div>
                 <Map className="space-above" center={position} zoom={this.state.zoom} ref={m => { this.leafletMap = m }}>
                     <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
-                    <MarkerClusterGroup>
-                        {this.props.markers.map((marker, index) =>
-                            <Marker key={`marker-${index}`} position={marker}>
-                                <Tooltip><span>{`${marker.title} (${marker.lat}, ${marker.lng})`}</span></Tooltip>
-                            </Marker>
-                        )}
-                    </MarkerClusterGroup>
+
                 </Map>
             </div>
         );

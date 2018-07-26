@@ -365,10 +365,28 @@ def otu_search_sample_sites(request):
             'longitude': sample.longitude,
         }
 
-    return JsonResponse({
-        'data': [format(sample) for sample in results]
-    })
+    # return JsonResponse({
+    #     'data': [format(sample) for sample in results]
+    # })
 
+    return JsonResponse({
+        'data': [{
+            'latitude': -32.1586,
+            'longitude': 121.7609,
+            'bpa_data': {
+                123: {
+                    'Soil Type': 'Clay',
+                    'Another Type': 'Bar'
+                },
+                456: {
+                    'Soil Type': 'Sandy'
+                },
+                789: {
+                    'Soil Type': 'Lime'
+                }
+            }
+        }]
+    })
 
 # technically we should be using GET, but the specification
 # of the query (plus the datatables params) is large: so we
