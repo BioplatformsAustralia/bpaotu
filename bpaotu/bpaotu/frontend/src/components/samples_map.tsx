@@ -1,10 +1,13 @@
 import * as React from 'react';
+import * as _ from 'lodash';
+import { TabContent, TabPane, Nav, NavItem, NavLink, CardTitle, CardText } from 'reactstrap';
 
 import {
     Map,
     Marker,
     TileLayer,
     Tooltip,
+    Popup
 } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import * as MiniMap from 'leaflet-minimap';
@@ -33,6 +36,84 @@ const ArcGIS = {
     attribution: "&amp;copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
 }
 
+
+
+
+
+
+
+
+
+
+class BPASampleDetails extends React.Component<any, any> {
+    constructor(props: any) {
+        super(props);
+        this.state = {
+            bpadata: this.props.bpadata,
+            activeTab: '0'
+        };
+
+        this.toggle = this.toggle.bind(this);
+    }
+
+    toggle(tab) {
+      if (this.state.activeTab !== tab) {
+        this.setState({
+          activeTab: tab
+        });
+      }
+    }
+
+    public render() {
+        return (
+            <div>
+                <Nav tabs>
+                {
+                    _.map(this.state.bpadata, (data, index) => (
+                        <NavItem>
+                            <NavLink
+                                classname={ index }
+                                onClick={() => { this.toggle({index}); }}>
+                                    { index }
+                            </NavLink>
+                        </NavItem>
+                    ))
+                }
+                </Nav>
+
+                <TabContent activeTab={this.state.activeTab}>
+                {
+                    _.map(this.state.bpadata, (data, index) => (
+                        <TabPane tabId={index}>
+                            <Row>
+                              <Col sm="6">
+                                <h4>Tab 1 Contents</h4>
+                              </Col>
+                            </Row>
+                        </TabPane>
+                    ))
+                }
+                </TabContent>
+            </div>
+        );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export default class SamplesMap extends React.Component<any> {
     leafletMap;
     state = {
@@ -47,6 +128,16 @@ export default class SamplesMap extends React.Component<any> {
                 <div className="text-center">{this.props.isLoading ? 'Processing...' : `Showing ${this.props.markers.length} samples`}</div>
                 <Map className="space-above" center={position} zoom={this.state.zoom} ref={m => { this.leafletMap = m }}>
                     <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
+
+
+                    <MarkerClusterGroup>
+                        {this.props.markers.map((marker, index) =>
+                            <Marker key={`marker-${index}`} position={marker}>
+                                <Tooltip><span>{`${marker.title} (${marker.lat}, ${marker.lng})`}</span></Tooltip>
+                            </Marker>
+                        )}
+                    </MarkerClusterGroup>
+
 
                 </Map>
             </div>
