@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import { TabContent, TabPane, Nav, NavItem, NavLink, CardTitle, CardText, Row, Col } from 'reactstrap';
+import { TabContent, TabPane, Nav, NavItem, NavLink, CardTitle, CardText, Row, Col, Card, Button } from 'reactstrap';
 
 import {
     Map,
@@ -36,13 +36,37 @@ const ArcGIS = {
     attribution: "&amp;copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
 }
 
-class BPASampleDetails extends React.Component<any, any> {
+
+class ProcessBPADetails extends React.Component<any, any> {
+    constructor(props: any) {
+        super(props);
+
+        this.state = {
+            bpadetails: this.props.bpadetails
+        };
+    }
+
+    public render() {
+        var rows = [];
+
+        var data = this.props.bpadetails;
+
+        return (
+            <div>
+                foobar
+            </div>
+        )
+    }
+}
+
+
+class BPASamples extends React.Component<any, any> {
     constructor(props: any) {
         super(props);
 
         this.state = {
             bpadata: this.props.bpadata,
-            activeTab: '0'
+            activeTab: _.first(_.keys(this.props.bpadata))
         };
 
         this.toggle = this.toggle.bind(this);
@@ -61,10 +85,11 @@ class BPASampleDetails extends React.Component<any, any> {
             <div>
                 <Nav tabs>
                 {
-                    _.map(this.state.bpadata, (data, index) => (
-                        <NavItem>
+                    _.map(this.props.bpadata, (data, index) => (
+                        <NavItem key={index}>
                             <NavLink
-                                onClick={() => { this.toggle({index}); }}>
+                                className={ index }
+                                onClick={() => { this.toggle(index); }}>
                                     { index }
                             </NavLink>
                         </NavItem>
@@ -72,13 +97,17 @@ class BPASampleDetails extends React.Component<any, any> {
                 }
                 </Nav>
 
-                <TabContent activeTab={this.state.activeTab}>
+                <TabContent activeTab={ this.state.activeTab }>
                 {
-                    _.map(this.state.bpadata, (data, index) => (
-                        <TabPane tabId={index}>
+                    _.map(this.props.bpadata, (data, index) => (
+                        <TabPane key={index} tabId={index}>
                             <Row>
-                              <Col sm="6">
-                                <h4>Tab 1 Contents</h4>
+                              <Col sm="12">
+                                {
+                                    _.map(data, (d, k) => (
+                                        <li>{k}: {d}</li>
+                                    ))
+                                }
                               </Col>
                             </Row>
                         </TabPane>
@@ -113,7 +142,7 @@ export default class SamplesMap extends React.Component<any> {
                                     <div>
                                         <b>{marker.lat}, {marker.lng}</b>
                                         <hr />
-                                        <BPASampleDetails bpadata={marker.bpadata} />
+                                        <BPASamples bpadata={marker.bpadata} />
                                     </div>
                                 </Popup>
                             </Marker>
