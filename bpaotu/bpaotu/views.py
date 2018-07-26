@@ -365,6 +365,7 @@ def otu_search_sample_sites(request):
             'longitude': sample.longitude,
         }
 
+    # TODO: Process the query data and package into the new format.
     # return JsonResponse({
     #     'data': [format(sample) for sample in results]
     # })

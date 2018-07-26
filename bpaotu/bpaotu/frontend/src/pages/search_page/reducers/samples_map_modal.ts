@@ -44,6 +44,6 @@ export default handleActions({
     [samplesMapModalFetchSamplesEnded as any]: (state, action: any) => ({
         ...state,
         isLoading: false,
-        markers: _.map(action.payload.data.data, sample => ({bpa_data: sample.bpa_id, lat: sample.latitude, lng: sample.longitude})),
+        markers: _.map(action.payload.data.data, sample => ({bpadata: sample.bpa_data, lat: sample.latitude, lng: sample.longitude})),
     }),
 }, searchPageInitialState.samplesMapModal);

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import { TabContent, TabPane, Nav, NavItem, NavLink, CardTitle, CardText } from 'reactstrap';
+import { TabContent, TabPane, Nav, NavItem, NavLink, CardTitle, CardText, Row, Col } from 'reactstrap';
 
 import {
     Map,
@@ -36,18 +36,10 @@ const ArcGIS = {
     attribution: "&amp;copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
 }
 
-
-
-
-
-
-
-
-
-
 class BPASampleDetails extends React.Component<any, any> {
     constructor(props: any) {
         super(props);
+
         this.state = {
             bpadata: this.props.bpadata,
             activeTab: '0'
@@ -72,7 +64,6 @@ class BPASampleDetails extends React.Component<any, any> {
                     _.map(this.state.bpadata, (data, index) => (
                         <NavItem>
                             <NavLink
-                                classname={ index }
                                 onClick={() => { this.toggle({index}); }}>
                                     { index }
                             </NavLink>
@@ -99,21 +90,6 @@ class BPASampleDetails extends React.Component<any, any> {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 export default class SamplesMap extends React.Component<any> {
     leafletMap;
     state = {
@@ -129,16 +105,20 @@ export default class SamplesMap extends React.Component<any> {
                 <Map className="space-above" center={position} zoom={this.state.zoom} ref={m => { this.leafletMap = m }}>
                     <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
 
-
                     <MarkerClusterGroup>
                         {this.props.markers.map((marker, index) =>
                             <Marker key={`marker-${index}`} position={marker}>
-                                <Tooltip><span>{`${marker.title} (${marker.lat}, ${marker.lng})`}</span></Tooltip>
+
+                                <Popup minWidth="640">
+                                    <div>
+                                        <b>{marker.lat}, {marker.lng}</b>
+                                        <hr />
+                                        <BPASampleDetails bpadata={marker.bpadata} />
+                                    </div>
+                                </Popup>
                             </Marker>
                         )}
                     </MarkerClusterGroup>
-
-
                 </Map>
             </div>
         );
