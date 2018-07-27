@@ -34,6 +34,6 @@ export default handleActions({
     [samplesMapFetchSamplesEnded as any]: (state, action: any) => ({
         ...state,
         isLoading: false,
-        samples: _.map(action.payload.data.data, sample => ({title: sample.bpa_id, lat: sample.latitude, lng: sample.longitude})),
+        samples: _.map(action.payload.data.data, sample => ({bpadata: sample.bpa_data, lat: sample.latitude, lng: sample.longitude})),
     }),
 }, initialState);
