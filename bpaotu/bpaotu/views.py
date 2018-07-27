@@ -46,7 +46,6 @@ from .util import val_or_empty
 from .biom import biom_zip_file_generator
 from . import tasks
 
-
 logger = logging.getLogger("rainbow")
 
 
@@ -358,36 +357,82 @@ def otu_search_sample_sites(request):
     with SampleQuery(params) as query:
         results = query.matching_samples()
 
-    def format(sample):
-        return {
-            'bpa_id': sample.id,
-            'latitude': sample.latitude,
-            'longitude': sample.longitude,
-        }
+    samplecontext_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
+    # First, group all results according to BPA ID
 
-    # TODO: Process the query data and package into the new format.
+    bpadata_dict = OrderedDict()
+
+    for r in results:
+        latlng_key = (r.latitude, r.longitude)
+
+        if latlng_key not in bpadata_dict:
+            bpadata_dict[latlng_key] = {}
+
+        bpaid_key = r.id
+        bpadata_dict[latlng_key][bpaid_key] = {}
+
+        for fld in samplecontext_fields:
+            if getattr(r, fld):
+                bpadata_dict[latlng_key][bpaid_key][fld] = getattr(r, fld)
+
+
+
+
+    # Then convert it into the right JsonResponse format
+    data = []
+
+    for (lat, lng) in bpadata_dict:
+        item = {}
+
+        item['latitude'] = lat
+        item['longitude'] = lng
+        item['bpa_data'] = {}
+
+        for bpaid in bpadata_dict[(lat, lng)]:
+            item['bpa_data'][bpaid] = {}
+
+            for metadata, value in bpadata_dict[(lat, lng)][bpaid].items():
+                item['bpa_data'][bpaid][metadata] = value
+
+        data.append(item)
+
+    logger.debug("---------------------------------------HERE WE ARE")
+
+    return JsonResponse({'data': data})
+
+
+
+
+    # # def format(sample):
+    # #     return {
+    # #         'bpa_id': sample.id,
+    # #         'latitude': sample.latitude,
+    # #         'longitude': sample.longitude,
+    # #     }
+    #
+    # # TODO: Process the query data and package into the new format.
+    # # return JsonResponse({
+    # #     'data': [format(sample) for sample in results]
+    # # })
+    #
     # return JsonResponse({
-    #     'data': [format(sample) for sample in results]
+    #     'data': [{
+    #         'latitude': -32.1586,
+    #         'longitude': 121.7609,
+    #         'bpa_data': {
+    #             123: {
+    #                 'Soil Type': 'Clay',
+    #                 'Another Type': 'Bar'
+    #             },
+    #             456: {
+    #                 'Soil Type': 'Sandy'
+    #             },
+    #             789: {
+    #                 'Soil Type': 'Lime'
+    #             }
+    #         }
+    #     }]
     # })
-
-    return JsonResponse({
-        'data': [{
-            'latitude': -32.1586,
-            'longitude': 121.7609,
-            'bpa_data': {
-                123: {
-                    'Soil Type': 'Clay',
-                    'Another Type': 'Bar'
-                },
-                456: {
-                    'Soil Type': 'Sandy'
-                },
-                789: {
-                    'Soil Type': 'Lime'
-                }
-            }
-        }]
-    })
 
 
 # technically we should be using GET, but the specification
