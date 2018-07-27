@@ -354,12 +354,12 @@ def otu_search_sample_sites(request):
             'data': [],
         })
 
+    samplecontext_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
+
     with SampleQuery(params) as query:
         results = query.matching_samples()
 
-    samplecontext_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
     # First, group all results according to BPA ID
-
     bpadata_dict = OrderedDict()
 
     for r in results:
@@ -374,9 +374,6 @@ def otu_search_sample_sites(request):
         for fld in samplecontext_fields:
             if getattr(r, fld):
                 bpadata_dict[latlng_key][bpaid_key][fld] = getattr(r, fld)
-
-
-
 
     # Then convert it into the right JsonResponse format
     data = []
@@ -396,43 +393,7 @@ def otu_search_sample_sites(request):
 
         data.append(item)
 
-    logger.debug("---------------------------------------HERE WE ARE")
-
     return JsonResponse({'data': data})
-
-
-
-
-    # # def format(sample):
-    # #     return {
-    # #         'bpa_id': sample.id,
-    # #         'latitude': sample.latitude,
-    # #         'longitude': sample.longitude,
-    # #     }
-    #
-    # # TODO: Process the query data and package into the new format.
-    # # return JsonResponse({
-    # #     'data': [format(sample) for sample in results]
-    # # })
-    #
-    # return JsonResponse({
-    #     'data': [{
-    #         'latitude': -32.1586,
-    #         'longitude': 121.7609,
-    #         'bpa_data': {
-    #             123: {
-    #                 'Soil Type': 'Clay',
-    #                 'Another Type': 'Bar'
-    #             },
-    #             456: {
-    #                 'Soil Type': 'Sandy'
-    #             },
-    #             789: {
-    #                 'Soil Type': 'Lime'
-    #             }
-    #         }
-    #     }]
-    # })
 
 
 # technically we should be using GET, but the specification
