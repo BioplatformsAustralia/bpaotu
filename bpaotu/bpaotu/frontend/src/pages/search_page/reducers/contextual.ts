@@ -6,7 +6,7 @@ import { createActions, handleActions, handleAction, combineActions } from 'redu
 
 import contextualDataDefinitionsReducer from './contextual_data_definitions';
 import { searchPageInitialState } from './types';
-import { changeElementAtIndex, removeElementAtIndex } from './utils';
+import { removeElementAtIndex, changeElementAtIndex } from '../../../reducers/utils';
 
 
 export const {

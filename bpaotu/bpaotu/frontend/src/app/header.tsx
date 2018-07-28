@@ -55,6 +55,10 @@ export default class Header extends React.Component<any, any> {
                         <NavItem>
                             <NavLink to='/map' activeClassName="active" tag={RRNavLink}>Map</NavLink>
                         </NavItem>
+
+                        <NavItem>
+                            <NavLink to='/contextual' activeClassName="active" tag={RRNavLink}>Contextual</NavLink>
+                        </NavItem>
                     </Nav>
                     <Nav className="ml-auto" navbar>
                         <NavItem>

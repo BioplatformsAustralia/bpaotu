@@ -17,7 +17,9 @@ const TypeToOperatorAndValue = {
     'sample_id': DropDownOperatorAndValue,
 }
 
-export default class ContextualFilter extends React.Component<any> {
+export class ContextualDropDown extends React.Component<any> {
+    dropDownSize = 11;
+
     render() {
         return (
             <Row>
@@ -27,15 +29,15 @@ export default class ContextualFilter extends React.Component<any> {
                         color="warning"
                         size="sm"
                         className="form-control"
-                        onClick={() => this.props.removeContextualFilter(this.props.index)}>
+                        onClick={() => this.props.remove(this.props.index)}>
                         <Octicon name="dash" size="small" />
                     </Button>
                 </Col>
-                <Col sm={3} className="no-padding-right">
+                <Col sm={this.dropDownSize} className="no-padding-right">
                     <Input
                         type="select"
                         value={this.props.filter.name}
-                        onChange={evt => this.props.selectContextualFilter(this.props.index, evt.target.value)}>
+                        onChange={evt => this.props.select(this.props.index, evt.target.value)}>
                         {this.renderOptions()}
                     </Input>
                 </Col>
@@ -63,6 +65,13 @@ export default class ContextualFilter extends React.Component<any> {
     }
 
     renderOperatorAndValue() {
+    }
+}
+
+export default class ContextualFilter extends ContextualDropDown {
+    dropDownSize = 3;
+
+    renderOperatorAndValue() {
         const type = _.get(this.props, 'dataDefinition.type');
         const TypeBasedOperatorAndValue = TypeToOperatorAndValue[type];
 
@@ -79,7 +88,6 @@ export default class ContextualFilter extends React.Component<any> {
         </Col>);
     }
 }
-
 
 function StringOperatorAndValue({ filter, dataDefinition, changeOperator, changeValue }) {
     return (

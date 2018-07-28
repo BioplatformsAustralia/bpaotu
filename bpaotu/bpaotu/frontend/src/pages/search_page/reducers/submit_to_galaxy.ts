@@ -3,7 +3,7 @@ import { searchPageInitialState, GalaxySubmission, ErrorList } from "./types";
 import { executeSubmitToGalaxy, getGalaxySubmission } from '../../../api';
 
 import { describeSearch } from './search';
-import { changeElementAtIndex, removeElementAtIndex } from './utils';
+import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils';
 import { createActions, handleActions } from 'redux-actions';
 
 const GALAXY_SUBMISSION_POLL_FREQUENCY_MS = 5000;

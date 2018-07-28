@@ -9,6 +9,7 @@ admin.autodiscover()
 urlpatterns = [
     url(r'^$', views.OTUSearch.as_view()),
     url(r'^map$', views.OTUSearch.as_view()),
+    url(r'^contextual$', views.OTUSearch.as_view()),
 
     url(r'^private/api/v1/amplicon-options$', views.amplicon_options, name="amplicon_options"),
     url(r'^private/api/v1/taxonomy-options$', views.taxonomy_options, name="taxonomy_options"),
