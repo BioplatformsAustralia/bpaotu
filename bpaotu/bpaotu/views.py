@@ -14,6 +14,7 @@ import zipstream
 from django.conf import settings
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
+# from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpResponse
 
@@ -150,8 +151,6 @@ def taxonomy_options(request):
     with TaxonomyOptions() as options:
         amplicon = clean_amplicon_filter(json.loads(request.GET['amplicon']))
         selected = clean_taxonomy_filter(json.loads(request.GET['selected']))
-        logger.debug('amplicon is %s', amplicon)
-        logger.debug('selected is %s', selected)
         possibilities = options.possibilities(amplicon, selected)
     return JsonResponse({
         'possibilities': possibilities

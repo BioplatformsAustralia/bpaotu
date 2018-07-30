@@ -212,8 +212,6 @@ class SampleQuery:
             cache_name.append(str(query_headers[int(sort_col)]))
             cache_name.append('desc' if sort.get('desc', False) else 'asc')
 
-        log_query(q)
-
         return self._q_all_cached(':'.join(cache_name), q)
 
     def matching_samples(self):
