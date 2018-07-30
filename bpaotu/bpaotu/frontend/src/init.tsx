@@ -10,7 +10,7 @@ import { BrowserRouter as Router} from 'react-router-dom';
 import App from './app';
 import reducers from './reducers'
 
-const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+const composeEnhancers = window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__'] || compose;
 
 export const store = createStore(
     reducers,
