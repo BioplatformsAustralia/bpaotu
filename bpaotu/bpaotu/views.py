@@ -14,7 +14,6 @@ import zipstream
 from django.conf import settings
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
-# from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpResponse
 
@@ -347,37 +346,65 @@ def required_table_headers(request):
 @require_CKAN_auth
 @require_POST
 def otu_search_sample_sites(request):
-    params, errors = param_to_filters(request.POST['otu_query'])
-    if errors:
-        return JsonResponse({
-            'errors': [str(e) for e in errors],
-            'data': [],
-        })
+    with OntologyInfo() as info:
+        def make_ontology_export(ontology_cls):
+            values = dict(info.get_values(ontology_cls))
 
-    samplecontext_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
+            def __ontology_lookup(x):
+                if x is None:
+                    return ''
+                return values[x]
+            return __ontology_lookup
 
-    with SampleQuery(params) as query:
-        results = query.matching_samples()
+        def str_none_blank(v):
+            if v is None:
+                return ''
+            return str(v)
 
-    # First, group all results according to BPA ID
-    bpadata_dict = OrderedDict()
+        params, errors = param_to_filters(request.POST['otu_query'])
+        if errors:
+            return JsonResponse({
+                'errors': [str(e) for e in errors],
+                'data': [],
+            })
 
-    for r in results:
-        latlng_key = (r.latitude, r.longitude)
+        write_fns = {}
+        for column in SampleContext.__table__.columns:
+            if column.name == 'id':
+                fn = format_bpa_id
+            elif hasattr(column, "ontology_class"):
+                fn = make_ontology_export(column.ontology_class)
+            else:
+                fn = str_none_blank
+            units = getattr(column, 'units', None)
+            title = display_name(column.name)
+            if units:
+                title += ' [%s]' % units
+            write_fns[column.name] = (title, fn)
 
-        if latlng_key not in bpadata_dict:
-            bpadata_dict[latlng_key] = {}
+        with SampleQuery(params) as query:
+            results = query.matching_samples()
 
-        bpaid_key = r.id
-        bpadata_dict[latlng_key][bpaid_key] = {}
+        # First, group all results according to BPA ID
+        bpadata_dict = OrderedDict()
 
-        for fld in samplecontext_fields:
-            if getattr(r, fld):
-                bpadata_dict[latlng_key][bpaid_key][fld] = getattr(r, fld)
+        for r in results:
+            latlng_key = (r.latitude, r.longitude)
 
-    # Then convert it into the right JsonResponse format
+            if latlng_key not in bpadata_dict:
+                bpadata_dict[latlng_key] = {}
+
+            bpaid_key = r.id
+            bpadata_dict[latlng_key][bpaid_key] = {}
+
+            for fld, (title, fn) in sorted(write_fns.items()):
+                val = fn(getattr(r, fld))
+                if val is None or val == '':
+                    continue
+                bpadata_dict[latlng_key][bpaid_key][title] = val
+
+    # manipulate data into format consumed by the front-end
     data = []
-
     for (lat, lng) in bpadata_dict:
         item = {}
 
@@ -385,7 +412,7 @@ def otu_search_sample_sites(request):
         item['longitude'] = lng
         item['bpa_data'] = {}
 
-        for bpaid in bpadata_dict[(lat, lng)]:
+        for bpaid in sorted(bpadata_dict[(lat, lng)]):
             item['bpa_data'][bpaid] = {}
 
             for metadata, value in bpadata_dict[(lat, lng)][bpaid].items():
