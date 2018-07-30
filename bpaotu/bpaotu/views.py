@@ -3,7 +3,6 @@ import csv
 import datetime
 import hmac
 import io
-import itertools
 import json
 import logging
 import os
@@ -314,25 +313,19 @@ def required_table_headers(request):
         except ValueError:
             return None
 
-    draw = _int_get_param('draw')
     start = _int_get_param('start')
     length = _int_get_param('length')
 
-    order_col = request.POST['order[0][column]']
-    order_type = request.POST['order[0][dir]']
-
-    column_names = itertools.takewhile(
-        lambda x: x is not None,
-        (request.POST.get('columns[%d][data]' % i) for i in itertools.count()))
-    added_column_names = (n for n in column_names if n not in ('bpa_id', 'environment'))
-
-    required_headers = list(added_column_names)
+    additional_headers = json.loads(request.POST.get('columns', '[]'))
+    all_headers = ['bpa_id', 'environment'] + additional_headers
 
     environment_lookup = make_environment_lookup()
 
+    sorting = _parse_table_sorting(json.loads(request.POST.get('sorting', '[]')), all_headers)
+
     params, errors = param_to_filters_without_checks(request.POST['otu_query'])
     with SampleQuery(params) as query:
-        results = query.matching_sample_headers(required_headers, order_col, order_type)
+        results = query.matching_sample_headers(additional_headers, sorting)
 
     result_count = len(results)
     results = results[start:start + length]
@@ -342,26 +335,15 @@ def required_table_headers(request):
             return None
         return environment_lookup[environment_id]
 
-    data = []
-    for t in results:
-        count = 2
-        data_dict = {"bpa_id": t[0], "environment": get_environment(t[1])}
+    def map_result(row):
+        d = dict(zip(all_headers, row))
+        d['environment'] = get_environment(d['environment'])
+        return d
 
-        for rh in required_headers:
-            data_dict[rh] = t[count]
-            count = count + 1
-
-        data.append(data_dict)
-
-    res = {
-        'draw': draw,
-    }
-    res.update({
-        'data': data,
-        'recordsTotal': result_count,
-        'recordsFiltered': result_count,
+    return JsonResponse({
+        'data': [map_result(row) for row in results],
+        'rowsCount': result_count,
     })
-    return JsonResponse(res)
 
 
 @require_CKAN_auth
@@ -629,18 +611,21 @@ def otu_log(request):
     return HttpResponse(template.render(context, request))
 
 
-@require_POST
+@require_CKAN_auth
+@require_GET
 def contextual_csv_download_endpoint(request):
-    data = request.POST.get('otu_query')
+    data = request.GET.get('otu_query')
 
-    search_terms = json.loads(data)
-    required_headers = search_terms['required_headers']
+    additional_headers = json.loads(request.GET.get('columns', '[]'))
+    all_headers = ['bpa_id', 'environment'] + additional_headers
 
-    params, errors = param_to_filters_without_checks(request.POST['otu_query'])
+    sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), all_headers)
+
+    params, errors = param_to_filters_without_checks(data)
     with SampleQuery(params) as query:
-        results = query.matching_sample_headers(required_headers)
+        results = query.matching_sample_headers(additional_headers, sorting)
 
-    header = ['sample_bpa_id', 'bpa_project'] + required_headers
+    header = ['sample_bpa_id', 'bpa_project'] + additional_headers
 
     file_buffer = io.StringIO()
     csv_writer = csv.writer(file_buffer)
@@ -663,7 +648,7 @@ def contextual_csv_download_endpoint(request):
             yield read_and_flush()
 
     response = StreamingHttpResponse(yield_csv_function(), content_type="text/csv")
-    response['Content-Disposition'] = "application/download; filename=table.csv"
+    response['Content-Disposition'] = 'attachment; filename="contextual_data.csv"'
 
     return response
 
@@ -675,6 +660,23 @@ def tables(request):
     }
 
     return HttpResponse(template.render(context, request))
+
+
+def _parse_table_sorting(sorting, headers):
+    def parse_sorting(sort):
+        if 'id' not in sort:
+            return None
+        col_name = sort.get('id')
+        try:
+            col_idx = headers.index(col_name)
+        except ValueError:
+            return None
+        return {'col_idx': col_idx, 'desc': sort.get('desc', False)}
+
+    def reject_nones(xs):
+        return [x for x in xs if x is not None]
+
+    return reject_nones(parse_sorting(s) for s in sorting)
 
 
 def dev_only_ckan_check_permissions(request):

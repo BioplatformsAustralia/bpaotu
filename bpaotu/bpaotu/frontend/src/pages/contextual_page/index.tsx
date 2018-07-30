@@ -8,39 +8,32 @@ import {
     Row,
 } from 'reactstrap';
 
-import AmpliconTaxonomyFilterCard from './components/amplicon_taxonomy_filter_card';
-import ContextualFilterCard from './components/contextual_filter_card';
+import SelectColumnsCard from './components/select_columns_card';
 import SearchButton from '../../components/search_button';
-import SearchErrors from './components/search_errors';
 import SearchResultsCard from './components/search_results_card';
 
 import { search } from './reducers/search';
 
 
-export const SearchPage = props => (
+export const ContextualPage = props => (
     <Container fluid>
-        <Row>
-            <Col sm={6}>
-                <AmpliconTaxonomyFilterCard />
-            </Col>
-            <Col sm={6}>
-                <ContextualFilterCard />
-            </Col>
-        </Row>
-
         <Row className="space-above">
             <Col sm={{ size: 6, offset: 3 }}>
-                <SearchErrors errors={props.errors} />
+                <SelectColumnsCard />
             </Col>
         </Row>
 
+        {/* The Search button is need as we search on each modification.
+            Uncomment, if you want the Search button as well.
         <Row className="space-above">
             <Col sm={{ size: 2, offset: 5 }}>
-                <SearchButton 
+                <SearchButton
                     isDisabled={props.isSearchButtonDisabled}
                     search={props.search} />
             </Col>
         </Row>
+        */}
+
         <Row className="space-above">
             <Col sm={12}>
                 <SearchResultsCard />
@@ -63,5 +56,4 @@ function mapDispatchToProps(dispatch) {
     }, dispatch);
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(SearchPage);
-
+export default connect(mapStateToProps, mapDispatchToProps)(ContextualPage);

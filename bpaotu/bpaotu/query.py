@@ -180,7 +180,7 @@ class SampleQuery:
         q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
         return self._q_all_cached('matching_sample_ids_and_environment', q)
 
-    def matching_sample_headers(self, required_headers=None, sort_col=None, sort_order=None):
+    def matching_sample_headers(self, required_headers=None, sorting=()):
         query_headers = [SampleContext.id, SampleContext.environment_id]
         joins = []  # Keep track of any foreign ontology classes which may be needed to be joined to.
 
@@ -202,17 +202,17 @@ class SampleQuery:
 
         q = self._session.query(*query_headers).outerjoin(*joins)
 
-        if sort_order == 'asc':
-            q = q.order_by(query_headers[int(sort_col)])
+        for sort in sorting:
+            sort_col = sort['col_idx']
+            if sort.get('desc', False):
+                q = q.order_by(query_headers[int(sort_col)].desc())
+            else:
+                q = q.order_by(query_headers[int(sort_col)])
 
             cache_name.append(str(query_headers[int(sort_col)]))
-            cache_name.append(sort_order)
+            cache_name.append('desc' if sort.get('desc', False) else 'asc')
 
-        elif sort_order == 'desc':
-            q = q.order_by(query_headers[int(sort_col)].desc())
-
-            cache_name.append(str(query_headers[int(sort_col)]))
-            cache_name.append(sort_order)
+        log_query(q)
 
         return self._q_all_cached(':'.join(cache_name), q)
 

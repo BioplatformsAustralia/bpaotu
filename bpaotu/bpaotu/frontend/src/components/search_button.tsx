@@ -1,9 +1,8 @@
 import * as React from 'react';
-import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
+
 import { Button } from 'reactstrap';
 
-import Octicon from '../../../components/octicon';
+import Octicon from './octicon';
 
 export default props => (
     <Button 

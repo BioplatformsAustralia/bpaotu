@@ -39,21 +39,26 @@ export function getTaxonomy(selectedAmplicon = {value: ''}, selectedTaxonomies) 
     });
 }
 
-export function executeSearch(filters, options) {
+function doSearch(url, filters, options) {
     let formData = new FormData();
     formData.append('start', (options.page * options.pageSize).toString());
     formData.append('length', options.pageSize);
+    formData.append('sorting', JSON.stringify(_.get(options, 'sorted', [])));
+    formData.append('columns', JSON.stringify(_.get(options, 'columns', [])));
     formData.append('otu_query', JSON.stringify(filters));
 
     return axios({
         method: 'post',
-        url: window.otu_search_config.search_endpoint,
+        url: url,
         data: formData,
         headers: {
             'Content-Type': 'multipart/form-data',
         }
     });
 }
+
+export const executeSearch = _.partial(doSearch, window.otu_search_config.search_endpoint);
+export const executeContextualSearch = _.partial(doSearch, window.otu_search_config.required_table_headers_endpoint);
 
 export function executeSampleSitesSearch(filters) {
     let formData = new FormData();

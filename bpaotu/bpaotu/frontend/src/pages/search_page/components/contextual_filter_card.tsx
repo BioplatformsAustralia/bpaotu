@@ -82,8 +82,8 @@ class ContextualFilterCard extends React.Component<any> {
                             dataDefinition={_.find(this.props.dataDefinitions, dd => dd.name === filter.name)}
                             options={this.props.contextualFilterOptions}
                             optionsLoading={this.props.optionsLoading}
-                            removeContextualFilter={this.props.removeContextualFilter}
-                            selectContextualFilter={this.props.selectContextualFilter}
+                            remove={this.props.removeContextualFilter}
+                            select={this.props.selectContextualFilter}
                             changeOperator={this.props.changeContextualFilterOperator}
                             changeValue={this.props.changeContextualFilterValue}
                             changeValue2={this.props.changeContextualFilterValue2}
