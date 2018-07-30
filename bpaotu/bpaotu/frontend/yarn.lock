@@ -3242,6 +3242,10 @@ leaflet-minimap@^3.6.1:
   version "3.6.1"
   resolved "https://registry.yarnpkg.com/leaflet-minimap/-/leaflet-minimap-3.6.1.tgz#2a43ff3b3d947a45a0acf4bdefc96505b673a6c6"
 
+leaflet.fullscreen@^1.4.x:
+  version "1.4.5"
+  resolved "https://registry.yarnpkg.com/leaflet.fullscreen/-/leaflet.fullscreen-1.4.5.tgz#3b558dece24d9b51ce762b2e00fe902727f47272"
+
 leaflet.markercluster@^1.3.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/leaflet.markercluster/-/leaflet.markercluster-1.3.0.tgz#58eb0654e90bd3274a660390ab0bc734212b204d"
@@ -4569,6 +4573,12 @@ react-dom@^16.4.0:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
     prop-types "^15.6.0"
+
+react-leaflet-fullscreen@^0.0.6:
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/react-leaflet-fullscreen/-/react-leaflet-fullscreen-0.0.6.tgz#03cdc15a8bba414990b45b7974285c69bfd22005"
+  dependencies:
+    leaflet.fullscreen "^1.4.x"
 
 react-leaflet-markercluster@^1.1.8:
   version "1.1.8"

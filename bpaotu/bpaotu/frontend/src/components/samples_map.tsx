@@ -9,6 +9,7 @@ import {
     Tooltip,
     Popup
 } from 'react-leaflet';
+import FullscreenControl from 'react-leaflet-fullscreen';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import * as MiniMap from 'leaflet-minimap';
 import * as L from 'leaflet';
@@ -66,7 +67,7 @@ class BPASamples extends React.Component<any, any> {
                             <NavLink
                                 className={ index }
                                 onClick={() => { this.toggle(index); }}>
-                                    { index }
+                                    Sample { index }
                             </NavLink>
                         </NavItem>
                     ))
@@ -81,8 +82,9 @@ class BPASamples extends React.Component<any, any> {
                               <Col sm="12">
                                 {
                                     _.map(data, (d, k) => (
-                                        <li>{k}: {d}</li>
+                                        <tr><th>{k}:</th><td>{d}</td></tr>
                                     ))
+
                                 }
                               </Col>
                             </Row>
@@ -108,15 +110,14 @@ export default class SamplesMap extends React.Component<any> {
             <div style={{ height: '100%' }}>
                 <div className="text-center">{this.props.isLoading ? 'Processing...' : `Showing ${this.props.markers.length} samples`}</div>
                 <Map className="space-above" center={position} zoom={this.state.zoom} ref={m => { this.leafletMap = m }}>
+                    <FullscreenControl position="topright" />
                     <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
                     <MarkerClusterGroup>
                         {this.props.markers.map((marker, index) =>
                             <Marker key={`marker-${index}`} position={marker}>
 
-                                <Popup minWidth="640">
+                                <Popup minWidth={640} maxHeight={300}>
                                     <div>
-                                        <b>{marker.lat}, {marker.lng}</b>
-                                        <hr />
                                         <BPASamples bpadata={marker.bpadata} />
                                     </div>
                                 </Popup>
