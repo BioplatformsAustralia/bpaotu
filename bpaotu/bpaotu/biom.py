@@ -54,7 +54,7 @@ def biom_header():
     '''
     biom_file = OrderedDict((
         ('id', None),
-        ('format', '1.0.0'),
+        ('format', 'Biological Observation Matrix 1.0.0'),
         ('format_url', 'http://biom-format.org'),
         ('type', 'OTU table'),
         ('generated_by', 'Bioplatforms Australia'),
