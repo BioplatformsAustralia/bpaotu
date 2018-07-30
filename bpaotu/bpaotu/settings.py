@@ -63,8 +63,6 @@ CKAN_SERVERS = ({
     'api_key': env.get('ckan_api_key', ''),
 },)
 
-CKAN_CACHE_TIMEOUT = env.get('ckan_cache_timeout', 24 * 60 * 60)
-
 DATABASES = {
     'default': {
         # 'ENGINE': env.get_db_engine("dbtype", "pgsql"),
