@@ -48,7 +48,7 @@ class SearchResultsCard extends React.Component<any, any> {
                     <CardHeader>
                         <div >
                             <HeaderButton octicon="globe" text="Show results on Map" onClick={this.props.openSamplesMapModal} />
-                            {window.otu_search_config.ckan_auth_integration && (
+                            {window.otu_search_config.galaxy_integration && (
                                 <HeaderButton
                                     octicon="clippy"
                                     text="Submit to Galaxy"
