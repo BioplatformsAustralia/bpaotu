@@ -103,7 +103,7 @@ def sample_columns(query, sample_to_column):
 
             def __ontology_lookup(x):
                 if x is None:
-                    return ''
+                    return None
                 return values[x]
             return __ontology_lookup
 
