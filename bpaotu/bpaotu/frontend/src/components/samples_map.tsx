@@ -80,12 +80,14 @@ class BPASamples extends React.Component<any, any> {
                         <TabPane key={index} tabId={index}>
                             <Row>
                               <Col sm="12">
+                                <table>
                                 {
                                     _.map(data, (d, k) => (
                                         <tr><th>{k}:</th><td>{d}</td></tr>
                                     ))
 
                                 }
+                                </table>
                               </Col>
                             </Row>
                         </TabPane>
@@ -116,7 +118,7 @@ export default class SamplesMap extends React.Component<any> {
                         {this.props.markers.map((marker, index) =>
                             <Marker key={`marker-${index}`} position={marker}>
 
-                                <Popup minWidth={640} maxHeight={300}>
+                                <Popup minWidth={640} maxHeight={200}>
                                     <div>
                                         <BPASamples bpadata={marker.bpadata} />
                                     </div>
