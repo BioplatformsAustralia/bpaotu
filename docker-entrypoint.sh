@@ -122,6 +122,14 @@ function _django_collectstatic {
 }
 
 
+function _warmcache {
+    info "running warmcache"
+    set -x
+    django-admin.py warmcache --settings="${DJANGO_SETTINGS_MODULE}"
+    set +x
+}
+
+
 function _django_test_fixtures {
     info 'loading test (iprestrict permissive) fixture'
     set -x
@@ -157,6 +165,7 @@ function _runserver() {
     _django_collectstatic
     _django_migrate
     _django_fixtures
+    _warmcache
 
     info "RUNSERVER_OPTS is ${RUNSERVER_OPTS}"
     set -x
@@ -188,6 +197,7 @@ if [ "$1" = 'uwsgi' ]; then
 
     _django_collectstatic
     _django_migrate
+    _warmcache
     # TODO what other startup do we need for prod?
     _django_check_deploy
 
@@ -205,6 +215,7 @@ if [ "$1" = 'uwsgi_local' ]; then
     _django_create_cache_table
     _django_bpaotu_setup
     _django_check_deploy
+    _warmcache
 
     set -x
     exec uwsgi --die-on-term --ini "${UWSGI_OPTS}"

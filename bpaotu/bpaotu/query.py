@@ -28,6 +28,10 @@ engine = make_engine()
 Session = sessionmaker(bind=engine)
 
 
+CACHE_FOREVER = None
+CACHE_7DAYS = (60 * 60 * 24 * 7)
+
+
 class OTUQueryParams:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
@@ -61,7 +65,7 @@ class TaxonomyOptions:
         result = cache.get(key)
         if not result:
             result = self._possibilities(amplicon, state)
-            cache.set(key, result)
+            cache.set(key, result, CACHE_FOREVER)
         return result
 
     def _possibilities(self, amplicon, state):
@@ -171,7 +175,7 @@ class SampleQuery:
             result = q.all()
             if mutate_result:
                 result = mutate_result(result)
-            cache.set(key, result)
+            cache.set(key, result, CACHE_7DAYS)
         return result
 
     def matching_sample_ids_and_environment(self):
