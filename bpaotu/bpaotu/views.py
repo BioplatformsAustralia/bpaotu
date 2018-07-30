@@ -396,9 +396,16 @@ def otu_search_sample_sites(request):
     data = []
     for (lat, lng) in bpadata_dict:
         item = {}
-
+        # TODO:
+        # this is a workaround for a leaflet bug; this should
+        # be moved into the frontend rather than being in this
+        # backend code. it resolves an issue with samples wrapping
+        # on the dateline and being shown off-screen (off coast NZ)
+        corrected_lng = lng
+        if corrected_lng < 0:
+            corrected_lng += 360
         item['latitude'] = lat
-        item['longitude'] = lng
+        item['longitude'] = corrected_lng
         item['bpa_data'] = {}
 
         for bpaid in sorted(bpadata_dict[(lat, lng)]):
