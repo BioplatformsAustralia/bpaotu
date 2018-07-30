@@ -41,7 +41,10 @@ from .models import (
     ImportFileLog,
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
-from .util import val_or_empty
+from .util import (
+    val_or_empty,
+    display_name,
+    format_bpa_id)
 from .biom import biom_zip_file_generator
 from . import tasks
 
@@ -61,20 +64,6 @@ class OTUError(Exception):
 def make_environment_lookup():
     with OntologyInfo() as info:
         return dict(info.get_values(Environment))
-
-
-def format_bpa_id(int_id):
-    return '102.100.100/%d' % int_id
-
-
-def display_name(field_name):
-    """
-    a bit of a bodge, just replace '_' with ' ' and upper-case
-    drop _id if it's there
-    """
-    if field_name.endswith('_id'):
-        field_name = field_name[:-3]
-    return ' '.join(((t[0].upper() + t[1:]) for t in field_name.split('_')))
 
 
 class OTUSearch(TemplateView):

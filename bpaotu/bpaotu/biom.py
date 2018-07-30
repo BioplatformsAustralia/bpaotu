@@ -6,7 +6,10 @@ import logging
 import os
 import zipstream
 
-from .query import SampleQuery
+from .util import display_name
+from .query import (
+    SampleQuery,
+    OntologyInfo)
 from .util import val_or_empty
 from .otu import SampleContext
 
@@ -94,8 +97,32 @@ def sample_columns(query, sample_to_column):
             return None
         return v
 
+    with OntologyInfo() as info:
+        def make_ontology_export(ontology_cls):
+            values = dict(info.get_values(ontology_cls))
+
+            def __ontology_lookup(x):
+                if x is None:
+                    return ''
+                return values[x]
+            return __ontology_lookup
+
+        ontology_fns = {}
+        titles = {}
+        for column in SampleContext.__table__.columns:
+            if hasattr(column, "ontology_class"):
+                fn = make_ontology_export(column.ontology_class)
+            else:
+                fn = empty_to_none
+            ontology_fns[column.name] = fn
+            title = display_name(column.name)
+            units = getattr(column, 'units', None)
+            if units:
+                title += ' [%s]' % units
+            titles[column.name] = title
+
     def get_context_value(sample, field):
-        return empty_to_none(getattr(sample, field))
+        return ontology_fns[field](getattr(sample, field))
 
     all_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
     non_empty = set()
@@ -112,7 +139,7 @@ def sample_columns(query, sample_to_column):
     # This is a cached query so all results are returned. Just iterate through without chunking.
     for idx, sample in enumerate(s for s in query.matching_samples() if s.id not in sample_to_column):
         sample_to_column[sample.id] = idx
-        metadata = ','.join(k_v(f, get_context_value(sample, f)) for f in fields)
+        metadata = ','.join(k_v(titles[f], get_context_value(sample, f)) for f in fields)
         sample_data = '{"id": "102.100.100/%s","metadata": {%s}}' % (sample.id, metadata)
 
         yield sample_data
