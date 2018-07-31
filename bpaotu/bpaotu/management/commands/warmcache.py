@@ -23,5 +23,5 @@ class Command(BaseCommand):
         with TaxonomyOptions() as q:
             for amplicon_id in amplicon_possibilities:
                 for kingdom_id in kingdom_possibilities:
-                    q.possibilities(make_is(amplicon_id), [make_is(kingdom_id), None, None, None, None, None, None])
+                    q.possibilities(make_is(amplicon_id), [make_is(kingdom_id), None, None, None, None, None, None], force_cache=True)
         print("Complete")

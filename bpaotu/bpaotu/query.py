@@ -58,12 +58,14 @@ class TaxonomyOptions:
     def __exit__(self, exec_type, exc_value, traceback):
         self._session.close()
 
-    def possibilities(self, amplicon, state):
+    def possibilities(self, amplicon, state, force_cache=False):
         cache = caches['search_results']
         hash_str = 'TaxonomyOptions:cached:' + repr(amplicon) + ':' + repr(state)
         key = sha256(hash_str.encode('utf8')).hexdigest()
-        result = cache.get(key)
-        if not result:
+        result = None
+        if not force_cache:
+            result = cache.get(key)
+        if result is None:
             result = self._possibilities(amplicon, state)
             cache.set(key, result, CACHE_FOREVER)
         return result
