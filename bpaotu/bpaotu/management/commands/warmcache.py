@@ -25,12 +25,13 @@ class Command(BaseCommand):
         print("Complete")
 
     def warm_map(self):
+        print("Warming spatial cache")
         params = OTUQueryParams(
             amplicon_filter=None,
             contextual_filter=ContextualFilter('and', None),
             taxonomy_filter=[None, None, None, None, None, None, None])
         spatial_query(params, cache_duration=CACHE_FOREVER, force_cache=True)
-        pass
+        print("Complete")
 
     def handle(self, *args, **kwargs):
         self.kingdom_possibilities = [None]
@@ -45,5 +46,5 @@ class Command(BaseCommand):
             self.amplicon_possibilities = [None] + [t for (t, _) in info.get_values(OTUAmplicon)]
             self.kingdom_possibilities = [None] + [t for (t, _) in info.get_values(OTUKingdom)]
 
-        # self.warm_taxonomies()
+        self.warm_taxonomies()
         self.warm_map()
