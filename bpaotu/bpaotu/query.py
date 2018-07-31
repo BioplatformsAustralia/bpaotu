@@ -5,7 +5,7 @@ from itertools import chain
 import logging
 
 import sqlalchemy
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, aliased
 
 from django.core.cache import caches
 
@@ -205,13 +205,19 @@ class SampleQuery:
                 col = getattr(SampleContext, h)
 
                 if hasattr(col, "ontology_class"):
-                    foreign_col = getattr(col.ontology_class, 'value')
+                    # we must create an alias here, as a single ontology may be linked to multiple
+                    # columns (e.g. Broad Land Use, Detailed Land use)
+                    aliased_table = aliased(col.ontology_class)
+                    foreign_id = getattr(aliased_table, 'id')
+                    foreign_col = getattr(aliased_table, 'value')
                     query_headers.append(foreign_col)
-                    joins.append(col.ontology_class)
+                    joins.append((aliased_table, foreign_id == col))
                 else:
                     query_headers.append(col)
 
-        q = self._session.query(*query_headers).outerjoin(*joins)
+        q = self._session.query(*query_headers)
+        for join, cond in joins:
+            q = q.outerjoin(join, cond)
 
         for sort in sorting:
             sort_col = sort['col_idx']
