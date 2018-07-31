@@ -23,6 +23,7 @@ Reference: https://github.com/PaulLeCam/react-leaflet/issues/453
 
 import 'react-leaflet-markercluster/dist/styles.min.css';
 import 'leaflet-minimap/dist/Control.MiniMap.min.css';
+import 'react-leaflet-fullscreen/dist/styles.css'
 
 
 // Initial Viewport is Australia
