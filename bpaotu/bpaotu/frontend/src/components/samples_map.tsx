@@ -111,7 +111,7 @@ export default class SamplesMap extends React.Component<any> {
 
         return (
             <div style={{ height: '100%' }}>
-                <div className="text-center">{this.props.isLoading ? 'Processing...' : `Showing ${this.props.markers.length} samples`}</div>
+                <div className="text-center">{this.props.isLoading ? 'Processing...' : `Showing ${this.props.markers.length} sample locations`}</div>
                 <Map className="space-above" center={position} zoom={this.state.zoom} ref={m => { this.leafletMap = m }}>
                     <FullscreenControl position="topright" />
                     <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />

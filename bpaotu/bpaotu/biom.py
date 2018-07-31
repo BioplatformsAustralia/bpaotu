@@ -110,15 +110,14 @@ def sample_columns(query, sample_to_column):
         ontology_fns = {}
         titles = {}
         for column in SampleContext.__table__.columns:
+            title = column.name
+            if title.endswith('_id'):
+                title = title[:-3]
             if hasattr(column, "ontology_class"):
                 fn = make_ontology_export(column.ontology_class)
             else:
                 fn = empty_to_none
             ontology_fns[column.name] = fn
-            title = display_name(column.name)
-            units = getattr(column, 'units', None)
-            if units:
-                title += ' [%s]' % units
             titles[column.name] = title
 
     def get_context_value(sample, field):
@@ -139,7 +138,7 @@ def sample_columns(query, sample_to_column):
     # This is a cached query so all results are returned. Just iterate through without chunking.
     for idx, sample in enumerate(s for s in query.matching_samples() if s.id not in sample_to_column):
         sample_to_column[sample.id] = idx
-        metadata = ','.join(k_v(f, get_context_value(sample, f)) for f in fields)
+        metadata = ','.join(k_v(titles[f], get_context_value(sample, f)) for f in fields)
         sample_data = '{"id": "102.100.100/%s","metadata": {%s}}' % (sample.id, metadata)
 
         yield sample_data
