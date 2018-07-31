@@ -34,8 +34,13 @@ CACHE_7DAYS = (60 * 60 * 24 * 7)
 
 class OTUQueryParams:
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
+        repr_parts = []
+        for k, v in sorted(kwargs.items()):
             setattr(self, k, v)
+            repr_parts.append(repr(k))
+            repr_parts.append(repr(v))
+        # for use by caching, should be a stable state summary
+        self.state_key = sha256(':'.join(repr_parts).encode('utf8')).hexdigest()
 
 
 class TaxonomyOptions:
