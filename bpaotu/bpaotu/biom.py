@@ -139,7 +139,7 @@ def sample_columns(query, sample_to_column):
     # This is a cached query so all results are returned. Just iterate through without chunking.
     for idx, sample in enumerate(s for s in query.matching_samples() if s.id not in sample_to_column):
         sample_to_column[sample.id] = idx
-        metadata = ','.join(k_v(titles[f], get_context_value(sample, f)) for f in fields)
+        metadata = ','.join(k_v(f, get_context_value(sample, f)) for f in fields)
         sample_data = '{"id": "102.100.100/%s","metadata": {%s}}' % (sample.id, metadata)
 
         yield sample_data
