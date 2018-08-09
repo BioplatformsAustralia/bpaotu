@@ -6,7 +6,6 @@ import logging
 import os
 import zipstream
 
-from .util import display_name
 from .query import (
     SampleQuery,
     OntologyInfo)

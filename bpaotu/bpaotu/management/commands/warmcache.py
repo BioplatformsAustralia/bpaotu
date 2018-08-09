@@ -37,11 +37,6 @@ class Command(BaseCommand):
         self.kingdom_possibilities = [None]
         self.amplicon_possibilities = [None]
 
-        def make_is(v):
-            if v is None:
-                return v
-            return OrderedDict([('operator', 'is'), ('value', v)])
-
         with OntologyInfo() as info:
             self.amplicon_possibilities = [None] + [t for (t, _) in info.get_values(OTUAmplicon)]
             self.kingdom_possibilities = [None] + [t for (t, _) in info.get_values(OTUKingdom)]
