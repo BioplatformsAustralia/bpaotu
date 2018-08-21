@@ -125,7 +125,7 @@ class DataImporter:
         self._analyze()
 
     def _clear_import_log(self):
-        logger.critical("Clearing import log")
+        logger.info("Clearing import log")
         for log_cls in (ImportSamplesMissingMetadataLog, ImportFileLog, ImportOntologyLog):
             log_cls.objects.all().delete()
 
@@ -317,18 +317,36 @@ class DataImporter:
         self._session.commit()
 
     def load_otu_abundance(self, otu_lookup):
+
         def otu_rows(fd):
             reader = csv.reader(fd, dialect='excel-tab')
             header = next(reader)
-            # there's taxonomy and control information in the last few columns. this can be
-            # excluded from the import: we skip until we hit a non-integer header
-            bpa_ids = [try_int(t.split('/')[-1]) for t in header[1:]]
-            try:
-                valid_until = bpa_ids.index(None)
-                bpa_ids = bpa_ids[:valid_until]
-            except ValueError:
-                pass
-            return bpa_ids, reader
+
+            assert(header[0] == '#OTU ID')
+
+            # find the four or five-digit BPA IDs: there are integers in here which are not BPA IDs,
+            # but they're not in the BPA ID range (currently 7031 -> 58020). FIXME, this is crude
+            # and it would be better to more clearly identify BPA / non BPA data; discussing with CSIRO
+            idx_bpa_id = [(i + 1, try_int(t)) for (i, t) in enumerate(header[1:]) if len(t) == 4 or len(t) == 5]
+            idx_bpa_id = [(i, t) for (i, t) in idx_bpa_id if t is not None]
+
+            def _tuplerows():
+                for row in reader:
+                    otu_code = row[0]
+                    otu_id = otu_lookup.get(otu_hash(otu_code))
+                    if otu_id is None:
+                        logger.critical(['OTU not defined', otu_code])
+                        continue
+                    for idx, bpa_id in idx_bpa_id:
+                        count = row[idx]
+                        if count == '' or count == '0' or count == '0.0':
+                            continue
+                        count = int(float(count))
+                        if count == 0:
+                            continue
+                        yield otu_id, bpa_id, count
+
+            return [t[1] for t in idx_bpa_id], _tuplerows()
 
         def _missing_bpa_ids(fname):
             have_bpaids = set([t[0] for t in self._session.query(SampleContext.id)])
@@ -342,26 +360,12 @@ class DataImporter:
             # note: (for now) we have to cope with duplicate columns in the input files.
             # we just make sure they don't clash, and this can be reported to CSIRO
             with gzip.open(fname, 'rt') as fd:
-                bpa_ids, reader = otu_rows(fd)
-                for (imported, row) in enumerate(reader):
-                    otu_code = row[0]
-                    otu_id = otu_lookup.get(otu_hash(otu_code))
-                    if otu_id is None:
-                        logger.critical(['OTU not defined', otu_code])
+                bpa_ids, tuple_rows = otu_rows(fd)
+                for entry, (otu_id, bpa_id, count) in enumerate(tuple_rows):
+                    if bpa_id in skip_missing:
                         continue
-                    to_make = {}
-                    for bpa_id, count in zip(bpa_ids, row[1:]):
-                        if count == '' or count == '0' or count == '0.0':
-                            continue
-                        if bpa_id in skip_missing:
-                            continue
-                        count = int(float(count))
-                        if bpa_id in to_make and to_make[bpa_id] != count:
-                            raise Exception("conflicting OTU data, abort.")
-                        to_make[bpa_id] = count
-                    for bpa_id, count in to_make.items():
-                        yield [bpa_id, otu_id, count]
-                ImportFileLog.make_file_log(fname, file_type='Abundance', rows_imported=imported, rows_skipped=0)
+                    yield (bpa_id, otu_id, count)
+                ImportFileLog.make_file_log(fname, file_type='Abundance', rows_imported=entry, rows_skipped=0)
 
         logger.warning('Loading OTU abundance tables')
         missing_bpa_ids = set()
