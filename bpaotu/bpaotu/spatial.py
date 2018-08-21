@@ -1,6 +1,5 @@
 
 from django.core.cache import caches
-from hashlib import sha256
 from .query import (
     OntologyInfo,
     SampleQuery,
@@ -9,7 +8,8 @@ from .otu import (
     SampleContext)
 from .util import (
     display_name,
-    format_bpa_id)
+    format_bpa_id,
+    make_cache_key)
 import logging
 from collections import OrderedDict
 
@@ -106,8 +106,9 @@ def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=False):
     which will need to be removed if this is to be used more generally
     """
     cache = caches['search_results']
-    hash_str = 'SpatialQuery:cached:' + params.state_key
-    key = sha256(hash_str.encode('utf8')).hexdigest()
+    key = make_cache_key(
+        'spatial_query',
+        params.state_key)
     result = None
     if not force_cache:
         result = cache.get(key)

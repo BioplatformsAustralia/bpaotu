@@ -1,3 +1,4 @@
+import os
 import logging
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy import Column, Integer, ForeignKey, String, Date, Float
@@ -25,7 +26,7 @@ class SchemaMixin():
 
 class OntologyMixin(SchemaMixin):
     id = Column(Integer, primary_key=True)
-    value = Column(String, unique=True)
+    value = Column(String, unique=True, nullable=False)
 
     @classmethod
     def make_tablename(cls, name):
@@ -39,9 +40,14 @@ class OntologyMixin(SchemaMixin):
         return "<%s(%s)>" % (type(self).__name__, self.value)
 
 
-def ontology_fkey(ontology_class, index=False):
+def ontology_fkey(ontology_class, index=False, default=None, nullable=False):
     nm = ontology_class.__name__
-    column = Column(Integer, ForeignKey(SCHEMA + '.' + OntologyMixin.make_tablename(nm) + '.id'), index=index)
+    column = Column(
+        Integer,
+        ForeignKey(SCHEMA + '.' + OntologyMixin.make_tablename(nm) + '.id'),
+        index=index,
+        nullable=nullable,
+        default=default)
     # stash this here for introspection later: saves a lot of manual
     # work with sqlalchemy's relationship() stuff
     column.ontology_class = ontology_class
@@ -97,17 +103,17 @@ class OTUSpecies(OntologyMixin, Base):
 class OTU(SchemaMixin, Base):
     __tablename__ = 'otu'
     id = Column(Integer, primary_key=True)
-    code = Column(String(length=1024))  # long GATTACAt-ype string
+    code = Column(String(length=1024), nullable=False)  # long GATTACAt-ype string
 
     # we query OTUs via heirarchy, so indexes on the first few
     # layers are sufficient
     kingdom_id = ontology_fkey(OTUKingdom, index=True)
     phylum_id = ontology_fkey(OTUPhylum, index=True)
     class_id = ontology_fkey(OTUClass, index=True)
-    order_id = ontology_fkey(OTUOrder)
-    family_id = ontology_fkey(OTUFamily)
-    genus_id = ontology_fkey(OTUGenus)
-    species_id = ontology_fkey(OTUSpecies)
+    order_id = ontology_fkey(OTUOrder, index=True)
+    family_id = ontology_fkey(OTUFamily, index=True)
+    genus_id = ontology_fkey(OTUGenus, index=True)
+    species_id = ontology_fkey(OTUSpecies, index=True)
     amplicon_id = ontology_fkey(OTUAmplicon, index=True)
 
     kingdom = relationship(OTUKingdom)
@@ -353,22 +359,23 @@ class SampleContext(SchemaMixin, Base):
     zm_sigmat = Column(Float)
     zm_delta_sigmat = Column(Float)
     #
-    # ontologies
+    # ontologies: note the default, which is by definition the empty string (''), we don't permit NULLs
+    # in ontology columns
     #
-    australian_soil_classification_id = ontology_fkey(SampleAustralianSoilClassification)
-    broad_land_use_id = ontology_fkey(SampleLandUse)
-    color_id = ontology_fkey(SampleColor)
-    detailed_land_use_id = ontology_fkey(SampleLandUse)
-    fao_soil_classification_id = ontology_fkey(SampleFAOSoilClassification)
-    general_ecological_zone_id = ontology_fkey(SampleEcologicalZone)
-    horizon_classification_id = ontology_fkey(SampleHorizonClassification)
-    immediate_previous_land_use_id = ontology_fkey(SampleLandUse)
-    profile_position_id = ontology_fkey(SampleProfilePosition)
-    environment_id = ontology_fkey(Environment)
-    sample_type_id = ontology_fkey(SampleType)
-    soil_sample_storage_method_id = ontology_fkey(SampleStorageMethod)
-    tillage_id = ontology_fkey(SampleTillage)
-    vegetation_type_id = ontology_fkey(SampleVegetationType)
+    australian_soil_classification_id = ontology_fkey(SampleAustralianSoilClassification, default=0)
+    broad_land_use_id = ontology_fkey(SampleLandUse, default=0)
+    color_id = ontology_fkey(SampleColor, default=0)
+    detailed_land_use_id = ontology_fkey(SampleLandUse, default=0)
+    fao_soil_classification_id = ontology_fkey(SampleFAOSoilClassification, default=0)
+    general_ecological_zone_id = ontology_fkey(SampleEcologicalZone, default=0)
+    horizon_classification_id = ontology_fkey(SampleHorizonClassification, default=0)
+    immediate_previous_land_use_id = ontology_fkey(SampleLandUse, default=0)
+    profile_position_id = ontology_fkey(SampleProfilePosition, default=0)
+    environment_id = ontology_fkey(Environment, default=0)
+    sample_type_id = ontology_fkey(SampleType, default=0)
+    soil_sample_storage_method_id = ontology_fkey(SampleStorageMethod, default=0)
+    tillage_id = ontology_fkey(SampleTillage, default=0)
+    vegetation_type_id = ontology_fkey(SampleVegetationType, default=0)
 
     def __repr__(self):
         return "<SampleContext(%d)>" % (self.id)
@@ -376,8 +383,8 @@ class SampleContext(SchemaMixin, Base):
 
 class SampleOTU(SchemaMixin, Base):
     __tablename__ = 'sample_otu'
-    sample_id = Column(Integer, ForeignKey(SCHEMA + '.sample_context.id'), primary_key=True)
-    otu_id = Column(Integer, ForeignKey(SCHEMA + '.otu.id'), primary_key=True)
+    sample_id = Column(Integer, ForeignKey(SCHEMA + '.sample_context.id'), nullable=False, primary_key=True, index=True)
+    otu_id = Column(Integer, ForeignKey(SCHEMA + '.otu.id'), nullable=False, primary_key=True, index=True)
     count = Column(Integer, nullable=False)
 
     def __repr__(self):
@@ -387,4 +394,5 @@ class SampleOTU(SchemaMixin, Base):
 def make_engine():
     conf = settings.DATABASES['default']
     engine_string = 'postgres://%(USER)s:%(PASSWORD)s@%(HOST)s:%(PORT)s/%(NAME)s' % (conf)
-    return create_engine(engine_string)
+    echo = os.environ.get('BPAOTU_ECHO') == '1'
+    return create_engine(engine_string, echo=echo)

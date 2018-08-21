@@ -1,7 +1,7 @@
 import datetime
 from functools import partial
-from hashlib import sha256
 from itertools import chain
+from .util import make_cache_key
 import logging
 
 import sqlalchemy
@@ -40,7 +40,9 @@ class OTUQueryParams:
             repr_parts.append(repr(k))
             repr_parts.append(repr(v))
         # for use by caching, should be a stable state summary
-        self.state_key = sha256(':'.join(repr_parts).encode('utf8')).hexdigest()
+        self.state_key = make_cache_key(
+            'OTUQueryParams.__init__',
+            *repr_parts)
 
 
 class TaxonomyOptions:
@@ -65,8 +67,10 @@ class TaxonomyOptions:
 
     def possibilities(self, amplicon, state, force_cache=False):
         cache = caches['search_results']
-        hash_str = 'TaxonomyOptions:cached:' + repr(amplicon) + ':' + repr(state)
-        key = sha256(hash_str.encode('utf8')).hexdigest()
+        key = make_cache_key(
+            'TaxonomyOptions.possibilities',
+            amplicon,
+            state)
         result = None
         if not force_cache:
             result = cache.get(key)
@@ -172,11 +176,12 @@ class SampleQuery:
 
     def _q_all_cached(self, topic, q, mutate_result=None):
         cache = caches['search_results']
-        hash_str = 'SampleQuery:cached:%s:' % (topic) \
-            + repr(self._amplicon_filter) + ':' \
-            + repr(self._taxonomy_filter) + ':' \
-            + repr(self._contextual_filter)
-        key = sha256(hash_str.encode('utf8')).hexdigest()
+        key = make_cache_key(
+            'SampleQuery._q_all_cached',
+            topic,
+            self._amplicon_filter,
+            self._taxonomy_filter,
+            self._contextual_filter)
         result = cache.get(key)
         if not result:
             result = q.all()
@@ -247,14 +252,17 @@ class SampleQuery:
         def to_boolean(result):
             return result[0][0]
 
-        q = self._session.query(self.matching_sample_otus(kingdom_id).exists())
+        q = self._session.query(self.matching_sample_otus(
+            SampleOTU.sample_id,
+            SampleOTU.otu_id,
+            SampleOTU.count, kingdom_id=kingdom_id).exists())
         return self._q_all_cached('has_matching_sample_otus:%s' % (kingdom_id), q, to_boolean)
 
-    def matching_sample_otus(self, kingdom_id=None):
+    def matching_sample_otus(self, *args, kingdom_id=None):
         # we do a cross-join, but convert to an inner-join with
         # filters. as SampleContext is in the main query, the
         # machinery for filtering above will just work
-        q = self._session.query(OTU, SampleOTU, SampleContext) \
+        q = self._session.query(*args) \
             .filter(OTU.id == SampleOTU.otu_id) \
             .filter(SampleContext.id == SampleOTU.sample_id)
         q = self._apply_taxonomy_filters(q)

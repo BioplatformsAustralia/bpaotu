@@ -7,6 +7,7 @@ import os
 import zipstream
 
 from .query import (
+    SampleOTU,
     SampleQuery,
     OntologyInfo)
 from .util import val_or_empty
@@ -144,17 +145,16 @@ def sample_columns(query, sample_to_column):
 
 
 def abundance_tbl(query, otu_to_row, sample_to_column):
-    q = query.matching_sample_otus()
-
-    for otu, sampleotu, samplecontext in q.yield_per(50):
+    q = query.matching_sample_otus(SampleOTU.otu_id, SampleOTU.sample_id, SampleOTU.count)
+    for otu_id, sample_id, count in q.yield_per(50):
         # a little messy, but this is our busiest bit of code in the
         # entire BIOM output process
         yield '[' + \
-            str(otu_to_row[sampleotu.otu_id]) + \
+            str(otu_to_row[otu_id]) + \
             ',' + \
-            str(sample_to_column[sampleotu.sample_id]) + \
+            str(sample_to_column[sample_id]) + \
             ',' + \
-            str(sampleotu.count) + \
+            str(count) + \
             ']'
 
 

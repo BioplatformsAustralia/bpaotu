@@ -72,6 +72,8 @@ def otu_hash(code):
 
 
 class DataImporter:
+    # note: some files have species, some don't
+    taxonomy_header = ['#OTU ID', 'kingdom', 'phylum', 'class', 'order', 'family', 'genus']
     soil_ontologies = OrderedDict([
         ('environment', Environment),
         ('sample_type', SampleType),
@@ -108,6 +110,19 @@ class DataImporter:
         self._session.execute(CreateSchema(SCHEMA))
         self._session.commit()
         Base.metadata.create_all(self._engine)
+        self.ontology_init()
+
+    def ontology_init(self):
+        # set blank as an option for all ontologies, bar Environment
+        all_cls = set(c for c in list(self.marine_ontologies.values()) + list(self.soil_ontologies.values()) if c is not Environment)
+        for db_class in all_cls:
+            instance = db_class(id=0, value='')
+            self._session.add(instance)
+        self._session.commit()
+
+    def complete(self):
+        self._session.close()
+        self._analyze()
 
     def _clear_import_log(self):
         logger.critical("Clearing import log")
@@ -124,8 +139,15 @@ class DataImporter:
                 if 'already exists' not in str(e):
                     logger.critical("couldn't create extension: %s (%s)" % (extension, e))
 
+    def _analyze(self):
+        logger.info("Completing ingest: analyze")
+        self._engine.execute('ANALYZE;')
+
     def _build_ontology(self, db_class, vals):
         for val in sorted(vals):
+            # this option is defined at import init
+            if val == '':
+                continue
             instance = db_class(value=val)
             self._session.add(instance)
         self._session.commit()
@@ -197,17 +219,18 @@ class DataImporter:
                 logger.warning('reading taxonomy file: %s' % fname)
                 imported = 0
                 with gzip.open(fname, 'rt') as fd:
-                    for row in csv.reader(fd, dialect='excel-tab'):
-                        if row[0].startswith('#'):
+                    for idx, row in enumerate(csv.reader(fd, dialect='excel-tab')):
+                        # latest version of the format has a counter running in the first column, which we don't need
+                        row = row[1:]
+                        if idx == 0:
+                            assert(row[:len(self.taxonomy_header)] == self.taxonomy_header)
+                            have_species = 'species' in row
                             continue
                         otu = row[0]
-                        ontology_parts = row[1:]
-                        if len(ontology_parts) > len(ontologies):
-                            # work-around: duplicated species column; reported to CSIRO
-                            ontology_parts = ontology_parts[:len(ontologies) - 1] + [ontology_parts[-1]]
-                        elif len(ontology_parts) < len(ontologies):
-                            # work-around: short rows; reported to CSIRO
-                            ontology_parts = ontology_parts[:-1] + [''] * (len(ontologies) - len(ontology_parts)) + [ontology_parts[-1]]
+                        if have_species:
+                            ontology_parts = row[1:]
+                        else:
+                            ontology_parts = row[1:-1] + ['undefined', row[-1]]
                         assert(len(ontology_parts) == len(ontologies))
                         obj = dict(zip(ontologies.keys(), ontology_parts))
                         obj['otu'] = otu
@@ -230,10 +253,8 @@ class DataImporter:
                     otu_lookup[otu_hash(row['otu'])] = _id
                     out_row = [_id, row['otu']]
                     for field in ontologies:
-                        if field not in row:
-                            out_row.append('')
-                        else:
-                            out_row.append(mappings[field][row[field]])
+                        val = row.get(field, '')
+                        out_row.append(mappings[field][val])
                     w.writerow(out_row)
             logger.warning("loading taxonomy data from temporary CSV file")
             self._engine.execute(
@@ -323,7 +344,11 @@ class DataImporter:
             with gzip.open(fname, 'rt') as fd:
                 bpa_ids, reader = otu_rows(fd)
                 for (imported, row) in enumerate(reader):
-                    otu_id = otu_lookup[otu_hash(row[0])]
+                    otu_code = row[0]
+                    otu_id = otu_lookup.get(otu_hash(otu_code))
+                    if otu_id is None:
+                        logger.critical(['OTU not defined', otu_code])
+                        continue
                     to_make = {}
                     for bpa_id, count in zip(bpa_ids, row[1:]):
                         if count == '' or count == '0' or count == '0.0':

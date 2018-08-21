@@ -6,6 +6,13 @@ import logging
 logger = logging.getLogger("rainbow")
 
 
+class ImportMetadata(models.Model):
+    methodology = models.CharField(max_length=32)
+    revision_date = models.DateField(null=False)
+    imported_at = models.DateTimeField(null=False)
+    uuid = models.CharField(max_length=36, null=False)
+
+
 class ImportFileLog(models.Model):
     filename = models.CharField(max_length=300, primary_key=True)
     file_type = models.CharField(max_length=300)
