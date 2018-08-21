@@ -24,10 +24,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   zlib1g-dev \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY docker-build.key /root/.ssh/id_rsa
-RUN chmod 600 /root/.ssh/id_rsa && \
-    echo "StrictHostKeyChecking no" > /root/.ssh/config && \
-    echo "UserKnownHostsFile /dev/null" >> /root/.ssh/config
 COPY docker-entrypoint-build.sh /app/docker-entrypoint-build.sh
 
 RUN mkdir -p /data \
