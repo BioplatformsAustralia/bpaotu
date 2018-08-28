@@ -36,14 +36,14 @@ def generate_biom_file(query):
 def biom_zip_file_generator(params, timestamp):
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     with SampleQuery(params) as query:
-        zf.write_iter("BiomExport-{}.biom".format(timestamp), (s.encode('utf8') for s in generate_biom_file(query)))
+        zf.write_iter(params.filename(timestamp, 'biom'), (s.encode('utf8') for s in generate_biom_file(query)))
     return zf
 
 
 def save_biom_zip_file(params, dir='/data'):
     timestamp = datetime.datetime.now().replace(microsecond=0).isoformat().replace(':', '')
 
-    filename = os.path.join(dir, 'BiomExport-{}.biom.zip'.format(timestamp))
+    filename = os.path.join(dir, params.filename(timestamp, 'biom.zip'))
     zf = biom_zip_file_generator(params, timestamp)
     with open(filename, 'wb') as f:
         for data in zf:

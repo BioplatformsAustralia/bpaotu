@@ -1,6 +1,7 @@
 from .libs.excel_wrapper import ExcelWrapper, make_field_definition as fld
 from .libs import ingest_utils
 import datetime
+import re
 from .contextual_controlled_vocabularies import (
     AustralianSoilClassificationVocabulary,
     BroadVegetationTypeVocabulary,
@@ -251,8 +252,8 @@ marine_field_specs = {
         fld('pulse_amplitude_modulated_pam_fluorometer_measurement', 'pulse amplitude modulated (pam) fluorometer measurement', coerce=ingest_utils.get_clean_number),
         fld('host_state', 'host state (free text field)'),
         fld('host_abundance', 'host abundance (individuals per m2)', coerce=ingest_utils.get_clean_number),
-        fld('light_intensity_surface', 'Light intensity (Surface) µmol/m²/s¯¹', coerce=ingest_utils.get_clean_number),
-        fld('light_intensity_meadow', 'Light intensity (Meadow) µmol/m²/s¯¹', coerce=ingest_utils.get_clean_number),
+        fld('light_intensity_surface', re.compile(r'^light intensity \(surface\).*'), coerce=ingest_utils.get_clean_number),
+        fld('light_intensity_meadow', re.compile(r'^light intensity \(meadow\).*'), coerce=ingest_utils.get_clean_number),
     ],
     'Seaweed': [
         fld('bpa_id', 'bpa_id', coerce=ingest_utils.extract_bpa_id),
@@ -268,8 +269,6 @@ marine_field_specs = {
         fld('notes', 'notes'),
         fld('pulse_amplitude_modulated_pam_fluorometer_measurement', 'pulse amplitude modulated (pam) fluorometer measurement', coerce=ingest_utils.get_clean_number),
         fld('host_state', 'host state (free text field)'),
-        fld('host_abundance', 'average host abundance (individuals per m2)', coerce=ingest_utils.get_clean_number),
-        fld('length', 'length (cm)', coerce=ingest_utils.get_clean_number),
         fld('fouling', 'fouling', coerce=ingest_utils.get_clean_number),
         fld('fouling_organisms', 'fouling_organisms'),
         fld('bleaching', 'bleaching (%)', coerce=ingest_utils.get_clean_number),
@@ -486,6 +485,7 @@ def soil_contextual_rows(metadata_path):
         metadata_path,
         sheet_name=None,
         header_length=1,
+        suggest_template=True,
         column_name_row_index=0,
         additional_context={'environment': 'Soil', 'sample_type': 'Soil'})
 
@@ -523,6 +523,9 @@ def soil_contextual_rows(metadata_path):
                 del obj[cleanup_name]
         objs.append(obj)
 
+    for error in wrapper.get_errors():
+        logger.error(error)
+
     for val in onotology_error_values:
         il = ImportOntologyLog(environment="Soil", ontology_name=val, import_result=list(sorted(onotology_error_values[val])))
         il.save()
@@ -541,12 +544,15 @@ def marine_contextual_rows(metadata_path):
             sheet_name=sheet_name,
             header_length=1,
             column_name_row_index=0,
+            suggest_template=True,
             additional_context={'sample_type': sheet_name, 'environment': 'Marine'})
         for row in wrapper.get_all():
             obj = row._asdict()
             if obj['bpa_id'] is None:
                 continue
             objs.append(obj)
+        for error in wrapper.get_errors():
+            logger.error(error)
 
     valid_objs = [t for t in objs if context_valid(t)]
     ImportFileLog.make_file_log(metadata_path, file_type='Marine contextual metadata', rows_imported=len(valid_objs), rows_skipped=len(objs) - len(valid_objs))

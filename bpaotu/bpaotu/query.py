@@ -33,16 +33,23 @@ CACHE_7DAYS = (60 * 60 * 24 * 7)
 
 
 class OTUQueryParams:
-    def __init__(self, **kwargs):
-        repr_parts = []
-        for k, v in sorted(kwargs.items()):
-            setattr(self, k, v)
-            repr_parts.append(repr(k))
-            repr_parts.append(repr(v))
+    def __init__(self, amplicon_filter, contextual_filter, taxonomy_filter):
+        self.amplicon_filter = amplicon_filter
+        self.contextual_filter = contextual_filter
+        self.taxonomy_filter = taxonomy_filter
         # for use by caching, should be a stable state summary
-        self.state_key = make_cache_key(
-            'OTUQueryParams.__init__',
-            *repr_parts)
+        self.state_key = make_cache_key(repr(self))
+
+    def filename(self, timestamp, extension):
+        return 'BiomExport-{}.{}'.format(timestamp, extension)
+
+    def __repr__(self):
+        # Note: used for caching, so make sure all components have a defined
+        # representation that's stable over time
+        return 'OTUQueryParams<{},{},{}>'.format(
+            self.amplicon_filter,
+            self.contextual_filter,
+            self.taxonomy_filter)
 
 
 class TaxonomyOptions:
