@@ -27,7 +27,7 @@ Three categories of file are ingested:
 
 All files should be placed under a base directory, and then the ingest can be run as a Django management command:
 
-```bash
+```console
 $ docker-compose exec runserver bash
 root@420c1d1e9fe4:~# /app/docker-entrypoint.sh django-admin otu_ingest /data/otu/
 ```
