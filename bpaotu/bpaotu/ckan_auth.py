@@ -13,13 +13,14 @@ logger = logging.getLogger("rainbow")
 
 
 FORBIDDEN_RESPONSE_MSG = 'Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.'
+SECS_IN_DAY = 60 * 60 * 24
 
 
 class OTUVerificationError(Exception):
     pass
 
 
-def require_CKAN_auth(func):
+def require_CKAN_auth(func):  # noqa N802
     if not settings.CKAN_AUTH_INTEGRATION:
         return func
 
@@ -54,8 +55,6 @@ def _otu_endpoint_verification(data):
         raise OTUVerificationError('Secret key does not match.')
 
     json_data = json.loads(data_portion)
-
-    SECS_IN_DAY = 60 * 60 * 24
 
     timestamp = json_data['timestamp']
     organisations = json_data['organisations']

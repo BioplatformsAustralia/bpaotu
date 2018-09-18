@@ -126,7 +126,10 @@ class TaxonomyOptions:
             # clear invalidated part of the state
             state = state[:target_idx] + [None] * (len(TaxonomyOptions.hierarchy) - target_idx)
             # build up a query of the OTUs for our target attribute
-            q = self._session.query(getattr(OTU, target_attr), target_class.value).group_by(getattr(OTU, target_attr), target_class.value).order_by(target_class.value)
+            q = (self._session.query(
+                getattr(OTU, target_attr), target_class.value)
+                .group_by(getattr(OTU, target_attr), target_class.value)
+                .order_by(target_class.value))
 
             q = apply_amplicon_filter(q, amplicon)
             for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, state):
@@ -362,7 +365,8 @@ class ContextualFilter:
         self.terms = []
 
     def __repr__(self):
-        return '<ContextualFilter(%s,env[%s],[%s]>' % (self.mode, repr(self.environment_filter), ','.join(repr(t) for t in self.terms))
+        return '<ContextualFilter(%s,env[%s],[%s]>' % (
+            self.mode, repr(self.environment_filter), ','.join(repr(t) for t in self.terms))
 
     def is_empty(self):
         return len(self.terms) == 0 and not self.environment_filter

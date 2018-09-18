@@ -15,6 +15,19 @@ def val_or_empty(obj):
     return obj.value
 
 
+def empty_to_none(v):
+    # FIXME: push this back in the core metadata handling
+    if v == '':
+        return None
+    return v
+
+
+def str_none_blank(v):
+    if v is None:
+        return ''
+    return str(v)
+
+
 def make_cache_key(*args):
     """
     make a cache key, which will be tied to the UUID of the current import,

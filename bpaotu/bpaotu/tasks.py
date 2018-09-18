@@ -55,15 +55,16 @@ def save_biom_file(submission_id):
     return submission_id
 
 
+GALAXY_NEW_HISTORY_NAME = 'BPA OTU Search'
+
+
 @shared_task
 def create_history_with_file(submission_id):
     submission = Submission(submission_id)
     full_file_name = submission.biom_zip_file_name
 
-    HISTORY_NAME = 'BPA OTU Search'
-
     galaxy = get_users_galaxy(submission.email)
-    history = galaxy.histories.create(HISTORY_NAME)
+    history = galaxy.histories.create(GALAXY_NEW_HISTORY_NAME)
     submission.history_id = history.get('id')
 
     filename = os.path.split(full_file_name)[1]

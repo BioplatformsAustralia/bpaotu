@@ -1,7 +1,6 @@
 import os
 import csv
 import tempfile
-import traceback
 import logging
 import sqlalchemy
 import gzip
@@ -53,6 +52,11 @@ from .otu import (
 logger = logging.getLogger("rainbow")
 
 
+TAXONOMY_FIELDS = [
+    'id', 'code',
+    'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id']
+
+
 def try_int(s):
     try:
         return int(s)
@@ -99,9 +103,8 @@ class DataImporter:
     def __init__(self, import_base):
         self._clear_import_log()
         self._engine = make_engine()
-        Session = sessionmaker(bind=self._engine)
         self._create_extensions()
-        self._session = Session()
+        self._session = sessionmaker(bind=self._engine)()
         self._import_base = import_base
         try:
             self._session.execute(DropSchema(SCHEMA, cascade=True))
@@ -114,7 +117,8 @@ class DataImporter:
 
     def ontology_init(self):
         # set blank as an option for all ontologies, bar Environment
-        all_cls = set(c for c in list(self.marine_ontologies.values()) + list(self.soil_ontologies.values()) if c is not Environment)
+        all_ontologies = list(self.marine_ontologies.values()) + list(self.soil_ontologies.values())
+        all_cls = set(c for c in all_ontologies if c is not Environment)
         for db_class in all_cls:
             instance = db_class(id=0, value='')
             self._session.add(instance)
@@ -248,7 +252,7 @@ class DataImporter:
                 os.chmod(fname, 0o644)
                 logger.warning("writing out taxonomy data to CSV tempfile: %s" % fname)
                 w = csv.writer(temp_fd)
-                w.writerow(['id', 'code', 'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id'])
+                w.writerow(TAXONOMY_FIELDS)
                 for _id, row in enumerate(_taxon_rows_iter(), 1):
                     otu_lookup[otu_hash(row['otu'])] = _id
                     out_row = [_id, row['otu']]
@@ -316,7 +320,8 @@ class DataImporter:
         self._session.bulk_save_objects(_make_context())
         self._session.commit()
 
-    def load_otu_abundance(self, otu_lookup):
+    # TODO this method has double the allowed complexity. It should be simplified!
+    def load_otu_abundance(self, otu_lookup):  # noqa: C901
 
         def otu_rows(fd):
             reader = csv.reader(fd, dialect='excel-tab')
@@ -392,8 +397,7 @@ class DataImporter:
                     self._engine.execute(
                         text('''COPY otu.sample_otu from :csv CSV header''').execution_options(autocommit=True),
                         csv=fname)
-                except:  # noqa
-                    logger.critical("unable to import %s" % (sampleotu_fname))
-                    traceback.print_exc()
+                except Exception:
+                    logger.critical("unable to import %s", sampleotu_fname, exc_info=True)
             finally:
                 os.unlink(fname)
