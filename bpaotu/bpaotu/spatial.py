@@ -85,6 +85,7 @@ def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=False):
     return result
 
 
+
 # TODO:
 # this is a workaround for a leaflet bug; this should
 # be moved into the frontend rather than being in this
