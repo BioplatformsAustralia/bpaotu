@@ -66,6 +66,7 @@ class ExcelWrapper(object):
             self.sheet = self.workbook.sheet_by_name(sheet_name)
 
         self.field_names = self._set_field_names()
+        self._header = None
         self.missing_headers = []
         self.name_to_column_map = self.set_name_to_column_map()
         self.name_to_func_map = self.set_name_to_func_map()
