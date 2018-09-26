@@ -84,7 +84,6 @@ def contextual_csv(samples):
             sample_data.append('102.100.100/%s' % sample.id)
             for field in fields:
                 sample_data.append(get_context_value(sample, field))
-            print(sample_data)
             w.writerow(sample_data)
 
     return csv_fd.getvalue()
