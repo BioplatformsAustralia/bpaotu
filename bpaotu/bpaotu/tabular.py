@@ -31,32 +31,60 @@ def contextual_csv(samples):
                 return ''
             return str(v)
 
-        csv_fd = io.StringIO()
-        w = csv.writer(csv_fd)
-        fields = []
-        heading = []
-        write_fns = []
+        headings = {}
+        write_fns = {}
         for column in SampleContext.__table__.columns:
-            fields.append(column.name)
             units = getattr(column, 'units', None)
             if column.name == 'id':
-                heading.append('BPA ID')
+                headings[column.name] = "BPA ID"
             else:
                 title = display_name(column.name)
                 if units:
                     title += ' [%s]' % units
-                heading.append(title)
+                headings[column.name] = title
 
             if column.name == 'id':
-                write_fns.append(format_bpa_id)
+                write_fns[column.name] = format_bpa_id
             elif hasattr(column, "ontology_class"):
-                write_fns.append(make_ontology_export(column.ontology_class))
+                write_fns[column.name] = make_ontology_export(column.ontology_class)
             else:
-                write_fns.append(str_none_blank)
-        w.writerow(heading)
-        for sample in samples:
-            w.writerow(f(getattr(sample, field)) for (field, f) in zip(fields, write_fns))
-        return csv_fd.getvalue()
+                write_fns[column.name] = str_none_blank
+
+    def get_context_value(sample, field):
+        return write_fns[field](getattr(sample, field))
+
+    # Find all non-empty fields(except 'BPA ID')
+    all_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
+    non_empty_fields = set()
+    for sample in samples:
+        for field in all_fields:
+            if get_context_value(sample, field):
+                non_empty_fields.add(field)
+
+    fields = list(non_empty_fields)
+    fields.sort()
+
+    # Prepare CSV writer
+    csv_fd = io.StringIO()
+    w = csv.writer(csv_fd)
+
+    # Extract headings of non-empty fields
+    non_empty_headings = ["BPA ID"]
+    for field in fields:
+        non_empty_headings.append(headings[field])
+    w.writerow(non_empty_headings)
+
+    # Determine relevant metadata for samples
+    exported_sample = []
+    for sample in samples:
+        if sample.id not in exported_sample:
+            exported_sample.append(sample.id)
+            sample_data = list()
+            sample_data.append('102.100.100/%s' % sample.id)
+            for field in fields:
+                sample_data.append(get_context_value(sample, field))
+            w.writerow(sample_data)
+    return csv_fd.getvalue()
 
 
 def tabular_zip_file_generator(params):
