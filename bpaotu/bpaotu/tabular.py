@@ -53,7 +53,6 @@ def contextual_csv(samples):
     def get_context_value(sample, field):
         return write_fns[field](getattr(sample, field))
 
-    # Issue: https://github.com/BioplatformsAustralia/bpaotu/issues/79
     # Find all non-empty fields(except 'BPA ID')
     all_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
     non_empty_fields = set()
@@ -85,7 +84,6 @@ def contextual_csv(samples):
             for field in fields:
                 sample_data.append(get_context_value(sample, field))
             w.writerow(sample_data)
-
     return csv_fd.getvalue()
 
 
