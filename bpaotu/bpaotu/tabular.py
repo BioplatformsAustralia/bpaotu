@@ -54,7 +54,7 @@ def contextual_csv(samples):
         return write_fns[field](getattr(sample, field))
 
     # Issue: https://github.com/BioplatformsAustralia/bpaotu/issues/79
-    # Find all non-empty fields(except 'BPA ID') 
+    # Find all non-empty fields(except 'BPA ID')
     all_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
     non_empty_fields = set()
     for sample in samples:
@@ -64,7 +64,7 @@ def contextual_csv(samples):
 
     fields = list(non_empty_fields)
     fields.sort()
-    
+
     # Prepare CSV writer
     csv_fd = io.StringIO()
     w = csv.writer(csv_fd)
