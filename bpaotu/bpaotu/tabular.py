@@ -5,9 +5,9 @@ from .otu import (
     OTU,
     SampleContext)
 from .util import (
-    val_or_empty,
-    display_name,
-    format_bpa_id)
+    format_bpa_id,
+    str_none_blank,
+    val_or_empty)
 from .query import (
     OntologyInfo,
     SampleQuery)
@@ -20,16 +20,11 @@ def contextual_csv(samples):
         def make_ontology_export(ontology_cls):
             values = dict(info.get_values(ontology_cls))
 
-            def __ontology_lookup(x):
+            def _ontology_lookup(x):
                 if x is None:
                     return ''
                 return values[x]
-            return __ontology_lookup
-
-        def str_none_blank(v):
-            if v is None:
-                return ''
-            return str(v)
+            return _ontology_lookup
 
         csv_fd = io.StringIO()
         w = csv.writer(csv_fd)
@@ -38,11 +33,11 @@ def contextual_csv(samples):
         write_fns = []
         for column in SampleContext.__table__.columns:
             fields.append(column.name)
-            units = getattr(column, 'units', None)
+            units = SampleContext.units(column.name)
             if column.name == 'id':
                 heading.append('BPA ID')
             else:
-                title = display_name(column.name)
+                title = SampleContext.display_name(column.name)
                 if units:
                     title += ' [%s]' % units
                 heading.append(title)
@@ -99,9 +94,19 @@ def tabular_zip_file_generator(params):
                 fd.truncate(0)
 
         zf.writestr('contextual.csv', contextual_csv(query.matching_samples()).encode('utf8'))
+        zf.writestr('info.txt', info_text(params))
         with OntologyInfo() as info:
             for kingdom_id, kingdom_label in info.get_values(OTUKingdom):
                 if not query.has_matching_sample_otus(kingdom_id):
                     continue
                 zf.write_iter('%s.csv' % (kingdom_label), sample_otu_csv_rows(kingdom_id))
         return zf
+
+
+def info_text(params):
+    return """\
+Australian Microbiome OTU Database - tabular export
+---------------------------------------------------
+
+{}
+""".format(params.describe()).encode('utf8')

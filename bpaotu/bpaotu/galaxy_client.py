@@ -39,6 +39,20 @@ class GalaxyClient:
     def post(self, relpath, **kwargs):
         return self.post_ll(relpath, data=kwargs)
 
+    def put(self, relpath, obj):
+        payload = json.dumps(obj)
+        params = {
+            'key': self.api_key
+        }
+        response = requests.put(
+            self._api_url(relpath),
+            data=payload,
+            params=params,
+            headers={'Content-Type': 'application/json'})
+        if response.status_code != requests.codes.ok:
+            raise Exception('Galaxy Error: %s' % response.text)
+        return response.json()
+
     def post_ll(self, relpath, **kwargs):
         '''A low-level post giving more control on the arguments we pass to request'''
         new_args = kwargs.copy()
@@ -84,6 +98,9 @@ class HistoryAPI(GalaxyAPI):
         response = self.client.post('histories', name=name)
         return response
 
+    def update(self, history):
+        return self.client.put('histories/%s' % history['id'], history)
+
     def upload_file(self, history_id, filepath, filename=None, file_type=None):
         payload = {
             'tool_id': 'upload1',
@@ -128,7 +145,11 @@ class WorkflowAPI(GalaxyAPI):
 
     def submit(self, workflow_id, history_id, file_ids):
         ds_map = {k: {'src': 'hda', 'id': v} for k, v in file_ids.items()}
-        response = self.client.post('workflows', workflow_id=workflow_id, history_id=history_id, ds_map=json.dumps(ds_map))
+        response = self.client.post(
+            'workflows',
+            workflow_id=workflow_id,
+            history_id=history_id,
+            ds_map=json.dumps(ds_map))
         return response
 
 
@@ -138,6 +159,19 @@ class Galaxy:
         self.users = UserAPI(self.client)
         self.histories = HistoryAPI(self.client)
         self.workflows = WorkflowAPI(self.client)
+
+
+def galaxy_ensure_user(email):
+    """
+    create a galaxy account if required. returns True if
+    an account was created
+    """
+    admins_galaxy = Galaxy()
+    galaxy_user = admins_galaxy.users.get_by_email(email)
+    if galaxy_user is None:
+        admins_galaxy.users.create(email)
+        return True
+    return False
 
 
 def get_users_galaxy(email):
@@ -150,9 +184,6 @@ def get_users_galaxy(email):
 
 def _get_users_galaxy_api_key(admins_galaxy, email):
     galaxy_user = admins_galaxy.users.get_by_email(email)
-    if galaxy_user is None:
-        galaxy_user = admins_galaxy.users.create(email)
-
     api_key = admins_galaxy.users.get_api_key(galaxy_user['id'])
     if api_key is None:
         api_key = admins_galaxy.users.create_api_key(galaxy_user['id'])

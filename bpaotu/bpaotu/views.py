@@ -1,14 +1,13 @@
 from collections import defaultdict, OrderedDict
 import csv
-import datetime
 import hmac
 import io
 import json
 import logging
+from operator import itemgetter
 import os
 import re
 import time
-import traceback
 
 from django.conf import settings
 from django.urls import reverse
@@ -34,6 +33,7 @@ from .query import (
     ContextualFilterTermOntology,
     ContextualFilterTermSampleID,
     ContextualFilterTermString,
+    TaxonomyFilter,
     get_sample_ids)
 from django.template import loader
 from .models import (
@@ -41,7 +41,9 @@ from .models import (
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
 from .util import (
-    display_name)
+    make_timestamp,
+    parse_date,
+    parse_float)
 from .biom import biom_zip_file_generator
 from .tabular import tabular_zip_file_generator
 from . import tasks
@@ -74,7 +76,9 @@ class OTUSearch(TemplateView):
         context['base_url'] = settings.BASE_URL
         context['galaxy_base_url'] = settings.GALAXY_BASE_URL
         context['ckan_base_url'] = settings.CKAN_SERVERS[0]['base_url']
-        context['ckan_check_permissions_url'] = settings.CKAN_CHECK_PERMISSIONS_URL if settings.PRODUCTION else reverse('dev_only_ckan_check_permissions')
+        context['ckan_check_permissions_url'] = (
+            settings.CKAN_CHECK_PERMISSIONS_URL if settings.PRODUCTION
+            else reverse('dev_only_ckan_check_permissions'))
         context['ckan_auth_integration'] = settings.CKAN_AUTH_INTEGRATION
         context['galaxy_integration'] = settings.GALAXY_INTEGRATION
 
@@ -103,16 +107,18 @@ clean_amplicon_filter = get_operator_and_int_value
 clean_environment_filter = get_operator_and_int_value
 
 
-def clean_taxonomy_filter(state_vector):
+def make_clean_taxonomy_filter(amplicon_filter, state_vector):
     """
-    take a taxonomy filter (a list of phylum, kingdom, ...) and clean it
-    so that it is a simple list of ints or None of the correct length.
+    take an amplicon filter and a taxonomy filter
+    # (a list of phylum, kingdom, ...) and clean it
     """
 
     assert(len(state_vector) == len(TaxonomyOptions.hierarchy))
-    return list(map(
-        get_operator_and_int_value,
-        state_vector))
+    return TaxonomyFilter(
+        clean_amplicon_filter(amplicon_filter),
+        list(map(
+            get_operator_and_int_value,
+            state_vector)))
 
 
 @require_CKAN_auth
@@ -135,9 +141,10 @@ def taxonomy_options(request):
     private API: given taxonomy constraints, return the possible options
     """
     with TaxonomyOptions() as options:
-        amplicon = clean_amplicon_filter(json.loads(request.GET['amplicon']))
-        selected = clean_taxonomy_filter(json.loads(request.GET['selected']))
-        possibilities = options.possibilities(amplicon, selected)
+        taxonomy_filter = make_clean_taxonomy_filter(
+            json.loads(request.GET['amplicon']),
+            json.loads(request.GET['selected']))
+        possibilities = options.possibilities(taxonomy_filter)
     return JsonResponse({
         'possibilities': possibilities
     })
@@ -156,6 +163,9 @@ def contextual_fields(request):
 
     ontology_classes = {}
 
+    # TODO Note TS: I don't understand why do we group columns together by their type.
+    # Why can't we just got through them once and map them to the definitions?
+
     # group together columns by their type. note special case
     # handling for our ontology linkage columns
     for column in SampleContext.__table__.columns:
@@ -166,40 +176,63 @@ def contextual_fields(request):
             ontology_classes[column.name] = column.ontology_class
         else:
             ty = str(column.type)
-        fields_by_type[ty].append((column.name, getattr(column, 'units', None)))
+        fields_by_type[ty].append(column.name)
 
-    def make_defn(typ, name, units, **kwargs):
+    def make_defn(typ, name, **kwargs):
         environment = classifications.get(name)
         r = kwargs.copy()
         r.update({
             'type': typ,
             'name': name,
-            'environment': environment
+            'environment': environment,
+            'display_name': SampleContext.display_name(name),
+            'units': SampleContext.units(name)
         })
-        if units:
-            r['units'] = units
         return r
 
-    definitions = [make_defn('sample_id', 'id', None, display_name='Sample ID', values=list(sorted(get_sample_ids())))]
-    for field_name, units in fields_by_type['DATE']:
-        definitions.append(make_defn('date', field_name, units))
-    for field_name, units in fields_by_type['FLOAT']:
-        definitions.append(make_defn('float', field_name, units))
-    for field_name, units in fields_by_type['CITEXT']:
-        definitions.append(make_defn('string', field_name, units))
     with OntologyInfo() as info:
-        for field_name, units in fields_by_type['_ontology']:
-            ontology_class = ontology_classes[field_name]
-            definitions.append(make_defn('ontology', field_name, units, values=info.get_values(ontology_class)))
-    for defn in definitions:
-        if 'display_name' not in defn:
-            defn['display_name'] = display_name(defn['name'])
+        fields_with_values = [
+            (field_name, info.get_values(ontology_classes[field_name]))
+            for field_name in fields_by_type['_ontology']]
 
-    definitions.sort(key=lambda x: x['display_name'])
+    definitions = (
+        [make_defn('sample_id', 'id', display_name='Sample ID', values=sorted(get_sample_ids()))] +
+        [make_defn('date', field_name) for field_name in fields_by_type['DATE']] +
+        [make_defn('float', field_name) for field_name in fields_by_type['FLOAT']] +
+        [make_defn('string', field_name) for field_name in fields_by_type['CITEXT']] +
+        [make_defn('ontology', field_name, values=values) for field_name, values in fields_with_values])
+    definitions.sort(key=itemgetter('display_name'))
 
     return JsonResponse({
         'definitions': definitions
     })
+
+
+def _parse_contextual_term(filter_spec):
+    field_name = filter_spec['field']
+
+    operator = filter_spec.get('operator')
+    column = SampleContext.__table__.columns[field_name]
+    typ = str(column.type)
+    if column.name == 'id':
+        if len(filter_spec['is']) == 0:
+            raise ValueError("Value can't be empty")
+        return ContextualFilterTermSampleID(field_name, operator, [int(t) for t in filter_spec['is']])
+    elif hasattr(column, 'ontology_class'):
+        return ContextualFilterTermOntology(field_name, operator, int(filter_spec['is']))
+    elif typ == 'DATE':
+        return ContextualFilterTermDate(
+            field_name, operator, parse_date(filter_spec['from']), parse_date(filter_spec['to']))
+    elif typ == 'FLOAT':
+        return ContextualFilterTermFloat(
+            field_name, operator, parse_float(filter_spec['from']), parse_float(filter_spec['to']))
+    elif typ == 'CITEXT':
+        value = str(filter_spec['contains'])
+        if value == '':
+            raise ValueError("Value can't be empty")
+        return ContextualFilterTermString(field_name, operator, value)
+    else:
+        raise ValueError("invalid filter term type: %s", typ)
 
 
 def param_to_filters(query_str):
@@ -208,21 +241,10 @@ def param_to_filters(query_str):
     and the filter instances
     """
 
-    def parse_date(s):
-        try:
-            return datetime.datetime.strptime(s, '%Y-%m-%d').date()
-        except ValueError:
-            return datetime.datetime.strptime(s, '%d/%m/%Y').date()
-
-    def parse_float(s):
-        try:
-            return float(s)
-        except ValueError:
-            return None
-
     otu_query = json.loads(query_str)
-    taxonomy_filter = clean_taxonomy_filter(otu_query['taxonomy_filters'])
-    amplicon_filter = clean_amplicon_filter(otu_query['amplicon_filter'])
+    taxonomy_filter = make_clean_taxonomy_filter(
+        otu_query['amplicon_filter'],
+        otu_query['taxonomy_filters'])
 
     context_spec = otu_query['contextual_filters']
     contextual_filter = ContextualFilter(context_spec['mode'], context_spec['environment'])
@@ -234,45 +256,23 @@ def param_to_filters(query_str):
         if field_name not in SampleContext.__table__.columns:
             errors.append("Please select a contextual data field to filter upon.")
             continue
-        operator = filter_spec.get('operator')
-        column = SampleContext.__table__.columns[field_name]
-        typ = str(column.type)
+
         try:
-            if column.name == 'id':
-                if len(filter_spec['is']) == 0:
-                    raise ValueError("Value can't be empty")
-                contextual_filter.add_term(ContextualFilterTermSampleID(field_name, operator, [int(t) for t in filter_spec['is']]))
-            elif hasattr(column, 'ontology_class'):
-                contextual_filter.add_term(
-                    ContextualFilterTermOntology(field_name, operator, int(filter_spec['is'])))
-            elif typ == 'DATE':
-                contextual_filter.add_term(
-                    ContextualFilterTermDate(field_name, operator, parse_date(filter_spec['from']), parse_date(filter_spec['to'])))
-            elif typ == 'FLOAT':
-                contextual_filter.add_term(
-                    ContextualFilterTermFloat(field_name, operator, parse_float(filter_spec['from']), parse_float(filter_spec['to'])))
-            elif typ == 'CITEXT':
-                value = str(filter_spec['contains'])
-                if value == '':
-                    raise ValueError("Value can't be empty")
-                contextual_filter.add_term(
-                    ContextualFilterTermString(field_name, operator, value))
-            else:
-                raise ValueError("invalid filter term type: %s", typ)
+            contextual_filter.add_term(_parse_contextual_term(filter_spec))
         except Exception:
             errors.append("Invalid value provided for contextual field `%s'" % field_name)
-            logger.critical("Exception parsing field: `%s':\n%s" % (field_name, traceback.format_exc()))
+            logger.critical("Exception parsing field: `%s'", field_name, exc_info=True)
 
     return (OTUQueryParams(
-        amplicon_filter=amplicon_filter,
         contextual_filter=contextual_filter,
         taxonomy_filter=taxonomy_filter), errors)
 
 
 def param_to_filters_without_checks(query_str):
     otu_query = json.loads(query_str)
-    taxonomy_filter = clean_taxonomy_filter(otu_query['taxonomy_filters'])
-    amplicon_filter = clean_amplicon_filter(otu_query['amplicon_filter'])
+    taxonomy_filter = make_clean_taxonomy_filter(
+        otu_query['amplicon_filter'],
+        otu_query['taxonomy_filters'])
 
     context_spec = otu_query['contextual_filters']
     contextual_filter = ContextualFilter(context_spec['mode'], context_spec['environment'])
@@ -280,7 +280,6 @@ def param_to_filters_without_checks(query_str):
     errors = []
 
     return (OTUQueryParams(
-        amplicon_filter=amplicon_filter,
         contextual_filter=contextual_filter,
         taxonomy_filter=taxonomy_filter), errors)
 
@@ -396,11 +395,11 @@ def otu_search(request):
 @require_CKAN_auth
 @require_GET
 def otu_biom_export(request):
-    timestamp = datetime.datetime.now().replace(microsecond=0).isoformat().replace(':', '')
+    timestamp = make_timestamp()
     params, errors = param_to_filters(request.GET['q'])
     zf = biom_zip_file_generator(params, timestamp)
     response = StreamingHttpResponse(zf, content_type='application/zip')
-    filename = params.filename(timestamp, 'biom.zip')
+    filename = params.filename(timestamp, '.biom.zip')
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     return response
 
@@ -416,10 +415,11 @@ def otu_export(request):
       - an CSV of all the contextual data samples matching the query
       - an CSV of all the OTUs matching the query, with counts against Sample IDs
     """
+    timestamp = make_timestamp()
     params, errors = param_to_filters(request.GET['q'])
     zf = tabular_zip_file_generator(params)
     response = StreamingHttpResponse(zf, content_type='application/zip')
-    filename = "BPASearchResultsExport.zip"
+    filename = params.filename(timestamp, '-csv.zip')
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     return response
 
@@ -439,11 +439,12 @@ def submit_to_galaxy(request):
         if errors:
             raise OTUError(*errors)
 
-        submission_id = tasks.submit_to_galaxy(email, request.POST['query'])
+        user_created, submission_id = tasks.submit_to_galaxy(email, request.POST['query'])
 
         return JsonResponse({
             'success': True,
             'submission_id': submission_id,
+            'user_created': user_created,
         })
     except OTUError as exc:
         logger.exception('Error in submit to Galaxy')
@@ -574,7 +575,8 @@ def dev_only_ckan_check_permissions(request):
     # organisations = [
     #     'anu-abc-upload', 'bpa-sepsis', 'australian-microbiome', 'bpa-project-documentation', 'bpa-barcode',
     #     'bioplatforms-australia', 'bpa-base', 'bpa-great-barrier-reef', 'incoming-data', 'bpa-marine-microbes',
-    #     'bpa-melanoma', 'bpa-omg', 'bpa-stemcells', 'bpa-wheat-cultivars', 'bpa-wheat-pathogens-genomes', 'bpa-wheat-pathogens-transcript']
+    #     'bpa-melanoma', 'bpa-omg', 'bpa-stemcells', 'bpa-wheat-cultivars', 'bpa-wheat-pathogens-genomes',
+    #     'bpa-wheat-pathogens-transcript']
     organisations = ['australian-microbiome']
 
     data = json.dumps({

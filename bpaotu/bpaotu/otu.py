@@ -33,7 +33,7 @@ class OntologyMixin(SchemaMixin):
         return 'ontology_' + name.lower()
 
     @declared_attr
-    def __tablename__(cls):
+    def __tablename__(cls):  # noqa: N805
         return cls.make_tablename(cls.__name__)
 
     def __repr__(self):
@@ -54,10 +54,15 @@ def ontology_fkey(ontology_class, index=False, default=None, nullable=False):
     return column
 
 
-def with_units(units, *args, **kwargs):
+def with_attrs(attrs, *args, **kwargs):
     column = Column(*args, **kwargs)
-    column.units = units
+    for k, v in attrs.items():
+        setattr(column, k, v)
     return column
+
+
+def with_units(units, *args, **kwargs):
+    return with_attrs({'units': units}, *args, **kwargs)
 
 
 class SampleType(OntologyMixin, Base):
@@ -180,7 +185,8 @@ class SampleColor(OntologyMixin, Base):
 
 class SampleContext(SchemaMixin, Base):
     __tablename__ = 'sample_context'
-    id = Column(Integer, primary_key=True)  # NB: we use the final component of the ID here
+    # NB: we use the final component of the ID here
+    id = with_attrs({'display_name': 'Sample ID'}, Integer, primary_key=True)
 
     # There are a large number of contextual fields, we are merging together all fields from BASE and MM
     # so that they can be queried universally.
@@ -387,6 +393,30 @@ class SampleContext(SchemaMixin, Base):
 
     def __repr__(self):
         return "<SampleContext(%d)>" % (self.id)
+
+    @classmethod
+    def display_name(cls, field_name):
+        """
+        return the display name for a field
+
+        if not explicitly set, we just replace '_' with ' ' and upper-case
+        drop _id if it's there
+        """
+        column = getattr(cls, field_name)
+        display_name = getattr(column, 'display_name', None)
+        if display_name is None:
+            if field_name.endswith('_id'):
+                field_name = field_name[:-3]
+            display_name = ' '.join(((t[0].upper() + t[1:]) for t in field_name.split('_')))
+        return display_name
+
+    @classmethod
+    def units(cls, field_name):
+        """
+        return the units for a field
+        """
+        column = getattr(cls, field_name)
+        return getattr(column, 'units', None)
 
 
 class SampleOTU(SchemaMixin, Base):

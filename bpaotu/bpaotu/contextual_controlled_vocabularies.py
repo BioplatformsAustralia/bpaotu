@@ -5,25 +5,37 @@
 
 HorizonClassificationVocabulary = (
     ('O',
-     'The organic or litter layer mainly over the soil surface composed of fresh and decaying plant residue. Typically composed of >25% organic soil materials.  This layer can usually be easily brushed away by hand.'
+     'The organic or litter layer mainly over the soil surface composed of fresh and decaying plant residue. '
+     'Typically composed of >25% organic soil materials.  This layer can usually be easily brushed away by hand.'
      ),
     ('A',
-     'This is the top layer of soil (often called top soil) that typically has the highest microbial activity.  It is composed of a mixture of mineral material and accumulated humified organic matter. Also, any plowed or disturbed surface layer.'
+     'This is the top layer of soil (often called top soil) that typically has the highest microbial activity.  '
+     'It is composed of a mixture of mineral material and accumulated humified organic matter. '
+     'Also, any plowed or disturbed surface layer.'
      ),
     ('E',
-     'This is the eluviated layer that is only seen in older soils and is not a universally used horizon designation.  If present it is below the A horizon and commonly is recognized by its lighter colored due to loss of clay, iron, aluminum, organic matter or some combination of these components.'
+     'This is the eluviated layer that is only seen in older soils and is not a universally used horizon designation.  '
+     'If present it is below the A horizon and commonly is recognized by its lighter colored due to loss of clay, '
+     'iron, aluminum, organic matter or some combination of these components.'
      ),
     ('B',
-     'In lay terms this is often called sub-soil.  It is the layer where most of the mineral materials that leach from the upper horizons accumulate.  Accumulation of clay, iron, silica, calcium carbonate, calcium sulphate, sesquioxides, and/or humus can occur.  Soil structure and color often differs from the A horizon. Color may be redder or browner due to iron accumulation.  Structure may be more granular, prismatic, or blocky.'
+     'In lay terms this is often called sub-soil.  It is the layer where most of the mineral materials that leach from '
+     'the upper horizons accumulate.  Accumulation of clay, iron, silica, calcium carbonate, calcium sulphate, '
+     'sesquioxides, and/or humus can occur.  Soil structure and color often differs from the A horizon. '
+     'Color may be redder or browner due to iron accumulation.  Structure may be more granular, prismatic, or blocky.'
      ),
     ('C',
-     'This is basically the weathered parent rock (excluding hard bedrock) that has not been affected by soil formation.  Composed mainly of large rocks.'
+     'This is basically the weathered parent rock (excluding hard bedrock) that has not been affected by soil '
+     'formation.  Composed mainly of large rocks.'
      ),
     ('R',
-     'This is the consolidated unweathered hard bedrock beneath the soil.  Usually is one large continuous rock mass.  The bedrock commonly found below the C horizon but under certain circumstances can be found directly below the A or B horizon.'
+     'This is the consolidated unweathered hard bedrock beneath the soil.  Usually is one large continuous rock mass.  '
+     'The bedrock commonly found below the C horizon but under certain circumstances can be found directly below the A '
+     'or B horizon.'
      ),
     ('P',
-     'Soils that are permanently frozen due to sustained temperature of less than 0ºC for two or more years.  Typically found in Polar regions.'
+     'Soils that are permanently frozen due to sustained temperature of less than 0ºC for two or more years.  '
+     'Typically found in Polar regions.'
      ), )
 
 # 2) land use
@@ -298,12 +310,15 @@ CropRotationClassification = ('No crop',
 # 9) Tillage
 TillageClassificationVocabulary = ((
     'Conservation Tillage or Zero Tillage',
-    'Tillage system that does not invert plant material into the soil, crop residues are left on the surface and crops are planted through the residue using a drill or cutting disc.'
+    'Tillage system that does not invert plant material into the soil, crop residues are left on the surface and '
+    'crops are planted through the residue using a drill or cutting disc.'
 ), (
     'Reduced Tillage',
-    'Less intensity of cultivation than conventional tillage.  Minimal soil disturbance typically limited to planting area.  Common examples are ridge till, strip tillage, zonal tillage, chisel or tined.'
+    'Less intensity of cultivation than conventional tillage.  Minimal soil disturbance typically limited to planting '
+    'area.  Common examples are ridge till, strip tillage, zonal tillage, chisel or tined.'
 ), ('Conventional Tillage',
-    'Soil is mechanically inverted typically using a mouldboard or a disc plough. Crop residues and weeds are incorporated into the soil and larger aggregates are broken down to prepare a seedbed.'
+    'Soil is mechanically inverted typically using a mouldboard or a disc plough. Crop residues and weeds are '
+    'incorporated into the soil and larger aggregates are broken down to prepare a seedbed.'
     ))
 
 # 10 Colour
@@ -332,23 +347,42 @@ SoilColourVocabulary = (('Brown', 'BR'),
 
 DrainageClassificationVocabulary = (
     ('Excessively drained',
-     'Water is removed from the soil very rapidly and available water holding capacity is very low.  Soils are commonly very sandy, gravelly or shallow on steep slopes All are uniform color and free of the mottling (mixture of colors in the same layer, often yellow, brown and sometimes grey) related to wetness. Irrigation would be needed for crop production.'
+     'Water is removed from the soil very rapidly and available water holding capacity is very low.  '
+     'Soils are commonly very sandy, gravelly or shallow on steep slopes All are uniform color and free of the '
+     'mottling (mixture of colors in the same layer, often yellow, brown and sometimes grey) related to wetness. '
+     'Irrigation would be needed for crop production.'
      ),
     ('Somewhat excessively drained',
-     'Water is removed from the soil rapidly. Internal free water occurrence commonly is very rare or very deep. The soils are commonly coarse-textured and have high saturated hydraulic conductivity or are very shallow.'
+     'Water is removed from the soil rapidly. Internal free water occurrence commonly is very rare or very deep. '
+     'The soils are commonly coarse-textured and have high saturated hydraulic conductivity or are very shallow.'
      ),
     ('Well drained',
-     'Water is removed from the soil readily, but not rapidly making it available to plants throughout most of the growing season.  Seasonal high water table is not within the rooting zone long enough during the growing season to adversely affect agricultural crops. Soils are commonly medium textured and mainly free of mottling.'
+     'Water is removed from the soil readily, but not rapidly making it available to plants throughout most of the '
+     'growing season.  Seasonal high water table is not within the rooting zone long enough during the growing '
+     'season to adversely affect agricultural crops. Soils are commonly medium textured and mainly free of mottling.'
      ),
     ('Moderately well drained',
-     'Water is removed from the soil somewhat slowly during some periods. Soils are wet for only a short time during the growing season, but periodically they are wet long enough that most mesophytic crops are affected. They commonly have a slowly pervious layer within or directly below the solum, or periodically receive high rainfall, or both.'
+     'Water is removed from the soil somewhat slowly during some periods. Soils are wet for only a short time during '
+     'the growing season, but periodically they are wet long enough that most mesophytic crops are affected. '
+     'They commonly have a slowly pervious layer within or directly below the solum, or periodically receive high '
+     'rainfall, or both.'
      ),
     ('Somewhat poorly drained',
-     'Water is removed slowly enough that the soil is wet for significant periods during the growing season. Wetness markedly restricts the growth of mesophytic crops unless artificial drainage is provided. Soils commonly have a slowly pervious layer, a high water table, additional water from seepage, nearly continuous rainfall, or a combination of these factors.'
+     'Water is removed slowly enough that the soil is wet for significant periods during the growing season. '
+     'Wetness markedly restricts the growth of mesophytic crops unless artificial drainage is provided. '
+     'Soils commonly have a slowly pervious layer, a high water table, additional water from seepage, '
+     'nearly continuous rainfall, or a combination of these factors.'
      ),
     ('Poorly drained',
-     'Water is removed so slowly that the soil is saturated periodically during the growing season or remains wet for long periods. Free water is commonly at or near the surface for long enough during the growing season that most mesophytic crops cannot be grown unless the soil is artificially drained. The soil is not continuously saturated in layers directly below plow depth. Poor drainage results from a high water table, a slowly pervious layer within the profile, seepage, nearly continuous rainfall, or a combination of these.'
+     'Water is removed so slowly that the soil is saturated periodically during the growing season or remains wet for '
+     'long periods. Free water is commonly at or near the surface for long enough during the growing season that most '
+     'mesophytic crops cannot be grown unless the soil is artificially drained. The soil is not continuously saturated '
+     'in layers directly below plow depth. Poor drainage results from a high water table, a slowly pervious layer '
+     'within the profile, seepage, nearly continuous rainfall, or a combination of these.'
      ),
     ('Very poorly drained',
-     'Water is removed from the soil so slowly that free water remains at or on the surface during most of the growing season. Unless the soil is artificially drained, most mesophytic crops cannot be grown. Very poorly drained soils are commonly level or depressed and are frequently ponded. Yet in rare cases, where rainfall is high and nearly continuous, they can have moderate or high slope gradients.'
+     'Water is removed from the soil so slowly that free water remains at or on the surface during most of the growing '
+     'season. Unless the soil is artificially drained, most mesophytic crops cannot be grown. Very poorly drained '
+     'soils are commonly level or depressed and are frequently ponded. Yet in rare cases, where rainfall is high and '
+     'nearly continuous, they can have moderate or high slope gradients.'
      ), )

@@ -18,6 +18,7 @@ export interface SelectableLoadableValues extends LoadableValues {
 
 export interface GalaxySubmission {
     submissionId?: string
+    userCreated?: boolean
     historyId?: string
     finished: boolean
     succeeded: boolean

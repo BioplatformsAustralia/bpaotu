@@ -20,9 +20,21 @@ urlpatterns = [
     url(r'^private/api/v1/galaxy_submission$', views.galaxy_submission, name="galaxy_submission"),
     url(r'^private/api/v1/export$', views.otu_export, name="otu_export"),
     url(r'^private/api/v1/export_biom$', views.otu_biom_export, name="otu_biom_export"),
-    url(r'^private/api/v1/user/check_permissions$', views.dev_only_ckan_check_permissions, name="dev_only_ckan_check_permissions"),
-    url(r'^ingest/$', views.otu_log, name="otu_log"),                                                                               # Display ingest names that do not match list.
-    url(r'^tables/$', views.tables, name="tables"),                                                                                 # Custom datatables columns.
-    url(r'^private/api/v1/required_table_headers/$', views.required_table_headers, name="required_table_headers"),                  # Custom datatables columns.
-    url(r'^contextual_csv_download_endpoint/$', views.contextual_csv_download_endpoint, name="contextual_csv_download_endpoint"),   # Custom datatables columns.
+    url(
+        r'^private/api/v1/user/check_permissions$',
+        views.dev_only_ckan_check_permissions,
+        name="dev_only_ckan_check_permissions"),
+    url(
+        r'^ingest/$',
+        views.otu_log,
+        name="otu_log"),
+    url(r'^tables/$', views.tables, name="tables"),
+    url(
+        r'^private/api/v1/required_table_headers/$',
+        views.required_table_headers,
+        name="required_table_headers"),
+    url(
+        r'^contextual_csv_download_endpoint/$',
+        views.contextual_csv_download_endpoint,
+        name="contextual_csv_download_endpoint"),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -137,9 +137,15 @@ function BetweenOperatorAndValue ({ filter, dataDefinition, changeOperator, chan
 
 function DropDownOperatorAndValue({ filter, dataDefinition, changeOperator, changeValue, changeValues }) {
     const renderOptions = dataDefinition.values.map((value) => {
+        // The values are list of tuples [id, text] in general.
+        // But for Sample ID the values are a list of the sample ids.
         let [id, text] = value;
-        if (!id) {
+        if (_.isUndefined(id)) {
+            // When single value (instead of [id, text]) make that both the id and the text
             id = text = value;
+        } else if (id === 0 && text === '') {
+            // Make the "no selection" value the empty string for consistency with other contextual filter types
+            id = '';
         }
         return (<option key={id} value={id}>{text}</option>);
     });
