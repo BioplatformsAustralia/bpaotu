@@ -70,6 +70,15 @@ function alert(text, color='primary') {
     return {color, text};
 }
 
+function reset_password_alert() {
+    const linkToReset = `${window.otu_search_config.galaxy_base_url}/user/reset_password?use_panels=True`;
+    const GALAXY_ALERT_USER_CREATED = alert(
+        'An account has been created for you on Galaxy Australia.' +
+        `Please <a target="_blank" href="${linkToReset}" className="alert-link">reset your password</a>, ` + 
+        'using the same email address you have registered with the Bioplatforms Data Portal.', 'success');
+    return GALAXY_ALERT_USER_CREATED;
+}
+
 const GALAXY_ALERT_IN_PROGRESS = alert('Submission to Galaxy in Progress ...');
 const GALAXY_ALERT_ERROR = alert('An error occured while submiting to Galaxy.', 'danger');
 
@@ -81,13 +90,18 @@ export default handleActions({
     }),
     [submitToGalaxyEnded as any]: {
         next: (state, action: any) => {
-            const lastSubmission = {
+            const lastSubmission: GalaxySubmission = {
                 submissionId: action.payload.data.submission_id,
+                userCreated: action.payload.data.user_created,
                 finished: false,
                 succeeded: false,
             }
+            var alerts = [GALAXY_ALERT_IN_PROGRESS];
+            if (lastSubmission.userCreated) {
+                alerts.push(reset_password_alert());
+            }
             return {
-                alerts: [GALAXY_ALERT_IN_PROGRESS],
+                alerts: alerts,
                 submissions: [
                     ...state.submissions,
                     lastSubmission,
@@ -123,8 +137,11 @@ export default handleActions({
                 const linkToHistory = `${window.otu_search_config.galaxy_base_url}/histories/view?id=${newLastSubmissionState.historyId}`;
                 const GALAXY_ALERT_SUCCESS = alert(
                     'Successfully submitted to Galaxy.' +
-                    ` File uploaded to your <a href="${linkToHistory}" className="alert-link">Galaxy history.</a>`, 'success');
+                    ` File uploaded to your <a target="_blank" href="${linkToHistory}" className="alert-link">Galaxy history.</a>`, 'success');
                 newAlerts = [newLastSubmissionState.succeeded ? GALAXY_ALERT_SUCCESS : GALAXY_ALERT_ERROR];
+                if (newLastSubmissionState.userCreated) {
+                    newAlerts.push(reset_password_alert());
+                }
             }
             return {
                 ...state,

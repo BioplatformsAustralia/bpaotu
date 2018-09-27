@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e 
+set -e
 
 #
 # Development build and tests
@@ -15,3 +15,4 @@ sudo chown 1000:1000 data/ build/
 ./develop.sh build builder
 ./develop.sh build dev
 ./develop.sh build node
+./develop.sh run build lint

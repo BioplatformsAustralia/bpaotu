@@ -7,7 +7,7 @@ import tempfile
 
 from .biom import save_biom_zip_file
 from .galaxy import Submission
-from .galaxy_client import get_users_galaxy
+from .galaxy_client import get_users_galaxy, galaxy_ensure_user
 from . import views
 
 
@@ -19,6 +19,9 @@ ALWAYS_RETRY = 1000
 
 FILE_UPLOAD_STATUS_POLL_FREQUENCY = 5
 
+# maximum length of a Galaxy history name
+GALAXY_HISTORY_NAME_MAX = 255
+
 
 @shared_task(bind=True)
 def debug_task(self):
@@ -27,18 +30,30 @@ def debug_task(self):
 
 @shared_task
 def submit_to_galaxy(email, query):
-    # submission_id = uuid.uuid5(uuid.NAMESPACE_URL, settings.GALAXY_BASE_URL)
+    # note: we check this before we submit any tasks which
+    # would implicitly create the user. the UI code needs
+    # to inform their user to reset the password on their
+    # new account
+    new_galaxy_user = galaxy_ensure_user(email)
+
     submission_id = uuid.uuid4()
 
     submission = Submission.create(submission_id)
     submission.query = query
     submission.email = email
 
+    params, _ = views.param_to_filters(query)
+    summary = params.summary()
+    if len(summary) > GALAXY_HISTORY_NAME_MAX:
+        summary = summary[:GALAXY_HISTORY_NAME_MAX - 3] + '...'
+    submission.name = summary
+    submission.annotation = params.describe()
+
     chain = save_biom_file.s() | create_history_with_file.s() | check_upload_status.s() | delete_biom_file.s()
 
     chain(submission_id)
 
-    return submission_id
+    return new_galaxy_user, submission_id
 
 
 @shared_task
@@ -60,10 +75,10 @@ def create_history_with_file(submission_id):
     submission = Submission(submission_id)
     full_file_name = submission.biom_zip_file_name
 
-    HISTORY_NAME = 'BPA OTU Search'
-
     galaxy = get_users_galaxy(submission.email)
-    history = galaxy.histories.create(HISTORY_NAME)
+    history = galaxy.histories.create(submission.name)
+    history['annotation'] = submission.annotation
+    galaxy.histories.update(history)
     submission.history_id = history.get('id')
 
     filename = os.path.split(full_file_name)[1]

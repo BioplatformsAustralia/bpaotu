@@ -10,7 +10,7 @@ from .query import (
     SampleOTU,
     SampleQuery,
     OntologyInfo)
-from .util import val_or_empty
+from .util import val_or_empty, make_timestamp, empty_to_none
 from .otu import SampleContext
 
 logger = logging.getLogger('rainbow')
@@ -36,14 +36,14 @@ def generate_biom_file(query):
 def biom_zip_file_generator(params, timestamp):
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     with SampleQuery(params) as query:
-        zf.write_iter(params.filename(timestamp, 'biom'), (s.encode('utf8') for s in generate_biom_file(query)))
+        zf.write_iter(params.filename(timestamp, '.biom'), (s.encode('utf8') for s in generate_biom_file(query)))
     return zf
 
 
 def save_biom_zip_file(params, dir='/data'):
-    timestamp = datetime.datetime.now().replace(microsecond=0).isoformat().replace(':', '')
+    timestamp = make_timestamp()
 
-    filename = os.path.join(dir, params.filename(timestamp, 'biom.zip'))
+    filename = os.path.join(dir, params.filename(timestamp, '.biom.zip'))
     zf = biom_zip_file_generator(params, timestamp)
     with open(filename, 'wb') as f:
         for data in zf:
@@ -91,21 +91,15 @@ def otu_rows(query, otu_to_row):
 
 
 def sample_columns(query, sample_to_column):
-    def empty_to_none(v):
-        # FIXME: push this back in the core metadata handling
-        if v == '':
-            return None
-        return v
-
     with OntologyInfo() as info:
         def make_ontology_export(ontology_cls):
             values = dict(info.get_values(ontology_cls))
 
-            def __ontology_lookup(x):
+            def _ontology_lookup(x):
                 if x is None:
                     return None
                 return values[x]
-            return __ontology_lookup
+            return _ontology_lookup
 
         ontology_fns = {}
         titles = {}
@@ -113,7 +107,7 @@ def sample_columns(query, sample_to_column):
             title = column.name
             if title.endswith('_id'):
                 title = title[:-3]
-            if hasattr(column, "ontology_class"):
+            if hasattr(column, 'ontology_class'):
                 fn = make_ontology_export(column.ontology_class)
             else:
                 fn = empty_to_none
@@ -124,16 +118,13 @@ def sample_columns(query, sample_to_column):
         return ontology_fns[field](getattr(sample, field))
 
     all_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
-    non_empty = set()
 
-    # do a first pass through and determine the relevant metadata fields for this export
-    for sample in query.matching_samples():
-        for field in all_fields:
-            if get_context_value(sample, field) is not None:
-                non_empty.add(field)
-
-    fields = list(non_empty)
-    fields.sort()
+    non_empty = set(
+        field
+        for sample in query.matching_samples()
+        for field in all_fields
+        if get_context_value(sample, field) is not None)
+    fields = sorted(list(non_empty))
 
     # This is a cached query so all results are returned. Just iterate through without chunking.
     for idx, sample in enumerate(s for s in query.matching_samples() if s.id not in sample_to_column):

@@ -9,8 +9,11 @@ from sqlalchemy.orm import sessionmaker, aliased
 
 from django.core.cache import caches
 
+from .models import ImportMetadata
 from .otu import (
+    Environment,
     OTU,
+    OTUAmplicon,
     OTUKingdom,
     OTUPhylum,
     OTUClass,
@@ -33,21 +36,78 @@ CACHE_7DAYS = (60 * 60 * 24 * 7)
 
 
 class OTUQueryParams:
-    def __init__(self, amplicon_filter, contextual_filter, taxonomy_filter):
-        self.amplicon_filter = amplicon_filter
+    def __init__(self, contextual_filter, taxonomy_filter):
         self.contextual_filter = contextual_filter
         self.taxonomy_filter = taxonomy_filter
         # for use by caching, should be a stable state summary
         self.state_key = make_cache_key(repr(self))
 
     def filename(self, timestamp, extension):
-        return 'BiomExport-{}.{}'.format(timestamp, extension)
+        return 'AustralianMicrobiome-{}{}'.format(timestamp, extension)
+
+    def summary(self, max_chars=100):
+        # a short title, maximum length `max_chars`
+        pfx = 'Australian Microbiome: '
+        parts = []
+        amplicon_descr, taxonomy_descr = self.taxonomy_filter.describe()
+        if amplicon_descr is not None:
+            parts.append(amplicon_descr)
+        if taxonomy_descr:
+            parts.append(taxonomy_descr[-1])
+        parts += self.contextual_filter.describe()
+        return pfx + '; '.join(parts)
+
+    def describe(self, max_chars=100):
+        "a short title, maximum length `max_chars`"
+
+        parts = []
+        amplicon_descr, taxonomy_descr = self.taxonomy_filter.describe()
+        indent = '  '
+
+        def add_section(lines):
+            parts.append('\n'.join(lines))
+
+        def amplicon_section():
+            p = ['Amplicon filter:']
+            if amplicon_descr is not None:
+                p.append(indent + amplicon_descr)
+            else:
+                p.append(indent + '(no amplicon filter applied)')
+            return p
+
+        def taxonomy_section():
+            p = ['Taxonomy filter:']
+            if taxonomy_descr:
+                p += [(indent + line) for line in taxonomy_descr]
+            else:
+                p.append(indent + '(no taxonomy filter applied)')
+            return p
+
+        def contextual_section():
+            p = ['Contextual filter:']
+            for entry in self.contextual_filter.describe():
+                p.append(indent + entry)
+            return p
+
+        def metadata_section():
+            metadata = ImportMetadata.objects.get()
+            return [
+                'Australian Microbiome Database Metadata:',
+                indent + 'Dataset methodology={}'.format(metadata.methodology),
+                indent + 'Dataset revision date={}'.format(metadata.revision_date),
+            ]
+
+        add_section(amplicon_section())
+        add_section(taxonomy_section())
+        add_section(contextual_section())
+        add_section(metadata_section())
+
+        return '\n\n'.join(parts)
 
     def __repr__(self):
         # Note: used for caching, so make sure all components have a defined
         # representation that's stable over time
-        return 'OTUQueryParams<{},{},{}>'.format(
-            self.amplicon_filter,
+        return 'OTUQueryParams<{},{}>'.format(
             self.contextual_filter,
             self.taxonomy_filter)
 
@@ -72,21 +132,20 @@ class TaxonomyOptions:
     def __exit__(self, exec_type, exc_value, traceback):
         self._session.close()
 
-    def possibilities(self, amplicon, state, force_cache=False):
+    def possibilities(self, taxonomy_filter, force_cache=False):
         cache = caches['search_results']
         key = make_cache_key(
             'TaxonomyOptions.possibilities',
-            amplicon,
-            state)
+            taxonomy_filter)
         result = None
         if not force_cache:
             result = cache.get(key)
         if result is None:
-            result = self._possibilities(amplicon, state)
+            result = self._possibilities(taxonomy_filter)
             cache.set(key, result, CACHE_FOREVER)
         return result
 
-    def _possibilities(self, amplicon, state):
+    def _possibilities(self, taxonomy_filter):
         """
         state should be a list of integer IDs for the relevent model, in the order of
         TaxonomyOptions.hierarchy. a value of None indicates there is no selection.
@@ -99,7 +158,7 @@ class TaxonomyOptions:
         def determine_target():
             # this query is built up over time, and validates the hierarchy provided to us
             q = self._session.query(OTU.kingdom_id).group_by(OTU.kingdom_id)
-            q = apply_amplicon_filter(q, amplicon)
+            q = apply_amplicon_filter(q, taxonomy_filter.amplicon_filter)
             for idx, ((otu_attr, ontology_class), taxonomy) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
                 valid = True
                 if taxonomy is None or taxonomy.get('value') is None:
@@ -111,6 +170,8 @@ class TaxonomyOptions:
                     return otu_attr, ontology_class, idx
             return None, None, None
 
+        state = taxonomy_filter.state_vector.copy()
+
         # scan through in order and find our target, by finding the first invalid selection
         target_attr, target_class, target_idx = determine_target()
         # the targets to be reset as a result of this choice
@@ -120,15 +181,17 @@ class TaxonomyOptions:
         if target_attr is None:
             return {}
         # performance: hard-code kingdom (it's the slowest query, and the most common)
-        elif not amplicon and target_class is OTUKingdom:
+        elif not taxonomy_filter.amplicon_filter and target_class is OTUKingdom:
             possibilities = self._session.query(target_class.id, target_class.value).all()
         else:
             # clear invalidated part of the state
             state = state[:target_idx] + [None] * (len(TaxonomyOptions.hierarchy) - target_idx)
             # build up a query of the OTUs for our target attribute
-            q = self._session.query(getattr(OTU, target_attr), target_class.value).group_by(getattr(OTU, target_attr), target_class.value).order_by(target_class.value)
+            q = self._session.query(
+                getattr(OTU, target_attr), target_class.value).group_by(
+                    getattr(OTU, target_attr), target_class.value).order_by(target_class.value)
 
-            q = apply_amplicon_filter(q, amplicon)
+            q = apply_amplicon_filter(q, taxonomy_filter.amplicon_filter)
             for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, state):
                 q = apply_otu_filter(otu_attr, q, taxonomy)
             q = q.join(target_class)
@@ -159,6 +222,16 @@ class OntologyInfo:
         vals.sort(key=lambda v: v[1])
         return vals
 
+    def id_to_value(self, ontology_class, _id):
+        if _id is None:
+            return None
+        return self._session.query(ontology_class.value).filter(ontology_class.id == _id).one()[0]
+
+    def value_to_id(self, ontology_class, value):
+        if value is None:
+            return None
+        return self._session.query(ontology_class.id).filter(ontology_class.value == value).one()[0]
+
 
 class SampleQuery:
     """
@@ -171,7 +244,6 @@ class SampleQuery:
         # amplicon filter is a master filter over the taxonomy; it's not
         # a strict part of the hierarchy, but affects taxonomy options
         # available
-        self._amplicon_filter = params.amplicon_filter
         self._taxonomy_filter = params.taxonomy_filter
         self._contextual_filter = params.contextual_filter
 
@@ -186,7 +258,6 @@ class SampleQuery:
         key = make_cache_key(
             'SampleQuery._q_all_cached',
             topic,
-            self._amplicon_filter,
             self._taxonomy_filter,
             self._contextual_filter)
         result = cache.get(key)
@@ -272,7 +343,7 @@ class SampleQuery:
         q = self._session.query(*args) \
             .filter(OTU.id == SampleOTU.otu_id) \
             .filter(SampleContext.id == SampleOTU.sample_id)
-        q = self._apply_taxonomy_filters(q)
+        q = self._taxonomy_filter.apply(q)
         q = self._contextual_filter.apply(q)
         if kingdom_id is not None:
             q = q.filter(OTU.kingdom_id == kingdom_id)
@@ -282,25 +353,18 @@ class SampleQuery:
         # it can be iterated over
         return q
 
-    def _apply_taxonomy_filters(self, q):
-        q = apply_amplicon_filter(q, self._amplicon_filter)
-        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter):
-            q = apply_otu_filter(otu_attr, q, taxonomy)
-        return q
-
     def _build_taxonomy_subquery(self):
         """
         return the BPA IDs (as ints) which have a non-zero OTU count for OTUs
         matching the taxonomy filter
         """
-        # shortcut: if we don't have any filters, don't produce a subquery
-        if not self._amplicon_filter and self._taxonomy_filter[0] is None:
+        if self._taxonomy_filter.is_empty():
             return None
         q = self._session.query(SampleOTU.sample_id) \
             .distinct() \
             .join(OTU) \
             .filter(OTU.id == SampleOTU.otu_id)
-        return self._apply_taxonomy_filters(q)
+        return self._taxonomy_filter.apply(q)
 
     def _build_contextual_subquery(self):
         """
@@ -343,10 +407,40 @@ class SampleQuery:
         if contextual_subquery is not None:
             q = q.filter(OTU.id.in_(contextual_subquery))
         # apply taxonomic filter terms
-        q = self._apply_taxonomy_filters(q)
+        q = self._taxonomy_filter.apply(q)
         if kingdom_id is not None:
             q = q.filter(OTU.kingdom_id == kingdom_id)
         return q
+
+
+class TaxonomyFilter:
+    def __init__(self, amplicon_filter, state_vector):
+        self.amplicon_filter = amplicon_filter
+        self.state_vector = state_vector
+
+    def describe(self):
+        with OntologyInfo() as info:
+            amplicon_description = describe_op_and_val(info, 'amplicon_id', OTUAmplicon, self.amplicon_filter)
+            taxonomy_descriptions = []
+            for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self.state_vector):
+                descr = describe_op_and_val(info, otu_attr, ontology_class, taxonomy)
+                if descr:
+                    taxonomy_descriptions.append(descr)
+            return amplicon_description, taxonomy_descriptions
+
+    def is_empty(self):
+        return not self.amplicon_filter and self.state_vector[0] is None
+
+    def apply(self, q):
+        q = apply_amplicon_filter(q, self.amplicon_filter)
+        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self.state_vector):
+            q = apply_otu_filter(otu_attr, q, taxonomy)
+        return q
+
+    def __repr__(self):
+        return '<TaxonomyFilter(%s,state_vec[%s])>' % (
+            self.amplicon_filter,
+            self.state_vector)
 
 
 class ContextualFilter:
@@ -362,7 +456,17 @@ class ContextualFilter:
         self.terms = []
 
     def __repr__(self):
-        return '<ContextualFilter(%s,env[%s],[%s]>' % (self.mode, repr(self.environment_filter), ','.join(repr(t) for t in self.terms))
+        return '<ContextualFilter(%s,env[%s],[%s]>' % (
+            self.mode,
+            repr(self.environment_filter), ','.join(repr(t) for t in self.terms))
+
+    def describe(self):
+        descr = []
+        with OntologyInfo() as info:
+            env_descr = describe_op_and_val(info, 'environment_id', Environment, self.environment_filter)
+            descr.append(env_descr)
+            descr += [term.describe() for term in self.terms]
+        return [t for t in descr if t]
 
     def is_empty(self):
         return len(self.terms) == 0 and not self.environment_filter
@@ -392,13 +496,36 @@ class ContextualFilterTerm:
         self.operator = operator
 
     @property
+    def complement(self):
+        return self.operator == 'complement'
+
+    @property
     def conditions(self):
-        if self.operator == 'complement':
+        if self.complement:
             return [sqlalchemy.not_(c) for c in (self.get_conditions())]
         return self.get_conditions()
 
 
-class ContextualFilterTermFloat(ContextualFilterTerm):
+class ContextualFilterTermBetween(ContextualFilterTerm):
+    def get_conditions(self):
+        return [
+            self.field.between(self.val_from, self.val_to)
+        ]
+
+    def describe(self):
+        if self.complement:
+            return '{}<{},>{}'.format(
+                SampleContext.display_name(self.field_name),
+                self.val_from,
+                self.val_to)
+        else:
+            return '{}<={}<={}'.format(
+                self.val_from,
+                SampleContext.display_name(self.field_name),
+                self.val_to)
+
+
+class ContextualFilterTermFloat(ContextualFilterTermBetween):
     def __init__(self, field_name, operator, val_from, val_to):
         super().__init__(field_name, operator)
         assert(type(val_from) is float)
@@ -409,13 +536,8 @@ class ContextualFilterTermFloat(ContextualFilterTerm):
     def __repr__(self):
         return '<TermFloat(%s,%s,%s,%s)>' % (self.field_name, self.operator, self.val_from, self.val_to)
 
-    def get_conditions(self):
-        return [
-            self.field.between(self.val_from, self.val_to)
-        ]
 
-
-class ContextualFilterTermDate(ContextualFilterTerm):
+class ContextualFilterTermDate(ContextualFilterTermBetween):
     def __init__(self, field_name, operator, val_from, val_to):
         super().__init__(field_name, operator)
         assert(type(val_from) is datetime.date)
@@ -425,11 +547,6 @@ class ContextualFilterTermDate(ContextualFilterTerm):
 
     def __repr__(self):
         return '<TermDate(%s,%s,%s,%s)>' % (self.field_name, self.operator, self.val_from, self.val_to)
-
-    def get_conditions(self):
-        return [
-            self.field.between(self.val_from, self.val_to)
-        ]
 
 
 class ContextualFilterTermString(ContextualFilterTerm):
@@ -445,6 +562,16 @@ class ContextualFilterTermString(ContextualFilterTerm):
         cond = self.field.contains(self.val_contains)
         return [cond]
 
+    def describe(self):
+        if self.complement:
+            return '{} does not contain "{}"'.format(
+                SampleContext.display_name(self.field_name),
+                self.val_contains)
+        else:
+            return '{} contains "{}"'.format(
+                SampleContext.display_name(self.field_name),
+                self.val_contains)
+
 
 class ContextualFilterTermOntology(ContextualFilterTerm):
     def __init__(self, field_name, operator, val_is):
@@ -459,6 +586,18 @@ class ContextualFilterTermOntology(ContextualFilterTerm):
         return [
             self.field == self.val_is
         ]
+
+    def describe(self):
+        with OntologyInfo() as info:
+            val = info.id_to_value(self.field.ontology_class, self.val_is)
+        if self.complement:
+            return "{} is not '{}'".format(
+                SampleContext.display_name(self.field_name),
+                val)
+        else:
+            return "{} is '{}'".format(
+                SampleContext.display_name(self.field_name),
+                val)
 
 
 class ContextualFilterTermSampleID(ContextualFilterTerm):
@@ -477,12 +616,34 @@ class ContextualFilterTermSampleID(ContextualFilterTerm):
             self.field.in_(self.val_is_in)
         ]
 
+    def describe(self):
+        if self.complement:
+            return '{} is not in "{}"'.format(
+                SampleContext.display_name('id'),
+                self.val_is_in)
+        else:
+            return '{} is in "{}"'.format(
+                SampleContext.display_name('id'),
+                self.val_is_in)
+
 
 def get_sample_ids():
     session = Session()
     ids = [t[0] for t in session.query(SampleContext.id).all()]
     session.close()
     return ids
+
+
+OP_DESCR = {
+    'is': ' is ',
+    'isnot': ' is not ',
+}
+
+
+def describe_op_and_val(ontology_info, attr, cls, q):
+    if q is None:
+        return None
+    return ''.join(([attr[:-3], OP_DESCR[q.get('operator')], repr(ontology_info.id_to_value(cls, q.get('value')))]))
 
 
 def apply_op_and_val_filter(attr, q, op_and_val):

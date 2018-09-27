@@ -2,7 +2,12 @@ from contextlib import contextmanager, suppress
 from .models import ImportMetadata
 from hashlib import sha256
 import os
+import datetime
 import tempfile
+import logging
+
+
+logger = logging.getLogger("rainbow")
 
 
 def strip_to_ascii(s):
@@ -13,6 +18,19 @@ def val_or_empty(obj):
     if obj is None:
         return ''
     return obj.value
+
+
+def empty_to_none(v):
+    # FIXME: push this back in the core metadata handling
+    if v == '':
+        return None
+    return v
+
+
+def str_none_blank(v):
+    if v is None:
+        return ''
+    return str(v)
 
 
 def make_cache_key(*args):
@@ -43,11 +61,22 @@ def format_bpa_id(int_id):
     return '102.100.100/%d' % int_id
 
 
-def display_name(field_name):
+def make_timestamp():
     """
-    a bit of a bodge, just replace '_' with ' ' and upper-case
-    drop _id if it's there
+    returns a timestamp, suitable for use in a filename
     """
-    if field_name.endswith('_id'):
-        field_name = field_name[:-3]
-    return ' '.join(((t[0].upper() + t[1:]) for t in field_name.split('_')))
+    return datetime.datetime.now().replace(microsecond=0).isoformat().replace(':', '')
+
+
+def parse_date(s):
+    try:
+        return datetime.datetime.strptime(s, '%Y-%m-%d').date()
+    except ValueError:
+        return datetime.datetime.strptime(s, '%d/%m/%Y').date()
+
+
+def parse_float(s):
+    try:
+        return float(s)
+    except ValueError:
+        return None
