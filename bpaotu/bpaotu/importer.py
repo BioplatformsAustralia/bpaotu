@@ -1,7 +1,6 @@
 import os
 import csv
 import tempfile
-import traceback
 import logging
 import sqlalchemy
 import gzip
@@ -53,6 +52,11 @@ from .otu import (
 logger = logging.getLogger("rainbow")
 
 
+TAXONOMY_FIELDS = [
+    'id', 'code',
+    'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id']
+
+
 def try_int(s):
     try:
         return int(s)
@@ -99,9 +103,8 @@ class DataImporter:
     def __init__(self, import_base):
         self._clear_import_log()
         self._engine = make_engine()
-        Session = sessionmaker(bind=self._engine)
         self._create_extensions()
-        self._session = Session()
+        self._session = sessionmaker(bind=self._engine)()
         self._import_base = import_base
         try:
             self._session.execute(DropSchema(SCHEMA, cascade=True))
@@ -114,7 +117,8 @@ class DataImporter:
 
     def ontology_init(self):
         # set blank as an option for all ontologies, bar Environment
-        all_cls = set(c for c in list(self.marine_ontologies.values()) + list(self.soil_ontologies.values()) if c is not Environment)
+        all_ontologies = list(self.marine_ontologies.values()) + list(self.soil_ontologies.values())
+        all_cls = set(c for c in all_ontologies if c is not Environment)
         for db_class in all_cls:
             instance = db_class(id=0, value='')
             self._session.add(instance)
@@ -248,7 +252,7 @@ class DataImporter:
                 os.chmod(fname, 0o644)
                 logger.warning("writing out taxonomy data to CSV tempfile: %s" % fname)
                 w = csv.writer(temp_fd)
-                w.writerow(['id', 'code', 'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id'])
+                w.writerow(TAXONOMY_FIELDS)
                 for _id, row in enumerate(_taxon_rows_iter(), 1):
                     otu_lookup[otu_hash(row['otu'])] = _id
                     out_row = [_id, row['otu']]
@@ -318,49 +322,11 @@ class DataImporter:
 
     def load_otu_abundance(self, otu_lookup):
 
-        def otu_rows(fd):
-            reader = csv.reader(fd, dialect='excel-tab')
-            header = next(reader)
-
-            assert(header[0] == '#OTU ID')
-
-            # find the four or five-digit BPA IDs: there are integers in here which are not BPA IDs,
-            # but they're not in the BPA ID range (currently 7031 -> 58020). FIXME, this is crude
-            # and it would be better to more clearly identify BPA / non BPA data; discussing with CSIRO
-            idx_bpa_id = [(i + 1, try_int(t)) for (i, t) in enumerate(header[1:]) if len(t) == 4 or len(t) == 5]
-            idx_bpa_id = [(i, t) for (i, t) in idx_bpa_id if t is not None]
-
-            def _tuplerows():
-                for row in reader:
-                    otu_code = row[0]
-                    otu_id = otu_lookup.get(otu_hash(otu_code))
-                    if otu_id is None:
-                        logger.critical(['OTU not defined', otu_code])
-                        continue
-                    for idx, bpa_id in idx_bpa_id:
-                        count = row[idx]
-                        if count == '' or count == '0' or count == '0.0':
-                            continue
-                        count = int(float(count))
-                        if count == 0:
-                            continue
-                        yield otu_id, bpa_id, count
-
-            return [t[1] for t in idx_bpa_id], _tuplerows()
-
-        def _missing_bpa_ids(fname):
-            have_bpaids = set([t[0] for t in self._session.query(SampleContext.id)])
-            with gzip.open(fname, 'rt') as fd:
-                bpa_ids, _ = otu_rows(fd)
-                for bpa_id in bpa_ids:
-                    if bpa_id not in have_bpaids:
-                        yield bpa_id
-
         def _make_sample_otus(fname, skip_missing):
             # note: (for now) we have to cope with duplicate columns in the input files.
             # we just make sure they don't clash, and this can be reported to CSIRO
             with gzip.open(fname, 'rt') as fd:
-                bpa_ids, tuple_rows = otu_rows(fd)
+                bpa_ids, tuple_rows = self._otu_rows(fd, otu_lookup)
                 for entry, (otu_id, bpa_id, count) in enumerate(tuple_rows):
                     if bpa_id in skip_missing:
                         continue
@@ -368,13 +334,10 @@ class DataImporter:
                 ImportFileLog.make_file_log(fname, file_type='Abundance', rows_imported=entry, rows_skipped=0)
 
         logger.warning('Loading OTU abundance tables')
-        missing_bpa_ids = set()
-        for fname in glob(self._import_base + '/*/*.txt.gz'):
-            logger.warning("first pass, reading from: %s" % (fname))
-            missing_bpa_ids |= set(_missing_bpa_ids(fname))
 
+        missing_bpa_ids = self._find_missing_bpa_ids(otu_lookup)
         if missing_bpa_ids:
-            il = ImportSamplesMissingMetadataLog(samples_without_metadata=list(sorted(missing_bpa_ids)))
+            il = ImportSamplesMissingMetadataLog(samples_without_metadata=sorted(missing_bpa_ids))
             il.save()
 
         for sampleotu_fname in glob(self._import_base + '/*/*.txt.gz'):
@@ -392,8 +355,52 @@ class DataImporter:
                     self._engine.execute(
                         text('''COPY otu.sample_otu from :csv CSV header''').execution_options(autocommit=True),
                         csv=fname)
-                except:  # noqa
-                    logger.critical("unable to import %s" % (sampleotu_fname))
-                    traceback.print_exc()
+                except Exception:
+                    logger.critical("unable to import %s", sampleotu_fname, exc_info=True)
             finally:
                 os.unlink(fname)
+
+    def _find_missing_bpa_ids(self, otu_lookup):
+        def _missing_bpa_ids(fname):
+            have_bpaids = set([t[0] for t in self._session.query(SampleContext.id)])
+            with gzip.open(fname, 'rt') as fd:
+                bpa_ids, _ = self._otu_rows(fd, otu_lookup)
+                for bpa_id in bpa_ids:
+                    if bpa_id not in have_bpaids:
+                        yield bpa_id
+
+        missing_bpa_ids = set()
+        for fname in glob(self._import_base + '/*/*.txt.gz'):
+            logger.warning("first pass, reading from: %s" % (fname))
+            missing_bpa_ids |= set(_missing_bpa_ids(fname))
+        return missing_bpa_ids
+
+    def _otu_rows(self, fd, otu_lookup):
+        reader = csv.reader(fd, dialect='excel-tab')
+        header = next(reader)
+
+        assert(header[0] == '#OTU ID')
+
+        # find the four or five-digit BPA IDs: there are integers in here which are not BPA IDs,
+        # but they're not in the BPA ID range (currently 7031 -> 58020). FIXME, this is crude
+        # and it would be better to more clearly identify BPA / non BPA data; discussing with CSIRO
+        idx_bpa_id = [(i + 1, try_int(t)) for (i, t) in enumerate(header[1:]) if len(t) == 4 or len(t) == 5]
+        idx_bpa_id = [(i, t) for (i, t) in idx_bpa_id if t is not None]
+
+        def _tuplerows():
+            for row in reader:
+                otu_code = row[0]
+                otu_id = otu_lookup.get(otu_hash(otu_code))
+                if otu_id is None:
+                    logger.critical(['OTU not defined', otu_code])
+                    continue
+                for idx, bpa_id in idx_bpa_id:
+                    count = row[idx]
+                    if count == '' or count == '0' or count == '0.0':
+                        continue
+                    count = int(float(count))
+                    if count == 0:
+                        continue
+                    yield otu_id, bpa_id, count
+
+        return [t[1] for t in idx_bpa_id], _tuplerows()

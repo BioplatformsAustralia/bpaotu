@@ -5,9 +5,10 @@ from .otu import (
     OTU,
     SampleContext)
 from .util import (
-    val_or_empty,
     display_name,
-    format_bpa_id)
+    format_bpa_id,
+    str_none_blank,
+    val_or_empty)
 from .query import (
     OntologyInfo,
     SampleQuery)
@@ -20,16 +21,11 @@ def contextual_csv(samples):
         def make_ontology_export(ontology_cls):
             values = dict(info.get_values(ontology_cls))
 
-            def __ontology_lookup(x):
+            def _ontology_lookup(x):
                 if x is None:
                     return ''
                 return values[x]
-            return __ontology_lookup
-
-        def str_none_blank(v):
-            if v is None:
-                return ''
-            return str(v)
+            return _ontology_lookup
 
         headings = {}
         write_fns = {}

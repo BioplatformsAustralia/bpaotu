@@ -128,7 +128,11 @@ class WorkflowAPI(GalaxyAPI):
 
     def submit(self, workflow_id, history_id, file_ids):
         ds_map = {k: {'src': 'hda', 'id': v} for k, v in file_ids.items()}
-        response = self.client.post('workflows', workflow_id=workflow_id, history_id=history_id, ds_map=json.dumps(ds_map))
+        response = self.client.post(
+            'workflows',
+            workflow_id=workflow_id,
+            history_id=history_id,
+            ds_map=json.dumps(ds_map))
         return response
 
 

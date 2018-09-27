@@ -196,36 +196,24 @@ def _get_date(dt):
     if dt is None:
         return None
 
-    if dt == 'unknown':
-        return None
-
     if isinstance(dt, datetime.date):
         return dt
 
     if not isinstance(dt, str):
         return None
 
-    if dt.strip() == '':
+    dt = dt.strip()
+
+    if dt in ('', 'unknown'):
         return None
 
-    try:
-        return datetime.datetime.strptime(dt, '%Y-%m-%d').date()
-    except ValueError:
-        pass
+    return _parse_date(dt, ('%Y-%m-%d', '%Y-%b-%d', '%d/%m/%Y', '%d/%m/%y'))
 
-    try:
-        return datetime.datetime.strptime(dt, '%Y-%b-%d').date()
-    except ValueError:
-        pass
 
-    try:
-        return datetime.datetime.strptime(dt, '%d/%m/%Y').date()
-    except ValueError:
-        pass
-
-    try:
-        return datetime.datetime.strptime(dt, '%d/%m/%y').date()
-    except ValueError:
-        pass
-
+def _parse_date(dt, fmts):
+    for fmt in fmts:
+        try:
+            return datetime.datetime.strptime(dt, fmt).date()
+        except ValueError:
+            pass
     return None

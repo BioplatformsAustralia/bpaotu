@@ -66,8 +66,9 @@ class ExcelWrapper(object):
             self.sheet = self.workbook.sheet_by_name(sheet_name)
 
         self.field_names = self._set_field_names()
+        self._header = None
         self.missing_headers = []
-        self.header, self.name_to_column_map = self.set_name_to_column_map()
+        self.name_to_column_map = self.set_name_to_column_map()
         self.name_to_func_map = self.set_name_to_func_map()
 
     def _error(self, s):
@@ -81,37 +82,41 @@ class ExcelWrapper(object):
         if len(set(names)) != len(self.field_spec):
             # this is a problem in the bpa-ingest code, not in the passed-in spreadsheet,
             # so we can fail hard here
-            raise Exception("duplicate `attribute` in field definition: %s" % [t for (t, c) in Counter(names).items() if c > 1])
+            raise Exception("duplicate `attribute` in field definition: %s",
+                            [t for (t, c) in Counter(names).items() if c > 1])
         return names
 
-    def set_name_to_column_map(self):
-        ''' maps the named field to the actual column in the spreadsheet '''
-
+    @property
+    def header(self):
         def coerce_header(s):
             if type(s) is not str:
                 self._error("header is not a string: %s `%s'" % (type(s), repr(s)))
                 return str(s)
             return strip_to_ascii(s)
 
-        header = [coerce_header(t).strip().lower() for t in self.sheet.row_values(self.column_name_row_index)]
+        if self._header is None:
+            self._header = [coerce_header(t).strip().lower() for t in self.sheet.row_values(self.column_name_row_index)]
+        return self._header
 
-        def find_column(column_name):
-            # if has the 'match' attribute, it's a regexp
-            if hasattr(column_name, 'match'):
-                return find_column_re(column_name)
-            col_index = -1
-            try:
-                col_index = header.index(column_name.strip().lower())
-            except ValueError:
-                pass
-            return col_index
-
+    def find_column(self, column_name):
         def find_column_re(column_name_re):
-            for idx, name in enumerate(header):
+            for idx, name in enumerate(self.header):
                 if column_name_re.match(name):
                     return idx
             return -1
 
+        # if has the 'match' attribute, it's a regexp
+        if hasattr(column_name, 'match'):
+            return find_column_re(column_name)
+        col_index = -1
+        try:
+            col_index = self.header.index(column_name.strip().lower())
+        except ValueError:
+            pass
+        return col_index
+
+    def set_name_to_column_map(self):
+        ''' maps the named field to the actual column in the spreadsheet '''
         cmap = {}
         missing_columns = False
         for spec in self.field_spec:
@@ -121,29 +126,30 @@ class ExcelWrapper(object):
                 col_descr = spec.column_name.pattern
             if type(spec.column_name) == tuple:
                 for c, _name in enumerate(spec.column_name):
-                    col_index = find_column(_name)
+                    col_index = self.find_column(_name)
                     if col_index != -1:
                         break
             else:
-                col_index = find_column(spec.column_name)
+                col_index = self.find_column(spec.column_name)
 
             if col_index != -1:
                 cmap[spec.attribute] = col_index
             else:
                 self.missing_headers.append(spec.column_name)
                 if not spec.optional:
-                    self._error("Column `{}' not found in `{}' `{}'".format(col_descr, os.path.basename(self.file_name), self.sheet.name))
+                    self._error("Column `{}' not found in `{}' `{}'".format(
+                        col_descr, os.path.basename(self.file_name), self.sheet.name))
                     missing_columns = True
                 cmap[spec.attribute] = None
 
         if missing_columns and self.suggest_template:
             template = ['[']
-            for header in (str(t) for t in header):
+            for header in (str(t) for t in self.header):
                 template.append("    fld('%s', '%s')," % (header.lower().replace(' ', '_'), header))
             template.append(']')
             self._error('Missing columns -- template for columns in spreadsheet is:\n%s' % ('\n'.join(template)))
 
-        return header, cmap
+        return cmap
 
     def set_name_to_func_map(self):
         ''' Map the spec fields to their corresponding functions '''

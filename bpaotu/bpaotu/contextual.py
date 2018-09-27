@@ -152,7 +152,9 @@ marine_field_specs = {
         fld('coastal_id', 'coastal_id'),
         fld('host_species', 'host species'),
         fld('notes', 'notes'),
-        fld('pulse_amplitude_modulated_fluorometer_measurement', 'pulse amplitude modulated (pam) fluorometer measurement', coerce=ingest_utils.get_clean_number),
+        fld('pulse_amplitude_modulated_fluorometer_measurement',
+            'pulse amplitude modulated (pam) fluorometer measurement',
+            coerce=ingest_utils.get_clean_number),
         fld('host_state', 'host state (free text field)'),
         fld('host_abundance', 'host abundance (individuals per m2)', coerce=ingest_utils.get_clean_number),
     ],
@@ -249,11 +251,17 @@ marine_field_specs = {
         fld('coastal_id', 'coastal_id'),
         fld('host_species', 'host species'),
         fld('notes', 'notes'),
-        fld('pulse_amplitude_modulated_pam_fluorometer_measurement', 'pulse amplitude modulated (pam) fluorometer measurement', coerce=ingest_utils.get_clean_number),
+        fld('pulse_amplitude_modulated_pam_fluorometer_measurement',
+            'pulse amplitude modulated (pam) fluorometer measurement',
+            coerce=ingest_utils.get_clean_number),
         fld('host_state', 'host state (free text field)'),
         fld('host_abundance', 'host abundance (individuals per m2)', coerce=ingest_utils.get_clean_number),
-        fld('light_intensity_surface', re.compile(r'^light intensity \(surface\).*'), coerce=ingest_utils.get_clean_number),
-        fld('light_intensity_meadow', re.compile(r'^light intensity \(meadow\).*'), coerce=ingest_utils.get_clean_number),
+        fld('light_intensity_surface',
+            re.compile(r'^light intensity \(surface\).*'),
+            coerce=ingest_utils.get_clean_number),
+        fld('light_intensity_meadow',
+            re.compile(r'^light intensity \(meadow\).*'),
+            coerce=ingest_utils.get_clean_number),
     ],
     'Seaweed': [
         fld('bpa_id', 'bpa_id', coerce=ingest_utils.extract_bpa_id),
@@ -267,7 +275,9 @@ marine_field_specs = {
         fld('coastal_id', 'coastal_id'),
         fld('host_species', 'host species'),
         fld('notes', 'notes'),
-        fld('pulse_amplitude_modulated_pam_fluorometer_measurement', 'pulse amplitude modulated (pam) fluorometer measurement', coerce=ingest_utils.get_clean_number),
+        fld('pulse_amplitude_modulated_pam_fluorometer_measurement',
+            'pulse amplitude modulated (pam) fluorometer measurement',
+            coerce=ingest_utils.get_clean_number),
         fld('host_state', 'host state (free text field)'),
         fld('fouling', 'fouling', coerce=ingest_utils.get_clean_number),
         fld('fouling_organisms', 'fouling_organisms'),
@@ -526,11 +536,15 @@ def soil_contextual_rows(metadata_path):
     for error in wrapper.get_errors():
         logger.error(error)
 
-    for val in onotology_error_values:
-        il = ImportOntologyLog(environment="Soil", ontology_name=val, import_result=list(sorted(onotology_error_values[val])))
+    for val, errs in onotology_error_values.items():
+        il = ImportOntologyLog(environment="Soil", ontology_name=val, import_result=sorted(errs))
         il.save()
     valid_objs = [t for t in objs if context_valid(t)]
-    ImportFileLog.make_file_log(metadata_path, file_type='Soil contextual metadata', rows_imported=len(valid_objs), rows_skipped=len(objs) - len(valid_objs))
+    ImportFileLog.make_file_log(
+        metadata_path,
+        file_type='Soil contextual metadata',
+        rows_imported=len(valid_objs),
+        rows_skipped=len(objs) - len(valid_objs))
     return valid_objs
 
 
@@ -555,5 +569,9 @@ def marine_contextual_rows(metadata_path):
             logger.error(error)
 
     valid_objs = [t for t in objs if context_valid(t)]
-    ImportFileLog.make_file_log(metadata_path, file_type='Marine contextual metadata', rows_imported=len(valid_objs), rows_skipped=len(objs) - len(valid_objs))
+    ImportFileLog.make_file_log(
+        metadata_path,
+        file_type='Marine contextual metadata',
+        rows_imported=len(valid_objs),
+        rows_skipped=len(objs) - len(valid_objs))
     return valid_objs

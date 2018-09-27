@@ -61,7 +61,9 @@ services:
     image: muccg/bpaotu:${BUILD_VERSION}
 
   lint:
-    image: muccg/linter
-    working_dir: /data
+    image: muccg/linter:python3
+    working_dir: /app/bpaotu
     volumes:
-      - ./:/data
+      - ./:/app
+    command:
+      - flake8
