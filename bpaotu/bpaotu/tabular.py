@@ -19,9 +19,9 @@ import logging
 logger = logging.getLogger('rainbow')
 
 
-def contextual_csv(samples):
-    with OntologyInfo() as info:
-        def make_ontology_export(ontology_cls):
+def _csv_write_function(column):
+    def make_ontology_export(ontology_cls):
+        with OntologyInfo() as info:
             values = dict(info.get_values(ontology_cls))
 
             def _ontology_lookup(x):
@@ -30,43 +30,49 @@ def contextual_csv(samples):
                 return values[x]
             return _ontology_lookup
 
-        headings = {}
-        write_fns = {}
-        for column in SampleContext.__table__.columns:
-            units = SampleContext.units(column.name)
-            if column.name == 'id':
-                headings[column.name] = 'BPA ID'
-            else:
-                title = SampleContext.display_name(column.name)
-                if units:
-                    title += ' [%s]' % units
-                headings[column.name] = title
+    if column.name == 'id':
+        return format_bpa_id
+    elif hasattr(column, "ontology_class"):
+        return make_ontology_export(column.ontology_class)
+    else:
+        return str_none_blank
 
-            if column.name == 'id':
-                write_fns[column.name] = format_bpa_id
-            elif hasattr(column, "ontology_class"):
-                write_fns[column.name] = make_ontology_export(column.ontology_class)
-            else:
-                write_fns[column.name] = str_none_blank
 
-        def get_context_value(sample, field):
-            return write_fns[field](getattr(sample, field))
+def _csv_heading(column):
+    units = SampleContext.units(column.name)
+    if column.name == 'id':
+        return 'BPA ID'
+    title = SampleContext.display_name(column.name)
+    if units:
+        title += ' [%s]' % units
+    return title
 
-        all_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
-        non_empty = set(
-            field
-            for sample in samples
-            for field in all_fields
-            if get_context_value(sample, field) != '')
-        fields = ['id'] + sorted(list(non_empty))
 
-        csv_fd = io.StringIO()
-        w = csv.writer(csv_fd)
-        w.writerow(headings[t] for t in fields)
+def contextual_csv(samples):
+    headings = {}
+    write_fns = {}
+    for column in SampleContext.__table__.columns:
+        headings[column.name] = _csv_heading(column)
+        write_fns[column.name] = _csv_write_function(column)
 
-        for sample in samples:
-            w.writerow(get_context_value(sample, field) for field in fields)
-        return csv_fd.getvalue()
+    def get_context_value(sample, field):
+        return write_fns[field](getattr(sample, field))
+
+    all_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
+    non_empty = set(
+        field
+        for sample in samples
+        for field in all_fields
+        if get_context_value(sample, field) != '')
+    fields = ['id'] + sorted(list(non_empty))
+
+    csv_fd = io.StringIO()
+    w = csv.writer(csv_fd)
+    w.writerow(headings[t] for t in fields)
+
+    for sample in samples:
+        w.writerow(get_context_value(sample, field) for field in fields)
+    return csv_fd.getvalue()
 
 
 def tabular_zip_file_generator(params):
