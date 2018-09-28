@@ -81,6 +81,10 @@ function reset_password_alert() {
 
 const GALAXY_ALERT_IN_PROGRESS = alert('Submission to Galaxy in Progress ...');
 const GALAXY_ALERT_ERROR = alert('An error occured while submiting to Galaxy.', 'danger');
+const GALAXY_ALERT_GETTING_STARTED = alert(
+    'If you are new to Galaxy Australia, please see this <a target="_blank" ' +
+    `href="${window.otu_search_config.base_url}/static/bpaotu/rdc/Galaxy%20Australia%20-%20Quick%20Start%20Guide.pdf">` +
+    'Getting started guide</a>', 'success');
 
 export default handleActions({
     [submitToGalaxyStarted as any]: (state, action) => ({
@@ -96,7 +100,7 @@ export default handleActions({
                 finished: false,
                 succeeded: false,
             }
-            var alerts = [GALAXY_ALERT_IN_PROGRESS];
+            var alerts = [GALAXY_ALERT_IN_PROGRESS, GALAXY_ALERT_GETTING_STARTED];
             if (lastSubmission.userCreated) {
                 alerts.push(reset_password_alert());
             }
@@ -138,7 +142,10 @@ export default handleActions({
                 const GALAXY_ALERT_SUCCESS = alert(
                     'Successfully submitted to Galaxy.' +
                     ` File uploaded to your <a target="_blank" href="${linkToHistory}" className="alert-link">Galaxy history.</a>`, 'success');
-                newAlerts = [newLastSubmissionState.succeeded ? GALAXY_ALERT_SUCCESS : GALAXY_ALERT_ERROR];
+                newAlerts = [
+                    newLastSubmissionState.succeeded ? GALAXY_ALERT_SUCCESS : GALAXY_ALERT_ERROR,
+                    GALAXY_ALERT_GETTING_STARTED
+                ];
                 if (newLastSubmissionState.userCreated) {
                     newAlerts.push(reset_password_alert());
                 }
