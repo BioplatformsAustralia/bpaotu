@@ -13,6 +13,10 @@ from .query import (
     SampleQuery)
 import io
 import csv
+import logging
+
+
+logger = logging.getLogger('rainbow')
 
 
 def contextual_csv(samples):
@@ -26,31 +30,42 @@ def contextual_csv(samples):
                 return values[x]
             return _ontology_lookup
 
-        csv_fd = io.StringIO()
-        w = csv.writer(csv_fd)
-        fields = []
-        heading = []
-        write_fns = []
+        headings = {}
+        write_fns = {}
         for column in SampleContext.__table__.columns:
-            fields.append(column.name)
             units = SampleContext.units(column.name)
             if column.name == 'id':
-                heading.append('BPA ID')
+                headings[column.name] = 'BPA ID'
             else:
                 title = SampleContext.display_name(column.name)
                 if units:
                     title += ' [%s]' % units
-                heading.append(title)
+                headings[column.name] = title
 
             if column.name == 'id':
-                write_fns.append(format_bpa_id)
+                write_fns[column.name] = format_bpa_id
             elif hasattr(column, "ontology_class"):
-                write_fns.append(make_ontology_export(column.ontology_class))
+                write_fns[column.name] = make_ontology_export(column.ontology_class)
             else:
-                write_fns.append(str_none_blank)
-        w.writerow(heading)
+                write_fns[column.name] = str_none_blank
+
+        def get_context_value(sample, field):
+            return write_fns[field](getattr(sample, field))
+
+        all_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
+        non_empty = set(
+            field
+            for sample in samples
+            for field in all_fields
+            if get_context_value(sample, field) != '')
+        fields = ['id'] + sorted(list(non_empty))
+
+        csv_fd = io.StringIO()
+        w = csv.writer(csv_fd)
+        w.writerow(headings[t] for t in fields)
+
         for sample in samples:
-            w.writerow(f(getattr(sample, field)) for (field, f) in zip(fields, write_fns))
+            w.writerow(get_context_value(sample, field) for field in fields)
         return csv_fd.getvalue()
 
 
