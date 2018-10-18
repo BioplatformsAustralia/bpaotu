@@ -17,4 +17,4 @@ cp .env .env_local
 ./develop.sh build dev
 ./develop.sh build node
 ./develop.sh run build lint
-./develop.sh run node lint
+./develop.sh run "" node lint
