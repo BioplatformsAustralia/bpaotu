@@ -1,16 +1,11 @@
-import * as React from 'react';
+import * as React from 'react'
 
-import { Button } from 'reactstrap';
+import { Button } from 'reactstrap'
 
-import Octicon from './octicon';
+import Octicon from './octicon'
 
 export default props => (
-    <Button 
-        block
-        color="primary"
-        size="lg"
-        disabled={props.isDisabled}
-        onClick={props.search}>
-            <Octicon name="search" /> &nbsp; Search
-    </Button>
-);
+  <Button block={true} color="primary" size="lg" disabled={props.isDisabled} onClick={props.search}>
+    <Octicon name="search" /> &nbsp; Search
+  </Button>
+)
