@@ -15,6 +15,6 @@ cp .env .env_local
 ./develop.sh build base
 ./develop.sh build builder
 ./develop.sh build dev
-./develop.sh build node
+./develop.sh build node --no-cache
 ./develop.sh run build lint
 ./develop.sh run "" node npm run lint
