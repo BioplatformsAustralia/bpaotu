@@ -35,7 +35,6 @@ const ArcGIS = {
 class BPASamples extends React.Component<any, any> {
   constructor(props: any) {
     super(props)
-    var x = 1
 
     this.state = {
       bpadata: this.props.bpadata,
