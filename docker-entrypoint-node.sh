@@ -34,7 +34,7 @@ if [ "$1" = 'lint' ]; then
     yarn install
     npm run lint
 
-    exit 0
+    exit $?
 fi
 
 
