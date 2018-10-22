@@ -1,26 +1,23 @@
-import { createActions, handleActions } from 'redux-actions';
+import { createActions, handleActions } from 'redux-actions'
 
-import { EmptyOperatorAndValue } from './types';
-import { clearAllTaxonomyFilters } from './taxonomy';
+import { clearAllTaxonomyFilters } from './taxonomy'
+import { EmptyOperatorAndValue } from './types'
 
+export const { selectAmplicon, selectAmpliconOperator } = createActions('SELECT_AMPLICON', 'SELECT_AMPLICON_OPERATOR')
 
-export const {
-    selectAmplicon,
-    selectAmpliconOperator,
-} = createActions(
-    'SELECT_AMPLICON',
-    'SELECT_AMPLICON_OPERATOR',
-);
-
-export default handleActions({
+export default handleActions(
+  {
     [clearAllTaxonomyFilters as any]: (state, action: any) => {
-        return EmptyOperatorAndValue},
+      return EmptyOperatorAndValue
+    },
     [selectAmplicon as any]: (state, action: any) => ({
-        ...state,
-        value: action.payload
+      ...state,
+      value: action.payload
     }),
     [selectAmpliconOperator as any]: (state, action: any) => ({
-        ...state,
-        operator: action.payload
+      ...state,
+      operator: action.payload
     })
-}, EmptyOperatorAndValue);
+  },
+  EmptyOperatorAndValue
+)

@@ -1,6 +1,6 @@
-import { combineReducers } from 'redux';
-import ampliconsReducer from './amplicons';
+import { combineReducers } from 'redux'
+import ampliconsReducer from './amplicons'
 
 export default combineReducers({
-    amplicons: ampliconsReducer,
-});
+  amplicons: ampliconsReducer
+})
