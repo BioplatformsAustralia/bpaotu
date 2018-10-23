@@ -1,184 +1,196 @@
-import * as _ from 'lodash';
-import { searchPageInitialState, GalaxySubmission, ErrorList } from "./types";
-import { executeSubmitToGalaxy, getGalaxySubmission } from '../../../api';
+import { get as _get, isNumber, last } from 'lodash'
+import { executeSubmitToGalaxy, getGalaxySubmission } from '../../../api'
+import { ErrorList, GalaxySubmission, searchPageInitialState } from './types'
 
-import { describeSearch } from './search';
-import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils';
-import { createActions, handleActions } from 'redux-actions';
+import { createActions, handleActions } from 'redux-actions'
+import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils'
+import { describeSearch } from './search'
 
-const GALAXY_SUBMISSION_POLL_FREQUENCY_MS = 5000;
-const ALERT_AUTO_HIDE_MS = 3000;
+const GALAXY_SUBMISSION_POLL_FREQUENCY_MS = 5000
+const ALERT_AUTO_HIDE_MS = 3000
 
 export const {
-    submitToGalaxyStarted,
-    submitToGalaxyEnded,
+  submitToGalaxyStarted,
+  submitToGalaxyEnded,
 
-    galaxySubmissionUpdateStarted,
-    galaxySubmissionUpdateEnded,
+  galaxySubmissionUpdateStarted,
+  galaxySubmissionUpdateEnded,
 
-    clearGalaxyAlert,
+  clearGalaxyAlert
 } = createActions(
-    'SUBMIT_TO_GALAXY_STARTED',
-    'SUBMIT_TO_GALAXY_ENDED',
+  'SUBMIT_TO_GALAXY_STARTED',
+  'SUBMIT_TO_GALAXY_ENDED',
 
-    'GALAXY_SUBMISSION_UPDATE_STARTED',
-    'GALAXY_SUBMISSION_UPDATE_ENDED',
+  'GALAXY_SUBMISSION_UPDATE_STARTED',
+  'GALAXY_SUBMISSION_UPDATE_ENDED',
 
-    'CLEAR_GALAXY_ALERT',
-);
+  'CLEAR_GALAXY_ALERT'
+)
 
 export const submitToGalaxy = () => (dispatch, getState) => {
-    const state = getState();
+  const state = getState()
 
-    dispatch(submitToGalaxyStarted());
+  dispatch(submitToGalaxyStarted())
 
-    const filters = describeSearch(state.searchPage.filters);
+  const filters = describeSearch(state.searchPage.filters)
 
-    executeSubmitToGalaxy(filters)
+  executeSubmitToGalaxy(filters)
     .then(data => {
-        if (_.get(data, 'data.errors', []).length > 0) {
-            dispatch(submitToGalaxyEnded(new ErrorList(data.data.errors)));
-            return;
-        }
-        dispatch(submitToGalaxyEnded(data));
-        dispatch(autoUpdateGalaxySubmission());
+      if (_get(data, 'data.errors', []).length > 0) {
+        dispatch(submitToGalaxyEnded(new ErrorList(data.data.errors)))
+        return
+      }
+      dispatch(submitToGalaxyEnded(data))
+      dispatch(autoUpdateGalaxySubmission())
     })
     .catch(error => {
-        dispatch(submitToGalaxyEnded(new ErrorList('Unhandled server-side error!')));
+      dispatch(submitToGalaxyEnded(new ErrorList('Unhandled server-side error!')))
     })
 }
 
 export const autoUpdateGalaxySubmission = () => (dispatch, getState) => {
-    const getLastSubmission: (() => GalaxySubmission) = () => _.last(getState().searchPage.galaxy.submissions);
-    const lastSubmission = getLastSubmission();
+  const getLastSubmission: (() => GalaxySubmission) = () => last(getState().searchPage.galaxy.submissions)
+  const lastSubmission = getLastSubmission()
 
-    getGalaxySubmission(lastSubmission.submissionId)
+  getGalaxySubmission(lastSubmission.submissionId)
     .then(data => {
-        dispatch(galaxySubmissionUpdateEnded(data));
-        const newLastSubmission = getLastSubmission();
-        if (!newLastSubmission.finished) {
-            setTimeout(() => dispatch(autoUpdateGalaxySubmission()), GALAXY_SUBMISSION_POLL_FREQUENCY_MS)
-        }
+      dispatch(galaxySubmissionUpdateEnded(data))
+      const newLastSubmission = getLastSubmission()
+      if (!newLastSubmission.finished) {
+        setTimeout(() => dispatch(autoUpdateGalaxySubmission()), GALAXY_SUBMISSION_POLL_FREQUENCY_MS)
+      }
     })
     .catch(error => {
-        dispatch(galaxySubmissionUpdateEnded(new Error('Unhandled server-side error!')));
-    });
+      dispatch(galaxySubmissionUpdateEnded(new Error('Unhandled server-side error!')))
+    })
 }
 
-
-function alert(text, color='primary') {
-    return {color, text};
+function alert(text, color = 'primary') {
+  return { color, text }
 }
 
 function reset_password_alert() {
-    const linkToReset = `${window.otu_search_config.galaxy_base_url}/user/reset_password?use_panels=True`;
-    const GALAXY_ALERT_USER_CREATED = alert(
-        'An account has been created for you on Galaxy Australia.' +
-        `Please <a target="_blank" href="${linkToReset}" className="alert-link">reset your password</a>, ` + 
-        'using the same email address you have registered with the Bioplatforms Data Portal.', 'success');
-    return GALAXY_ALERT_USER_CREATED;
+  const linkToReset = `${window.otu_search_config.galaxy_base_url}/user/reset_password?use_panels=True`
+  const GALAXY_ALERT_USER_CREATED = alert(
+    'An account has been created for you on Galaxy Australia.' +
+      `Please <a target="_blank" href="${linkToReset}" className="alert-link">reset your password</a>, ` +
+      'using the same email address you have registered with the Bioplatforms Data Portal.',
+    'success'
+  )
+  return GALAXY_ALERT_USER_CREATED
 }
 
-const GALAXY_ALERT_IN_PROGRESS = alert('Submission to Galaxy in Progress ...');
-const GALAXY_ALERT_ERROR = alert('An error occured while submiting to Galaxy.', 'danger');
+const GALAXY_ALERT_IN_PROGRESS = alert('Submission to Galaxy in Progress ...')
+const GALAXY_ALERT_ERROR = alert('An error occured while submiting to Galaxy.', 'danger')
 const GALAXY_ALERT_GETTING_STARTED = alert(
-    'If you are new to Galaxy Australia, please see this <a target="_blank" ' +
-    `href="${window.otu_search_config.base_url}/static/bpaotu/rdc/Galaxy%20Australia%20-%20Quick%20Start%20Guide.pdf">` +
-    'Getting started guide</a>', 'success');
+  'If you are new to Galaxy Australia, please see this <a target="_blank" ' +
+    `href="${
+      window.otu_search_config.base_url
+    }/static/bpaotu/rdc/Galaxy%20Australia%20-%20Quick%20Start%20Guide.pdf">` +
+    'Getting started guide</a>',
+  'success'
+)
 
-export default handleActions({
+export default handleActions(
+  {
     [submitToGalaxyStarted as any]: (state, action) => ({
-        ...state,
-        alerts: [],
-        isSubmitting: true,
+      ...state,
+      alerts: [],
+      isSubmitting: true
     }),
     [submitToGalaxyEnded as any]: {
-        next: (state, action: any) => {
-            const lastSubmission: GalaxySubmission = {
-                submissionId: action.payload.data.submission_id,
-                userCreated: action.payload.data.user_created,
-                finished: false,
-                succeeded: false,
-            }
-            var alerts = [GALAXY_ALERT_IN_PROGRESS, GALAXY_ALERT_GETTING_STARTED];
-            if (lastSubmission.userCreated) {
-                alerts.push(reset_password_alert());
-            }
-            return {
-                alerts: alerts,
-                submissions: [
-                    ...state.submissions,
-                    lastSubmission,
-                ],
-                isSubmitting: false,
-            }
-        },
-        throw: (state, action) => ({
-            ...state,
-            isSubmitting: false,
-        }),
+      next: (state, action: any) => {
+        const lastSubmission: GalaxySubmission = {
+          submissionId: action.payload.data.submission_id,
+          userCreated: action.payload.data.user_created,
+          finished: false,
+          succeeded: false
+        }
+        const alerts = [GALAXY_ALERT_IN_PROGRESS, GALAXY_ALERT_GETTING_STARTED]
+        if (lastSubmission.userCreated) {
+          alerts.push(reset_password_alert())
+        }
+        return {
+          alerts,
+          submissions: [...state.submissions, lastSubmission],
+          isSubmitting: false
+        }
+      },
+      throw: (state, action) => ({
+        ...state,
+        isSubmitting: false
+      })
     },
     [galaxySubmissionUpdateEnded as any]: {
-        next: (state, action: any) => {
-            const lastSubmission = _.last(state.submissions);
-            const newLastSubmissionState = (submission => {
-                const { state, error, history_id } = action.payload.data.submission;
-                let newState = {
-                    ...submission,
-                    historyId: history_id,
-                    finished: state === 'ok' || state === 'error',
-                    succeeded: state === 'ok'
-                }
-                if (state === 'error') {
-                    newState.error = error;
-                }
-                return newState;
-            })(lastSubmission);
+      next: (state, action: any) => {
+        const lastSubmission = last(state.submissions)
+        const newLastSubmissionState = (submission => {
+          const { status, error, history_id } = action.payload.data.submission
+          const newState = {
+            ...submission,
+            historyId: history_id,
+            finished: status === 'ok' || status === 'error',
+            succeeded: status === 'ok'
+          }
+          if (status === 'error') {
+            newState.error = error
+          }
+          return newState
+        })(lastSubmission)
 
-            let newAlerts = state.alerts;
+        let newAlerts = state.alerts
 
-            if (newLastSubmissionState.finished && !lastSubmission.finished) {
-                const linkToHistory = `${window.otu_search_config.galaxy_base_url}/histories/view?id=${newLastSubmissionState.historyId}`;
-                const GALAXY_ALERT_SUCCESS = alert(
-                    'Successfully submitted to Galaxy.' +
-                    ` File uploaded to your <a target="_blank" href="${linkToHistory}" className="alert-link">Galaxy history.</a>`, 'success');
-                newAlerts = [
-                    newLastSubmissionState.succeeded ? GALAXY_ALERT_SUCCESS : GALAXY_ALERT_ERROR,
-                    GALAXY_ALERT_GETTING_STARTED
-                ];
-                if (newLastSubmissionState.userCreated) {
-                    newAlerts.push(reset_password_alert());
-                }
-            }
-            return {
-                ...state,
-                submissions: changeElementAtIndex(state.submissions, state.submissions.length - 1, _ => newLastSubmissionState),
-                alerts: newAlerts,
-            }
-        },
-        throw: (state, action) => {
-            const lastSubmission = _.last(state.submissions);
-            return {
-                ...state,
-                submissions: changeElementAtIndex(state.submissions, state.submissions.length - 1, submission => ({
-                    ...submission,
-                    finished: true,
-                    succeeded: false,
-                    error: action.error,
-                })),
-                alerts: [GALAXY_ALERT_ERROR],
-            }
-        },
+        if (newLastSubmissionState.finished && !lastSubmission.finished) {
+          const linkToHistory = `${window.otu_search_config.galaxy_base_url}/histories/view?id=${
+            newLastSubmissionState.historyId
+          }`
+          const GALAXY_ALERT_SUCCESS = alert(
+            'Successfully submitted to Galaxy.' +
+              ` File uploaded to your <a target="_blank" href="${linkToHistory}" className="alert-link">Galaxy history.</a>`,
+            'success'
+          )
+          newAlerts = [
+            newLastSubmissionState.succeeded ? GALAXY_ALERT_SUCCESS : GALAXY_ALERT_ERROR,
+            GALAXY_ALERT_GETTING_STARTED
+          ]
+          if (newLastSubmissionState.userCreated) {
+            newAlerts.push(reset_password_alert())
+          }
+        }
+        return {
+          ...state,
+          submissions: changeElementAtIndex(
+            state.submissions,
+            state.submissions.length - 1,
+            _ => newLastSubmissionState
+          ),
+          alerts: newAlerts
+        }
+      },
+      throw: (state, action) => {
+        const lastSubmission = last(state.submissions)
+        return {
+          ...state,
+          submissions: changeElementAtIndex(state.submissions, state.submissions.length - 1, submission => ({
+            ...submission,
+            finished: true,
+            succeeded: false,
+            error: action.error
+          })),
+          alerts: [GALAXY_ALERT_ERROR]
+        }
+      }
     },
     [clearGalaxyAlert as any]: (state, action) => {
-        const index = action.payload;
-        const alerts = _.isNumber(index) ?
-            removeElementAtIndex(state.alerts, index) :
-            state.alerts.filter(a => a.color === 'danger'); // never auto-remove errors
-        return {
-            ...state,
-            alerts,
-        }
-    },
-
-}, searchPageInitialState.galaxy);
+      const index = action.payload
+      const alerts = isNumber(index)
+        ? removeElementAtIndex(state.alerts, index)
+        : state.alerts.filter(a => a.color === 'danger') // never auto-remove errors
+      return {
+        ...state,
+        alerts
+      }
+    }
+  },
+  searchPageInitialState.galaxy
+)

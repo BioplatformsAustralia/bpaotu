@@ -1,8 +1,8 @@
-import { SearchConfig } from './search';
+import { SearchConfig } from './search'
 
 declare global {
   interface Window {
-    otu_search_config: SearchConfig,
+    __REDUX_DEVTOOLS_EXTENSION_COMPOSE__: any
+    otu_search_config: SearchConfig
   }
 }
-

@@ -1,13 +1,11 @@
-import { combineReducers } from 'redux';
+import { combineReducers } from 'redux'
 
-
-import selectColumnsReducer from './select_columns';
-import searchResultsReducer from './search';
-
+import searchResultsReducer from './search'
+import selectColumnsReducer from './select_columns'
 
 const pageReducer = combineReducers({
-    selectColumns: selectColumnsReducer,
-    results: searchResultsReducer,
-});
+  selectColumns: selectColumnsReducer,
+  results: searchResultsReducer
+})
 
-export default pageReducer;
+export default pageReducer

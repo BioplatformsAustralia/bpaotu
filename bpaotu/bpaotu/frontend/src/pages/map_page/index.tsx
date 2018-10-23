@@ -1,10 +1,10 @@
-import { noop, isEmpty } from 'lodash';
+import { isEmpty, noop } from 'lodash';
 import * as React from 'react';
-import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 
-import { fetchSampleMapSamples } from './reducers';
 import SamplesMap from '../../components/samples_map';
+import { fetchSampleMapSamples } from './reducers';
 
 const MapPage = props => {
     const mapContainerHeight = window.innerHeight - 220 * 2 + 'px';
