@@ -1,4 +1,4 @@
-import { find, isNull, map, negate } from 'lodash'
+import { find, isNull, map, negate, toNumber } from 'lodash'
 import reduceReducers from 'reduce-reducers'
 
 import { combineActions, createActions, handleAction, handleActions } from 'redux-actions'
@@ -75,7 +75,7 @@ export const doesFilterMatchEnvironment = environment => filter => {
   if (environment.value === '') {
     return true
   }
-  const eq = fltr => fltr.environment === environment.value
+  const eq = fltr => fltr.environment === toNumber(environment.value)
   const op = environment.operator === 'is' ? eq : negate(eq)
   return isNull(filter.environment) || op(filter)
 }
