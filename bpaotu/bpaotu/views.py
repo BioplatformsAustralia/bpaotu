@@ -8,6 +8,13 @@ from operator import itemgetter
 import os
 import re
 import time
+import ckanapi
+import requests
+from io import BytesIO
+from PIL import Image
+
+from .util import make_cache_key
+from django.core.cache import caches
 
 from django.conf import settings
 from django.urls import reverse
@@ -593,3 +600,44 @@ def dev_only_ckan_check_permissions(request):
     response = '||'.join([digest, data])
 
     return HttpResponse(response)
+
+
+def fetch_images(request):
+    remote = ckanapi.RemoteCKAN(settings.BPA_PROD_URL, apikey=settings.CKAN_API_KEY)
+
+    packages = remote.action.package_search(
+        fq='tags:site-images',
+        include_private=True,
+        rows=100000)['results']
+
+    logger.error('--------------------------------------------------------------------------------')
+    logger.error('Current directory: {}'.format(os.getcwd()))
+    logger.error('There are {} image packages.'.format(len(packages)))
+    logger.error('--------------------------------------------------------------------------------')
+
+    lookup_table = {}
+
+    for i in packages:
+        try:
+            coords = (i['latitude'], i['longitude'])
+            img_url = i['resources'][0]['url']
+            lookup_table[coords] = img_url
+
+            # r = requests.get(img_url, headers={'Authorization': settings.CKAN_API_KEY})
+            #
+            # with Image.open(BytesIO(r.content)) as img_fp:
+            #     w, h = img_fp.size
+            #     logger.error("Width: {} Height: {}".format(w, h))
+            #
+            # logger.error("{}".format(r.status_code))
+
+        except Exception as e:
+            logger.error("Either latitude or longitude is missing for: {}".format(img_url))
+
+            continue
+
+        # break
+
+    logger.error(lookup_table)
+
+    return HttpResponse(str(lookup_table))

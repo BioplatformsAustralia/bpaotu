@@ -32,6 +32,18 @@ const ArcGIS = {
     '&amp;copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
 }
 
+
+class BPAImages extends React.Component<any, any> {
+    public render() {
+        return (
+            <div>
+                Foobarbaz
+            </div>
+        )
+    }
+}
+
+
 class BPASamples extends React.Component<any, any> {
   constructor(props: any) {
     super(props)
@@ -88,6 +100,8 @@ class BPASamples extends React.Component<any, any> {
             </TabPane>
           ))}
         </TabContent>
+
+
       </div>
     )
   }
@@ -121,9 +135,11 @@ export default class SamplesMap extends React.Component<any> {
           <MarkerClusterGroup>
             {this.props.markers.map((marker, index) => (
               <Marker key={`marker-${index}`} position={marker}>
-                <Popup minWidth={640} maxHeight={200}>
+                <Popup minWidth={640} maxHeight={480}>
                   <div>
-                    <BPASamples bpadata={marker.bpadata} />
+                      <BPASamples bpadata={marker.bpadata} />
+                      <hr />
+                      <BPAImages />
                   </div>
                 </Popup>
               </Marker>
