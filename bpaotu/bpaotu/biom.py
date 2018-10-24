@@ -36,7 +36,9 @@ def generate_biom_file(query, comment):
 def biom_zip_file_generator(params, timestamp):
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     with SampleQuery(params) as query:
-        zf.write_iter(params.filename(timestamp, '.biom'), (s.encode('utf8') for s in generate_biom_file(query, params.describe())))
+        zf.write_iter(
+            params.filename(timestamp, '.biom'),
+            (s.encode('utf8') for s in generate_biom_file(query, params.describe())))
     return zf
 
 
