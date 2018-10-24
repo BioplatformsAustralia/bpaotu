@@ -16,7 +16,7 @@ from .otu import SampleContext
 logger = logging.getLogger('rainbow')
 
 
-def generate_biom_file(query):
+def generate_biom_file(query, comment):
     otu_to_row = {}
     sample_to_column = {}
 
@@ -26,7 +26,7 @@ def generate_biom_file(query):
     shape = (str(len(x)) for x in (otu_to_row, sample_to_column))
 
     return itertools.chain(
-        biom_header(),
+        biom_header(comment),
         wrap('"rows": [', otus, '],\n'),
         wrap('"columns": [', samples, '],\n'),
         wrap('"shape": [', shape, '],\n'),
@@ -36,7 +36,7 @@ def generate_biom_file(query):
 def biom_zip_file_generator(params, timestamp):
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     with SampleQuery(params) as query:
-        zf.write_iter(params.filename(timestamp, '.biom'), (s.encode('utf8') for s in generate_biom_file(query)))
+        zf.write_iter(params.filename(timestamp, '.biom'), (s.encode('utf8') for s in generate_biom_file(query, params.describe())))
     return zf
 
 
@@ -51,7 +51,7 @@ def save_biom_zip_file(params, dir='/data'):
     return filename
 
 
-def biom_header():
+def biom_header(comment):
     '''
     Write out the JSON file header first
     '''
@@ -60,6 +60,7 @@ def biom_header():
         ('format', 'Biological Observation Matrix 1.0.0'),
         ('format_url', 'http://biom-format.org'),
         ('type', 'OTU table'),
+        ('comment', comment),
         ('generated_by', 'Bioplatforms Australia'),
         ('date', datetime.datetime.now().replace(microsecond=0).isoformat()),
         ('matrix_type', 'sparse'),
@@ -115,7 +116,22 @@ def sample_columns(query, sample_to_column):
             titles[column.name] = title
 
     def get_context_value(sample, field):
-        return ontology_fns[field](getattr(sample, field))
+        val = ontology_fns[field](getattr(sample, field))
+
+        # Phinch (http://phinch.org/) and Krona don't handle the full
+        # range of JS types in metadata.
+        #
+        # These workarounds draw upon the behaviour of this online BIOM
+        # converter: https://biomcs.iimog.org
+
+        # workaround: None values not handled by external tools
+        if val is None:
+            val = 'null'
+
+        # workaround: non-string values not handled by external tools
+        val = str(val)
+
+        return val
 
     all_fields = [k.name for k in SampleContext.__table__.columns if k.name != 'id']
 
