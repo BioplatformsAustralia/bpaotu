@@ -38,5 +38,6 @@ urlpatterns = [
         views.contextual_csv_download_endpoint,
         name="contextual_csv_download_endpoint"),
 
-    url(r'^fetch_images$', views.fetch_images, name="fetch_images")
+    url(r'^create_img_lookup_table$', views.create_img_lookup_table, name="create_img_lookup_table"),
+    url(r'^process_img$', views.process_img, name="process_img")
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

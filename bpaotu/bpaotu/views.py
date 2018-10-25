@@ -602,18 +602,19 @@ def dev_only_ckan_check_permissions(request):
     return HttpResponse(response)
 
 
-def fetch_images(request):
+def create_img_lookup_table(request):
     remote = ckanapi.RemoteCKAN(settings.BPA_PROD_URL, apikey=settings.CKAN_API_KEY)
 
     packages = remote.action.package_search(
         fq='tags:site-images',
         include_private=True,
-        rows=100000)['results']
+        rows=100000
+    )['results']
 
-    logger.error('--------------------------------------------------------------------------------')
-    logger.error('Current directory: {}'.format(os.getcwd()))
-    logger.error('There are {} image packages.'.format(len(packages)))
-    logger.error('--------------------------------------------------------------------------------')
+    logger.info('----------------------------------------')
+    logger.info('Current directory: {}'.format(os.getcwd()))
+    logger.info('There are {} image packages.'.format(len(packages)))
+    logger.info('----------------------------------------')
 
     lookup_table = {}
 
@@ -623,21 +624,42 @@ def fetch_images(request):
             img_url = i['resources'][0]['url']
             lookup_table[coords] = img_url
 
-            # r = requests.get(img_url, headers={'Authorization': settings.CKAN_API_KEY})
-            #
-            # with Image.open(BytesIO(r.content)) as img_fp:
-            #     w, h = img_fp.size
-            #     logger.error("Width: {} Height: {}".format(w, h))
-            #
-            # logger.error("{}".format(r.status_code))
-
         except Exception as e:
             logger.error("Either latitude or longitude is missing for: {}".format(img_url))
+            logger.error("Missing parameter is: {}".format(str(e)))
 
             continue
 
-        # break
+    cache = caches['image_results']
+    key = 'lookup_table'
 
-    logger.error(lookup_table)
+    if cache.get(key) is None:
+        logger.info('Caching image lookup table.')
+        cache.set(key, lookup_table, None)
 
-    return HttpResponse(str(lookup_table))
+    cache_results = cache.get(key)
+
+    return HttpResponse(str(cache_results))
+
+
+def process_img(request, params=None):
+    lat_lng_example = ('-26.7605', '120.2840833333')  # Hardcode an example for testing for now
+
+    cache = caches['image_results']
+    lookup_table = cache.get('lookup_table')
+
+    img_url = lookup_table[lat_lng_example]
+
+    try:
+        r = requests.get(img_url, headers={'Authorization': settings.CKAN_API_KEY})
+
+        with Image.open(BytesIO(r.content)) as img_fp:
+            w, h = img_fp.size
+            logger.info("Width: {} Height: {}".format(w, h))
+
+        logger.info("{}".format(r.status_code))
+
+    except Exception as e:
+        logger.error("Error processing image: {}.".format(str(e)))
+
+    return HttpResponse('Foobar')
