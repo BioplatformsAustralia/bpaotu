@@ -52,7 +52,7 @@ class SearchResultsCard extends React.Component<any, any> {
               {window.otu_search_config.galaxy_integration && (
                 <HeaderButton
                   octicon="clippy"
-                  text="Submit to Galaxy"
+                  text="Export Data to Galaxy Australia for further analysis"
                   disabled={this.isGalaxySubmissionDisabled()}
                   onClick={this.props.submitToGalaxy}
                 />
