@@ -26,7 +26,8 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
     return bindActionCreators({
-        fetchSamples: fetchSampleMapSamples
+        fetchSamples: fetchSampleMapSamples,
+        // fetchSampleImages
     }, dispatch);
 }
 

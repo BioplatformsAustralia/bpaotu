@@ -62,6 +62,8 @@ logger = logging.getLogger("rainbow")
 ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
 
+CACHE_7DAYS = (60 * 60 * 24 * 7)
+
 
 class OTUError(Exception):
     def __init__(self, *errors):
@@ -602,40 +604,40 @@ def dev_only_ckan_check_permissions(request):
     return HttpResponse(response)
 
 
-def create_img_lookup_table(request):
-    remote = ckanapi.RemoteCKAN(settings.BPA_PROD_URL, apikey=settings.CKAN_API_KEY)
-
-    packages = remote.action.package_search(
-        fq='tags:site-images',
-        include_private=True,
-        rows=100000
-    )['results']
-
-    logger.info('----------------------------------------')
-    logger.info('Current directory: {}'.format(os.getcwd()))
-    logger.info('There are {} image packages.'.format(len(packages)))
-    logger.info('----------------------------------------')
-
-    lookup_table = {}
-
-    for i in packages:
-        try:
-            coords = (i['latitude'], i['longitude'])
-            img_url = i['resources'][0]['url']
-            lookup_table[coords] = img_url
-
-        except Exception as e:
-            logger.error("Either latitude or longitude is missing for: {}".format(img_url))
-            logger.error("Missing parameter is: {}".format(str(e)))
-
-            continue
+def create_img_lookup_table(request=None):
+    logger.info('a')
 
     cache = caches['image_results']
-    key = 'lookup_table'
+    key = 'lookup_table'  # Cannot hash based on content, else not able to retrieve.
 
     if cache.get(key) is None:
-        logger.info('Caching image lookup table.')
-        cache.set(key, lookup_table, None)
+        remote = ckanapi.RemoteCKAN(settings.BPA_PROD_URL, apikey=settings.CKAN_API_KEY)
+
+        packages = remote.action.package_search(
+            fq='tags:site-images',
+            include_private=True,
+            rows=100000
+        )['results']
+
+        logger.info('--------------------------------------------------------------------------------')
+        logger.info('There are {} image packages.'.format(len(packages)))
+        logger.info('--------------------------------------------------------------------------------')
+
+        lookup_table = {}
+
+        for i in packages:
+            try:
+                coords = (i['latitude'], i['longitude'])
+                img_url = i['resources'][0]['url']
+                lookup_table[coords] = img_url
+
+            except Exception as e:
+                logger.error("Either latitude or longitude is missing for: {}".format(img_url))
+                logger.error("Missing parameter is: {}".format(str(e)))
+
+                continue
+
+        cache.set(key, lookup_table, CACHE_7DAYS)
 
     cache_results = cache.get(key)
 
@@ -643,23 +645,50 @@ def create_img_lookup_table(request):
 
 
 def process_img(request, params=None):
+    logger.info('b')
+
+    create_img_lookup_table()
+
     lat_lng_example = ('-26.7605', '120.2840833333')  # Hardcode an example for testing for now
+
+    img_ext_convert_tbl = {
+        'jpg': ['JPEG', 'image/jpeg']
+    }
 
     cache = caches['image_results']
     lookup_table = cache.get('lookup_table')
 
     img_url = lookup_table[lat_lng_example]
+    img_name, img_ext = (img_url.split('/')[-1:])[0].split(".")
+    img_filename = img_name + "." + img_ext
 
-    try:
-        r = requests.get(img_url, headers={'Authorization': settings.CKAN_API_KEY})
+    key = img_filename
 
-        with Image.open(BytesIO(r.content)) as img_fp:
-            w, h = img_fp.size
-            logger.info("Width: {} Height: {}".format(w, h))
+    if cache.get(key) is None:
+        logger.info('--------------------------------------------------------------------------------')
+        logger.info('Current directory: {}'.format(os.getcwd()))
+        logger.info('Caching image: {}'.format(key))
+        logger.info('--------------------------------------------------------------------------------')
 
-        logger.info("{}".format(r.status_code))
+        try:
+            r = requests.get(img_url, headers={'Authorization': settings.CKAN_API_KEY})
 
-    except Exception as e:
-        logger.error("Error processing image: {}.".format(str(e)))
+            with Image.open(BytesIO(r.content)) as img_obj:
+                # img_obj.save(img_filename)
 
-    return HttpResponse('Foobar')
+                with BytesIO() as img_buf:
+                    img_obj.save(img_buf, format=img_ext_convert_tbl[img_ext][0])
+
+                    if cache.get(key) is None:
+                        logger.info('Caching img: {}'.format(img_filename))
+                        cache.set(key, img_buf.getvalue(), CACHE_7DAYS)
+
+                w, h = img_obj.size
+                logger.info("Width: {} Height: {}".format(w, h))
+
+        except Exception as e:
+            logger.error("Error processing image: {}.".format(str(e)))
+
+    buf = BytesIO(cache.get(key))
+
+    return HttpResponse(buf.getvalue(), content_type=img_ext_convert_tbl[img_ext][1])
