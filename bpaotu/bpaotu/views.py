@@ -644,6 +644,16 @@ def create_img_lookup_table(request=None):
     return HttpResponse(str(cache_results))
 
 
+# lat, lng
+def sample_images(request):
+    pass
+    # []
+    # [url_to_img/lat/lng/1,
+    # url_to_img/lat/lng/2]
+    # n
+
+
+# lat, lng, idx
 def process_img(request, params=None):
     logger.info('b')
 

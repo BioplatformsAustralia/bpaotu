@@ -34,6 +34,11 @@ const ArcGIS = {
 
 
 class BPAImages extends React.Component<any, any> {
+    public componentDidMount() {
+      // this.setUpMiniMap()
+      this.props.fetchImage(this.props.lat, this.props.lng)
+    }
+
     public render() {
         return (
             <div>
@@ -139,7 +144,7 @@ export default class SamplesMap extends React.Component<any> {
                   <div>
                       <BPASamples bpadata={marker.bpadata} />
                       <hr />
-                      <BPAImages />
+                      <BPAImages lat={this.state.lat} lng={this.state.lng} />
                   </div>
                 </Popup>
               </Marker>
