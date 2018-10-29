@@ -629,7 +629,13 @@ def create_img_lookup_table(request=None):
             try:
                 coords = (i['latitude'], i['longitude'])
                 img_url = i['resources'][0]['url']
-                lookup_table[coords] = img_url
+
+                # Do this in case there is more than one image for a given coordinate point.
+                if lookup_table[coords]:
+                    lookup_table[coords].append(img_url)
+                else:
+                    lookup_table[coords] = [].append(img_url)
+
 
             except Exception as e:
                 logger.error("Either latitude or longitude is missing for: {}".format(img_url))
@@ -668,7 +674,8 @@ def process_img(request, params=None):
     cache = caches['image_results']
     lookup_table = cache.get('lookup_table')
 
-    img_url = lookup_table[lat_lng_example]
+    img_url = lookup_table[lat_lng_example][0]  # NOTE: Hardcode to use first image for dev for now
+
     img_name, img_ext = (img_url.split('/')[-1:])[0].split(".")
     img_filename = img_name + "." + img_ext
 
