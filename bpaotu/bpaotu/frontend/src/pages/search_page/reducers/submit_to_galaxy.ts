@@ -125,7 +125,7 @@ export default handleActions(
       next: (state, action: any) => {
         const lastSubmission = last(state.submissions)
         const newLastSubmissionState = (submission => {
-          const { status, error, history_id } = action.payload.data.submission
+          const { state: status, error, history_id } = action.payload.data.submission
           const newState = {
             ...submission,
             historyId: history_id,
