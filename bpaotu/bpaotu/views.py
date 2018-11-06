@@ -603,15 +603,43 @@ def dev_only_ckan_check_permissions(request):
     return HttpResponse(response)
 
 
+# --------------------------------------------------------------------------------
+# Add Images to Map
+# --------------------------------------------------------------------------------
+
+# img file extension corresponding to pillow processing format and HttpResponse format
+
+IMG_EXTENSION_TABLE = {
+    'jpg': ['JPEG', 'image/jpeg']
+}
+
+LOOKUP_TABLE_KEY = 'lkup_tbl_key'
+
+
+def _get_cached_item(key):
+    try:
+        cache = caches['image_results']
+
+        return cache.get(key)
+    except Exception as e:
+        logger.error(str(e))
+
+
+def _set_cached_item(key, value):
+    try:
+        cache = caches['image_results']
+        cache.set(key, value, CACHE_7DAYS)
+    except Exception as e:
+        logger.error(str(e))
+
+    return True
+
+
 def create_img_lookup_table(request=None):
     '''
     Create a lookup table of all images in ckan.
     '''
-
-    cache = caches['image_results']
-    key = 'lookup_table_11'  # Cannot hash based on content, else not able to retrieve.
-
-    if cache.get(key) is None:
+    if _get_cached_item(LOOKUP_TABLE_KEY) is None:
         remote = ckanapi.RemoteCKAN(settings.BPA_PROD_URL, apikey=settings.CKAN_API_KEY)
 
         packages = remote.action.package_search(
@@ -620,9 +648,7 @@ def create_img_lookup_table(request=None):
             rows=100000
         )['results']
 
-        logger.info('--------------------------------------------------------------------------------')
         logger.info('There are {} image packages.'.format(len(packages)))
-        logger.info('--------------------------------------------------------------------------------')
 
         lookup_table = defaultdict(list)
 
@@ -640,70 +666,77 @@ def create_img_lookup_table(request=None):
                 continue
 
         lookup_table = dict(lookup_table)
-        cache.set(key, lookup_table, CACHE_7DAYS)
+        _set_cached_item(LOOKUP_TABLE_KEY, lookup_table)
 
-    cache_results = cache.get(key)
+    cache_results = _get_cached_item(LOOKUP_TABLE_KEY)
 
     # TODO: No need to return anything once testing is done
     return HttpResponse(str(cache_results))
 
 
-# lat, lng
-def sample_images(request):
-    pass
-    # []
-    # [url_to_img/lat/lng/1,
-    # url_to_img/lat/lng/2]
-    # n
+def process_img(request=None, lat=None, lng=None, index=None):
+    '''
+    Return specified cached image or fetch image from ckan and resize before caching and returning.
+    '''
+    logger.debug("{} {} {}".format(lat, lng, index))
 
+    lookup_table = _get_cached_item(LOOKUP_TABLE_KEY)
 
-# lat, lng, idx
-def process_img(request, params=None):
-    logger.info('b')
-
-    create_img_lookup_table()
-
-    lat_lng_example = ('-26.7605', '120.2840833333')  # Hardcode an example for testing for now
-
-    img_ext_convert_tbl = {
-        'jpg': ['JPEG', 'image/jpeg']
-    }
-
-    cache = caches['image_results']
-    lookup_table = cache.get('lookup_table')
-
-    img_url = lookup_table[lat_lng_example][0]  # NOTE: Hardcode to use first image for dev for now
-
+    img_url = lookup_table[(lat, lng)][int(index)]
     img_name, img_ext = (img_url.split('/')[-1:])[0].split(".")
     img_filename = img_name + "." + img_ext
 
-    key = img_filename
+    key = img_filename + 'foobarbaz'
 
-    if cache.get(key) is None:
-        logger.info('--------------------------------------------------------------------------------')
-        logger.info('Current directory: {}'.format(os.getcwd()))
-        logger.info('Caching image: {}'.format(key))
-        logger.info('--------------------------------------------------------------------------------')
-
+    if _get_cached_item(key) is None:
         try:
             r = requests.get(img_url, headers={'Authorization': settings.CKAN_API_KEY})
 
             with Image.open(BytesIO(r.content)) as img_obj:
-                # img_obj.save(img_filename)
+                # img_obj.save(img_filename)  # Saves image to a file on disk
+
+                # Resizing an image while maintaining aspect ratio:
+                # https://stackoverflow.com/questions/24745857/python-pillow-how-to-scale-an-image/24745969
+                MAX_WIDTH = 300
+                MAX_HEIGHT = 300
+                maxsize = (MAX_WIDTH, MAX_HEIGHT)
+                img_obj.thumbnail(maxsize, Image.ANTIALIAS)
 
                 with BytesIO() as img_buf:
-                    img_obj.save(img_buf, format=img_ext_convert_tbl[img_ext][0])
+                    # 1. Save image to BytesIO stream
+                    img_obj.save(img_buf, format=IMG_EXTENSION_TABLE[img_ext][0])
 
-                    if cache.get(key) is None:
-                        logger.info('Caching img: {}'.format(img_filename))
-                        cache.set(key, img_buf.getvalue(), CACHE_7DAYS)
+                    # 2. Cache the BytesIO stream
+                    _set_cached_item(key, img_buf.getvalue())
 
-                w, h = img_obj.size
-                logger.info("Width: {} Height: {}".format(w, h))
+                width, height = img_obj.size
+                logger.info("Width: {} Height: {}".format(width, height))
 
         except Exception as e:
             logger.error("Error processing image: {}.".format(str(e)))
 
-    buf = BytesIO(cache.get(key))
+    buf = BytesIO(_get_cached_item(key))
 
-    return HttpResponse(buf.getvalue(), content_type=img_ext_convert_tbl[img_ext][1])
+    return HttpResponse(buf.getvalue(), content_type=IMG_EXTENSION_TABLE[img_ext][1])
+
+
+def sample_images(request, lat=None, lng=None):
+    '''
+    This function coordinates all the other functions.
+    '''
+    logger.debug("{} {}".format(lat, lng))
+
+    create_img_lookup_table()
+
+    # NOTE: Hardcoding an example for now
+    lat = '-26.7605'
+    lng = '120.2840833333'
+
+    lookup_table = _get_cached_item(LOOKUP_TABLE_KEY)
+    img_lookup_entry = lookup_table[(lat, lng)]
+
+    response_str = ""
+    for index, img_url in enumerate(img_lookup_entry):
+        response_str += '<img src="./process_img/{}/{}/{}" />'.format(lat, lng, index)
+
+    return HttpResponse(response_str)
