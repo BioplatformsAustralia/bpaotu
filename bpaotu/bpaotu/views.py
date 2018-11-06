@@ -13,7 +13,6 @@ import requests
 from io import BytesIO
 from PIL import Image
 
-from .util import make_cache_key
 from django.core.cache import caches
 
 from django.conf import settings
@@ -605,10 +604,12 @@ def dev_only_ckan_check_permissions(request):
 
 
 def create_img_lookup_table(request=None):
-    logger.info('a')
+    '''
+    Create a lookup table of all images in ckan.
+    '''
 
     cache = caches['image_results']
-    key = 'lookup_table'  # Cannot hash based on content, else not able to retrieve.
+    key = 'lookup_table_11'  # Cannot hash based on content, else not able to retrieve.
 
     if cache.get(key) is None:
         remote = ckanapi.RemoteCKAN(settings.BPA_PROD_URL, apikey=settings.CKAN_API_KEY)
@@ -623,19 +624,14 @@ def create_img_lookup_table(request=None):
         logger.info('There are {} image packages.'.format(len(packages)))
         logger.info('--------------------------------------------------------------------------------')
 
-        lookup_table = {}
+        lookup_table = defaultdict(list)
 
         for i in packages:
             try:
                 coords = (i['latitude'], i['longitude'])
                 img_url = i['resources'][0]['url']
 
-                # Do this in case there is more than one image for a given coordinate point.
-                if lookup_table[coords]:
-                    lookup_table[coords].append(img_url)
-                else:
-                    lookup_table[coords] = [].append(img_url)
-
+                lookup_table[coords].append(img_url)
 
             except Exception as e:
                 logger.error("Either latitude or longitude is missing for: {}".format(img_url))
@@ -643,10 +639,12 @@ def create_img_lookup_table(request=None):
 
                 continue
 
+        lookup_table = dict(lookup_table)
         cache.set(key, lookup_table, CACHE_7DAYS)
 
     cache_results = cache.get(key)
 
+    # TODO: No need to return anything once testing is done
     return HttpResponse(str(cache_results))
 
 
