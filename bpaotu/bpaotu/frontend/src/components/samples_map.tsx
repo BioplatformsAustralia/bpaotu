@@ -35,13 +35,16 @@ const ArcGIS = {
 
 class BPAImages extends React.Component<any, any> {
     public componentDidMount() {
+        console.log('hello world');
       // this.setUpMiniMap()
-      this.props.fetchImage(this.props.lat, this.props.lng)
+      // this.props.fetchImage(this.props.lat, this.props.lng)
     }
 
     public render() {
         return (
             <div>
+                {this.props.lat}
+                {this.props.lng}
                 Foobarbaz
             </div>
         )
