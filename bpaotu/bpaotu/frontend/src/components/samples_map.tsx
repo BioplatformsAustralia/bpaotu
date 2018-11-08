@@ -108,8 +108,6 @@ class BPASamples extends React.Component<any, any> {
             </TabPane>
           ))}
         </TabContent>
-
-
       </div>
     )
   }

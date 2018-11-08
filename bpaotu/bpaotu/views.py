@@ -724,19 +724,22 @@ def sample_images(request, lat=None, lng=None):
     '''
     This function coordinates all the other functions.
     '''
-    logger.debug("{} {}".format(lat, lng))
+    logger.debug("Lat: {} Lng: {}".format(lat, lng))
 
     create_img_lookup_table()
 
-    # NOTE: Hardcoding an example for now
-    lat = '-26.7605'
-    lng = '120.2840833333'
+    if lat is None or lng is None:
+        # NOTE: Hardcoding an example for testing - should not return anything when live
+        lat = '-26.7605'
+        lng = '120.2840833333'
+
+        # return HttpResponse("Please specify lat and lng parameters.")
 
     lookup_table = _get_cached_item(LOOKUP_TABLE_KEY)
     img_lookup_entry = lookup_table[(lat, lng)]
 
     response_str = ""
     for index, img_url in enumerate(img_lookup_entry):
-        response_str += '<img src="./process_img/{}/{}/{}" />'.format(lat, lng, index)
+        response_str += '<img src="/process_img/{}/{}/{}" />'.format(lat, lng, index)
 
     return HttpResponse(response_str)

@@ -9,6 +9,7 @@ import { fetchSampleMapSamples } from './reducers';
 const MapPage = props => {
     const mapContainerHeight = window.innerHeight - 220 * 2 + 'px';
     const fetchSamples = isEmpty(props.markers) ? props.fetchSamples : noop;
+    const fetchImages =
 
     return (
         <div style={{ height: mapContainerHeight }}>
@@ -30,5 +31,6 @@ function mapDispatchToProps(dispatch) {
         // fetchSampleImages
     }, dispatch);
 }
+
 
 export default connect(mapStateToProps, mapDispatchToProps)(MapPage);
