@@ -1,6 +1,6 @@
 import { map, partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import { executeSampleSitesSearch } from '../../../api'
+import { executeSampleSitesSearch, executeImageSearch } from '../../../api'
 import { handleSimpleAPIResponse } from '../../../reducers/utils'
 import { describeSearch } from './search'
 import { searchPageInitialState } from './types'
@@ -10,13 +10,19 @@ export const {
   closeSamplesMapModal,
 
   samplesMapModalFetchSamplesStarted,
-  samplesMapModalFetchSamplesEnded
+  samplesMapModalFetchSamplesEnded,
+
+  samplesMapFetchImagesStarted,
+  samplesMapFetchImagesEnded
 } = createActions(
   'OPEN_SAMPLES_MAP_MODAL',
   'CLOSE_SAMPLES_MAP_MODAL',
 
   'SAMPLES_MAP_MODAL_FETCH_SAMPLES_STARTED',
-  'SAMPLES_MAP_MODAL_FETCH_SAMPLES_ENDED'
+  'SAMPLES_MAP_MODAL_FETCH_SAMPLES_ENDED',
+
+  'SAMPLES_MAP_FETCH_IMAGES_STARTED',
+  'SAMPLES_MAP_FETCH_IMAGES_ENDED'
 )
 
 export const fetchSampleMapModalSamples = () => (dispatch, getState) => {
@@ -49,6 +55,12 @@ export default handleActions(
         lat: sample.latitude,
         lng: sample.longitude
       }))
+    }),
+    [samplesMapFetchImagesStarted as any]: (state, action) => ({
+        ...state
+    }),
+    [samplesMapFetchImagesEnded as any]: (state, action) => ({
+        ...state
     })
   },
   searchPageInitialState.samplesMapModal

@@ -74,7 +74,6 @@ export function executeSampleSitesSearch(filters) {
   })
 }
 
-
 export function executeImageSearch(lat, lng) {
     return axios({
         method: 'post',
@@ -84,7 +83,6 @@ export function executeImageSearch(lat, lng) {
         }
     })
 }
-
 
 export function executeSubmitToGalaxy(filters) {
   const formData = new FormData()
