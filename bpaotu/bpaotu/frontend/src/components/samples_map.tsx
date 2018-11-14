@@ -37,9 +37,10 @@ class BPAImages extends React.Component<any, any> {
         super(props)
 
         let imgs = []
-        for (let _i=0; _i<Object.keys(this.props.img_urls).length; _i++) {
-            console.log(_i);
-            imgs.push(<img src={`/process_img/${this.props.lat}/${this.props.lng}/${_i}`} />)
+        if (typeof this.props.img_urls !== 'undefined') {
+            for (let _i=0; _i<Object.keys(this.props.img_urls).length; _i++) {
+                imgs.push(<img src={`/process_img/${this.props.lat}/${this.props.lng}/${_i}`} />)
+            }
         }
 
         this.state = {
