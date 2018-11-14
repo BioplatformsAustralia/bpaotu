@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "build": "webpack --config webpack.prod.js --mode production",
-    "watch": "webpack --config webpack.dev.js --mode development --watch",
+    "watch": "webpack-dev-server --config webpack.dev.js --mode development",
     "lint": "tslint 'src/**/*.ts{,x}'"
   },
   "sideEffects": false,
@@ -14,6 +14,12 @@
   "license": "AGPL-3.0",
   "private": false,
   "devDependencies": {
+    "@babel/core": "^7.1.5",
+    "@babel/plugin-proposal-class-properties": "^7.1.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/preset-env": "^7.1.5",
+    "@babel/preset-react": "^7.0.0",
+    "@babel/preset-typescript": "^7.1.0",
     "@types/axios": "^0.14.0",
     "@types/datatables.net": "^1.10.9",
     "@types/jquery": "^3.3.1",
@@ -32,11 +38,14 @@
     "@types/redux-actions": "^2.3.0",
     "@types/redux-thunk": "^2.1.0",
     "axios": "^0.18.0",
+    "babel": "^6.23.0",
+    "babel-loader": "^8.0.4",
     "bootstrap": "^4.1.1",
     "css-loader": "^0.28.11",
     "datatables.net": "^1.10.16",
     "datatables.net-bs": "^1.10.16",
     "file-loader": "^1.1.11",
+    "fork-ts-checker-webpack-plugin": "^0.4.15",
     "jquery": "^3.3.1",
     "leaflet": "^1.3.1",
     "leaflet-minimap": "^3.6.1",
@@ -49,6 +58,7 @@
     "prop-types": "^15.6.2",
     "react": "^16.4.0",
     "react-dom": "^16.4.0",
+    "react-hot-loader": "^4.3.12",
     "react-leaflet": "^1.9.1",
     "react-leaflet-fullscreen": "^0.0.6",
     "react-leaflet-markercluster": "^1.1.8",
@@ -72,7 +82,9 @@
     "url-loader": "^1.0.1",
     "webpack": "^4.8.1",
     "webpack-bundle-analyzer": "^2.13.0",
+    "webpack-bundle-tracker": "^0.4.2-beta",
     "webpack-cli": "^2.1.3",
+    "webpack-dev-server": "^3.1.10",
     "webpack-merge": "^4.1.2"
   }
 }
