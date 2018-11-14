@@ -32,25 +32,29 @@ const ArcGIS = {
     '&amp;copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
 }
 
-
 class BPAImages extends React.Component<any, any> {
-    public componentDidMount() {
-        console.log('hello world');
-      // this.setUpMiniMap()
-      // this.props.fetchImage(this.props.lat, this.props.lng)
+    constructor(props: any) {
+        super(props)
+
+        let imgs = []
+        for (let _i=0; _i<Object.keys(this.props.img_urls).length; _i++) {
+            console.log(_i);
+            imgs.push(<img src={`/process_img/${this.props.lat}/${this.props.lng}/${_i}`} />)
+        }
+
+        this.state = {
+            img: imgs
+        }
     }
 
     public render() {
         return (
             <div>
-                {this.props.lat}
-                {this.props.lng}
-                Foobarbaz
+                {this.state.img}
             </div>
         )
     }
 }
-
 
 class BPASamples extends React.Component<any, any> {
   constructor(props: any) {
@@ -141,11 +145,11 @@ export default class SamplesMap extends React.Component<any> {
           <MarkerClusterGroup>
             {this.props.markers.map((marker, index) => (
               <Marker key={`marker-${index}`} position={marker}>
-                <Popup minWidth={640} maxHeight={480}>
+                  <Popup minWidth={480} maxHeight={360}>
                   <div>
                       <BPASamples bpadata={marker.bpadata} />
                       <hr />
-                      <BPAImages lat={this.state.lat} lng={this.state.lng} />
+                      <BPAImages lat={marker.lat} lng={marker.lng} img_urls={marker.img_urls} />
                   </div>
                 </Popup>
               </Marker>

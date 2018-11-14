@@ -21,7 +21,7 @@ export interface SearchConfig {
   search_sample_sites_endpoint: string
   required_table_headers_endpoint: string
   contextual_csv_download_endpoint: string
-  sample_images: string
+  // sample_images: string
 }
 
 export enum BooleanOperator {

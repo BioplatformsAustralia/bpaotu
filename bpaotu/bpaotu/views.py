@@ -348,6 +348,16 @@ def otu_search_sample_sites(request):
             'data': [],
         })
     data = spatial_query(params)
+
+    create_img_lookup_table()
+    img_lookup_table = _get_cached_item(LOOKUP_TABLE_KEY)
+
+    for d in data:
+        key = (str(d['latitude']), str(d['longitude']))
+        for i in img_lookup_table:
+            if key == i:
+                d['img_urls'] = img_lookup_table[i]
+
     return JsonResponse({'data': data})
 
 
@@ -680,6 +690,8 @@ def process_img(request=None, lat=None, lng=None, index=None):
     '''
     logger.debug("{} {} {}".format(lat, lng, index))
 
+    create_img_lookup_table()
+
     lookup_table = _get_cached_item(LOOKUP_TABLE_KEY)
 
     img_url = lookup_table[(lat, lng)][int(index)]
@@ -720,26 +732,26 @@ def process_img(request=None, lat=None, lng=None, index=None):
     return HttpResponse(buf.getvalue(), content_type=IMG_EXTENSION_TABLE[img_ext][1])
 
 
-def sample_images(request, lat=None, lng=None):
-    '''
-    This function coordinates all the other functions.
-    '''
-    logger.debug("Lat: {} Lng: {}".format(lat, lng))
-
-    create_img_lookup_table()
-
-    if lat is None or lng is None:
-        # NOTE: Hardcoding an example for testing - should not return anything when live
-        lat = '-26.7605'
-        lng = '120.2840833333'
-
-        # return HttpResponse("Please specify lat and lng parameters.")
-
-    lookup_table = _get_cached_item(LOOKUP_TABLE_KEY)
-    img_lookup_entry = lookup_table[(lat, lng)]
-
-    response_str = ""
-    for index, img_url in enumerate(img_lookup_entry):
-        response_str += '<img src="/process_img/{}/{}/{}" />'.format(lat, lng, index)
-
-    return HttpResponse(response_str)
+# def sample_images(request, lat=None, lng=None):
+#     '''
+#     This function coordinates all the other functions.
+#     '''
+#     # logger.debug("Lat: {} Lng: {}".format(lat, lng))
+#
+#     create_img_lookup_table()
+#
+#     # if lat is None or lng is None:
+#     #     # NOTE: Hardcoding an example for testing - should not return anything when live
+#     #     lat = '-26.7605'
+#     #     lng = '120.2840833333'
+#     #
+#         # return HttpResponse("Please specify lat and lng parameters.")
+#
+#     lookup_table = _get_cached_item(LOOKUP_TABLE_KEY)
+#     img_lookup_entry = lookup_table[(lat, lng)]
+#
+#     response_str = ""
+#     for index, img_url in enumerate(img_lookup_entry):
+#         response_str += '<img src="/process_img/{}/{}/{}" />'.format(lat, lng, index)
+#
+#     return HttpResponse(response_str)

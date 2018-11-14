@@ -34,7 +34,8 @@ export default handleActions(
       samples: map(action.payload.data.data, sample => ({
         bpadata: sample.bpa_data,
         lat: sample.latitude,
-        lng: sample.longitude
+        lng: sample.longitude,
+        img_urls: sample.img_urls
       }))
     })
   },

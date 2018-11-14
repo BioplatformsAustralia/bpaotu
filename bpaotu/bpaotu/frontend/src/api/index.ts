@@ -73,16 +73,16 @@ export function executeSampleSitesSearch(filters) {
     }
   })
 }
-
-export function executeImageSearch(lat, lng) {
-    return axios({
-        method: 'post',
-        url: window.otu_search_config.sample_images + '/' + lat + '/' + lng,
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    })
-}
+// 
+// export function executeImageSearch(lat, lng) {
+//     return axios({
+//         method: 'post',
+//         url: window.otu_search_config.sample_images + '/' + lat + '/' + lng,
+//         headers: {
+//             'Content-Type': 'multipart/form-data'
+//         }
+//     })
+// }
 
 export function executeSubmitToGalaxy(filters) {
   const formData = new FormData()
