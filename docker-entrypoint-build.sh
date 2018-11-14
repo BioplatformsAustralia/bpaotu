@@ -34,8 +34,10 @@ if [ "$1" = 'releasetarball' ]; then
     cd /data/app
     pip install --upgrade -r requirements/runtime-requirements.txt
     pip install --upgrade -r requirements/biom-requirements.txt
+    pip install --upgrade -r bpa-ingest/requirements.txt
     ls -l
     cd "${PROJECT_NAME}" && pip install .
+    cd "bpa-ingest" && pip install .
 
     set +x
 
