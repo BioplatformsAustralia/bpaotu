@@ -10,10 +10,7 @@ export const {
   closeSamplesMapModal,
 
   samplesMapModalFetchSamplesStarted,
-  samplesMapModalFetchSamplesEnded,
-
-  samplesMapFetchImagesStarted,
-  samplesMapFetchImagesEnded
+  samplesMapModalFetchSamplesEnded
 } = createActions(
   'OPEN_SAMPLES_MAP_MODAL',
   'CLOSE_SAMPLES_MAP_MODAL',
