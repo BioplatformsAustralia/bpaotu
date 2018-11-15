@@ -73,16 +73,9 @@
         };
     </script>
 
-
-    {% if production %}
-      <script src="{% static 'bpaotu/js/runtime-bundle.min.js' %}"></script>
-      <script src="{% static 'bpaotu/js/vendors-bundle.min.js' %}"></script>
-      <script src="{% static 'bpaotu/js/main-bundle.min.js' %}"></script>
-    {% else %}
-      <script src="{% static 'bpaotu/js/runtime-bundle.js' %}"></script>
-      <script src="{% static 'bpaotu/js/vendors-bundle.js' %}"></script>
-      <script src="{% static 'bpaotu/js/main-bundle.js' %}"></script>
-    {% endif %}
+    {% render_bundle 'runtime' %}
+    {% render_bundle 'vendors' %}
+    {% render_bundle 'main' %}
 
 </body>
 </html>
