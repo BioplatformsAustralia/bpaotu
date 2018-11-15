@@ -146,7 +146,7 @@ export default class SamplesMap extends React.Component<any> {
           <MarkerClusterGroup>
             {this.props.markers.map((marker, index) => (
               <Marker key={`marker-${index}`} position={marker}>
-                  <Popup minWidth={480} maxHeight={360}>
+                  <Popup minWidth={640} maxHeight={480}>
                   <div>
                       <BPASamples bpadata={marker.bpadata} />
                       <hr />
