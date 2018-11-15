@@ -32,14 +32,15 @@ const ArcGIS = {
     '&amp;copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
 }
 
+// tslint:disable-next-line:max-classes-per-file 
 class BPAImages extends React.Component<any, any> {
     constructor(props: any) {
         super(props)
 
-        let imgs = []
-        if (typeof this.props.img_urls !== 'undefined') {
-            for (let _i=0; _i<Object.keys(this.props.img_urls).length; _i++) {
-                imgs.push(<img src={`/process_img/${this.props.lat}/${this.props.lng}/${_i}`} />)
+        const imgs = []
+        if (typeof this.props.imgUrls !== 'undefined') {
+            for (let i=0; i<Object.keys(this.props.imgUrls).length; i++) {
+                imgs.push(<img src={`/process_img/${this.props.lat}/${this.props.lng}/${i}`} />)
             }
         }
 
@@ -57,6 +58,8 @@ class BPAImages extends React.Component<any, any> {
     }
 }
 
+
+// tslint:disable-next-line:max-classes-per-file
 class BPASamples extends React.Component<any, any> {
   constructor(props: any) {
     super(props)
@@ -150,7 +153,7 @@ export default class SamplesMap extends React.Component<any> {
                   <div>
                       <BPASamples bpadata={marker.bpadata} />
                       <hr />
-                      <BPAImages lat={marker.lat} lng={marker.lng} img_urls={marker.img_urls} />
+                      <BPAImages lat={marker.lat} lng={marker.lng} imgUrls={marker.img_urls} />
                   </div>
                 </Popup>
               </Marker>
