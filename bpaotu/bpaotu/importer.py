@@ -11,6 +11,7 @@ from hashlib import md5
 from sqlalchemy.orm import sessionmaker
 from glob import glob
 from bpaingest.projects.amdb.ingest import AccessBASEContextualMetadata, AccessMarineMicrobesContextualMetadata
+from bpaingest.projects.amdb.contextual import BASESampleContextual, MarineMicrobesSampleContextual
 from bpaingest.metadata import DownloadMetadata
 
 from collections import (
@@ -185,12 +186,12 @@ class DataImporter:
 
         soil_fields = set()
         marine_fields = set()
-        for field_info in soil_field_spec:
+        for field_info in BASESampleContextual.field_spec:
             field_name = field_info[0]
             if field_name in DataImporter.soil_ontologies:
                 field_name += '_id'
             soil_fields.add(field_name)
-        for data_type, fields in marine_field_specs.items():
+        for data_type, fields in MarineMicrobesSampleContextual.field_specs.items():
             for field_info in fields:
                 field_name = field_info[0]
                 if field_name in DataImporter.marine_ontologies:
