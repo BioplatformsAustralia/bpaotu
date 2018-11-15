@@ -12,7 +12,8 @@ module.exports = merge(common, {
     },
     host: '0.0.0.0',
     port: 3000,
-    hot: true,
+    // Setting hot to true doesn't work currently, so passing in --hot as argument in packages.json
+    // hot: true
   },
 
   output: {

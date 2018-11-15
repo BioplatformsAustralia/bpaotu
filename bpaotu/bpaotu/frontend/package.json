@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "build": "webpack --config webpack.prod.js --mode production",
-    "watch": "webpack-dev-server --config webpack.dev.js --mode development",
+    "watch": "webpack-dev-server --config webpack.dev.js --mode development --hot",
     "lint": "tslint 'src/**/*.ts{,x}'"
   },
   "sideEffects": false,
