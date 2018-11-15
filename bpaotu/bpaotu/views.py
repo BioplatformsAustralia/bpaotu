@@ -686,8 +686,6 @@ def process_img(request=None, lat=None, lng=None, index=None):
     '''
     Return specified cached image or fetch image from ckan and resize before caching and returning.
     '''
-    logger.debug("{} {} {}".format(lat, lng, index))
-
     _create_img_lookup_table()
 
     lookup_table = _get_cached_item(LOOKUP_TABLE_KEY)
