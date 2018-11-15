@@ -61,6 +61,8 @@ logger = logging.getLogger("rainbow")
 ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
 
+MAX_WIDTH = 300
+MAX_HEIGHT = 300
 CACHE_7DAYS = (60 * 60 * 24 * 7)
 
 
@@ -705,8 +707,7 @@ def process_img(request=None, lat=None, lng=None, index=None):
 
                 # Resizing an image while maintaining aspect ratio:
                 # https://stackoverflow.com/questions/24745857/python-pillow-how-to-scale-an-image/24745969
-                MAX_WIDTH = 300
-                MAX_HEIGHT = 300
+
                 maxsize = (MAX_WIDTH, MAX_HEIGHT)
                 img_obj.thumbnail(maxsize, Image.ANTIALIAS)
 
