@@ -187,9 +187,7 @@ TEMPLATES = [
 
 ROOT_URLCONF = 'bpaotu.urls'
 
-INSTALLED_APPS = ('bpaotu',
-                  'suit',
-                  'django.contrib.auth',
+INSTALLED_APPS = ('django.contrib.auth',
                   'django.contrib.contenttypes',
                   'django.contrib.humanize',
                   'django.contrib.sessions',
@@ -200,6 +198,9 @@ INSTALLED_APPS = ('bpaotu',
                   'django_extensions',
                   'django.contrib.admin',
                   'django.contrib.admindocs',
+                  'suit',
+                  'bpaotu',
+                  'webpack_loader',
                   )
 
 # #
@@ -377,6 +378,17 @@ CHMOD_GROUP = env.get("repo_group", "apache")
 # this is here to placate the new system check framework, its also set in testsettings,
 # where it belongs
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+# For production we put the bundle information in a separate file webpack-stats-prod.json
+# and we put it one level above frontend, because we don't include anything from frontend in the tarball we build.
+# Both files are in .gitignore, so it doesn't matter much where they are stored.
+WEBPACK_STATS_FILE = 'webpack-stats-prod.json' if PRODUCTION else 'frontend/webpack-stats.json'
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'BUNDLE_DIR_NAME': 'bpaotu/js/',
+        'STATS_FILE': os.path.join(WEBAPP_ROOT, 'bpaotu', WEBPACK_STATS_FILE),
+    }
+}
 
 # ingest all
 DOWNLOADS_CHECKER_USER = env.get('downloads_checker_user', 'downloads_checker')

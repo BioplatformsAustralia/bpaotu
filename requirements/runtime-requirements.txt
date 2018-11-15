@@ -27,3 +27,4 @@ numpy==1.14.5
 celery==4.1.1
 pillow
 python-resize-image
+django-webpack-loader==0.6.0
