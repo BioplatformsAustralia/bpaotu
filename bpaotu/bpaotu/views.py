@@ -9,10 +9,6 @@ import os
 import re
 import time
 
-import requests
-from io import BytesIO
-from PIL import Image
-
 from django.conf import settings
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
@@ -52,10 +48,7 @@ from .biom import biom_zip_file_generator
 from .tabular import tabular_zip_file_generator
 from . import tasks
 from .img_processing import (
-    IMG_EXTENSION_TABLE,
-    LOOKUP_TABLE_KEY,
-    _get_cached_item,
-    _set_cached_item,
+    fetch_image,
     _create_img_lookup_table
 )
 
@@ -66,8 +59,6 @@ logger = logging.getLogger("rainbow")
 ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
 
-MAX_WIDTH = 300
-MAX_HEIGHT = 300
 CACHE_7DAYS = (60 * 60 * 24 * 7)
 
 
@@ -358,6 +349,7 @@ def otu_search_sample_sites(request):
 
     _create_img_lookup_table()
     img_lookup_table = _get_cached_item(LOOKUP_TABLE_KEY)
+    img_lookup_table = {}
 
     for d in data:
         key = (str(d['latitude']), str(d['longitude']))
@@ -624,42 +616,7 @@ def process_img(request=None, lat=None, lng=None, index=None):
     '''
     Return specified cached image or fetch image from ckan and resize before caching and returning.
     '''
-    _create_img_lookup_table()
 
-    lookup_table = _get_cached_item(LOOKUP_TABLE_KEY)
+    buf, content_type = fetch_image(lat, lng, index)
 
-    img_url = lookup_table[(lat, lng)][int(index)]
-    img_name, img_ext = (img_url.split('/')[-1:])[0].split(".")
-    img_filename = img_name + "." + img_ext
-
-    key = img_filename
-
-    if _get_cached_item(key) is None:
-        try:
-            r = requests.get(img_url, headers={'Authorization': settings.CKAN_API_KEY})
-
-            with Image.open(BytesIO(r.content)) as img_obj:
-                # img_obj.save(img_filename)  # Saves image to a file on disk
-
-                # Resizing an image while maintaining aspect ratio:
-                # https://stackoverflow.com/questions/24745857/python-pillow-how-to-scale-an-image/24745969
-
-                maxsize = (MAX_WIDTH, MAX_HEIGHT)
-                img_obj.thumbnail(maxsize, Image.ANTIALIAS)
-
-                with BytesIO() as img_buf:
-                    # 1. Save image to BytesIO stream
-                    img_obj.save(img_buf, format=IMG_EXTENSION_TABLE[img_ext][0])
-
-                    # 2. Cache the BytesIO stream
-                    _set_cached_item(key, img_buf.getvalue())
-
-                width, height = img_obj.size
-                logger.info("Width: {} Height: {}".format(width, height))
-
-        except Exception as e:
-            logger.error("Error processing image: {}.".format(str(e)))
-
-    buf = BytesIO(_get_cached_item(key))
-
-    return HttpResponse(buf.getvalue(), content_type=IMG_EXTENSION_TABLE[img_ext][1])
+    return HttpResponse(buf.getvalue(), content_type=content_type)
