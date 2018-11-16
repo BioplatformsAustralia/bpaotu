@@ -90,6 +90,8 @@ def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=False):
 # backend code. it resolves an issue with samples wrapping
 # on the dateline and being shown off-screen (off coast NZ)
 def _corrected_longitude(lng):
+    if lng is None:
+        return None
     return lng + 360 if lng < 0 else lng
 
 
