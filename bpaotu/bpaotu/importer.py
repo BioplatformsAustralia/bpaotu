@@ -281,7 +281,7 @@ class DataImporter:
         # convert into a row-like structure
         return list(metadata.values())
 
-    def contextual_row_context(self, metadata, ontologies, mappings):
+    def contextual_row_context(self, metadata, ontologies, mappings, fields_used):
         for row in metadata:
             sample_id = row['sample_id']
             if sample_id is None:
@@ -297,21 +297,25 @@ class DataImporter:
                 if field in attrs or (field + '_id') in attrs or field == 'sample_id':
                     continue
                 attrs[field] = value
+            fields_used.update(set(attrs.keys()))
             yield SampleContext(**attrs)
 
-    def load_soil_contextual_metadata(self):
-        logger.warning("loading Soil contextual metadata")
-        metadata = self.contextual_rows(AccessBASEContextualMetadata, name='soil-contextual')
-        mappings = self._load_ontology(DataImporter.soil_ontologies, metadata)
-        self._session.bulk_save_objects(self.contextual_row_context(metadata, DataImporter.soil_ontologies, mappings))
-        self._session.commit()
+    def load_contextual_metadata(self):
+        def load_from_cls(context_cls, ontologies, name):
+            logger.warning("loading Soil contextual metadata")
+            metadata = self.contextual_rows(context_cls, name=name)
+            mappings = self._load_ontology(ontologies, metadata)
+            self._session.bulk_save_objects(self.contextual_row_context(metadata, ontologies, mappings, utilised_fields))
+            self._session.commit()
 
-    def load_marine_contextual_metadata(self):
-        logger.warning("loading Marine contextual metadata")
-        metadata = self.contextual_rows(AccessMarineMicrobesContextualMetadata, name='marine-contextual')
-        mappings = self._load_ontology(DataImporter.marine_ontologies, metadata)
-        self._session.bulk_save_objects(self.contextual_row_context(metadata, DataImporter.marine_ontologies, mappings))
-        self._session.commit()
+        # we have a bit of a broken window in the SampleContext class, so we
+        # check whether or not we are using all the fields to assist us when
+        # updating the code for new versions of the source spreadsheet
+        utilised_fields = set()
+        load_from_cls(AccessBASEContextualMetadata, DataImporter.soil_ontologies, 'soil-contextual')
+        load_from_cls(AccessMarineMicrobesContextualMetadata, DataImporter.marine_ontologies, 'marine-contextual')
+        logger.info("Unutilised fields: {}".format(
+            utilised_fields - set(t.name for t in SampleContext.__table__.columns)))
 
     def _otu_rows(self, fd, otu_lookup):
         reader = csv.reader(fd, dialect='excel-tab')
