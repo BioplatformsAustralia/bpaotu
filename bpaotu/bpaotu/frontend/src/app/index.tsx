@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { hot } from 'react-hot-loader'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
 import { bindActionCreators } from 'redux'
@@ -60,7 +61,9 @@ function mapDispatchToProps(dispatch) {
   )
 }
 
-export default withRouter(connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(App) as any)
+export default hot(module)(
+  withRouter(connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )(App) as any)
+)

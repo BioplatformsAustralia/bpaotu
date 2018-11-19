@@ -34,10 +34,13 @@ COPY ./requirements/runtime-requirements.txt /app/bpaotu/
 RUN pip install --upgrade -r bpaotu/runtime-requirements.txt
 COPY ./requirements/biom-requirements.txt /app/bpaotu/
 RUN pip install --upgrade -r bpaotu/biom-requirements.txt
+COPY ./bpa-ingest/requirements.txt /app/bpaotu/bpaingest-requirements.txt
+RUN pip install --upgrade -r bpaotu/bpaingest-requirements.txt
 
 # Copy code and install the app
 COPY . /app
 RUN pip ${PIP_OPTS} install --upgrade -e bpaotu
+RUN pip ${PIP_OPTS} install --upgrade -e bpa-ingest
 
 EXPOSE 8000 9000 9001 9100 9101
 VOLUME ["/app", "/data"]

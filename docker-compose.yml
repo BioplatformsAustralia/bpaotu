@@ -27,6 +27,8 @@ services:
 
     node:
       image: muccg/bpaotu-node
+      ports:
+          - "3000:3000"
       command: "watch"
       working_dir: /app/bpaotu/bpaotu/frontend
       environment:
@@ -47,6 +49,7 @@ services:
       depends_on:
         - db
         - cache
+        - node
       networks:
         default:
           aliases:

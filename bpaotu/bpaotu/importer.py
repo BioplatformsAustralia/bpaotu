@@ -10,11 +10,10 @@ from sqlalchemy.sql.expression import text
 from hashlib import md5
 from sqlalchemy.orm import sessionmaker
 from glob import glob
-from .contextual import (
-    marine_contextual_rows,
-    soil_contextual_rows,
-    soil_field_spec,
-    marine_field_specs)
+from bpaingest.projects.amdb.ingest import AccessBASEContextualMetadata, AccessMarineMicrobesContextualMetadata
+from bpaingest.projects.amdb.contextual import BASESampleContextual, MarineMicrobesSampleContextual
+from bpaingest.metadata import DownloadMetadata
+
 from collections import (
     defaultdict,
     OrderedDict)
@@ -187,12 +186,12 @@ class DataImporter:
 
         soil_fields = set()
         marine_fields = set()
-        for field_info in soil_field_spec:
+        for field_info in BASESampleContextual.field_spec:
             field_name = field_info[0]
             if field_name in DataImporter.soil_ontologies:
                 field_name += '_id'
             soil_fields.add(field_name)
-        for data_type, fields in marine_field_specs.items():
+        for data_type, fields in MarineMicrobesSampleContextual.field_specs.items():
             for field_info in fields:
                 field_name = field_info[0]
                 if field_name in DataImporter.marine_ontologies:
@@ -270,56 +269,48 @@ class DataImporter:
             os.unlink(fname)
         return otu_lookup
 
+    def contextual_rows(self, ingest_cls, name):
+        # flatten contextual metadata into dicts
+        metadata = defaultdict(dict)
+        with DownloadMetadata(ingest_cls, path='/data/{}/'.format(name)) as dlmeta:
+            for contextual_source in dlmeta.meta.contextual_metadata:
+                for sample_id in contextual_source.sample_ids():
+                    metadata[sample_id]['sample_id'] = sample_id
+                    metadata[sample_id].update(contextual_source.get(sample_id))
+
+        # convert into a row-like structure
+        return list(metadata.values())
+
+    def contextual_row_context(self, metadata, ontologies, mappings):
+        for row in metadata:
+            sample_id = row['sample_id']
+            if sample_id is None:
+                continue
+            attrs = {
+                'id': int(sample_id.split('.')[-1])
+            }
+            for field in ontologies:
+                if field not in row:
+                    continue
+                attrs[field + '_id'] = mappings[field][row[field]]
+            for field, value in row.items():
+                if field in attrs or (field + '_id') in attrs or field == 'sample_id':
+                    continue
+                attrs[field] = value
+            yield SampleContext(**attrs)
+
     def load_soil_contextual_metadata(self):
         logger.warning("loading Soil contextual metadata")
-
-        def _make_context():
-            for row in rows:
-                bpa_id = row['bpa_id']
-                if bpa_id is None:
-                    continue
-                attrs = {
-                    'id': int(bpa_id.split('.')[-1])
-                }
-                for field in DataImporter.soil_ontologies:
-                    if field not in row:
-                        continue
-                    attrs[field + '_id'] = mappings[field][row[field]]
-                for field, value in row.items():
-                    if field in attrs or (field + '_id') in attrs or field == 'bpa_id':
-                        continue
-                    attrs[field] = value
-                yield SampleContext(**attrs)
-
-        rows = soil_contextual_rows(glob(self._import_base + '/base/*.xlsx')[0])
-        mappings = self._load_ontology(DataImporter.soil_ontologies, rows)
-        self._session.bulk_save_objects(_make_context())
+        metadata = self.contextual_rows(AccessBASEContextualMetadata, name='soil-contextual')
+        mappings = self._load_ontology(DataImporter.soil_ontologies, metadata)
+        self._session.bulk_save_objects(self.contextual_row_context(metadata, DataImporter.soil_ontologies, mappings))
         self._session.commit()
 
     def load_marine_contextual_metadata(self):
         logger.warning("loading Marine contextual metadata")
-
-        def _make_context():
-            for row in rows:
-                bpa_id = row['bpa_id']
-                if bpa_id is None:
-                    continue
-                attrs = {
-                    'id': int(bpa_id.split('.')[-1])
-                }
-                for field in DataImporter.marine_ontologies:
-                    if field not in row:
-                        continue
-                    attrs[field + '_id'] = mappings[field][row[field]]
-                for field, value in row.items():
-                    if field in attrs or (field + '_id') in attrs or field == 'bpa_id':
-                        continue
-                    attrs[field] = value
-                yield SampleContext(**attrs)
-
-        rows = marine_contextual_rows(glob(self._import_base + '/mm/*.xlsx')[0])
-        mappings = self._load_ontology(DataImporter.marine_ontologies, rows)
-        self._session.bulk_save_objects(_make_context())
+        metadata = self.contextual_rows(AccessMarineMicrobesContextualMetadata, name='marine-contextual')
+        mappings = self._load_ontology(DataImporter.marine_ontologies, metadata)
+        self._session.bulk_save_objects(self.contextual_row_context(metadata, DataImporter.marine_ontologies, mappings))
         self._session.commit()
 
     def _otu_rows(self, fd, otu_lookup):
