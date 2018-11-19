@@ -11,6 +11,7 @@ import SearchErrors from './components/search_errors'
 import SearchResultsCard from './components/search_results_card'
 
 import { search } from './reducers/search'
+import LoadingSpinner from '../../components/search_spinner'
 
 export const SearchPage = props => (
   <Container fluid={true}>
@@ -30,17 +31,20 @@ export const SearchPage = props => (
     </Row>
 
     <Row className="space-above">
-      <Col sm={{ size: 2, offset: 5 }}>
-        <SearchButton isDisabled={props.isSearchButtonDisabled} search={props.search} />
-      </Col>
+      {props.isSearchButtonDisabled
+        ? <Col sm={{ size: 2, offset: 6 }}> <LoadingSpinner /> </Col>
+        : <Col sm={{ size: 2, offset: 5 }}> <SearchButton isDisabled={props.isSearchButtonDisabled} search={props.search} /> </Col>
+      }
     </Row>
     <Row className="space-above">
       <Col sm={12}>
         <SearchResultsCard />
       </Col>
     </Row>
-  </Container>
+  </Container >
 )
+
+
 
 function mapStateToProps(state) {
   return {
