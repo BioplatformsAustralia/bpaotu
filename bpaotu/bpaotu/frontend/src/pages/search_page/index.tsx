@@ -31,24 +31,27 @@ export const SearchPage = props => (
     </Row>
 
     <Row className="space-above">
-      {props.isSearchButtonDisabled
-        ? <Col sm={{ size: 2, offset: 6 }}> <LoadingSpinner /> </Col>
-        : <Col sm={{ size: 2, offset: 5 }}> <SearchButton isDisabled={props.isSearchButtonDisabled} search={props.search} /> </Col>
-      }
+      {props.isSearchInProgress ? (
+        <Col sm={{ size: 2, offset: 6 }}>
+          <LoadingSpinner />
+        </Col>
+      ) : (
+        <Col sm={{ size: 2, offset: 5 }}>
+          <SearchButton search={props.search} />
+        </Col>
+      )}
     </Row>
     <Row className="space-above">
       <Col sm={12}>
         <SearchResultsCard />
       </Col>
     </Row>
-  </Container >
+  </Container>
 )
-
-
 
 function mapStateToProps(state) {
   return {
-    isSearchButtonDisabled: state.searchPage.results.isLoading,
+    isSearchInProgress: state.searchPage.results.isLoading,
     errors: state.searchPage.results.errors
   }
 }
