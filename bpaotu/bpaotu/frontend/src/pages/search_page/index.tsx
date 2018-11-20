@@ -5,13 +5,13 @@ import { bindActionCreators } from 'redux'
 import { Col, Container, Row } from 'reactstrap'
 
 import SearchButton from '../../components/search_button'
+import LoadingSpinner from '../../components/search_spinner'
 import AmpliconTaxonomyFilterCard from './components/amplicon_taxonomy_filter_card'
 import ContextualFilterCard from './components/contextual_filter_card'
 import SearchErrors from './components/search_errors'
 import SearchResultsCard from './components/search_results_card'
 
 import { search } from './reducers/search'
-import LoadingSpinner from '../../components/search_spinner'
 
 export const SearchPage = props => (
   <Container fluid={true}>
