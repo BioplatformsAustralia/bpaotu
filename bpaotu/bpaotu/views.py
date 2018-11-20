@@ -235,7 +235,7 @@ def _parse_contextual_term(filter_spec):
         raise ValueError("invalid filter term type: %s", typ)
 
 
-def param_to_filters(query_str):
+def param_to_filters(query_str, contextual_filtering=True):
     """
     take a JSON encoded query_str, validate, return any errors
     and the filter instances
@@ -251,33 +251,18 @@ def param_to_filters(query_str):
 
     errors = []
 
-    for filter_spec in context_spec['filters']:
-        field_name = filter_spec['field']
-        if field_name not in SampleContext.__table__.columns:
-            errors.append("Please select a contextual data field to filter upon.")
-            continue
+    if contextual_filtering:
+        for filter_spec in context_spec['filters']:
+            field_name = filter_spec['field']
+            if field_name not in SampleContext.__table__.columns:
+                errors.append("Please select a contextual data field to filter upon.")
+                continue
 
-        try:
-            contextual_filter.add_term(_parse_contextual_term(filter_spec))
-        except Exception:
-            errors.append("Invalid value provided for contextual field `%s'" % field_name)
-            logger.critical("Exception parsing field: `%s'", field_name, exc_info=True)
-
-    return (OTUQueryParams(
-        contextual_filter=contextual_filter,
-        taxonomy_filter=taxonomy_filter), errors)
-
-
-def param_to_filters_without_checks(query_str):
-    otu_query = json.loads(query_str)
-    taxonomy_filter = make_clean_taxonomy_filter(
-        otu_query['amplicon_filter'],
-        otu_query['taxonomy_filters'])
-
-    context_spec = otu_query['contextual_filters']
-    contextual_filter = ContextualFilter(context_spec['mode'], context_spec['environment'])
-
-    errors = []
+            try:
+                contextual_filter.add_term(_parse_contextual_term(filter_spec))
+            except Exception:
+                errors.append("Invalid value provided for contextual field `%s'" % field_name)
+                logger.critical("Exception parsing field: `%s'", field_name, exc_info=True)
 
     return (OTUQueryParams(
         contextual_filter=contextual_filter,
@@ -286,48 +271,7 @@ def param_to_filters_without_checks(query_str):
 
 @require_POST
 def required_table_headers(request):
-    """
-    This is a modification of the otu_search method to populate the DataTable
-    """
-
-    def _int_get_param(param_name):
-        param = request.POST.get(param_name, '')
-        try:
-            return int(param)
-        except ValueError:
-            return None
-
-    start = _int_get_param('start')
-    length = _int_get_param('length')
-
-    additional_headers = json.loads(request.POST.get('columns', '[]'))
-    all_headers = ['bpa_id', 'environment'] + additional_headers
-
-    environment_lookup = make_environment_lookup()
-
-    sorting = _parse_table_sorting(json.loads(request.POST.get('sorting', '[]')), all_headers)
-
-    params, errors = param_to_filters_without_checks(request.POST['otu_query'])
-    with SampleQuery(params) as query:
-        results = query.matching_sample_headers(additional_headers, sorting)
-
-    result_count = len(results)
-    results = results[start:start + length]
-
-    def get_environment(environment_id):
-        if environment_id is None:
-            return None
-        return environment_lookup[environment_id]
-
-    def map_result(row):
-        d = dict(zip(all_headers, row))
-        d['environment'] = get_environment(d['environment'])
-        return d
-
-    return JsonResponse({
-        'data': [map_result(row) for row in results],
-        'rowsCount': result_count,
-    })
+    return otu_search(request, contextual_filtering=False)
 
 
 @require_CKAN_auth
@@ -348,11 +292,7 @@ def otu_search_sample_sites(request):
 # avoid the issues of long URLs by simply POSTing the query
 @require_CKAN_auth
 @require_POST
-def otu_search(request):
-    """
-    private API: return the available fields, and their types, so that
-    the contextual filtering UI can be built
-    """
+def otu_search(request, contextual_filtering=True):
     def _int_get_param(param_name):
         param = request.POST.get(param_name)
         try:
@@ -363,12 +303,26 @@ def otu_search(request):
     start = _int_get_param('start')
     length = _int_get_param('length')
 
+    additional_headers = json.loads(request.POST.get('columns', '[]'))
+    all_headers = ['bpa_id', 'environment'] + additional_headers
+
     environment_lookup = make_environment_lookup()
 
-    params, errors = param_to_filters(request.POST['otu_query'])
+    sorting = _parse_table_sorting(json.loads(request.POST.get('sorting', '[]')), all_headers)
+
+    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+    if errors:
+        return JsonResponse({
+            'errors': [str(t) for t in errors],
+            'data': [],
+            'rowsCount': 0,
+        })
+
     with SampleQuery(params) as query:
-        results = query.matching_sample_ids_and_environment()
+        results = query.matching_sample_headers(additional_headers, sorting)
+
     result_count = len(results)
+
     if start >= result_count:
         start = (result_count // length) * length
     results = results[start:start + length]
@@ -378,18 +332,15 @@ def otu_search(request):
             return None
         return environment_lookup[environment_id]
 
-    if errors:
-        res = {
-            'errors': [str(t) for t in errors],
-            'data': [],
-            'rowsCount': 0,
-        }
-    else:
-        res = {
-            'data': [{"bpa_id": t[0], "environment": get_environment(t[1])} for t in results],
-            'rowsCount': result_count,
-        }
-    return JsonResponse(res)
+    def map_result(row):
+        d = dict(zip(all_headers, row))
+        d['environment'] = get_environment(d['environment'])
+        return d
+
+    return JsonResponse({
+        'data': [map_result(row) for row in results],
+        'rowsCount': result_count,
+    })
 
 
 @require_CKAN_auth
@@ -506,7 +457,7 @@ def contextual_csv_download_endpoint(request):
 
     sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), all_headers)
 
-    params, errors = param_to_filters_without_checks(data)
+    params, errors = param_to_filters(data, contextual=False)
     with SampleQuery(params) as query:
         results = query.matching_sample_headers(additional_headers, sorting)
 

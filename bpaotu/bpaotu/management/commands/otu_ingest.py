@@ -15,7 +15,7 @@ class Command(BaseCommand):
         # hard-coded for now, FIXME
         meta = ImportMetadata(
             methodology='v1',
-            revision_date=datetime.date(2018, 8, 10),
+            revision_date=datetime.date(2018, 11, 19),
             imported_at=datetime.date.today(),
             uuid=str(uuid.uuid4()))
         meta.save()

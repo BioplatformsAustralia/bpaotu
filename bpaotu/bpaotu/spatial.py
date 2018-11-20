@@ -8,7 +8,7 @@ from .query import (
 from .otu import (
     SampleContext)
 from .util import (
-    format_bpa_id,
+    format_sample_id,
     make_cache_key,
     str_none_blank)
 import logging
@@ -36,7 +36,7 @@ def _spatial_query(params):
         for column in SampleContext.__table__.columns:
             fn = str_none_blank
             if column.name == 'id':
-                fn = format_bpa_id
+                fn = format_sample_id
             elif hasattr(column, "ontology_class"):
                 fn = make_ontology_export(column.ontology_class)
             units = SampleContext.units(column.name)
