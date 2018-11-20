@@ -73,9 +73,14 @@
         };
     </script>
 
-    {% render_bundle 'runtime' %}
-    {% render_bundle 'vendors' %}
-    {% render_bundle 'main' %}
- 
+    {% if production %}
+        {% render_bundle 'runtime' %}
+        {% render_bundle 'vendors' %}
+        {% render_bundle 'main' %}
+    {% else %}
+        {% render_bundle 'runtime' attrs='crossorigin' %}
+        {% render_bundle 'vendors' attrs='crossorigin' %}
+        {% render_bundle 'main' attrs='crossorigin' %}
+    {% endif %}
 </body>
 </html>

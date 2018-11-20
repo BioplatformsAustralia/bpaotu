@@ -14,16 +14,13 @@ import { addColumn, clearColumns, removeColumn, selectColumn } from '../reducers
 class SelectColumnsCard extends React.Component<any> {
   constructor(props) {
     super(props)
-    this.doThenSearch.bind(this)
+    this.onRemoveColumn = this.onRemoveColumn.bind(this)
+    this.onSelectColumn = this.onSelectColumn.bind(this)
+    this.onClearColumns = this.onClearColumns.bind(this)
   }
 
   public componentDidMount() {
     this.props.fetchColumnsDataDefinitions()
-  }
-
-  public doThenSearch(action, ...args) {
-    action(...args)
-    this.props.search()
   }
 
   public render() {
@@ -39,21 +36,36 @@ class SelectColumnsCard extends React.Component<any> {
               dataDefinition={find(this.props.dataDefinitions, dd => dd.name === column.name)}
               options={this.props.dataDefinitions}
               optionsLoading={this.props.optionsLoading}
-              remove={partial(this.doThenSearch, this.props.removeColumn)}
-              select={partial(this.doThenSearch, this.props.selectColumn)}
+              remove={this.onRemoveColumn}
+              select={this.onSelectColumn}
             />
           ))}
         </CardBody>
         <CardFooter className="text-center">
-          <Button color="success" onClick={partial(this.doThenSearch, this.props.addColumn)}>
+          <Button color="success" onClick={this.props.addColumn}>
             Add
           </Button>
-          <Button color="warning" onClick={partial(this.doThenSearch, this.props.clearColumns)}>
+          <Button color="warning" onClick={this.onClearColumns}>
             Clear
           </Button>
         </CardFooter>
       </Card>
     )
+  }
+
+  private onRemoveColumn(...args) {
+    this.props.removeColumn(...args)
+    this.props.search()
+  }
+
+  private onSelectColumn(...args) {
+    this.props.selectColumn(...args)
+    this.props.search()
+  }
+
+  private onClearColumns() {
+    this.props.clearColumns()
+    this.props.search()
   }
 }
 
