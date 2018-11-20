@@ -23,3 +23,5 @@ bpaotu/bpaotu/frontend/dist
 bpaotu/bpaotu/static/bpaotu/js/*-bundle*.js
 
 yarn_cache/
+
+webpack-stats*.json
