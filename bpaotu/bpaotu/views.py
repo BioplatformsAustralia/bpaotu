@@ -14,6 +14,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import TemplateView
 from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpResponse
+from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
 from .ckan_auth import require_CKAN_auth
 from .importer import DataImporter
@@ -160,6 +161,7 @@ def contextual_fields(request):
     fields_by_type = defaultdict(list)
 
     classifications = DataImporter.classify_fields(make_environment_lookup())
+    field_units = AustralianMicrobiomeSampleContextual.units_for_fields()
 
     ontology_classes = {}
 
@@ -186,7 +188,7 @@ def contextual_fields(request):
             'name': name,
             'environment': environment,
             'display_name': SampleContext.display_name(name),
-            'units': SampleContext.units(name)
+            'units': field_units.get(name)
         })
         return r
 

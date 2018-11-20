@@ -61,10 +61,6 @@ def with_attrs(attrs, *args, **kwargs):
     return column
 
 
-def with_units(units, *args, **kwargs):
-    return with_attrs({'units': units}, *args, **kwargs)
-
-
 class SampleType(OntologyMixin, Base):
     pass
 
@@ -212,7 +208,8 @@ class SampleContext(SchemaMixin, Base):
     chlorophyll_a = Column(Float)
     clay = Column(Float)
     coastal_id = Column(CIText)
-    conductivity = Column(Float)
+    conductivity_dsm = Column(Float)
+    conductivity_sm = Column(Float)
     course_sand = Column(Float)
     cphl_a = Column(Float)
     cphl_b = Column(Float)
@@ -256,6 +253,7 @@ class SampleContext(SchemaMixin, Base):
     gyro = Column(Float)
     hex_fuco = Column(Float)
     host_abundance = Column(Float)
+    host_abundance_seaweed = Column(Float)
     host_species = Column(CIText)
     host_state = Column(CIText)
     information = Column(String)
@@ -288,7 +286,8 @@ class SampleContext(SchemaMixin, Base):
     organic_carbon = Column(Float)
     organic_fraction = Column(Float)
     organism = Column(CIText)
-    oxygen_ctd = Column(Float)
+    oxygen_ctd_coastal_water = Column(Float)
+    oxygen_ctd_pelagic = Column(Float)
     oxygen_lab = Column(Float)
     pam_fluorometer = Column(Float)
     perid = Column(Float)
@@ -369,14 +368,6 @@ class SampleContext(SchemaMixin, Base):
                 field_name = field_name[:-3]
             display_name = ' '.join(((t[0].upper() + t[1:]) for t in field_name.split('_')))
         return display_name
-
-    @classmethod
-    def units(cls, field_name):
-        """
-        return the units for a field
-        """
-        column = getattr(cls, field_name)
-        return getattr(column, 'units', None)
 
 
 class SampleOTU(SchemaMixin, Base):
