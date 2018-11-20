@@ -3,7 +3,7 @@ import * as React from 'react'
 import LoadingSpin from 'react-loading-spin'
 
 const spin = () => (
-  <div className={'LoadingSpinner'}>
+  <div className="spinner">
     <LoadingSpin />
   </div>
 )
