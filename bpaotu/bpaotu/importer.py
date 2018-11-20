@@ -187,12 +187,16 @@ class DataImporter:
 
         soil_fields = set()
         marine_fields = set()
-        for data_type, fields in AustralianMicrobiomeSampleContextual.field_specs.items():
+        for sheet_name, fields in AustralianMicrobiomeSampleContextual.field_specs.items():
+            environment = AustralianMicrobiomeSampleContextual.environment_for_sheet(sheet_name)
             for field_info in fields:
                 field_name = field_info[0]
                 if field_name in DataImporter.amd_ontologies:
                     field_name += '_id'
-                marine_fields.add(field_name)
+                if environment == 'Soil':
+                    soil_fields.add(field_name)
+                else:
+                    marine_fields.add(field_name)
         soil_only = soil_fields - marine_fields
         marine_only = marine_fields - soil_fields
         r = {}
