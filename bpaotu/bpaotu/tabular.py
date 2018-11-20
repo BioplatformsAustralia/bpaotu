@@ -41,7 +41,7 @@ def _csv_write_function(column):
 def _csv_heading(column):
     units = SampleContext.units(column.name)
     if column.name == 'id':
-        return 'BPA ID'
+        return 'Sample ID'
     title = SampleContext.display_name(column.name)
     if units:
         title += ' [%s]' % units
@@ -82,7 +82,7 @@ def tabular_zip_file_generator(params):
             fd = io.StringIO()
             w = csv.writer(fd)
             w.writerow([
-                'BPA ID',
+                'Sample ID',
                 'OTU',
                 'OTU Count',
                 'Amplicon',

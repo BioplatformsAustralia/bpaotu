@@ -353,7 +353,7 @@ class SampleQuery:
 
     def _build_taxonomy_subquery(self):
         """
-        return the BPA IDs (as ints) which have a non-zero OTU count for OTUs
+        return the Sample IDs (as ints) which have a non-zero OTU count for OTUs
         matching the taxonomy filter
         """
         if self._taxonomy_filter.is_empty():
