@@ -168,6 +168,11 @@ class DataImporter:
                     if field in row:
                         vals[db_class].add(row[field])
 
+        # blow up if any of the ontologies hasn't worked
+        for db_class, val_set in vals.items():
+            if len(val_set) <= 1:
+                raise Exception("empty ontology: {}".format(db_class))
+
         mappings = {}
         for db_class, fields in by_class.items():
             map_dict = self._build_ontology(db_class, vals[db_class])
@@ -298,6 +303,7 @@ class DataImporter:
         utilised_fields = set()
         logger.warning("loading Soil contextual metadata")
         metadata = self.contextual_rows(AccessAMDContextualMetadata, name='amd-metadata')
+        logger.debug(metadata)
         mappings = self._load_ontology(DataImporter.amd_ontologies, metadata)
         self._session.bulk_save_objects(
             self.contextual_row_context(

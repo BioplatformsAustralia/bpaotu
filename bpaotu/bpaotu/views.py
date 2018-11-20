@@ -304,7 +304,7 @@ def otu_search(request, contextual_filtering=True):
     length = _int_get_param('length')
 
     additional_headers = json.loads(request.POST.get('columns', '[]'))
-    all_headers = ['bpa_id', 'environment'] + additional_headers
+    all_headers = ['sample_id', 'environment'] + additional_headers
 
     environment_lookup = make_environment_lookup()
 
@@ -453,7 +453,7 @@ def contextual_csv_download_endpoint(request):
     data = request.GET.get('otu_query')
 
     additional_headers = json.loads(request.GET.get('columns', '[]'))
-    all_headers = ['bpa_id', 'environment'] + additional_headers
+    all_headers = ['sample_id', 'environment'] + additional_headers
 
     sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), all_headers)
 
@@ -461,7 +461,7 @@ def contextual_csv_download_endpoint(request):
     with SampleQuery(params) as query:
         results = query.matching_sample_headers(additional_headers, sorting)
 
-    header = ['sample_bpa_id', 'bpa_project'] + additional_headers
+    header = ['sample_id', 'bpa_project'] + additional_headers
 
     file_buffer = io.StringIO()
     csv_writer = csv.writer(file_buffer)

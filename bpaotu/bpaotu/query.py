@@ -382,7 +382,7 @@ class SampleQuery:
         """
         applies the passed taxonomy_subquery to apply taxonomy filters.
 
-        paging support: applies limit and offset, and returns (count, [bpa_id, ...])
+        paging support: applies limit and offset, and returns (count, [sample_id, ...])
         """
         # we use a window function here, to get count() over the whole query without having to
         # run it twice
@@ -397,7 +397,7 @@ class SampleQuery:
         """
         applies the passed contextual_subquery to apply taxonomy filters.
 
-        paging support: applies limit and offset, and returns (count, [bpa_id, ...])
+        paging support: applies limit and offset, and returns (count, [sample_id, ...])
         """
         # we use a window function here, to get count() over the whole query without having to
         # run it twice
