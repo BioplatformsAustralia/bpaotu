@@ -27,7 +27,7 @@ h5py==2.7.1
 numpy==1.14.5
 celery==4.1.1
 django-webpack-loader==0.6.0
-https://github.com/BioplatformsAustralia/bpa-ingest/archive/5.3.2.tar.gz
+https://github.com/BioplatformsAustralia/bpa-ingest/archive/5.3.3.tar.gz
 git+https://github.com/muccg/ckanapi.git@streaming-uploads
 httplib2==0.10.3
 boto3==1.4.7
