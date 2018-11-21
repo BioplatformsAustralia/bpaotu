@@ -22,7 +22,7 @@ export class SearchResultsTable extends React.Component<any> {
       )
     },
     {
-      Header: 'BPA Project',
+      Header: 'Environment',
       sortable: true,
       accessor: 'environment'
     }

@@ -324,9 +324,10 @@ class DataImporter:
 
         assert(header[0] == '#OTU ID')
 
-        # find the four or five-digit BPA IDs: there are integers in here which are not BPA IDs,
-        # but they're not in the BPA ID range (currently 7031 -> 58020). FIXME, this is crude
-        # and it would be better to more clearly identify BPA / non BPA data; discussing with CSIRO
+        # find the four or five-digit Sample IDs: there are integers in here which are not Sample IDs,
+        # but they're not in the Sample ID range (currently 7031 -> 58020). FIXME, this is crude
+        # and it would be better to more clearly identify Bioplatforms / non-Bioplatforms data;
+        # discussing with CSIRO
         idx_sample_id = [(i + 1, try_int(t)) for (i, t) in enumerate(header[1:]) if len(t) == 4 or len(t) == 5]
         idx_sample_id = [(i, t) for (i, t) in idx_sample_id if t is not None]
 
