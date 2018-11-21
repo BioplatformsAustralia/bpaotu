@@ -14,6 +14,7 @@ from .query import (
 import io
 import csv
 import logging
+from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
 
 logger = logging.getLogger('rainbow')
@@ -38,8 +39,8 @@ def _csv_write_function(column):
         return str_none_blank
 
 
-def _csv_heading(column):
-    units = SampleContext.units(column.name)
+def _csv_heading(column, field_units):
+    units = field_units.get(column.name)
     if column.name == 'id':
         return 'Sample ID'
     title = SampleContext.display_name(column.name)
@@ -51,8 +52,9 @@ def _csv_heading(column):
 def contextual_csv(samples):
     headings = {}
     write_fns = {}
+    field_units = AustralianMicrobiomeSampleContextual.units_for_fields()
     for column in SampleContext.__table__.columns:
-        headings[column.name] = _csv_heading(column)
+        headings[column.name] = _csv_heading(column, field_units)
         write_fns[column.name] = _csv_write_function(column)
 
     def get_context_value(sample, field):

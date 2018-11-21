@@ -12,6 +12,7 @@ from .util import (
     make_cache_key,
     str_none_blank)
 import logging
+from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
 
 logger = logging.getLogger("rainbow")
@@ -32,6 +33,7 @@ def _spatial_query(params):
                 return values[x]
             return _ontology_lookup
 
+        field_units = AustralianMicrobiomeSampleContextual.units_for_fields()
         write_fns = {}
         for column in SampleContext.__table__.columns:
             fn = str_none_blank
@@ -39,7 +41,7 @@ def _spatial_query(params):
                 fn = format_sample_id
             elif hasattr(column, "ontology_class"):
                 fn = make_ontology_export(column.ontology_class)
-            units = SampleContext.units(column.name)
+            units = field_units.get(column.name)
             title = SampleContext.display_name(column.name)
             if units:
                 title += ' [%s]' % units
