@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 info () {
     printf "\r  [\033[00;34mINFO\033[0m] %s\n" "$1"
