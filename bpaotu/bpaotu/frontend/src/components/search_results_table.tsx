@@ -10,8 +10,8 @@ import 'react-table/react-table.css'
 export class SearchResultsTable extends React.Component<any> {
   public defaultColumns = [
     {
-      Header: 'BPA Sample ID',
-      accessor: 'bpa_id',
+      Header: 'Sample ID',
+      accessor: 'sample_id',
       sortable: true,
       Cell: row => (
         <div>
@@ -97,7 +97,7 @@ export class SearchResultsTable extends React.Component<any> {
 }
 
 function bpaIDToCKANURL(bpaId) {
-  return `${window.otu_search_config.ckan_base_url}/organization/australian-microbiome?q=bpa_id:102.100.100.${bpaId}`
+  return `${window.otu_search_config.ckan_base_url}/organization/australian-microbiome?q=sample_id:102.100.100.${bpaId}`
 }
 
 function fieldToDisplayName(fieldName) {

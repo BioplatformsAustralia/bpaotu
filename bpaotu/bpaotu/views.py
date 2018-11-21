@@ -14,6 +14,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import TemplateView
 from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpResponse
+from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
 from .ckan_auth import require_CKAN_auth
 from .importer import DataImporter
@@ -160,6 +161,7 @@ def contextual_fields(request):
     fields_by_type = defaultdict(list)
 
     classifications = DataImporter.classify_fields(make_environment_lookup())
+    field_units = AustralianMicrobiomeSampleContextual.units_for_fields()
 
     ontology_classes = {}
 
@@ -186,7 +188,7 @@ def contextual_fields(request):
             'name': name,
             'environment': environment,
             'display_name': SampleContext.display_name(name),
-            'units': SampleContext.units(name)
+            'units': field_units.get(name)
         })
         return r
 
@@ -304,7 +306,7 @@ def otu_search(request, contextual_filtering=True):
     length = _int_get_param('length')
 
     additional_headers = json.loads(request.POST.get('columns', '[]'))
-    all_headers = ['bpa_id', 'environment'] + additional_headers
+    all_headers = ['sample_id', 'environment'] + additional_headers
 
     environment_lookup = make_environment_lookup()
 
@@ -453,7 +455,7 @@ def contextual_csv_download_endpoint(request):
     data = request.GET.get('otu_query')
 
     additional_headers = json.loads(request.GET.get('columns', '[]'))
-    all_headers = ['bpa_id', 'environment'] + additional_headers
+    all_headers = ['sample_id', 'environment'] + additional_headers
 
     sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), all_headers)
 
@@ -461,7 +463,7 @@ def contextual_csv_download_endpoint(request):
     with SampleQuery(params) as query:
         results = query.matching_sample_headers(additional_headers, sorting)
 
-    header = ['sample_bpa_id', 'bpa_project'] + additional_headers
+    header = ['sample_id', 'bpa_project'] + additional_headers
 
     file_buffer = io.StringIO()
     csv_writer = csv.writer(file_buffer)

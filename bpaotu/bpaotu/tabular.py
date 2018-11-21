@@ -5,7 +5,7 @@ from .otu import (
     OTU,
     SampleContext)
 from .util import (
-    format_bpa_id,
+    format_sample_id,
     str_none_blank,
     val_or_empty)
 from .query import (
@@ -31,7 +31,7 @@ def _csv_write_function(column):
             return _ontology_lookup
 
     if column.name == 'id':
-        return format_bpa_id
+        return format_sample_id
     elif hasattr(column, "ontology_class"):
         return make_ontology_export(column.ontology_class)
     else:
@@ -41,7 +41,7 @@ def _csv_write_function(column):
 def _csv_heading(column):
     units = SampleContext.units(column.name)
     if column.name == 'id':
-        return 'BPA ID'
+        return 'Sample ID'
     title = SampleContext.display_name(column.name)
     if units:
         title += ' [%s]' % units
@@ -82,7 +82,7 @@ def tabular_zip_file_generator(params):
             fd = io.StringIO()
             w = csv.writer(fd)
             w.writerow([
-                'BPA ID',
+                'Sample ID',
                 'OTU',
                 'OTU Count',
                 'Amplicon',
@@ -99,7 +99,7 @@ def tabular_zip_file_generator(params):
             q = query.matching_sample_otus(OTU, SampleOTU, SampleContext, kingdom_id=kingdom_id)
             for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
                 w.writerow([
-                    format_bpa_id(sample_otu.sample_id),
+                    format_sample_id(sample_otu.sample_id),
                     otu.code,
                     sample_otu.count,
                     val_or_empty(otu.amplicon),
