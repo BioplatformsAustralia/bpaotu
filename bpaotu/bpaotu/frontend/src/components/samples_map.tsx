@@ -1,4 +1,4 @@
-import { first, keys, map } from 'lodash'
+import { first, join, keys, map } from 'lodash'
 import * as React from 'react'
 import { Button, Card, CardText, CardTitle, Col, Nav, NavItem, NavLink, Row, TabContent, TabPane } from 'reactstrap'
 
@@ -34,30 +34,20 @@ const ArcGIS = {
 
 // tslint:disable-next-line:max-classes-per-file
 class BPAImages extends React.Component<any, any> {
-    constructor(props: any) {
-        super(props)
-
-        const imgs = []
-        if (typeof this.props.imgUrls !== 'undefined') {
-            for (let i=0; i<Object.keys(this.props.imgUrls).length; i++) {
-                imgs.push(
-                    <a href={`${this.props.imgUrls[i]}`} target="_blank">
-                        <img src={`/process_img/${this.props.lat}/${this.props.lng}/${i}`} />
-                    </a>
-                )
-            }
-            imgs.push(<hr />)
-        }
-
-        this.state = {
-            img: imgs
-        }
-    }
-
     public render() {
+        const tnUrl = (packageId, resourceId) => join(
+          [window.otu_search_config.base_url, 'site-image-thumbnail', packageId, resourceId], '/')
+        const rsUrl = (packageId, resourceId) => join(
+          [window.otu_search_config.ckan_base_url, 'dataset', packageId, 'resource', resourceId], '/')
         return (
             <div>
-                {this.state.img}
+              {map(this.props.siteImages || [], ({package_id, resource_id}, index) => (
+                <Row key={index}>
+                  <a href={rsUrl(package_id, resource_id)} target="_other">
+                    <img src={tnUrl(package_id, resource_id)} />
+                  </a>
+                </Row>
+              ))}
             </div>
         )
     }
@@ -109,12 +99,14 @@ class BPASamples extends React.Component<any, any> {
               <Row>
                 <Col sm="12">
                   <table>
-                    {map(data, (d, k) => (
-                      <tr>
-                        <th>{k}:</th>
-                        <td>{d}</td>
-                      </tr>
-                    ))}
+                    <tbody>
+                      {map(data, (d, k) => (
+                        <tr key={k}>
+                          <th>{k}:</th>
+                          <td>{d}</td>
+                        </tr>
+                      ))}
+                    </tbody>
                   </table>
                 </Col>
               </Row>
@@ -156,7 +148,7 @@ export default class SamplesMap extends React.Component<any> {
               <Marker key={`marker-${index}`} position={marker}>
                   <Popup minWidth={640} maxHeight={480}>
                   <div>
-                      <BPAImages lat={marker.lat} lng={marker.lng} imgUrls={marker.img_urls} />
+                      <BPAImages lat={marker.lat} lng={marker.lng} siteImages={marker.site_images} />
                       <BPASamples bpadata={marker.bpadata} />
                   </div>
                 </Popup>

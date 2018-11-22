@@ -9,6 +9,7 @@ import os
 import re
 import time
 
+from django.views.decorators.cache import cache_page
 from django.conf import settings
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
@@ -48,8 +49,8 @@ from .util import (
 from .biom import biom_zip_file_generator
 from .tabular import tabular_zip_file_generator
 from . import tasks
-from .img_processing import (
-    _get_lookup_table,
+from .site_images import (
+    get_site_image_lookup_table,
     fetch_image
 )
 
@@ -60,6 +61,7 @@ logger = logging.getLogger("rainbow")
 ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
 
+CACHE_1DAY = (60 * 60 * 24)
 CACHE_7DAYS = (60 * 60 * 24 * 7)
 
 
@@ -293,14 +295,11 @@ def otu_search_sample_sites(request):
         })
     data = spatial_query(params)
 
-    img_lookup_table = _get_lookup_table()
+    site_image_lookup_table = get_site_image_lookup_table()
 
     for d in data:
         key = (str(d['latitude']), str(d['longitude']))
-        for i in img_lookup_table:
-            if key == i:
-                d['img_urls'] = img_lookup_table[i]
-
+        d['site_images'] = site_image_lookup_table.get(key)
     return JsonResponse({'data': data})
 
 
@@ -563,11 +562,11 @@ def dev_only_ckan_check_permissions(request):
     return HttpResponse(response)
 
 
-def process_img(request=None, lat=None, lng=None, index=None):
+@cache_page(CACHE_1DAY, cache="image_results")
+def site_image_thumbnail(request, package_id, resource_id):
     '''
     Return specified cached image or fetch image from ckan and resize before caching and returning.
     '''
 
-    buf, content_type = fetch_image(lat, lng, index)
-
+    buf, content_type = fetch_image(package_id, resource_id)
     return HttpResponse(buf.getvalue(), content_type=content_type)

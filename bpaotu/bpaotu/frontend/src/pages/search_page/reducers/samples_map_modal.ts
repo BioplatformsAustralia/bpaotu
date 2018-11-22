@@ -48,7 +48,7 @@ export default handleActions(
         bpadata: sample.bpa_data,
         lat: sample.latitude,
         lng: sample.longitude,
-        img_urls: sample.img_urls
+        site_images: sample.site_images
       }))
     })
   },
