@@ -92,9 +92,11 @@ def fetch_image(lat, lng, index):
 
             # Resizing an image while maintaining aspect ratio:
             # https://stackoverflow.com/questions/24745857/python-pillow-how-to-scale-an-image/24745969
-
             maxsize = (MAX_WIDTH, MAX_HEIGHT)
             img_obj.thumbnail(maxsize, Image.ANTIALIAS)
+
+            # Needed fix for some cases with Alpha channel (See test case 5).
+            img_obj = img_obj.convert('RGB')
 
             with BytesIO() as img_buf:
                 # 1. Save image to BytesIO stream
