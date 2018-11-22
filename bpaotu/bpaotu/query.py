@@ -255,11 +255,17 @@ class SampleQuery:
 
     def _q_all_cached(self, topic, q, mutate_result=None):
         cache = caches['search_results']
+
+        stmt = q.with_labels().statement
+        compiled = stmt.compile()
+        params = compiled.params
+
         key = make_cache_key(
             'SampleQuery._q_all_cached',
             topic,
-            self._taxonomy_filter,
-            self._contextual_filter)
+            str(compiled),
+            params)
+
         result = cache.get(key)
         if not result:
             result = q.all()
@@ -268,19 +274,11 @@ class SampleQuery:
             cache.set(key, result, CACHE_7DAYS)
         return result
 
-    def matching_sample_ids_and_environment(self):
-        q = self._session.query(SampleContext.id, SampleContext.environment_id)
-        subq = self._build_taxonomy_subquery()
-        q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
-        return self._q_all_cached('matching_sample_ids_and_environment', q)
-
     def matching_sample_headers(self, required_headers=None, sorting=()):
         query_headers = [SampleContext.id, SampleContext.environment_id]
         joins = []  # Keep track of any foreign ontology classes which may be needed to be joined to.
 
-        cache_name = ['matching_sample_headers']
         if required_headers:
-            cache_name += required_headers
             for h in required_headers:
                 if not h:
                     continue
@@ -302,6 +300,9 @@ class SampleQuery:
         for join, cond in joins:
             q = q.outerjoin(join, cond)
 
+        subq = self._build_taxonomy_subquery()
+        q = self._assemble_sample_query(q, subq)
+
         for sort in sorting:
             sort_col = sort['col_idx']
             if sort.get('desc', False):
@@ -309,10 +310,7 @@ class SampleQuery:
             else:
                 q = q.order_by(query_headers[int(sort_col)])
 
-            cache_name.append(str(query_headers[int(sort_col)]))
-            cache_name.append('desc' if sort.get('desc', False) else 'asc')
-
-        return self._q_all_cached(':'.join(cache_name), q)
+        return self._q_all_cached('matching_sample_headers', q)
 
     def matching_samples(self):
         q = self._session.query(SampleContext)
@@ -355,15 +353,15 @@ class SampleQuery:
 
     def _build_taxonomy_subquery(self):
         """
-        return the BPA IDs (as ints) which have a non-zero OTU count for OTUs
+        return the Sample IDs (as ints) which have a non-zero OTU count for OTUs
         matching the taxonomy filter
         """
         if self._taxonomy_filter.is_empty():
             return None
-        q = self._session.query(SampleOTU.sample_id) \
-            .distinct() \
-            .join(OTU) \
-            .filter(OTU.id == SampleOTU.otu_id)
+        q = (self._session.query(SampleOTU.sample_id)
+                          .distinct()
+                          .join(OTU)
+                          .filter(OTU.id == SampleOTU.otu_id))
         return self._taxonomy_filter.apply(q)
 
     def _build_contextual_subquery(self):
@@ -374,17 +372,17 @@ class SampleQuery:
         # shortcut: if we don't have any filters, don't produce a subquery
         if self._contextual_filter.is_empty():
             return None
-        q = self._session.query(SampleOTU.otu_id) \
-            .distinct() \
-            .join(SampleContext) \
-            .filter(SampleContext.id == SampleOTU.sample_id)
+        q = (self._session.query(SampleOTU.otu_id)
+                          .distinct()
+                          .join(SampleContext)
+                          .filter(SampleContext.id == SampleOTU.sample_id))
         return self._contextual_filter.apply(q)
 
     def _assemble_sample_query(self, sample_query, taxonomy_subquery):
         """
         applies the passed taxonomy_subquery to apply taxonomy filters.
 
-        paging support: applies limit and offset, and returns (count, [bpa_id, ...])
+        paging support: applies limit and offset, and returns (count, [sample_id, ...])
         """
         # we use a window function here, to get count() over the whole query without having to
         # run it twice
@@ -399,7 +397,7 @@ class SampleQuery:
         """
         applies the passed contextual_subquery to apply taxonomy filters.
 
-        paging support: applies limit and offset, and returns (count, [bpa_id, ...])
+        paging support: applies limit and offset, and returns (count, [sample_id, ...])
         """
         # we use a window function here, to get count() over the whole query without having to
         # run it twice

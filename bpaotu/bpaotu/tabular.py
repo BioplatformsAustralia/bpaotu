@@ -5,7 +5,7 @@ from .otu import (
     OTU,
     SampleContext)
 from .util import (
-    format_bpa_id,
+    format_sample_id,
     str_none_blank,
     val_or_empty)
 from .query import (
@@ -14,6 +14,7 @@ from .query import (
 import io
 import csv
 import logging
+from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
 
 logger = logging.getLogger('rainbow')
@@ -31,17 +32,17 @@ def _csv_write_function(column):
             return _ontology_lookup
 
     if column.name == 'id':
-        return format_bpa_id
+        return format_sample_id
     elif hasattr(column, "ontology_class"):
         return make_ontology_export(column.ontology_class)
     else:
         return str_none_blank
 
 
-def _csv_heading(column):
-    units = SampleContext.units(column.name)
+def _csv_heading(column, field_units):
+    units = field_units.get(column.name)
     if column.name == 'id':
-        return 'BPA ID'
+        return 'Sample ID'
     title = SampleContext.display_name(column.name)
     if units:
         title += ' [%s]' % units
@@ -51,8 +52,9 @@ def _csv_heading(column):
 def contextual_csv(samples):
     headings = {}
     write_fns = {}
+    field_units = AustralianMicrobiomeSampleContextual.units_for_fields()
     for column in SampleContext.__table__.columns:
-        headings[column.name] = _csv_heading(column)
+        headings[column.name] = _csv_heading(column, field_units)
         write_fns[column.name] = _csv_write_function(column)
 
     def get_context_value(sample, field):
@@ -82,7 +84,7 @@ def tabular_zip_file_generator(params):
             fd = io.StringIO()
             w = csv.writer(fd)
             w.writerow([
-                'BPA ID',
+                'Sample ID',
                 'OTU',
                 'OTU Count',
                 'Amplicon',
@@ -99,7 +101,7 @@ def tabular_zip_file_generator(params):
             q = query.matching_sample_otus(OTU, SampleOTU, SampleContext, kingdom_id=kingdom_id)
             for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
                 w.writerow([
-                    format_bpa_id(sample_otu.sample_id),
+                    format_sample_id(sample_otu.sample_id),
                     otu.code,
                     sample_otu.count,
                     val_or_empty(otu.amplicon),

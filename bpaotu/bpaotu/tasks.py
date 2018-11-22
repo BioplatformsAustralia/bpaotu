@@ -36,7 +36,7 @@ def submit_to_galaxy(email, query):
     # new account
     new_galaxy_user = galaxy_ensure_user(email)
 
-    submission_id = uuid.uuid4()
+    submission_id = str(uuid.uuid4())
 
     submission = Submission.create(submission_id)
     submission.query = query

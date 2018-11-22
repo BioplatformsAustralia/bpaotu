@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-/MAIL
-# Django settings for bpa metadata project.
+# Django settings for Bioplatforms OTU project.
 
 import os
 from contextlib import suppress
@@ -45,7 +45,7 @@ MANAGERS = ADMINS
 
 # anymail email
 DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'No Reply <no-reply@mg.ccgapps.com.au>')
-EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[BPA OTU] ')
+EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU] ')
 SERVER_EMAIL = env.get('DJANGO_SERVER_EMAIL', DEFAULT_FROM_EMAIL)
 # default to anymail/mailgun, but if the API key is not set, fall back to console
 EMAIL_BACKEND = env.get('DJANGO_EMAIL_BACKEND', 'anymail.backends.mailgun.MailgunBackend')
@@ -382,7 +382,10 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 # For production we put the bundle information in a separate file webpack-stats-prod.json
 # and we put it one level above frontend, because we don't include anything from frontend in the tarball we build.
 # Both files are in .gitignore, so it doesn't matter much where they are stored.
-WEBPACK_STATS_FILE = 'webpack-stats-prod.json' if PRODUCTION else 'frontend/webpack-stats.json'
+#
+# FIXME: hard-coded path to the stats file in PRODUCTION; we are pip installing bpaotu
+# outside of dev-mode, but that doesn't install the webpack assets
+WEBPACK_STATS_FILE = '/app/bpaotu/bpaotu/webpack-stats-prod.json' if PRODUCTION else 'frontend/webpack-stats.json'
 WEBPACK_LOADER = {
     'DEFAULT': {
         'BUNDLE_DIR_NAME': 'bpaotu/js/',
@@ -401,7 +404,7 @@ EXPLORER_TASKS_ENABLED = True
 EXPLORER_TOKEN_AUTH_ENABLED = True
 EXPLORER_TOKEN = env.get('EXPLORER_TOKEN', "EXPLOREIT")
 
-# enable integration with CKAN authentication (specific to the BPA data portal)
+# enable integration with CKAN authentication (specific to the Bioplatforms data portal)
 CKAN_AUTH_INTEGRATION = env.get('ckan_auth_integration', True)
 CKAN_CHECK_PERMISSIONS_URL = env.get('ckan_check_permissions_url', '/user/private/api/bpa/check_permissions')
 

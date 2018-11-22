@@ -5,6 +5,7 @@ import { bindActionCreators } from 'redux'
 import { Col, Container, Row } from 'reactstrap'
 
 import SearchButton from '../../components/search_button'
+import LoadingSpinner from '../../components/search_spinner'
 import AmpliconTaxonomyFilterCard from './components/amplicon_taxonomy_filter_card'
 import ContextualFilterCard from './components/contextual_filter_card'
 import SearchErrors from './components/search_errors'
@@ -30,9 +31,15 @@ export const SearchPage = props => (
     </Row>
 
     <Row className="space-above">
-      <Col sm={{ size: 2, offset: 5 }}>
-        <SearchButton isDisabled={props.isSearchButtonDisabled} search={props.search} />
-      </Col>
+      {props.isSearchInProgress ? (
+        <Col sm={{ size: 2, offset: 6 }}>
+          <LoadingSpinner />
+        </Col>
+      ) : (
+        <Col sm={{ size: 2, offset: 5 }}>
+          <SearchButton search={props.search} />
+        </Col>
+      )}
     </Row>
     <Row className="space-above">
       <Col sm={12}>
@@ -44,7 +51,7 @@ export const SearchPage = props => (
 
 function mapStateToProps(state) {
   return {
-    isSearchButtonDisabled: state.searchPage.results.isLoading,
+    isSearchInProgress: state.searchPage.results.isLoading,
     errors: state.searchPage.results.errors
   }
 }

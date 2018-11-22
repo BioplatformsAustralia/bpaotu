@@ -1,4 +1,4 @@
-import { find, get as _get, map, reject } from 'lodash'
+import { find, get as _get, isEmpty, map, reject, uniq } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
 
 import { executeSearch } from '../../../api'
@@ -70,7 +70,13 @@ export const search = () => (dispatch, getState) => {
   dispatch(searchStarted())
 
   const filters = describeSearch(state.searchPage.filters)
-  executeSearch(filters, state.searchPage.results)
+
+  const options = {
+    ...state.searchPage.results,
+    columns: uniq(reject(map(filters.contextual_filters.filters, f => f.field), name => isEmpty(name)))
+  }
+
+  executeSearch(filters, options)
     .then(data => {
       if (_get(data, 'data.errors', []).length > 0) {
         dispatch(searchEnded(new ErrorList(...data.data.errors)))

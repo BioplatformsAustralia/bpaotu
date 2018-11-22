@@ -21,9 +21,6 @@ import ContextualFilter from '../../../components/contextual_filter'
 import Octicon from '../../../components/octicon'
 import EnvironmentFilter from './environment_filter'
 
-const ContextualFilterInfo =
-  'Contextual filters allow data to be filtered on site specific chemical and physical data. More than one filter may be used and combined with "and/or" functions.'
-
 class ContextualFilterCard extends React.Component<any> {
   public componentDidMount() {
     this.props.fetchContextualDataDefinitions()
@@ -33,9 +30,6 @@ class ContextualFilterCard extends React.Component<any> {
     return (
       <Card>
         <CardHeader>
-          <span title={ContextualFilterInfo}>
-            <Octicon name="info" />
-          </span>{' '}
           Contextual Filters
         </CardHeader>
         <CardBody className="filters">
@@ -43,6 +37,14 @@ class ContextualFilterCard extends React.Component<any> {
 
           <hr />
           <h5 className="text-center">Contextual Filters</h5>
+
+          <Row>
+            <Col>
+              <p className="text-center">
+                Contextual filters allow data to be filtered on site specific chemical and physical data. More than one filter may be used and combined with "all/any" functions.
+              </p>
+            </Col>
+          </Row>
 
           {this.props.contextualFilters.length >= 2 && (
             <Row>

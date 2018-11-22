@@ -8,10 +8,11 @@ from .query import (
 from .otu import (
     SampleContext)
 from .util import (
-    format_bpa_id,
+    format_sample_id,
     make_cache_key,
     str_none_blank)
 import logging
+from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
 
 logger = logging.getLogger("rainbow")
@@ -32,14 +33,15 @@ def _spatial_query(params):
                 return values[x]
             return _ontology_lookup
 
+        field_units = AustralianMicrobiomeSampleContextual.units_for_fields()
         write_fns = {}
         for column in SampleContext.__table__.columns:
             fn = str_none_blank
             if column.name == 'id':
-                fn = format_bpa_id
+                fn = format_sample_id
             elif hasattr(column, "ontology_class"):
                 fn = make_ontology_export(column.ontology_class)
-            units = SampleContext.units(column.name)
+            units = field_units.get(column.name)
             title = SampleContext.display_name(column.name)
             if units:
                 title += ' [%s]' % units
@@ -90,6 +92,8 @@ def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=False):
 # backend code. it resolves an issue with samples wrapping
 # on the dateline and being shown off-screen (off coast NZ)
 def _corrected_longitude(lng):
+    if lng is None:
+        return None
     return lng + 360 if lng < 0 else lng
 
 

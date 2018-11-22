@@ -57,7 +57,7 @@ def temporary_file(contents):
         os.remove(path)
 
 
-def format_bpa_id(int_id):
+def format_sample_id(int_id):
     return '102.100.100/%d' % int_id
 
 
