@@ -82,7 +82,9 @@ def fetch_image(lat, lng, index):
 
     key = img_filename
 
-    if _get_cached_item(key) is None:
+    img_data = _get_cached_item(key)
+
+    if img_data is None:
         r = requests.get(img_url, headers={'Authorization': settings.CKAN_API_KEY})
 
         with Image.open(BytesIO(r.content)) as img_obj:
@@ -97,13 +99,11 @@ def fetch_image(lat, lng, index):
             with BytesIO() as img_buf:
                 # 1. Save image to BytesIO stream
                 img_obj.save(img_buf, format=IMG_EXTENSION_TABLE[img_ext][0])
+                img_data = img_buf.getvalue()
 
                 # 2. Cache the BytesIO stream
-                _set_cached_item(key, img_buf.getvalue())
-
-            width, height = img_obj.size
-            logger.info("Width: {} Height: {}".format(width, height))
+                _set_cached_item(key, img_data)
 
     content_type = IMG_EXTENSION_TABLE[img_ext][1]
 
-    return (BytesIO(_get_cached_item(key)), content_type)
+    return (BytesIO(img_data), content_type)
