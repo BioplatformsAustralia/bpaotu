@@ -49,10 +49,7 @@ from .tabular import tabular_zip_file_generator
 from . import tasks
 from .img_processing import (
     _get_lookup_table,
-    fetch_image,
-    # _get_cached_item,
-    # LOOKUP_TABLE_KEY,
-    # _create_img_lookup_table
+    fetch_image
 )
 
 logger = logging.getLogger("rainbow")
