@@ -48,8 +48,11 @@ from .biom import biom_zip_file_generator
 from .tabular import tabular_zip_file_generator
 from . import tasks
 from .img_processing import (
+    _get_lookup_table,
     fetch_image,
-    _create_img_lookup_table
+    # _get_cached_item,
+    # LOOKUP_TABLE_KEY,
+    # _create_img_lookup_table
 )
 
 logger = logging.getLogger("rainbow")
@@ -347,9 +350,7 @@ def otu_search_sample_sites(request):
         })
     data = spatial_query(params)
 
-    _create_img_lookup_table()
-    img_lookup_table = _get_cached_item(LOOKUP_TABLE_KEY)
-    img_lookup_table = {}
+    img_lookup_table = _get_lookup_table()
 
     for d in data:
         key = (str(d['latitude']), str(d['longitude']))

@@ -46,6 +46,7 @@ class BPAImages extends React.Component<any, any> {
                     </a>
                 )
             }
+            imgs.push(<hr />)
         }
 
         this.state = {
@@ -156,7 +157,6 @@ export default class SamplesMap extends React.Component<any> {
                   <Popup minWidth={640} maxHeight={480}>
                   <div>
                       <BPAImages lat={marker.lat} lng={marker.lng} imgUrls={marker.img_urls} />
-                      <hr />
                       <BPASamples bpadata={marker.bpadata} />
                   </div>
                 </Popup>
