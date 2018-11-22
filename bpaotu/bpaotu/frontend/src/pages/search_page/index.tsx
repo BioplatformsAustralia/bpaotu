@@ -7,6 +7,7 @@ import { Col, Container, Row } from 'reactstrap'
 import SearchButton from '../../components/search_button'
 import LoadingSpinner from '../../components/search_spinner'
 import AmpliconTaxonomyFilterCard from './components/amplicon_taxonomy_filter_card'
+import BlastSearchCard from './components/blast_search_card'
 import ContextualFilterCard from './components/contextual_filter_card'
 import SearchErrors from './components/search_errors'
 import SearchResultsCard from './components/search_results_card'
@@ -23,7 +24,11 @@ export const SearchPage = props => (
         <ContextualFilterCard />
       </Col>
     </Row>
-
+    <Row className="space-above">
+      <Col sm={6}>
+        <BlastSearchCard />
+      </Col>
+    </Row>
     <Row className="space-above">
       <Col sm={{ size: 6, offset: 3 }}>
         <SearchErrors errors={props.errors} />
