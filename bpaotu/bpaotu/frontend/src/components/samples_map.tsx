@@ -44,7 +44,7 @@ class BPAImages extends React.Component<any, any> {
               {map(this.props.siteImages || [], ({package_id, resource_id}, index) => (
                 <Row key={index}>
                   <a href={rsUrl(package_id, resource_id)} target="_other">
-                    <img src={tnUrl(package_id, resource_id)} />
+                    <img alt="Australian Microbiome site image" src={tnUrl(package_id, resource_id)} />
                   </a>
                 </Row>
               ))}
@@ -148,7 +148,7 @@ export default class SamplesMap extends React.Component<any> {
               <Marker key={`marker-${index}`} position={marker}>
                   <Popup minWidth={640} maxHeight={480}>
                   <div>
-                      <BPAImages lat={marker.lat} lng={marker.lng} siteImages={marker.site_images} />
+                      <BPAImages siteImages={marker.site_images} />
                       <BPASamples bpadata={marker.bpadata} />
                   </div>
                 </Popup>

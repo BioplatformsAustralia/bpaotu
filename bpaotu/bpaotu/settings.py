@@ -57,11 +57,11 @@ ANYMAIL = {
 
 ALLOWED_HOSTS = env.getlist("allowed_hosts", ["*"])
 
-CKAN_SERVERS = ({
+CKAN_SERVER = {
     'name': env.get('ckan_name', 'bpa-aws1'),
     'base_url': env.get('ckan_base_url', 'https://data.bioplatforms.com/'),
     'api_key': env.get('ckan_api_key', ''),
-},)
+}
 
 DATABASES = {
     'default': {
@@ -418,6 +418,3 @@ GALAXY_BASE_URL = env.get('galaxy_base_url', 'https://galaxy-aust-dev.genome.edu
 # Leaving it as optional as not sure if all installations will use Galaxy
 GALAXY_ADMIN_USER_API_KEY = env.get('galaxy_admin_user_api_key', '')
 GALAXY_INTEGRATION = CKAN_AUTH_INTEGRATION and GALAXY_ADMIN_USER_API_KEY != ''
-
-BPA_PROD_URL = env.get('bpa_prod_url', 'https://data.bioplatforms.com')
-CKAN_API_KEY = env.get('ckan_api_key', '')

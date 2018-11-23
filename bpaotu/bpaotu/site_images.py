@@ -3,6 +3,7 @@ from django.conf import settings
 from collections import defaultdict
 
 import ckanapi
+import mimetypes
 
 import requests
 from io import BytesIO
@@ -15,24 +16,13 @@ logger = logging.getLogger("rainbow")
 
 THUMBNAIL_SIZE = 480
 CACHE_1DAY = (60 * 60 * 24)
-
-
-# img file extension corresponding to pillow processing format and HttpResponse format
-IMAGE_TYPES = {
-    'jpg': {
-        'format': 'JPEG',
-        'content_type': 'image/jpeg'
-    }
-}
-
-
 SITE_IMAGE_DATA_TYPE = 'base-site-image'
-LOOKUP_TABLE_KEY = 'CKAN_IMAGE_LOOKUP_TABLE2'
+LOOKUP_TABLE_KEY = 'CKAN_IMAGE_LOOKUP_TABLE'
 image_cache = caches['image_results']
 
 
 def make_ckan_remote():
-    return ckanapi.RemoteCKAN(settings.BPA_PROD_URL, apikey=settings.CKAN_API_KEY)
+    return ckanapi.RemoteCKAN(settings.CKAN_SERVER['base_url'], apikey=settings.CKAN_SERVER['api_key'])
 
 
 def _get_image_packages():
@@ -91,18 +81,17 @@ def get_site_image_lookup_table():
     return lookup_table
 
 
-def resize_image(content, format):
+def resize_image(content):
     with Image.open(BytesIO(content)) as img_obj:
         # Resizing an image while maintaining aspect ratio:
         # https://stackoverflow.com/questions/24745857/python-pillow-how-to-scale-an-image/24745969
         maxsize = (THUMBNAIL_SIZE, THUMBNAIL_SIZE)
         img_obj.thumbnail(maxsize, Image.ANTIALIAS)
-        # Needed fix for some cases with Alpha channel (See test case 5).
+        # Needed fix for some cases with Alpha channel
         img_obj = img_obj.convert('RGB')
 
         with BytesIO() as img_buf:
-            # 1. Save image to BytesIO stream
-            img_obj.save(img_buf, format=format)
+            img_obj.save(img_buf, format='JPEG')
             img_data = img_buf.getvalue()
     return img_data
 
@@ -113,10 +102,8 @@ def fetch_image(package_id, resource_id):
     resource = _get_and_verify_resource(package_id, resource_id)
     if resource is None:
         raise HttpResponseForbidden()
-
     img_url = resource['url']
-    img_name, img_ext = img_url.rsplit('/', 1)[-1].rsplit(".", 1)
-    img_type = IMAGE_TYPES[img_ext]
-    r = requests.get(img_url, headers={'Authorization': settings.CKAN_API_KEY})
-    img_data = resize_image(r.content, format=img_type['format'])
-    return (BytesIO(img_data), img_type['content_type'])
+    content_type, _ = mimetypes.guess_type(img_url)
+    r = requests.get(img_url, headers={'Authorization': settings.CKAN_SERVER['api_key']})
+    img_data = resize_image(r.content)
+    return (BytesIO(img_data), content_type)
