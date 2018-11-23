@@ -1,4 +1,4 @@
-import { first, keys, map } from 'lodash'
+import { first, join, keys, map } from 'lodash'
 import * as React from 'react'
 import { Button, Card, CardText, CardTitle, Col, Nav, NavItem, NavLink, Row, TabContent, TabPane } from 'reactstrap'
 
@@ -32,6 +32,29 @@ const ArcGIS = {
     '&amp;copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
 }
 
+// tslint:disable-next-line:max-classes-per-file
+class BPAImages extends React.Component<any, any> {
+    public render() {
+        const tnUrl = (packageId, resourceId) => join(
+          [window.otu_search_config.base_url, 'site-image-thumbnail', packageId, resourceId], '/')
+        const rsUrl = (packageId, resourceId) => join(
+          [window.otu_search_config.ckan_base_url, 'dataset', packageId, 'resource', resourceId], '/')
+        return (
+            <div>
+              {map(this.props.siteImages || [], ({package_id, resource_id}, index) => (
+                <Row key={index}>
+                  <a href={rsUrl(package_id, resource_id)} target="_other">
+                    <img alt="Australian Microbiome site image" src={tnUrl(package_id, resource_id)} />
+                  </a>
+                </Row>
+              ))}
+            </div>
+        )
+    }
+}
+
+
+// tslint:disable-next-line:max-classes-per-file
 class BPASamples extends React.Component<any, any> {
   constructor(props: any) {
     super(props)
@@ -76,12 +99,14 @@ class BPASamples extends React.Component<any, any> {
               <Row>
                 <Col sm="12">
                   <table>
-                    {map(data, (d, k) => (
-                      <tr>
-                        <th>{k}:</th>
-                        <td>{d}</td>
-                      </tr>
-                    ))}
+                    <tbody>
+                      {map(data, (d, k) => (
+                        <tr key={k}>
+                          <th>{k}:</th>
+                          <td>{d}</td>
+                        </tr>
+                      ))}
+                    </tbody>
                   </table>
                 </Col>
               </Row>
@@ -121,9 +146,10 @@ export default class SamplesMap extends React.Component<any> {
           <MarkerClusterGroup>
             {this.props.markers.map((marker, index) => (
               <Marker key={`marker-${index}`} position={marker}>
-                <Popup minWidth={640} maxHeight={200}>
+                  <Popup minWidth={640} maxHeight={480}>
                   <div>
-                    <BPASamples bpadata={marker.bpadata} />
+                      <BPAImages siteImages={marker.site_images} />
+                      <BPASamples bpadata={marker.bpadata} />
                   </div>
                 </Popup>
               </Marker>

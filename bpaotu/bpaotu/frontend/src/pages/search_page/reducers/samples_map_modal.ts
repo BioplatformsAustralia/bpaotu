@@ -16,7 +16,7 @@ export const {
   'CLOSE_SAMPLES_MAP_MODAL',
 
   'SAMPLES_MAP_MODAL_FETCH_SAMPLES_STARTED',
-  'SAMPLES_MAP_MODAL_FETCH_SAMPLES_ENDED'
+  'SAMPLES_MAP_MODAL_FETCH_SAMPLES_ENDED',
 )
 
 export const fetchSampleMapModalSamples = () => (dispatch, getState) => {
@@ -47,7 +47,8 @@ export default handleActions(
       markers: map(action.payload.data.data, sample => ({
         bpadata: sample.bpa_data,
         lat: sample.latitude,
-        lng: sample.longitude
+        lng: sample.longitude,
+        site_images: sample.site_images
       }))
     })
   },

@@ -26,6 +26,8 @@ zipstream==1.1.4
 h5py==2.7.1
 numpy==1.14.5
 celery==4.1.1
+Pillow==5.3.0
+python-resize-image==1.1.18
 django-webpack-loader==0.6.0
 https://github.com/BioplatformsAustralia/bpa-ingest/archive/5.3.3.tar.gz
 git+https://github.com/muccg/ckanapi.git@streaming-uploads

@@ -9,6 +9,7 @@ import os
 import re
 import time
 
+from django.views.decorators.cache import cache_page
 from django.conf import settings
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
@@ -48,6 +49,10 @@ from .util import (
 from .biom import biom_zip_file_generator
 from .tabular import tabular_zip_file_generator
 from . import tasks
+from .site_images import (
+    get_site_image_lookup_table,
+    fetch_image
+)
 
 logger = logging.getLogger("rainbow")
 
@@ -55,6 +60,9 @@ logger = logging.getLogger("rainbow")
 # See datatables.net serverSide documentation for details
 ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
+
+CACHE_1DAY = (60 * 60 * 24)
+CACHE_7DAYS = (60 * 60 * 24 * 7)
 
 
 class OTUError(Exception):
@@ -70,13 +78,13 @@ def make_environment_lookup():
 class OTUSearch(TemplateView):
     template_name = 'bpaotu/search.html'
     base_url = settings.BASE_URL
-    ckan_base_url = settings.CKAN_SERVERS[0]['base_url']
+    ckan_base_url = settings.CKAN_SERVER['base_url']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['base_url'] = settings.BASE_URL
         context['galaxy_base_url'] = settings.GALAXY_BASE_URL
-        context['ckan_base_url'] = settings.CKAN_SERVERS[0]['base_url']
+        context['ckan_base_url'] = settings.CKAN_SERVER['base_url']
         context['ckan_check_permissions_url'] = (
             settings.CKAN_CHECK_PERMISSIONS_URL if settings.PRODUCTION
             else reverse('dev_only_ckan_check_permissions'))
@@ -286,6 +294,12 @@ def otu_search_sample_sites(request):
             'data': [],
         })
     data = spatial_query(params)
+
+    site_image_lookup_table = get_site_image_lookup_table()
+
+    for d in data:
+        key = (str(d['latitude']), str(d['longitude']))
+        d['site_images'] = site_image_lookup_table.get(key)
     return JsonResponse({'data': data})
 
 
@@ -546,3 +560,13 @@ def dev_only_ckan_check_permissions(request):
     response = '||'.join([digest, data])
 
     return HttpResponse(response)
+
+
+@cache_page(CACHE_1DAY, cache="image_results")
+def site_image_thumbnail(request, package_id, resource_id):
+    '''
+    Return specified cached image or fetch image from ckan and resize before caching and returning.
+    '''
+
+    buf, content_type = fetch_image(package_id, resource_id)
+    return HttpResponse(buf.getvalue(), content_type=content_type)

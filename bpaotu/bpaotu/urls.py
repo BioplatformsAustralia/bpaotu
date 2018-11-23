@@ -37,4 +37,8 @@ urlpatterns = [
         r'^contextual_csv_download_endpoint/$',
         views.contextual_csv_download_endpoint,
         name="contextual_csv_download_endpoint"),
+    url(
+        r'^site-image-thumbnail/(?P<package_id>[\w-]+)/(?P<resource_id>[\w-]+)/$',
+        views.site_image_thumbnail,
+        name="site_image_thumbnail"),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

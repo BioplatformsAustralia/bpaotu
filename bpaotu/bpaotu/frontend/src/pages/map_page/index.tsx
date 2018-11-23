@@ -26,8 +26,9 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
     return bindActionCreators({
-        fetchSamples: fetchSampleMapSamples
+        fetchSamples: fetchSampleMapSamples,
     }, dispatch);
 }
+
 
 export default connect(mapStateToProps, mapDispatchToProps)(MapPage);

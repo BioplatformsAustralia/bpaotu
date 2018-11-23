@@ -57,11 +57,11 @@ ANYMAIL = {
 
 ALLOWED_HOSTS = env.getlist("allowed_hosts", ["*"])
 
-CKAN_SERVERS = ({
+CKAN_SERVER = {
     'name': env.get('ckan_name', 'bpa-aws1'),
     'base_url': env.get('ckan_base_url', 'https://data.bioplatforms.com/'),
     'api_key': env.get('ckan_api_key', ''),
-},)
+}
 
 DATABASES = {
     'default': {
@@ -368,6 +368,8 @@ CELERY_TIMEZONE = TIME_ZONE
 # End Celery
 
 CACHES['search_results'] = CACHES['default']
+CACHES['image_results'] = CACHES['default']
+
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
 CHMOD_USER = env.get("repo_user", "apache")
