@@ -278,8 +278,12 @@ class DataImporter:
                     metadata[sample_id]['sample_id'] = sample_id
                     metadata[sample_id].update(contextual_source.get(sample_id))
 
+        def has_minimum_metadata(row):
+            return 'latitude' in row and 'longitude' in row \
+                and isinstance(row['latitude'], float) and isinstance(row['longitude'], float)
+
         # convert into a row-like structure
-        return list(metadata.values())
+        return list([t for t in metadata.values() if has_minimum_metadata(t)])
 
     def contextual_row_context(self, metadata, ontologies, mappings, fields_used):
         for row in metadata:
