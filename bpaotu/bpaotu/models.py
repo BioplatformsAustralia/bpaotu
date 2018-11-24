@@ -9,7 +9,10 @@ logger = logging.getLogger("rainbow")
 class ImportMetadata(models.Model):
     methodology = models.CharField(max_length=32)
     revision_date = models.DateField(null=False)
-    imported_at = models.DateTimeField(null=False)
+    imported_at = models.DateField(null=False)
+    otu_count = models.BigIntegerField(null=False)
+    sampleotu_count = models.BigIntegerField(null=False)
+    samplecontext_count = models.BigIntegerField(null=False)
     uuid = models.CharField(max_length=36, null=False)
 
 
@@ -34,7 +37,7 @@ class ImportFileLog(models.Model):
 class ImportOntologyLog(models.Model):
     environment = models.CharField(max_length=300)
     ontology_name = models.CharField(max_length=300)
-    import_result = ArrayField(models.TextField())
+    invalid_values = ArrayField(models.TextField())
 
     class Meta:
         ordering = ['environment', 'ontology_name']

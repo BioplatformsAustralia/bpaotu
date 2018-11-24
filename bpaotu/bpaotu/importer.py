@@ -1,59 +1,46 @@
-import os
 import csv
+import datetime
+import gzip
+import logging
+import os
 import tempfile
 import traceback
-import logging
+import uuid
+from collections import OrderedDict, defaultdict
+from glob import glob
+from hashlib import md5
+from itertools import zip_longest
+
 import sqlalchemy
-import gzip
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema, DropSchema
 from sqlalchemy.sql.expression import text
-from hashlib import md5
-from sqlalchemy.orm import sessionmaker
-from glob import glob
-from bpaingest.projects.amdb.ingest import AccessAMDContextualMetadata
-from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
+
 from bpaingest.metadata import DownloadMetadata
+from bpaingest.projects.amdb.contextual import \
+    AustralianMicrobiomeSampleContextual
+from bpaingest.projects.amdb.ingest import AccessAMDContextualMetadata
 
-from collections import (
-    defaultdict,
-    OrderedDict)
-from itertools import zip_longest
-from .models import (
-    ImportSamplesMissingMetadataLog,
-    ImportFileLog,
-    ImportOntologyLog)
-from .otu import (
-    Base,
-    Environment,
-    OTUAmplicon,
-    OTUKingdom,
-    OTUPhylum,
-    OTUClass,
-    OTUOrder,
-    OTUFamily,
-    OTUGenus,
-    OTUSpecies,
-    SampleContext,
-    SampleHorizonClassification,
-    SampleStorageMethod,
-    SampleLandUse,
-    SampleEcologicalZone,
-    SampleVegetationType,
-    SampleProfilePosition,
-    SampleAustralianSoilClassification,
-    SampleFAOSoilClassification,
-    SampleTillage,
-    SampleType,
-    SampleColor,
-    SCHEMA,
-    make_engine)
-
+from .models import (ImportFileLog, ImportMetadata, ImportOntologyLog,
+                     ImportSamplesMissingMetadataLog)
+from .otu import (OTU, SCHEMA, Base, Environment, OTUAmplicon, OTUClass,
+                  OTUFamily, OTUGenus, OTUKingdom, OTUOrder, OTUPhylum,
+                  OTUSpecies, SampleAustralianSoilClassification, SampleColor,
+                  SampleContext, SampleEcologicalZone,
+                  SampleFAOSoilClassification, SampleHorizonClassification,
+                  SampleLandUse, SampleOTU, SampleProfilePosition,
+                  SampleStorageMethod, SampleTillage, SampleType,
+                  SampleVegetationType, make_engine)
 
 TAXONOMY_FIELDS = [
     'id', 'code',
     'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id']
 
 logger = logging.getLogger("rainbow")
+
+
+class ImportException(Exception):
+    pass
 
 
 def try_int(s):
@@ -94,12 +81,13 @@ class DataImporter:
         ('color', SampleColor),
     ])
 
-    def __init__(self, import_base):
+    def __init__(self, import_base, revision_date):
         self._clear_import_log()
         self._engine = make_engine()
         self._create_extensions()
         self._session = sessionmaker(bind=self._engine)()
         self._import_base = import_base
+        self._revision_date = revision_date
         try:
             self._session.execute(DropSchema(SCHEMA, cascade=True))
         except sqlalchemy.exc.ProgrammingError:
@@ -121,8 +109,21 @@ class DataImporter:
         self._session.commit()
 
     def complete(self):
+        self._write_metadata()
         self._session.close()
         self._analyze()
+
+    def _write_metadata(self):
+        ImportMetadata.objects.all().delete()
+        meta = ImportMetadata(
+            methodology='v1',
+            revision_date=datetime.datetime.strptime(self._revision_date, "%Y-%m-%d").date(),
+            imported_at=datetime.date.today(),
+            uuid=str(uuid.uuid4()),
+            sampleotu_count=self._session.query(SampleOTU).count(),
+            samplecontext_count=self._session.query(SampleContext).count(),
+            otu_count=self._session.query(OTU).count())
+        meta.save()
 
     def _clear_import_log(self):
         logger.info("Clearing import log")
@@ -170,8 +171,8 @@ class DataImporter:
 
         # blow up if any of the ontologies hasn't worked
         for db_class, val_set in vals.items():
-            if len(val_set) <= 1:
-                raise Exception("empty ontology: {}".format(db_class))
+            if len(val_set) == 0:
+                raise ImportException("empty ontology: {}".format(db_class))
 
         mappings = {}
         for db_class, fields in by_class.items():
@@ -269,11 +270,23 @@ class DataImporter:
             os.unlink(fname)
         return otu_lookup
 
+    def save_ontology_errors(self, environment_ontology_errors):
+        if environment_ontology_errors is None:
+            return
+        for (environment, ontology_name), invalid_values in environment_ontology_errors.items():
+            log = ImportOntologyLog(
+                environment=environment,
+                ontology_name=ontology_name,
+                invalid_values=sorted(invalid_values))
+            log.save()
+
     def contextual_rows(self, ingest_cls, name):
         # flatten contextual metadata into dicts
         metadata = defaultdict(dict)
         with DownloadMetadata(ingest_cls, path='/data/{}/'.format(name)) as dlmeta:
             for contextual_source in dlmeta.meta.contextual_metadata:
+                self.save_ontology_errors(
+                    getattr(contextual_source, "environment_ontology_errors", None))
                 for sample_id in contextual_source.sample_ids():
                     metadata[sample_id]['sample_id'] = sample_id
                     metadata[sample_id].update(contextual_source.get(sample_id))
@@ -374,11 +387,14 @@ class DataImporter:
             # we just make sure they don't clash, and this can be reported to CSIRO
             with gzip.open(fname, 'rt') as fd:
                 sample_ids, tuple_rows = self._otu_rows(fd, otu_lookup)
+                rows_skipped = 0
                 for entry, (otu_id, sample_id, count) in enumerate(tuple_rows):
                     if sample_id in skip_missing:
+                        rows_skipped += 1
                         continue
                     yield (sample_id, otu_id, count)
-                ImportFileLog.make_file_log(fname, file_type='Abundance', rows_imported=entry, rows_skipped=0)
+                ImportFileLog.make_file_log(
+                    fname, file_type='Abundance', rows_imported=entry, rows_skipped=rows_skipped)
 
         logger.warning('Loading OTU abundance tables')
 

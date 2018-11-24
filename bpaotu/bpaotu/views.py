@@ -39,6 +39,7 @@ from .query import (
     get_sample_ids)
 from django.template import loader
 from .models import (
+    ImportMetadata,
     ImportFileLog,
     ImportOntologyLog,
     ImportSamplesMissingMetadataLog)
@@ -446,20 +447,16 @@ def galaxy_submission(request):
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
     missing_sample_ids = []
-    from .query import Session
-    from .otu import (SampleContext, OTU, SampleOTU)
     for obj in ImportSamplesMissingMetadataLog.objects.all():
         missing_sample_ids += obj.samples_without_metadata
-    session = Session()
+    import_meta = ImportMetadata.objects.get()
     context = {
+        'ckan_base_url': settings.CKAN_SERVER['base_url'],
         'files': ImportFileLog.objects.all(),
         'ontology_errors': ImportOntologyLog.objects.all(),
-        'missing_samples': ', '.join(sorted(missing_sample_ids)),
-        'otu_count': session.query(OTU).count(),
-        'sampleotu_count': session.query(SampleOTU).count(),
-        'samplecontext_count': session.query(SampleContext).count(),
+        'missing_samples': sorted(missing_sample_ids),
+        'metadata': import_meta,
     }
-    session.close()
     return HttpResponse(template.render(context, request))
 
 

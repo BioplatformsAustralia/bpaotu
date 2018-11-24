@@ -1,13 +1,24 @@
-{% extends 'bpaotu/base.html' %}
 {% load humanize %}
+{% load static from staticfiles %}
 
-{% block title %}
-<title>Bioplatforms OTU Search Facility - Ingest Log</title>
-{% endblock title %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=11">
 
+    <title>Bioplatforms OTU Search Facility - Ingest Log</title>
 
-{% block content %}
+    <link rel="icon" href="{% static 'bpa-logos/favicon.ico' %}" type="image/x-icon">
+    <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/common.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/bpaotu.css' %}"/>
 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+</head>
+<body>
 <style>
     td, th {
         vertical-align: top;
@@ -20,7 +31,7 @@
     }
 </style>
 
-<div class="container-fluid">
+<div class="container">
     <div class="row">
         <div class="col-md-12">
             <h1>Bioplatforms OTU Database - Ingest log</h1>
@@ -28,21 +39,25 @@
             <h2>Database</h2>
 
             <table>
-                <thead>
-                    <th>Object</th>
-                    <th>Count</th>
-                </thead>
                 <tr>
-                    <td>Sample</td>
-                    <td>{{ samplecontext_count | intcomma }}</td>
+                    <td>Methodology:</td>
+                    <td>{{ metadata.methodology }}</td>
                 </tr>
                 <tr>
-                    <td>OTU</td>
-                    <td>{{ otu_count | intcomma }}</td>
+                    <td>Revision:</td>
+                    <td>{{ metadata.revision_date }} (Imported {{ metadata.imported_at }})</td>
                 </tr>
                 <tr>
-                    <td>Abundance entries</td>
-                    <td>{{ sampleotu_count | intcomma }}</td>
+                    <td>Samples:</td>
+                    <td>{{ metadata.samplecontext_count | intcomma }}</td>
+                </tr>
+                <tr>
+                    <td>OTUs:</td>
+                    <td>{{ metadata.otu_count | intcomma }}</td>
+                </tr>
+                <tr>
+                    <td>Abundance entries:</td>
+                    <td>{{ metadata.sampleotu_count | intcomma }}</td>
                 </tr>
 
             </table>
@@ -75,18 +90,18 @@
                 <thead>
                     <th>Environment</th>
                     <th>Ontology Name</th>
-                    <th>Mismatches</th>
+                    <th>Invalid values (dropped by import)</th>
                 </thead>
                 
                 {% for item in ontology_errors %}
-                {% if item.import_result %}
+                {% if item.invalid_values %}
                 <tr>
                     <td>{{ item.environment }}</td>
                     <td>{{ item.ontology_name }}</td>
                     <td>
                         <ul>
-                            {% for result in item.import_result %}
-                            <li>{{ result }}</li>
+                            {% for invalid_value in item.invalid_values %}
+                            <li><code>"{{ invalid_value }}"</code></li>
                             {% endfor %}
                         </ul>
                     </td>
@@ -102,10 +117,15 @@
                 <thead>
                     <th>Sample ID</th>
                 </thead>
-                <tr><td>{{ missing_samples }}</td></tr>
+                <tr><td>
+                    {% for sample_id in missing_samples %}
+                    <a target="_other" href="{{ ckan_base_url }}/organization/australian-microbiome?q=bpa_id:102.100.100.{{ sample_id}}">{{ sample_id }}</a>
+                    {% endfor %}
+                </td></tr>
             </table>
-
         </div>
     </div>
 </div>
-{% endblock content %}
+
+</body>
+</html>
