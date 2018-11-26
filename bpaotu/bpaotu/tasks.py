@@ -4,9 +4,11 @@ import os
 import uuid
 import shutil
 import tempfile
+from django.conf import settings
 
+from .blast import BlastWrapper
 from .biom import save_biom_zip_file
-from .galaxy import Submission
+from .submission import Submission
 from .galaxy_client import get_users_galaxy, galaxy_ensure_user
 from . import views
 
@@ -54,6 +56,21 @@ def submit_to_galaxy(email, query):
     chain(submission_id)
 
     return new_galaxy_user, submission_id
+
+
+@shared_task
+def submit_blast(search_string, query):
+    submission_id = str(uuid.uuid4())
+
+    submission = Submission.create(submission_id)
+    submission.query = query
+    submission.search_string = search_string
+
+    chain = setup_blast.s() | run_blast.s() | cleanup_blast.s()
+
+    chain(submission_id)
+
+    return submission_id
 
 
 @shared_task
@@ -118,6 +135,37 @@ def delete_biom_file(submission_id):
     except Exception:
         logger.exception('Error when deleting biom zip file (%s)' % biom_file_name)
 
+    return submission_id
+
+
+def _make_blast_wrapper(submission):
+    return BlastWrapper(
+        submission.cwd, submission.submission_id, submission.search_string, submission.query)
+
+
+@shared_task
+def setup_blast(submission_id):
+    submission = Submission(submission_id)
+    submission.cwd = tempfile.mkdtemp()
+    wrapper = _make_blast_wrapper(submission)
+    wrapper.setup()
+    return submission_id
+
+
+@shared_task
+def run_blast(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_blast_wrapper(submission)
+    fname = wrapper.run()
+    submission.result_url = settings.BLAST_RESULTS_URL + '/' + fname
+    return submission_id
+
+
+@shared_task
+def cleanup_blast(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_blast_wrapper(submission)
+    wrapper.cleanup()
     return submission_id
 
 

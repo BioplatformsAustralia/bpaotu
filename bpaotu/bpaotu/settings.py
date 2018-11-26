@@ -148,6 +148,11 @@ STATIC_ROOT = env.get('static_root', os.path.join(WEBAPP_ROOT, 'static'))
 STATIC_URL = '{0}/static/'.format(SCRIPT_NAME)
 STATIC_SERVER_PATH = STATIC_ROOT
 
+BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
+BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
+STATICFILES_DIRS = [
+    BLAST_RESULTS_PATH,
+]
 MIDDLEWARE_CLASSES = ('django.middleware.security.SecurityMiddleware',
                       'django.middleware.clickjacking.XFrameOptionsMiddleware',
                       'django.middleware.common.CommonMiddleware',

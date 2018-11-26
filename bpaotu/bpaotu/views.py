@@ -131,6 +131,20 @@ def make_clean_taxonomy_filter(amplicon_filter, state_vector):
             state_vector)))
 
 
+def normalise_blast_search_string(s):
+    """
+    returns None if the string is valid
+    otherwise, returns the set of invalid characters
+    """
+    cleaned = s.strip().upper()
+    used_chars = set(cleaned)
+    permitted_chars = set('GATC')
+    invalid = used_chars - permitted_chars
+    if invalid:
+        raise OTUError("BLAST search string contains invalid characters: {}".format(invalid))
+    return cleaned
+
+
 @require_CKAN_auth
 @require_GET
 def amplicon_options(request):
@@ -439,6 +453,53 @@ def galaxy_submission(request):
             'id': submission_id,
             'history_id': submission.history_id,
             'file_id': submission.file_id,
+            'state': state,
+        }
+    })
+
+
+@require_CKAN_auth
+@require_POST
+def submit_blast(request):
+    try:
+        params, errors = param_to_filters(request.POST['query'])
+
+        if errors:
+            raise OTUError(*errors)
+
+        search_string = normalise_blast_search_string(request.POST['search_string'])
+        submission_id = tasks.submit_blast(
+            search_string,
+            request.POST['query'])
+
+        return JsonResponse({
+            'success': True,
+            'submission_id': submission_id,
+        })
+    except OTUError as exc:
+        logger.exception('Error in submit to Galaxy')
+        return JsonResponse({
+            'success': False,
+            'errors': exc.errors,
+        })
+
+
+@require_CKAN_auth
+@require_GET
+def blast_submission(request):
+    submission_id = request.GET['submission_id']
+    submission = tasks.Submission(submission_id)
+
+    if not submission.filename:
+        state = 'pending'
+    else:
+        state = 'complete'
+
+    return JsonResponse({
+        'success': True,
+        'submission': {
+            'id': submission_id,
+            'result_url': submission.result_url,
             'state': state,
         }
     })

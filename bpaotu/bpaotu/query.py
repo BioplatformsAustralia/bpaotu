@@ -112,6 +112,20 @@ class OTUQueryParams:
             self.taxonomy_filter)
 
 
+class OTUInfo:
+    def __init__(self):
+        self._session = Session()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exec_type, exc_value, traceback):
+        self._session.close()
+
+    def id_to_code(self, otu_id):
+        return self._session.query(OTU.code).filter(OTU.id == otu_id).one()[0]
+
+
 class TaxonomyOptions:
     hierarchy = [
         ('kingdom_id', OTUKingdom),
