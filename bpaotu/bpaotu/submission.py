@@ -9,6 +9,10 @@ redis_client = redis.StrictRedis(host=settings.REDIS_HOST, db=settings.REDIS_DB)
 
 
 class Submission:
+    """
+    track a submission (Galaxy, BLAST, ...) as it progresses
+    """
+
     def __init__(self, submission_id):
         self.submission_id = submission_id
 
