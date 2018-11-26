@@ -132,10 +132,6 @@ def make_clean_taxonomy_filter(amplicon_filter, state_vector):
 
 
 def normalise_blast_search_string(s):
-    """
-    returns None if the string is valid
-    otherwise, returns the set of invalid characters
-    """
     cleaned = s.strip().upper()
     used_chars = set(cleaned)
     permitted_chars = set('GATC')

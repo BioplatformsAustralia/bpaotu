@@ -99,7 +99,7 @@ def tabular_zip_file_generator(params):
             fd.seek(0)
             fd.truncate(0)
             q = query.matching_sample_otus(OTU, SampleOTU, SampleContext, kingdom_id=kingdom_id)
-            for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
+            for otu, sample_otu, sample_context in q.yield_per(50):
                 w.writerow([
                     format_sample_id(sample_otu.sample_id),
                     otu.code,

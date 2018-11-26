@@ -93,7 +93,7 @@ class BlastWrapper:
             yield fd.getvalue().encode('utf8')
             fd.seek(0)
             fd.truncate(0)
-            for i, (otu, sample_otu, sample_context) in enumerate(q.yield_per(50)):
+            for otu, sample_otu, sample_context in q.yield_per(50):
                 blast_row = blast_rows[otu.id]
                 writer.writerow(
                     [otu.code, format_sample_id(sample_context.id), sample_otu.count,
