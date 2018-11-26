@@ -88,7 +88,7 @@ class BlastWrapper:
         with SampleQuery(self._params) as query:
             q = query.matching_sample_otus(OTU, SampleOTU, SampleContext)
             q = q.filter(OTU.id.in_(blast_rows.keys()))
-            writer = csv.writer(fd, dialect='excel-tab')
+            writer = csv.writer(fd)
             writer.writerow(['OTU', 'sample_id', 'abundance', 'latitude', 'longitude'] + self.BLAST_COLUMNS)
             yield fd.getvalue().encode('utf8')
             fd.seek(0)
@@ -105,7 +105,7 @@ class BlastWrapper:
     def _write_output(self):
         zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
         zf.writestr('info.txt', self._info_text(self._params))
-        zf.write_iter('blast_results.tsv', self._rewritten_blast_result_rows())
+        zf.write_iter('blast_results.csv', self._rewritten_blast_result_rows())
 
         with suppress(FileExistsError, PermissionError):
             os.mkdir(settings.BLAST_RESULTS_PATH)
