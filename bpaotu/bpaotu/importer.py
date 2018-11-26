@@ -194,6 +194,8 @@ class DataImporter:
                 field_name = field_info[0]
                 if field_name in DataImporter.amd_ontologies:
                     field_name += '_id'
+                elif field_name == 'sample_id':
+                    field_name = 'id'
                 if environment == 'Soil':
                     soil_fields.add(field_name)
                 else:
