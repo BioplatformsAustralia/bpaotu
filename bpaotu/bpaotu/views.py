@@ -511,7 +511,7 @@ def blast_submission(request):
     submission_id = request.GET['submission_id']
     submission = tasks.Submission(submission_id)
 
-    if not submission.filename:
+    if not submission.result_url:
         state = 'pending'
     else:
         state = 'complete'
