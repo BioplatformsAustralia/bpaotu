@@ -8,7 +8,7 @@ import { Alert, Button, Card, CardBody, CardHeader } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 import { openSamplesMapModal } from '../reducers/samples_map_modal'
 import { describeSearch } from '../reducers/search'
-import { clearGalaxyAlert, submitToGalaxy } from '../reducers/submit_to_galaxy'
+import { clearGalaxyAlert, workflowOnGalaxy, submitToGalaxy } from '../reducers/submit_to_galaxy'
 import { GalaxySubmission } from '../reducers/types'
 import SamplesMapModal from './samples_map_modal'
 import SearchResultsTable from './search_results_table'
@@ -55,6 +55,14 @@ class SearchResultsCard extends React.Component<any, any> {
                   text="Export Data to Galaxy Australia for further analysis"
                   disabled={this.isGalaxySubmissionDisabled()}
                   onClick={this.props.submitToGalaxy}
+                />
+              )}
+              {window.otu_search_config.galaxy_integration && (
+                <HeaderButton
+                  octicon="graph"
+                  text="Make Krona Taxonomic Abundance Graph using Galaxy Australia"
+                  disabled={this.isGalaxySubmissionDisabled()}
+                  onClick={this.props.workflowOnGalaxy}
                 />
               )}
               <HeaderButton octicon="desktop-download" text="Export Search Results (CSV)" onClick={this.exportCSV} />
@@ -121,6 +129,7 @@ function mapDispatchToProps(dispatch) {
     {
       openSamplesMapModal,
       submitToGalaxy,
+      workflowOnGalaxy,
       clearGalaxyAlert
     },
     dispatch

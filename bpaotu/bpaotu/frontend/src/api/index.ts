@@ -88,6 +88,20 @@ export function executeSubmitToGalaxy(filters) {
   })
 }
 
+export function executeWorkflowOnGalaxy(filters) {
+  const formData = new FormData()
+  formData.append('query', JSON.stringify(filters))
+
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.execute_workflow_on_galaxy_endpoint,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
 export function getGalaxySubmission(submissionId) {
   return axios.get(window.otu_search_config.galaxy_submission_endpoint, {
     params: {
