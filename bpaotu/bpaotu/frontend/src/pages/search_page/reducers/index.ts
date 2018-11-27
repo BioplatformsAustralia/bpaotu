@@ -1,12 +1,13 @@
 import { combineReducers } from 'redux'
 
 import selectedAmpliconReducer from './amplicon'
+import blastSearchReducer from './blast_search'
 import contextualReducer from './contextual'
 import samplesMapModalReducer from './samples_map_modal'
 import searchResultsReducer from './search'
 import submitToGalaxyReducer from './submit_to_galaxy'
 import taxonomyReducer from './taxonomy'
-import blastSearchReducer from './blast_search'
+
 const filtersReducer = combineReducers({
   selectedAmplicon: selectedAmpliconReducer,
   taxonomy: taxonomyReducer,
