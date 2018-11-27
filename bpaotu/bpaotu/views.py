@@ -1,5 +1,6 @@
 from collections import defaultdict, OrderedDict
 import csv
+from functools import wraps
 import hmac
 import io
 import json
@@ -18,6 +19,7 @@ from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpRespon
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
 from .ckan_auth import require_CKAN_auth
+from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .importer import DataImporter
 from .spatial import spatial_query
 from .otu import (
@@ -402,34 +404,57 @@ def otu_export(request):
     return response
 
 
+def do_on_galaxy(galaxy_action):
+
+    @wraps(galaxy_action)
+    def galaxy_wrapper_view(request):
+        try:
+            ckan_data = request.ckan_data
+
+            email = ckan_data.get('email')
+            if not email:
+                raise OTUError("Could not retrieve user's email")
+
+            params, errors = param_to_filters(request.POST['query'])
+
+            if errors:
+                raise OTUError(*errors)
+
+            submission_id, user_created = galaxy_action(request, email)
+
+            return JsonResponse({
+                'success': True,
+                'submission_id': submission_id,
+                'user_created': user_created,
+            })
+        except OTUError as exc:
+            logger.exception('Error in submit to Galaxy')
+            return JsonResponse({
+                'success': False,
+                'errors': exc.errors,
+            })
+
+    return galaxy_wrapper_view
+
+
 @require_CKAN_auth
 @require_POST
-def submit_to_galaxy(request):
-    try:
-        ckan_data = request.ckan_data
+@do_on_galaxy
+def submit_to_galaxy(request, email):
+    '''Submits the search results as a biom file into a new history in Galaxy.'''
+    user_created = galaxy_ensure_user(email)
+    submission_id = tasks.submit_to_galaxy(email, request.POST['query'])
+    return submission_id, user_created
 
-        email = ckan_data.get('email')
-        if not email:
-            raise OTUError("Could not retrieve user's email")
 
-        params, errors = param_to_filters(request.POST['query'])
-
-        if errors:
-            raise OTUError(*errors)
-
-        user_created, submission_id = tasks.submit_to_galaxy(email, request.POST['query'])
-
-        return JsonResponse({
-            'success': True,
-            'submission_id': submission_id,
-            'user_created': user_created,
-        })
-    except OTUError as exc:
-        logger.exception('Error in submit to Galaxy')
-        return JsonResponse({
-            'success': False,
-            'errors': exc.errors,
-        })
+@require_CKAN_auth
+@require_POST
+@do_on_galaxy
+def execute_workflow_on_galaxy(request, email):
+    user_created = galaxy_ensure_user(email)
+    workflow_id = get_krona_workflow(email)
+    submission_id = tasks.execute_workflow_on_galaxy(email, request.POST['query'], workflow_id)
+    return submission_id, user_created
 
 
 @require_CKAN_auth

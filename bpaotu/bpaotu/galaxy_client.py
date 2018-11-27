@@ -8,6 +8,7 @@ import time
 import requests
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 
 
 logger = logging.getLogger("rainbow")
@@ -143,14 +144,36 @@ class WorkflowAPI(GalaxyAPI):
             if workflow.get('name') == name:
                 return workflow
 
-    def submit(self, workflow_id, history_id, file_ids):
-        ds_map = {k: {'src': 'hda', 'id': v} for k, v in file_ids.items()}
-        response = self.client.post(
+    def get_by_tag(self, tag):
+        '''Gets a workflow with the given tag set.
+
+        If more than one worflow has the tag it will return the last modified workflow.'''
+        workflows = self.client.get('workflows')
+        matching_workflows = [wfl for wfl in workflows if tag in wfl.get('tags', [])]
+        if len(matching_workflows) == 0:
+            return None
+        print([wfl['id'] for wfl in matching_workflows])
+        return matching_workflows[0]
+
+    def import_shared_workflow(self, workflow_id):
+        return self.client.post('workflows', shared_workflow_id=workflow_id)
+
+    def tag_workflow(self, workflow_id, new_tags):
+        workflow = self.client.get('workflows/%s/download' % workflow_id)
+
+        current_tags = set(workflow.setdefault('tags', []))
+        workflow['tags'] += [tag for tag in new_tags if tag not in current_tags]
+
+        return self.client.put('workflows/%s' % workflow_id, {'workflow': workflow})
+
+    def run_simple(self, workflow_id, history_id, file_id):
+        '''Runs a simple workflow that accepts just one input file'''
+        ds_map = {'0': {'src': 'hda', 'id': file_id}}
+        return self.client.post(
             'workflows',
             workflow_id=workflow_id,
-            history_id=history_id,
+            history='hist_id=%s' % history_id,
             ds_map=json.dumps(ds_map))
-        return response
 
 
 class Galaxy:
@@ -188,6 +211,25 @@ def _get_users_galaxy_api_key(admins_galaxy, email):
     if api_key is None:
         api_key = admins_galaxy.users.create_api_key(galaxy_user['id'])
     return api_key
+
+
+def make_workflow_tag(krona_shared_wfl_id):
+    return 'imported_from_shared_krona_workflow_id:%s' % krona_shared_wfl_id
+
+
+def get_krona_workflow(email):
+    krona_shared_wfl_id = settings.GALAXY_KRONA_WORKFLOW_ID
+    if krona_shared_wfl_id == '':
+        raise ImproperlyConfigured('Krona Workflow ID not set, please set settings.GALAXY_KRONA_WORKFLOW_ID')
+    galaxy = get_users_galaxy(email)
+
+    tag = make_workflow_tag(krona_shared_wfl_id)
+    wfl = galaxy.workflows.get_by_tag(tag)
+    if wfl is None:
+        wfl = galaxy.workflows.import_shared_workflow(krona_shared_wfl_id)
+        wfl = galaxy.workflows.tag_workflow(wfl['id'], [tag])
+
+    return wfl['id']
 
 
 def generate_password(length=32):

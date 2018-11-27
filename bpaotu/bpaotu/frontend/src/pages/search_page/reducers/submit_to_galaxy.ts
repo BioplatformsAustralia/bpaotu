@@ -1,5 +1,5 @@
-import { get as _get, isNumber, last } from 'lodash'
-import { executeSubmitToGalaxy, getGalaxySubmission } from '../../../api'
+import { get as _get, isNumber, join, last, reject } from 'lodash'
+import { executeSubmitToGalaxy, executeWorkflowOnGalaxy, getGalaxySubmission } from '../../../api'
 import { ErrorList, GalaxySubmission, searchPageInitialState } from './types'
 
 import { createActions, handleActions } from 'redux-actions'
@@ -48,6 +48,32 @@ export const submitToGalaxy = () => (dispatch, getState) => {
     })
 }
 
+export const workflowOnGalaxy = () => (dispatch, getState) => {
+  const state = getState()
+
+  dispatch(submitToGalaxyStarted())
+
+  const filters = describeSearch(state.searchPage.filters)
+
+  executeWorkflowOnGalaxy(filters)
+    .then(data => {
+      if (_get(data, 'data.errors', []).length > 0) {
+        dispatch(submitToGalaxyEnded(new ErrorList(data.data.errors)))
+        return
+      }
+      dispatch(
+        submitToGalaxyEnded({
+          ...data,
+          isWorkflowSubmission: true
+        })
+      )
+      dispatch(autoUpdateGalaxySubmission())
+    })
+    .catch(error => {
+      dispatch(submitToGalaxyEnded(new ErrorList('Unhandled server-side error!')))
+    })
+}
+
 export const autoUpdateGalaxySubmission = () => (dispatch, getState) => {
   const getLastSubmission: (() => GalaxySubmission) = () => last(getState().searchPage.galaxy.submissions)
   const lastSubmission = getLastSubmission()
@@ -69,7 +95,7 @@ function alert(text, color = 'primary') {
   return { color, text }
 }
 
-function reset_password_alert() {
+function resetPasswordAlert() {
   const linkToReset = `${window.otu_search_config.galaxy_base_url}/user/reset_password?use_panels=True`
   const GALAXY_ALERT_USER_CREATED = alert(
     'An account has been created for you on Galaxy Australia.' +
@@ -82,14 +108,17 @@ function reset_password_alert() {
 
 const GALAXY_ALERT_IN_PROGRESS = alert('Submission to Galaxy in Progress ...')
 const GALAXY_ALERT_ERROR = alert('An error occured while submiting to Galaxy.', 'danger')
-const GALAXY_ALERT_GETTING_STARTED = alert(
-  'If you are new to Galaxy Australia, please see this <a target="_blank" ' +
-    `href="${
-      window.otu_search_config.base_url
-    }/static/bpaotu/rdc/Galaxy%20Australia%20-%20Quick%20Start%20Guide.pdf">` +
-    'Getting started guide</a>',
-  'success'
-)
+
+function gettingStartedAlert(showWorkflowGuide) {
+  const pdf = showWorkflowGuide
+    ? 'Galaxy Australia - Krona Visualisation Quick Start Guide.pdf'
+    : 'Galaxy Australia - Quick Start Guide.pdf'
+  const url = join([window.otu_search_config.static_base_url, 'bpaotu', 'rdc', encodeURIComponent(pdf)], '/')
+  return alert(
+    `If you are new to Galaxy Australia, please see this <a target="_blank" href="${url}">Getting started guide</a>`,
+    'success'
+  )
+}
 
 export default handleActions(
   {
@@ -106,9 +135,9 @@ export default handleActions(
           finished: false,
           succeeded: false
         }
-        const alerts = [GALAXY_ALERT_IN_PROGRESS, GALAXY_ALERT_GETTING_STARTED]
+        const alerts = [GALAXY_ALERT_IN_PROGRESS, gettingStartedAlert(action.payload.isWorkflowSubmission)]
         if (lastSubmission.userCreated) {
-          alerts.push(reset_password_alert())
+          alerts.push(resetPasswordAlert())
         }
         return {
           alerts,
@@ -138,7 +167,7 @@ export default handleActions(
           return newState
         })(lastSubmission)
 
-        let newAlerts = state.alerts
+        let newAlerts: any = state.alerts
 
         if (newLastSubmissionState.finished && !lastSubmission.finished) {
           const linkToHistory = `${window.otu_search_config.galaxy_base_url}/histories/view?id=${
@@ -146,16 +175,12 @@ export default handleActions(
           }`
           const GALAXY_ALERT_SUCCESS = alert(
             'Successfully submitted to Galaxy.' +
-              ` File uploaded to your <a target="_blank" href="${linkToHistory}" className="alert-link">Galaxy history.</a>`,
+              ` File uploaded to your <a target="_blank" href="${linkToHistory}" className="alert-link">` +
+              'Galaxy history.</a>',
             'success'
           )
-          newAlerts = [
-            newLastSubmissionState.succeeded ? GALAXY_ALERT_SUCCESS : GALAXY_ALERT_ERROR,
-            GALAXY_ALERT_GETTING_STARTED
-          ]
-          if (newLastSubmissionState.userCreated) {
-            newAlerts.push(reset_password_alert())
-          }
+          newAlerts = reject(state.alerts, GALAXY_ALERT_IN_PROGRESS)
+          newAlerts.push(newLastSubmissionState.succeeded ? GALAXY_ALERT_SUCCESS : GALAXY_ALERT_ERROR)
         }
         return {
           ...state,

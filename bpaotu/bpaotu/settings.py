@@ -423,3 +423,4 @@ GALAXY_BASE_URL = env.get('galaxy_base_url', 'https://galaxy-aust-dev.genome.edu
 # Leaving it as optional as not sure if all installations will use Galaxy
 GALAXY_ADMIN_USER_API_KEY = env.get('galaxy_admin_user_api_key', '')
 GALAXY_INTEGRATION = CKAN_AUTH_INTEGRATION and GALAXY_ADMIN_USER_API_KEY != ''
+GALAXY_KRONA_WORKFLOW_ID = env.get('galaxy_krona_workflow_id', 'bf002aa8f96f4e7b')

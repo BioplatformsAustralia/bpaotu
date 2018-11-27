@@ -17,6 +17,10 @@ urlpatterns = [
     url(r'^private/api/v1/search$', views.otu_search, name="otu_search"),
     url(r'^private/api/v1/search-sample-sites$', views.otu_search_sample_sites, name="otu_search_sample_sites"),
     url(r'^private/api/v1/submit_to_galaxy$', views.submit_to_galaxy, name="submit_to_galaxy"),
+    url(
+        r'^private/api/v1/execute_workflow_on_galaxy$',
+        views.execute_workflow_on_galaxy,
+        name="execute_workflow_on_galaxy"),
     url(r'^private/api/v1/galaxy_submission$', views.galaxy_submission, name="galaxy_submission"),
     url(r'^private/api/v1/submit_blast$', views.submit_blast, name="submit_blast"),
     url(r'^private/api/v1/blast_submission$', views.blast_submission, name="blast_submission"),

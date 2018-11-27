@@ -9,7 +9,7 @@ from django.conf import settings
 from .blast import BlastWrapper
 from .biom import save_biom_zip_file
 from .submission import Submission
-from .galaxy_client import get_users_galaxy, galaxy_ensure_user
+from .galaxy_client import get_users_galaxy
 from . import views
 
 
@@ -32,30 +32,19 @@ def debug_task(self):
 
 @shared_task
 def submit_to_galaxy(email, query):
-    # note: we check this before we submit any tasks which
-    # would implicitly create the user. the UI code needs
-    # to inform their user to reset the password on their
-    # new account
-    new_galaxy_user = galaxy_ensure_user(email)
+    submission_id = _create_submission_object(email, query)
+    upload_biom_to_history_chain(submission_id)
 
-    submission_id = str(uuid.uuid4())
+    return submission_id
 
-    submission = Submission.create(submission_id)
-    submission.query = query
-    submission.email = email
 
-    params, _ = views.param_to_filters(query)
-    summary = params.summary()
-    if len(summary) > GALAXY_HISTORY_NAME_MAX:
-        summary = summary[:GALAXY_HISTORY_NAME_MAX - 3] + '...'
-    submission.name = summary
-    submission.annotation = params.describe()
-
-    chain = save_biom_file.s() | create_history_with_file.s() | check_upload_status.s() | delete_biom_file.s()
-
+@shared_task
+def execute_workflow_on_galaxy(email, query, workflow_id):
+    submission_id = _create_submission_object(email, query)
+    chain = upload_biom_to_history_chain | execute_workflow.s(workflow_id)
     chain(submission_id)
 
-    return new_galaxy_user, submission_id
+    return submission_id
 
 
 @shared_task
@@ -138,9 +127,18 @@ def delete_biom_file(submission_id):
     return submission_id
 
 
-def _make_blast_wrapper(submission):
-    return BlastWrapper(
-        submission.cwd, submission.submission_id, submission.search_string, submission.query)
+@shared_task
+def execute_workflow(submission_id, workflow_id):
+    submission = Submission(submission_id)
+
+    galaxy = get_users_galaxy(submission.email)
+    galaxy.workflows.run_simple(workflow_id, submission.history_id, submission.file_id)
+
+    return submission_id
+
+
+upload_biom_to_history_chain = (
+    save_biom_file.s() | create_history_with_file.s() | check_upload_status.s() | delete_biom_file.s())
 
 
 @shared_task
@@ -169,11 +167,23 @@ def cleanup_blast(submission_id):
     return submission_id
 
 
-# Keeping workflow submission code for future reference:
+def _create_submission_object(email, query):
+    submission_id = str(uuid.uuid4())
 
-    # wfl = users_galaxy.workflows.submit(
-    #     workflow_id=workflow.get('id'),
-    #     history_id=history.get('id'),
-    #     file_ids={'0': file_id})
+    submission = Submission.create(submission_id)
+    submission.query = query
+    submission.email = email
 
-    # wfl_data = {k: v for k, v in wfl.items() if k in ('workflow_id', 'history', 'state')}
+    params, _ = views.param_to_filters(query)
+    summary = params.summary()
+    if len(summary) > GALAXY_HISTORY_NAME_MAX:
+        summary = summary[:GALAXY_HISTORY_NAME_MAX - 3] + '...'
+    submission.name = summary
+    submission.annotation = params.describe()
+
+    return submission_id
+
+
+def _make_blast_wrapper(submission):
+    return BlastWrapper(
+        submission.cwd, submission.submission_id, submission.search_string, submission.query)
