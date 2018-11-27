@@ -1,4 +1,4 @@
-import { filter as _filter, get as _get, isUndefined } from 'lodash'
+import { filter as _filter, get as _get, isArray } from 'lodash'
 import * as React from 'react'
 import { Col, Input, Row } from 'reactstrap'
 
@@ -84,14 +84,20 @@ function DropDownOperatorAndValue({ filter, dataDefinition, changeOperator, chan
   const renderOptions = dataDefinition.values.map(value => {
     // The values are list of tuples [id, text] in general.
     // But for Sample ID the values are a list of the sample ids.
-    let [id, text] = value
-    if (isUndefined(id)) {
-      // When single value (instead of [id, text]) make that both the id and the text
-      id = text = value
-    } else if (id === 0 && text === '') {
-      // Make the "no selection" value the empty string for consistency with other contextual filter types
-      id = ''
+    const toIdAndText = v => {
+      if (!isArray(v)) {
+        // When single value (instead of [id, text]) make that both the id and the text
+        return [v, v]
+      }
+      const [idx, txt] = v
+      if (idx === 0 && txt === '') {
+        // Make the "no selection" value the empty string for consistency with other contextual filter types
+        return ['', '']
+      }
+      return [idx, txt]
     }
+
+    const [id, text] = toIdAndText(value)
     return (
       <option key={id} value={id}>
         {text}
