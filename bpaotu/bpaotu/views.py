@@ -19,7 +19,7 @@ from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpRespon
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
 from .ckan_auth import require_CKAN_auth
-from .galaxy_client import galaxy_ensure_user, get_krona_workflow, get_users_galaxy
+from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .importer import DataImporter
 from .spatial import spatial_query
 from .otu import (
