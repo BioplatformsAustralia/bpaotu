@@ -14,12 +14,10 @@ const blastInitialState = {
 
 export default handleActions(
   {
-    [handleBlastSequence as any]: (state, action: any) => {
-      return {
-        ...state,
-        sequenceValue: join(filter(upperCase(action.payload), ch => includes('GATC', ch)), '')
-      }
-    }
+    [handleBlastSequence as any]: (state, action: any) => ({
+      ...state,
+      sequenceValue: join(filter(upperCase(action.payload), ch => includes('GATC', ch)), '')
+    })
   },
   blastInitialState
 )
