@@ -24,10 +24,9 @@ export class BlastSearchCard extends React.Component<any> {
           />
         </CardBody>
         <CardFooter className="text-center">
-          {this.props.sequenceValue}
-          {this.props.isSeachEnabled}
-          {/* <Button color="warning" disabled={!this.props.enableBlastSearch}> */}
-          <Button color="warning">Run BLAST</Button>
+          <Button color="warning" disabled={!this.props.blastSearchEnabled}>
+            Run BLAST
+          </Button>
         </CardFooter>
       </Card>
     )
