@@ -19,6 +19,8 @@ export interface SearchConfig {
   submit_to_galaxy_endpoint: string
   execute_workflow_on_galaxy_endpoint: string
   galaxy_submission_endpoint: string
+  submit_blast_endpoint: string
+  blast_submission_endpoint: string
   search_sample_sites_endpoint: string
   required_table_headers_endpoint: string
   contextual_csv_download_endpoint: string
