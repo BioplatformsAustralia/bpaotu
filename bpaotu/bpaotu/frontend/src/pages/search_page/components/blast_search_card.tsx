@@ -50,4 +50,7 @@ function mapDispatchToProps(dispatch) {
     dispatch
   )
 }
-export default connect(mapStateToProps)(BlastSearchCard)
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(BlastSearchCard)
