@@ -116,7 +116,8 @@ export default handleActions(
       },
       throw: (state, action: any) => ({
         ...state,
-        isSubmitting: false
+        isSubmitting: false,
+        alerts: [BLAST_ALERT_ERROR]
       })
     },
     [blastSubmissionUpdateEnded as any]: {

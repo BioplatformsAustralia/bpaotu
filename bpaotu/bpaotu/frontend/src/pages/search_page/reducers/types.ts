@@ -25,7 +25,7 @@ export interface GalaxySubmission {
 }
 
 export interface BlastSubmission {
-  submissionId?: string
+  submissionId: string
   finished: boolean
   succeeded: boolean
   error?: string
