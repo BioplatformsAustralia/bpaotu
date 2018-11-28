@@ -112,3 +112,26 @@ export function getGalaxySubmission(submissionId) {
 
 const makeArray = (length, fillValue) => map(Array(length), () => fillValue)
 const completeArray = (arr, length, fillValue) => arr.concat(makeArray(length - arr.length, fillValue))
+
+export function executeBlast(searchString, filters) {
+  const formData = new FormData()
+  formData.append('query', JSON.stringify(filters))
+  formData.append('search_string', searchString)
+
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.submit_blast_endpoint,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+export function getBlastSubmission(submissionId) {
+  return axios.get(window.otu_search_config.blast_submission_endpoint, {
+    params: {
+      submission_id: submissionId
+    }
+  })
+}

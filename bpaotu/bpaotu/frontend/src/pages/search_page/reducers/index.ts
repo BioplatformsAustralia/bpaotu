@@ -1,6 +1,7 @@
 import { combineReducers } from 'redux'
 
 import selectedAmpliconReducer from './amplicon'
+import blastSearchReducer from './blast_search'
 import contextualReducer from './contextual'
 import samplesMapModalReducer from './samples_map_modal'
 import searchResultsReducer from './search'
@@ -17,7 +18,8 @@ const pageReducer = combineReducers({
   filters: filtersReducer,
   samplesMapModal: samplesMapModalReducer,
   galaxy: submitToGalaxyReducer,
-  results: searchResultsReducer
+  results: searchResultsReducer,
+  blastSearch: blastSearchReducer
 })
 
 export default pageReducer

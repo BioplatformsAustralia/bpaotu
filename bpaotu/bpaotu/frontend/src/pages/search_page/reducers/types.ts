@@ -24,6 +24,13 @@ export interface GalaxySubmission {
   error?: string
 }
 
+export interface BlastSubmission {
+  submissionId: string
+  finished: boolean
+  succeeded: boolean
+  error?: string
+}
+
 export interface Alert {
   color: string
   text: string
