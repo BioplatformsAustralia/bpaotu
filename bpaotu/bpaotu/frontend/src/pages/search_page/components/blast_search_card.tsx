@@ -38,9 +38,7 @@ export class BlastSearchCard extends React.Component<any> {
           </div>
         </CardBody>
         <CardFooter className="text-center">
-          aaa
-          {this.props.isSubmitting}
-          <Button color="warning" disabled={!this.props.sequenceValue} onClick={this.props.runBlast}>
+          <Button color="warning" disabled={this.props.isBlastSearchDisabled} onClick={this.props.runBlast}>
             Run BLAST
           </Button>
         </CardFooter>
@@ -48,21 +46,15 @@ export class BlastSearchCard extends React.Component<any> {
     )
   }
 }
-// public isGalaxySubmissionDisabled() {
-//   if (this.props.galaxy.isSubmitting) {
-//     return true
-//   }
-//   const lastSubmission: GalaxySubmission = last(this.props.galaxy.submissions)
-//   return lastSubmission && !lastSubmission.finished
-// }
+
 function mapStateToProps(state, props) {
   return {
     isAmpliconSelected: state.searchPage.filters.selectedAmplicon.value,
     sequenceValue: state.searchPage.blastSearch.sequenceValue,
     isSubmitting: state.searchPage.blastSearch.isSubmitting,
-    //isSequenceProvided: state.searchPage.blastSearch.sequenceValue.length > 0 ? true : false,
+    isBlastSearchDisabled:
+      state.searchPage.blastSearch.isSubmitting || state.searchPage.blastSearch.sequenceValue === 0,
     alerts: state.searchPage.blastSearch.alerts
-    //lastSubmission: last(state.searchPage.blastSerach.submissions)
   }
 }
 

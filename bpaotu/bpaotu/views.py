@@ -484,6 +484,9 @@ def galaxy_submission(request):
 def submit_blast(request):
     try:
         params, errors = param_to_filters(request.POST['query'])
+        logger.debug("#########################")
+        logger.debug(request.POST['query'])
+        logger.debug(request.POST['search_string'])
 
         if errors:
             raise OTUError(*errors)
@@ -493,12 +496,14 @@ def submit_blast(request):
             search_string,
             request.POST['query'])
 
+        logger.debug(submission_id)
+        logger.debug("#########################")
         return JsonResponse({
             'success': True,
             'submission_id': submission_id,
         })
     except OTUError as exc:
-        logger.exception('Error in submit to Galaxy')
+        logger.exception('Error in submit to Blast')
         return JsonResponse({
             'success': False,
             'errors': exc.errors,
@@ -510,7 +515,11 @@ def submit_blast(request):
 def blast_submission(request):
     submission_id = request.GET['submission_id']
     submission = tasks.Submission(submission_id)
-
+    logger.debug("$$$$$$$$$$$$$$$")
+    logger.debug(submission)
+    logger.debug(submission.submission_id)
+    logger.debug(submission.result_url)
+    logger.debug("$$$$$$$$$$$$$$$")
     if not submission.result_url:
         state = 'pending'
     else:

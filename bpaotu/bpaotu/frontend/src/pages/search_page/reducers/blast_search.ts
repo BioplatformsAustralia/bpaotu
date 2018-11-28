@@ -1,9 +1,11 @@
-import { get as _get, isNumber, filter, includes, join, last, upperCase, reject } from 'lodash'
-import { executeBlast, getBlastSubmission } from '../../../api'
-import { ErrorList, BlastSubmission } from './types'
+import { filter, get as _get, includes, isNumber, join, last, reject, upperCase } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
+
+import { executeBlast, getBlastSubmission } from '../../../api'
 import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils'
+
 import { describeSearch } from './search'
+import { BlastSubmission, ErrorList } from './types'
 
 export const HANDLE_BLAST_SEQUENCE = 'HANDLE_BLAST_SEQUENCE'
 export const RUN_BLAST_STARTED = 'RUN_BLAST_STARTED'
@@ -49,15 +51,14 @@ export const runBlast = () => (dispatch, getState) => {
   dispatch(runBlastStarted())
 
   const filters = describeSearch(state.searchPage.filters)
-  const search_string = state.searchPage.blastSearch.sequenceValue
+  const searchString = state.searchPage.blastSearch.sequenceValue
 
-  executeBlast(search_string, filters)
+  executeBlast(searchString, filters)
     .then(data => {
       if (_get(data, 'data.errors', []).length > 0) {
         dispatch(runBlastEnded(new ErrorList(data.data.errors)))
         return
       }
-      console.log(data)
       dispatch(runBlastEnded(data))
       dispatch(autoUpdateBlastSubmission())
     })
@@ -66,15 +67,11 @@ export const runBlast = () => (dispatch, getState) => {
     })
 }
 export const autoUpdateBlastSubmission = () => (dispatch, getState) => {
-  console.log(getState().searchPage.blastSearch.submissions)
   const getLastSubmission: (() => BlastSubmission) = () => last(getState().searchPage.blastSearch.submissions)
   const lastSubmission = getLastSubmission()
-  console.log(lastSubmission)
-  console.log(lastSubmission.submissionId)
 
   getBlastSubmission(lastSubmission.submissionId)
     .then(data => {
-      console.log(data)
       dispatch(blastSubmissionUpdateEnded(data))
       const newLastSubmission = getLastSubmission()
       if (!newLastSubmission.finished) {
@@ -115,10 +112,7 @@ export default handleActions(
           finished: false,
           succeeded: false
         }
-        console.log(lastSubmission)
         const alerts = [BLAST_ALERT_IN_PROGRESS]
-        console.log(alerts)
-        console.log(state.sequenceValue)
         return {
           ...state,
           sequenceValue: state.sequenceValue,
@@ -127,7 +121,7 @@ export default handleActions(
           isSubmitting: false
         }
       },
-      throw: (state, action) => ({
+      throw: (state, action: any) => ({
         ...state,
         isSubmitting: false
       })
@@ -139,8 +133,8 @@ export default handleActions(
           const { state: status, error } = action.payload.data.submission
           const newState = {
             ...submission,
-            finished: status === 'ok' || status === 'error',
-            succeeded: status === 'ok'
+            finished: status === 'complete' || status === 'error',
+            succeeded: status === 'complete'
           }
           if (status === 'error') {
             newState.error = error
@@ -149,7 +143,6 @@ export default handleActions(
         })(lastSubmission)
 
         let newAlerts: any = state.alerts
-
         if (newLastSubmissionState.finished && !lastSubmission.finished) {
           const linkToHistory = `${window.otu_search_config.blast_submission_endpoint}`
           const BLAST_ALERT_SUCCESS = alert(
