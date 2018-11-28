@@ -69,7 +69,6 @@ export const runBlast = () => (dispatch, getState) => {
 export const autoUpdateBlastSubmission = () => (dispatch, getState) => {
   const getLastSubmission: (() => BlastSubmission) = () => last(getState().searchPage.blastSearch.submissions)
   const lastSubmission = getLastSubmission()
-
   getBlastSubmission(lastSubmission.submissionId)
     .then(data => {
       dispatch(blastSubmissionUpdateEnded(data))
@@ -93,17 +92,11 @@ export default handleActions(
   {
     [handleBlastSequence as any]: (state, action: any) => ({
       ...state,
-      sequenceValue: join(filter(upperCase(action.payload), ch => includes('GATC', ch)), ''),
-      alerts: [],
-      isSubmitting: false,
-      submissions: []
+      sequenceValue: join(filter(upperCase(action.payload), ch => includes('GATC', ch)), '')
     }),
     [runBlastStarted as any]: (state, action: any) => ({
       ...state,
-      sequenceValue: state.sequenceValue,
-      alerts: [],
-      isSubmitting: true,
-      submissions: []
+      isSubmitting: true
     }),
     [runBlastEnded as any]: {
       next: (state, action: any) => {
@@ -113,12 +106,12 @@ export default handleActions(
           succeeded: false
         }
         const alerts = [BLAST_ALERT_IN_PROGRESS]
+
         return {
           ...state,
           sequenceValue: state.sequenceValue,
           alerts,
-          submissions: [...state.submissions, lastSubmission],
-          isSubmitting: false
+          submissions: [...state.submissions, lastSubmission]
         }
       },
       throw: (state, action: any) => ({
@@ -141,19 +134,24 @@ export default handleActions(
           }
           return newState
         })(lastSubmission)
-
         let newAlerts: any = state.alerts
         if (newLastSubmissionState.finished && !lastSubmission.finished) {
-          const linkToHistory = `${window.otu_search_config.blast_submission_endpoint}`
+          const resultUrl = action.payload.data.submission.result_url
           const BLAST_ALERT_SUCCESS = alert(
             'BLAST search executed successfully.' +
-              ` File uploaded to your <a target="_blank" href="${linkToHistory}" className="alert-link">` +
-              'BLAST history.</a>',
+              `Click <a target="_blank" href="${resultUrl}" className="alert-link">` +
+              'here</a> to download the results.',
             'success'
           )
           newAlerts = reject([state.alerts, BLAST_ALERT_IN_PROGRESS])
           newAlerts.push(newLastSubmissionState.succeeded ? BLAST_ALERT_SUCCESS : BLAST_ALERT_ERROR)
         }
+
+        let isSubmitted: any = state.isSubmitting
+        if (action.payload.data.submission.result_url) {
+          isSubmitted = false
+        }
+
         return {
           ...state,
           submissions: changeElementAtIndex(
@@ -161,7 +159,8 @@ export default handleActions(
             state.submissions.length - 1,
             _ => newLastSubmissionState
           ),
-          alerts: newAlerts
+          alerts: newAlerts,
+          isSubmitting: isSubmitted
         }
       },
       throw: (state, action) => {
@@ -174,7 +173,8 @@ export default handleActions(
             succeeded: false,
             error: action.error
           })),
-          alerts: [BLAST_ALERT_ERROR]
+          alerts: [BLAST_ALERT_ERROR],
+          isSubmitting: false
         }
       }
     },

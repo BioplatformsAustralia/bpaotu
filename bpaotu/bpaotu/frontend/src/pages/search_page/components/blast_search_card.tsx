@@ -3,9 +3,10 @@ import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
-import { Alert, Button, Card, CardBody, CardFooter, CardHeader, Input } from 'reactstrap'
+import { Alert, Button, Card, CardBody, CardFooter, CardHeader, Col, Container, Input, Row } from 'reactstrap'
 
 import Octicon from '../../../components/octicon'
+import LoadingSpinner from '../../../components/search_spinner'
 import { clearBlastAlert, handleBlastSequence, runBlast } from '../reducers/blast_search'
 
 export class BlastSearchCard extends React.Component<any> {
@@ -24,7 +25,7 @@ export class BlastSearchCard extends React.Component<any> {
             disabled={!this.props.isAmpliconSelected}
             onChange={evt => this.props.handleBlastSequence(evt.target.value)}
           />
-          <div>
+          <div className="pt-2">
             {this.props.alerts.map((alert, idx) => (
               <Alert
                 key={idx}
@@ -38,7 +39,9 @@ export class BlastSearchCard extends React.Component<any> {
           </div>
         </CardBody>
         <CardFooter className="text-center">
-          <Button color="warning" disabled={this.props.isBlastSearchDisabled} onClick={this.props.runBlast}>
+          {this.props.isSubmitting && <LoadingSpinner />}
+
+          <Button color="warning" disabled={this.props.isSearchDisabled} onClick={this.props.runBlast}>
             Run BLAST
           </Button>
         </CardFooter>
@@ -52,8 +55,10 @@ function mapStateToProps(state, props) {
     isAmpliconSelected: state.searchPage.filters.selectedAmplicon.value,
     sequenceValue: state.searchPage.blastSearch.sequenceValue,
     isSubmitting: state.searchPage.blastSearch.isSubmitting,
-    isBlastSearchDisabled:
-      state.searchPage.blastSearch.isSubmitting || state.searchPage.blastSearch.sequenceValue === 0,
+    isSearchDisabled:
+      state.searchPage.filters.selectedAmplicon.value === '' ||
+      state.searchPage.blastSearch.sequenceValue === '' ||
+      state.searchPage.blastSearch.isSubmitting,
     alerts: state.searchPage.blastSearch.alerts
   }
 }
@@ -62,7 +67,8 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
       handleBlastSequence,
-      runBlast
+      runBlast,
+      clearBlastAlert
     },
     dispatch
   )
