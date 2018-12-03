@@ -550,7 +550,7 @@ def contextual_csv_download_endpoint(request):
 
     sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), all_headers)
 
-    params, errors = param_to_filters(data, contextual=False)
+    params, errors = param_to_filters(data, contextual_filtering=False)
     with SampleQuery(params) as query:
         results = query.matching_sample_headers(additional_headers, sorting)
 
