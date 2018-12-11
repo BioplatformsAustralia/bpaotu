@@ -119,7 +119,7 @@
                 </thead>
                 <tr><td>
                     {% for sample_id in missing_samples %}
-                    <a target="_other" href="{{ ckan_base_url }}/organization/australian-microbiome?q=bpa_id:102.100.100.{{ sample_id}}">{{ sample_id }}</a>
+                    <a target="_other" href="{{ ckan_base_url }}/organization/australian-microbiome?q=bpa_id:102.100.100/{{ sample_id}}">{{ sample_id }}</a>
                     {% endfor %}
                 </td></tr>
             </table>
