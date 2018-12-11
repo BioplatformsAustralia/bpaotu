@@ -306,7 +306,7 @@ class DataImporter:
             if sample_id is None:
                 continue
             attrs = {
-                'id': int(sample_id.split('.')[-1])
+                'id': int(sample_id.split('/')[-1])
             }
             for field in ontologies:
                 if field not in row:
