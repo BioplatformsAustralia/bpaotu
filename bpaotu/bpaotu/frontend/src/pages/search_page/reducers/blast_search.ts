@@ -85,7 +85,7 @@ function alert(text, color = 'primary') {
   return { color, text }
 }
 
-const BLAST_ALERT_IN_PROGRESS = alert('BLAST search is in Progress ...')
+const BLAST_ALERT_IN_PROGRESS = alert('BLAST search is in progress, and may take several minutes. Do not close your browser - this status will update once the search is complete.')
 const BLAST_ALERT_ERROR = alert('An error occured while running BLAST.', 'danger')
 
 export default handleActions(
@@ -139,7 +139,7 @@ export default handleActions(
         if (newLastSubmissionState.finished && !lastSubmission.finished) {
           const resultUrl = action.payload.data.submission.result_url
           const BLAST_ALERT_SUCCESS = alert(
-            'BLAST search executed successfully.' +
+            'BLAST search executed successfully. ' +
               `Click <a target="_blank" href="${resultUrl}" className="alert-link">` +
               'here</a> to download the results.',
             'success'

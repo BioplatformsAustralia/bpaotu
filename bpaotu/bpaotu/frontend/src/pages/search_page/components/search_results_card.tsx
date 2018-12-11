@@ -9,6 +9,7 @@ import Octicon from '../../../components/octicon'
 import { openSamplesMapModal } from '../reducers/samples_map_modal'
 import { describeSearch } from '../reducers/search'
 import { clearGalaxyAlert, submitToGalaxy, workflowOnGalaxy } from '../reducers/submit_to_galaxy'
+import { clearTips, showPhinchTip } from '../reducers/tips'
 import { GalaxySubmission } from '../reducers/types'
 import SamplesMapModal from './samples_map_modal'
 import SearchResultsTable from './search_results_table'
@@ -66,7 +67,7 @@ class SearchResultsCard extends React.Component<any, any> {
                 />
               )}
               <HeaderButton octicon="desktop-download" text="Export Search Results (CSV)" onClick={this.exportCSV} />
-              <HeaderButton octicon="desktop-download" text="Export Search Results (BIOM)" onClick={this.exportBIOM} />
+              <HeaderButton octicon="desktop-download" text="Export Search Results (Phinch compatible BIOM)" onClick={this.exportBIOM} />
             </div>
           </CardHeader>
           <CardBody>
@@ -77,6 +78,18 @@ class SearchResultsCard extends React.Component<any, any> {
                   color={alert.color}
                   className="text-center"
                   toggle={() => this.props.clearGalaxyAlert(idx)}
+                >
+                  <div dangerouslySetInnerHTML={wrapText(alert.text)} />
+                </Alert>
+              ))}
+            </div>
+            <div>
+              {this.props.tips.alerts.map((alert, idx) => (
+                <Alert
+                  key={idx}
+                  color={alert.color}
+                  className="text-center"
+                  toggle={() => this.props.clearTips(idx)}
                 >
                   <div dangerouslySetInnerHTML={wrapText(alert.text)} />
                 </Alert>
@@ -108,6 +121,7 @@ class SearchResultsCard extends React.Component<any, any> {
   }
 
   public exportBIOM() {
+    this.props.showPhinchTip();
     this.export(window.otu_search_config.export_biom_endpoint)
   }
 
@@ -120,6 +134,7 @@ function mapStateToProps(state) {
   return {
     ckanAuthToken: state.auth.ckanAuthToken,
     galaxy: state.searchPage.galaxy,
+    tips: state.searchPage.tips,
     filters: state.searchPage.filters
   }
 }
@@ -130,7 +145,9 @@ function mapDispatchToProps(dispatch) {
       openSamplesMapModal,
       submitToGalaxy,
       workflowOnGalaxy,
-      clearGalaxyAlert
+      clearGalaxyAlert,
+      clearTips,
+      showPhinchTip,
     },
     dispatch
   )
