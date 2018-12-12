@@ -25,7 +25,7 @@ package_data = get_data_files()
 package_data['bpaotu'].append('webpack-stats-prod.json')
 
 setup(name='bpaotu',
-      version='1.21.3',
+      version='1.23.0',
       description="BPA OTU",
       author='Centre for Comparative Genomics',
       author_email='web@ccg.murdoch.edu.au',
