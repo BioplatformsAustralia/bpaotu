@@ -60,6 +60,9 @@ export interface PageState {
     alerts: Alert[]
     submissions: GalaxySubmission[]
   }
+  tips: {
+    alerts: Alert[]
+  }
   results: {
     isLoading: boolean
     errors: string[]
@@ -118,6 +121,9 @@ export const searchPageInitialState: PageState = {
     alerts: [],
     isSubmitting: false,
     submissions: []
+  },
+  tips: {
+    alerts: [],
   },
   results: {
     isLoading: false,
