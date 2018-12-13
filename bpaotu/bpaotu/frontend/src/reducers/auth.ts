@@ -35,7 +35,7 @@ export default handleActions(
       next: (state: any, action: any) => {
         const ckanAuthToken = action.payload.data
         const [_, data] = ckanAuthToken.split('||')
-        const { email } = JSON.parse(data)
+        const { email, organisations } = JSON.parse(data)
         axios.defaults.headers = {
           'X-BPAOTU-CKAN-Token': ckanAuthToken
         }
@@ -43,7 +43,8 @@ export default handleActions(
           isLoginInProgess: false,
           isLoggedIn: true,
           ckanAuthToken,
-          email
+          email,
+          organisations
         }
       },
       throw: (state, action) => {

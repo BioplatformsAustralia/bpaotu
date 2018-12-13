@@ -7,6 +7,7 @@ import { bindActionCreators } from 'redux'
 import Header from './header'
 import Routes from './routes'
 
+import AustralianMicrobiomeAccessRequiredPage from '../pages/australian_microbiome_access_required_page'
 import LoginInProgressPage from '../pages/login_in_progress_page'
 import LoginRequiredPage from '../pages/login_required_page'
 
@@ -14,9 +15,7 @@ import { getCKANAuthInfo } from '../reducers/auth'
 
 class App extends React.Component<any> {
   public componentWillMount() {
-    if (window.otu_search_config.ckan_auth_integration) {
-      this.props.getCKANAuthInfo()
-    }
+    this.props.getCKANAuthInfo()
   }
 
   public render() {
@@ -34,13 +33,14 @@ class App extends React.Component<any> {
   }
 
   public renderContents() {
-    if (window.otu_search_config.ckan_auth_integration) {
-      if (this.props.auth.isLoginInProgress) {
-        return <LoginInProgressPage />
-      }
-      if (!this.props.auth.isLoggedIn) {
-        return <LoginRequiredPage />
-      }
+    if (this.props.auth.isLoginInProgress) {
+      return <LoginInProgressPage />
+    }
+    if (!this.props.auth.isLoggedIn) {
+      return <LoginRequiredPage />
+    }
+    if (!this.props.auth.organisations.includes('australian-microbiome')) {
+      return <AustralianMicrobiomeAccessRequiredPage />
     }
     return <Routes />
   }
