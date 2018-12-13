@@ -49,7 +49,6 @@
 
 
     <script>
-        var ckan_auth_integration = '{{ ckan_auth_integration }}' === 'True';
         var galaxy_integration = '{{ galaxy_integration }}' === 'True';
         window.otu_search_config = {
             'amplicon_endpoint': "{% url 'amplicon_options' %}",
@@ -70,7 +69,6 @@
             'static_base_url': "{% static '' %}",
             'galaxy_base_url': "{{ galaxy_base_url }}",
             'ckan_base_url': "{{ ckan_base_url }}",
-            'ckan_auth_integration': ckan_auth_integration,
             'galaxy_integration': galaxy_integration,
             'ckan_check_permissions': "{{ ckan_check_permissions_url }}"
         };

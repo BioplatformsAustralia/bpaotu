@@ -91,7 +91,6 @@ class OTUSearch(TemplateView):
         context['ckan_check_permissions_url'] = (
             settings.CKAN_CHECK_PERMISSIONS_URL if settings.PRODUCTION
             else reverse('dev_only_ckan_check_permissions'))
-        context['ckan_auth_integration'] = settings.CKAN_AUTH_INTEGRATION
         context['galaxy_integration'] = settings.GALAXY_INTEGRATION
 
         return context
@@ -580,15 +579,6 @@ def contextual_csv_download_endpoint(request):
     response['Content-Disposition'] = 'attachment; filename="contextual_data.csv"'
 
     return response
-
-
-def tables(request):
-    template = loader.get_template('bpaotu/tables.html')
-    context = {
-        'ckan_auth_integration': settings.CKAN_AUTH_INTEGRATION
-    }
-
-    return HttpResponse(template.render(context, request))
 
 
 def _parse_table_sorting(sorting, headers):

@@ -34,7 +34,6 @@ urlpatterns = [
         r'^ingest/$',
         views.otu_log,
         name="otu_log"),
-    url(r'^tables/$', views.tables, name="tables"),
     url(
         r'^private/api/v1/required_table_headers/$',
         views.required_table_headers,

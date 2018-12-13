@@ -6,7 +6,6 @@ export interface SearchConfig {
   galaxy_base_url: string
 
   galaxy_integration: boolean
-  ckan_auth_integration: boolean
   ckan_base_url: string
   ckan_check_permissions: string
 

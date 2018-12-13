@@ -410,7 +410,6 @@ EXPLORER_TOKEN_AUTH_ENABLED = True
 EXPLORER_TOKEN = env.get('EXPLORER_TOKEN', "EXPLOREIT")
 
 # enable integration with CKAN authentication (specific to the Bioplatforms data portal)
-CKAN_AUTH_INTEGRATION = env.get('ckan_auth_integration', True)
 CKAN_CHECK_PERMISSIONS_URL = env.get('ckan_check_permissions_url', '/user/private/api/bpa/check_permissions')
 
 # email to use in development when CKAN auth integration is enabled
@@ -422,5 +421,5 @@ GALAXY_BASE_URL = env.get('galaxy_base_url', 'https://galaxy-aust-dev.genome.edu
 # This will fail late, only when the user is trying to submit workflows to galaxy
 # Leaving it as optional as not sure if all installations will use Galaxy
 GALAXY_ADMIN_USER_API_KEY = env.get('galaxy_admin_user_api_key', '')
-GALAXY_INTEGRATION = CKAN_AUTH_INTEGRATION and GALAXY_ADMIN_USER_API_KEY != ''
+GALAXY_INTEGRATION = GALAXY_ADMIN_USER_API_KEY != ''
 GALAXY_KRONA_WORKFLOW_ID = env.get('galaxy_krona_workflow_id', 'bf002aa8f96f4e7b')
