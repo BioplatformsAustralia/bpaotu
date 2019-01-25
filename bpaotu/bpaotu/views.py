@@ -533,7 +533,7 @@ def otu_log(request):
         'ckan_base_url': settings.CKAN_SERVER['base_url'],
         'files': ImportFileLog.objects.all(),
         'ontology_errors': ImportOntologyLog.objects.all(),
-        'missing_samples': sorted(missing_sample_ids),
+        'missing_samples': sorted(missing_sample_ids, key=lambda x: int(x)),
         'metadata': import_meta,
     }
     return HttpResponse(template.render(context, request))

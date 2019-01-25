@@ -6,6 +6,7 @@ import os
 import tempfile
 import traceback
 import uuid
+import re
 from collections import OrderedDict, defaultdict
 from glob import glob
 from hashlib import md5
@@ -20,6 +21,7 @@ from bpaingest.metadata import DownloadMetadata
 from bpaingest.projects.amdb.contextual import \
     AustralianMicrobiomeSampleContextual
 from bpaingest.projects.amdb.ingest import AccessAMDContextualMetadata
+from bpaingest.libs.ingest_utils import get_int
 
 from .models import (ImportFileLog, ImportMetadata, ImportOntologyLog,
                      ImportSamplesMissingMetadataLog)
@@ -31,10 +33,6 @@ from .otu import (OTU, SCHEMA, Base, Environment, OTUAmplicon, OTUClass,
                   SampleLandUse, SampleOTU, SampleProfilePosition,
                   SampleStorageMethod, SampleTillage, SampleType,
                   SampleVegetationType, make_engine)
-
-TAXONOMY_FIELDS = [
-    'id', 'code',
-    'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id']
 
 logger = logging.getLogger("rainbow")
 
@@ -57,13 +55,12 @@ def grouper(iterable, n, fillvalue=None):
     return zip_longest(*args, fillvalue=fillvalue)
 
 
-def otu_hash(code):
-    return md5(code.encode('ascii')).digest()
+def otu_hash(code, amplicon_id):
+    return md5('{},{}'.format(code, amplicon_id).encode('ascii')).digest()
 
 
 class DataImporter:
     # note: some files have species, some don't
-    taxonomy_header = ['#OTU ID', 'kingdom', 'phylum', 'class', 'order', 'family', 'genus']
     amd_ontologies = OrderedDict([
         ('environment', Environment),
         ('sample_type', SampleType),
@@ -82,6 +79,7 @@ class DataImporter:
     ])
 
     def __init__(self, import_base, revision_date):
+        self.amplicon_code_names = {}  # mapping from dirname to amplicon ontology
         self._clear_import_log()
         self._engine = make_engine()
         self._create_extensions()
@@ -103,6 +101,8 @@ class DataImporter:
             c for c
             in list(self.amd_ontologies.values())
             if c is not Environment)
+        # Species is the only potentially blank taxonomy
+        all_cls.add(OTUSpecies)
         for db_class in all_cls:
             instance = db_class(id=0, value='')
             self._session.add(instance)
@@ -207,10 +207,19 @@ class DataImporter:
         r.update((t, pl['Marine']) for t in marine_only)
         return r
 
+    def amplicon_files(self, pattern):
+        for fname in glob(self._import_base + '/*/' + pattern):
+            amplicon = fname.split('/')[-2]
+            yield amplicon, fname
+
     def load_taxonomies(self):
         # md5(otu code) -> otu ID, returned
 
         otu_lookup = {}
+        taxonomy_fields = [
+            'id', 'code',
+            # order here must match `ontologies' below
+            'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id']
         ontologies = OrderedDict([
             ('kingdom', OTUKingdom),
             ('phylum', OTUPhylum),
@@ -223,28 +232,34 @@ class DataImporter:
         ])
 
         def _taxon_rows_iter():
-            for fname in glob(self._import_base + '/*/*.taxonomy.gz'):
+            code_re = re.compile(r'^[GATC]+')
+            otu_header = '#OTU ID'
+            amplicon_header = 'amplicon'
+            for amplicon_code, fname in self.amplicon_files('*.taxonomy.gz'):
                 logger.warning('reading taxonomy file: %s' % fname)
-                imported = 0
+                amplicon = None
                 with gzip.open(fname, 'rt') as fd:
+                    reader = csv.reader(fd, dialect='excel-tab')
+                    header = next(reader)
+                    assert(header[0] == otu_header)
+                    assert(header[-1] == amplicon_header)
+                    taxo_header = header[1:-1]
                     for idx, row in enumerate(csv.reader(fd, dialect='excel-tab')):
-                        # latest version of the format has a counter running in the first column, which we don't need
-                        row = row[1:]
-                        if idx == 0:
-                            assert(row[:len(self.taxonomy_header)] == self.taxonomy_header)
-                            have_species = 'species' in row
-                            continue
-                        otu = row[0]
-                        if have_species:
-                            ontology_parts = row[1:]
-                        else:
-                            ontology_parts = row[1:-1] + ['undefined', row[-1]]
-                        assert(len(ontology_parts) == len(ontologies))
-                        obj = dict(zip(ontologies.keys(), ontology_parts))
-                        obj['otu'] = otu
-                        imported += 1
+                        code = row[0]
+                        if not code_re.match(code):
+                            raise Exception("invalid OTU code: {}".format(code))
+                        obj = {
+                            'amplicon': row[-1],
+                            'otu': code,
+                        }
+                        if amplicon is None:
+                            amplicon = obj['amplicon']
+                        if amplicon != obj['amplicon']:
+                            raise Exception('more than one amplicon in folder: {} vs {}'.format(amplicon, obj['amplicon']))
+                        obj.update(zip(taxo_header, row[1:-1]))
                         yield obj
-                ImportFileLog.make_file_log(fname, file_type='Taxonomy', rows_imported=imported, rows_skipped=0)
+                self.amplicon_code_names[amplicon_code] = amplicon
+                ImportFileLog.make_file_log(fname, file_type='Taxonomy', rows_imported=idx + 1, rows_skipped=0)
 
         logger.warning("loading taxonomies - pass 1, defining ontologies")
         mappings = self._load_ontology(ontologies, _taxon_rows_iter())
@@ -256,14 +271,17 @@ class DataImporter:
                 os.chmod(fname, 0o644)
                 logger.warning("writing out taxonomy data to CSV tempfile: %s" % fname)
                 w = csv.writer(temp_fd)
-                w.writerow(TAXONOMY_FIELDS)
+                w.writerow(taxonomy_fields)
                 for _id, row in enumerate(_taxon_rows_iter(), 1):
-                    otu_lookup[otu_hash(row['otu'])] = _id
-                    out_row = [_id, row['otu']]
+                    otu_key = otu_hash(row['otu'], row['amplicon'])
+                    assert(otu_key not in otu_lookup)
+                    otu_lookup[otu_key] = _id
+
+                    otu_row = [_id, row['otu']]
                     for field in ontologies:
                         val = row.get(field, '')
-                        out_row.append(mappings[field][val])
-                    w.writerow(out_row)
+                        otu_row.append(mappings[field][val])
+                    w.writerow(otu_row)
             logger.warning("loading taxonomy data from temporary CSV file")
             self._engine.execute(
                 text('''COPY otu.otu from :csv CSV header''').execution_options(autocommit=True),
@@ -337,58 +355,56 @@ class DataImporter:
             for field in sorted(unused):
                 logger.info(field)
 
-    def _otu_rows(self, fd, otu_lookup):
+    def _otu_abundance_rows(self, fd, amplicon_code, otu_lookup):
         reader = csv.reader(fd, dialect='excel-tab')
         header = next(reader)
 
-        assert(header[0] == '#OTU ID')
-
-        # find the four or five-digit Sample IDs: there are integers in here which are not Sample IDs,
-        # but they're not in the Sample ID range (currently 7031 -> 58020). FIXME, this is crude
-        # and it would be better to more clearly identify Bioplatforms / non-Bioplatforms data;
-        # discussing with CSIRO
-        idx_sample_id = [(i + 1, try_int(t)) for (i, t) in enumerate(header[1:]) if len(t) == 4 or len(t) == 5]
-        idx_sample_id = [(i, t) for (i, t) in idx_sample_id if t is not None]
+        assert(header == ["#OTU ID", "Sample_only", "Abundance"])
 
         def _tuplerows():
-            for row in reader:
-                otu_code = row[0]
-                otu_id = otu_lookup.get(otu_hash(otu_code))
-                if otu_id is None:
-                    logger.critical(['OTU not defined', otu_code])
+            seen_invalid = set()
+            seen_unknown = set()
+            for otu_code, sample_id, count in reader:
+                float_count = float(count)
+                int_count = int(float_count)
+                # make sure that fractional values don't creep in on a future ingest
+                assert(int_count - float_count == 0)
+                sample_id_int = get_int(sample_id)
+                if sample_id_int is None:
+                    if sample_id not in seen_invalid:
+                        logger.info('skipping invalid sample ID: {}'.format(sample_id))
+                        seen_invalid.add(sample_id)
                     continue
-                for idx, sample_id in idx_sample_id:
-                    count = row[idx]
-                    if count == '' or count == '0' or count == '0.0':
-                        continue
-                    count = int(float(count))
-                    if count == 0:
-                        continue
-                    yield otu_id, sample_id, count
+                otu_id = otu_lookup.get(otu_hash(otu_code, self.amplicon_code_names[amplicon_code]))
+                if otu_id is None:
+                    if otu_code not in seen_unknown:
+                        logger.critical('skipping unknown OTU code: {}'.format(otu_code))
+                        seen_unknown.add(otu_code)
+                    continue
+                yield otu_id, sample_id_int, int_count
 
-        return [t[1] for t in idx_sample_id], _tuplerows()
+        return _tuplerows()
 
     def _find_missing_sample_ids(self, otu_lookup):
-        def _missing_sample_ids(fname):
+        def _missing_sample_ids(amplicon_code, fname):
             have_bpaids = set([t[0] for t in self._session.query(SampleContext.id)])
             with gzip.open(fname, 'rt') as fd:
-                sample_ids, _ = self._otu_rows(fd, otu_lookup)
+                entries = self._otu_abundance_rows(fd, amplicon_code, otu_lookup)
+                sample_ids = set(t[1] for t in entries)
                 for sample_id in sample_ids:
                     if sample_id not in have_bpaids:
                         yield sample_id
 
         missing_sample_ids = set()
-        for fname in glob(self._import_base + '/*/*.txt.gz'):
+        for amplicon_code, fname in self.amplicon_files('*.txt.gz'):
             logger.warning("first pass, reading from: %s" % (fname))
-            missing_sample_ids |= set(_missing_sample_ids(fname))
+            missing_sample_ids |= set(_missing_sample_ids(amplicon_code, fname))
         return missing_sample_ids
 
     def load_otu_abundance(self, otu_lookup):
-        def _make_sample_otus(fname, skip_missing):
-            # note: (for now) we have to cope with duplicate columns in the input files.
-            # we just make sure they don't clash, and this can be reported to CSIRO
+        def _make_sample_otus(fname, amplicon_code, skip_missing):
             with gzip.open(fname, 'rt') as fd:
-                sample_ids, tuple_rows = self._otu_rows(fd, otu_lookup)
+                tuple_rows = self._otu_abundance_rows(fd, amplicon_code, otu_lookup)
                 rows_skipped = 0
                 for entry, (otu_id, sample_id, count) in enumerate(tuple_rows):
                     if sample_id in skip_missing:
@@ -405,7 +421,7 @@ class DataImporter:
             il = ImportSamplesMissingMetadataLog(samples_without_metadata=list(sorted(missing_sample_ids)))
             il.save()
 
-        for sampleotu_fname in glob(self._import_base + '/*/*.txt.gz'):
+        for amplicon_code, sampleotu_fname in self.amplicon_files('*.txt.gz'):
             try:
                 logger.warning("second pass, reading from: %s" % (sampleotu_fname))
                 with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
@@ -414,7 +430,7 @@ class DataImporter:
                     logger.warning("writing out OTU abundance data to CSV tempfile: %s" % fname)
                     w = csv.writer(temp_fd)
                     w.writerow(['sample_id', 'otu_id', 'count'])
-                    w.writerows(_make_sample_otus(sampleotu_fname, missing_sample_ids))
+                    w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, missing_sample_ids))
                 logger.warning("loading OTU abundance data from temporary CSV file")
                 try:
                     self._engine.execute(
