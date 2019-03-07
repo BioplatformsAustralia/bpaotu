@@ -255,7 +255,8 @@ class DataImporter:
                         if amplicon is None:
                             amplicon = obj['amplicon']
                         if amplicon != obj['amplicon']:
-                            raise Exception('more than one amplicon in folder: {} vs {}'.format(amplicon, obj['amplicon']))
+                            raise Exception(
+                                'more than one amplicon in folder: {} vs {}'.format(amplicon, obj['amplicon']))
                         obj.update(zip(taxo_header, row[1:-1]))
                         yield obj
                 self.amplicon_code_names[amplicon_code] = amplicon
