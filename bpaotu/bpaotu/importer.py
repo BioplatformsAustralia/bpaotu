@@ -21,7 +21,6 @@ from bpaingest.metadata import DownloadMetadata
 from bpaingest.projects.amdb.contextual import \
     AustralianMicrobiomeSampleContextual
 from bpaingest.projects.amdb.ingest import AccessAMDContextualMetadata
-from bpaingest.libs.ingest_utils import get_int
 
 from .models import (ImportFileLog, ImportMetadata, ImportOntologyLog,
                      ImportSamplesMissingMetadataLog)
@@ -361,6 +360,8 @@ class DataImporter:
         header = next(reader)
 
         assert(header == ["#OTU ID", "Sample_only", "Abundance"])
+        valid_sample_re = re.compile(r'^[0-9]+$')
+        skipped_invalid = set()
 
         def _tuplerows():
             seen_invalid = set()
@@ -370,7 +371,13 @@ class DataImporter:
                 int_count = int(float_count)
                 # make sure that fractional values don't creep in on a future ingest
                 assert(int_count - float_count == 0)
-                sample_id_int = get_int(sample_id)
+                # strict conversion to integer, as we've got other things mixed in here
+                if not valid_sample_re.match(sample_id):
+                    if sample_id not in skipped_invalid:
+                        logger.warning('skipped non-Bioplatforms sample ID: {}'.format(sample_id))
+                        skipped_invalid.add(sample_id)
+                    continue
+                sample_id_int = int(sample_id)
                 if sample_id_int is None:
                     if sample_id not in seen_invalid:
                         logger.info('skipping invalid sample ID: {}'.format(sample_id))
@@ -388,12 +395,12 @@ class DataImporter:
 
     def _find_missing_sample_ids(self, otu_lookup):
         def _missing_sample_ids(amplicon_code, fname):
-            have_bpaids = set([t[0] for t in self._session.query(SampleContext.id)])
+            have_sampleids = set([t[0] for t in self._session.query(SampleContext.id)])
             with gzip.open(fname, 'rt') as fd:
                 entries = self._otu_abundance_rows(fd, amplicon_code, otu_lookup)
                 sample_ids = set(t[1] for t in entries)
                 for sample_id in sample_ids:
-                    if sample_id not in have_bpaids:
+                    if sample_id not in have_sampleids:
                         yield sample_id
 
         missing_sample_ids = set()
