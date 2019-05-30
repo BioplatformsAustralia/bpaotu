@@ -153,15 +153,15 @@ BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
 STATICFILES_DIRS = [
     BLAST_RESULTS_PATH,
 ]
-MIDDLEWARE_CLASSES = ('django.middleware.security.SecurityMiddleware',
-                      'django.middleware.clickjacking.XFrameOptionsMiddleware',
-                      'django.middleware.common.CommonMiddleware',
-                      'django.contrib.sessions.middleware.SessionMiddleware',
-                      'django.middleware.csrf.CsrfViewMiddleware',
-                      'django.contrib.auth.middleware.AuthenticationMiddleware',
-                      'django.contrib.messages.middleware.MessageMiddleware',
-                      'django.middleware.locale.LocaleMiddleware',
-                      )
+MIDDLEWARE = (
+    'django.middleware.security.SecurityMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.locale.LocaleMiddleware')
 
 TEMPLATES = [
     {
@@ -329,7 +329,7 @@ LOGGING = {
 
 if env.get("DEBUG_TOOLBAR", False):
     INSTALLED_APPS += ('debug_toolbar', )
-    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
+    MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
     INTERNAL_IPS = ('127.0.0.1',
                     '172.16.2.189', )  # explicitly set this for your environment
 
