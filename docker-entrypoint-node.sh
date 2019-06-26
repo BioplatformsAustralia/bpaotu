@@ -42,3 +42,4 @@ info "[RUN]: Builtin command not provided [build|lint|watch]"
 info "[RUN]: $*"
 
 exec "$@"
+bash
