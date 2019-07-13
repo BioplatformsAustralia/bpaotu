@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'^map$', views.OTUSearch.as_view()),
     url(r'^contextual$', views.OTUSearch.as_view()),
 
+    url(r'^private/api/v1/config$', views.api_config, name="api_config"),
     url(r'^private/api/v1/amplicon-options$', views.amplicon_options, name="amplicon_options"),
     url(r'^private/api/v1/taxonomy-options$', views.taxonomy_options, name="taxonomy_options"),
     url(r'^private/api/v1/contextual-fields$', views.contextual_fields, name="contextual_fields"),

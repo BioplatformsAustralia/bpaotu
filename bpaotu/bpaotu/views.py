@@ -142,6 +142,35 @@ def normalise_blast_search_string(s):
     return cleaned
 
 
+@require_GET
+def api_config(request):
+    config = {
+        'amplicon_endpoint': reverse('amplicon_options'),
+        'taxonomy_endpoint': reverse('taxonomy_options'),
+        'contextual_endpoint': reverse('contextual_fields'),
+        'search_endpoint': reverse('otu_search'),
+        'export_endpoint': reverse('otu_export'),
+        'export_biom_endpoint': reverse('otu_biom_export'),
+        'submit_to_galaxy_endpoint': reverse('submit_to_galaxy'),
+        'execute_workflow_on_galaxy_endpoint': reverse('execute_workflow_on_galaxy'),
+        'galaxy_submission_endpoint': reverse('galaxy_submission'),
+        'submit_blast_endpoint': reverse('submit_blast'),
+        'blast_submission_endpoint': reverse('blast_submission'),
+        'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
+        'required_table_headers_endpoint': reverse('required_table_headers'),
+        'contextual_csv_download_endpoint': reverse('contextual_csv_download_endpoint'),
+        'base_url': settings.BASE_URL,
+        'static_base_url': settings.STATIC_URL,
+        'galaxy_base_url': settings.GALAXY_BASE_URL,
+        'ckan_base_url': settings.CKAN_SERVER['base_url'],
+        'ckan_check_permissions': (
+            settings.CKAN_CHECK_PERMISSIONS_URL if settings.PRODUCTION
+            else reverse('dev_only_ckan_check_permissions')),
+        'galaxy_integration': settings.GALAXY_INTEGRATION,
+    }
+    return JsonResponse(config)
+
+
 @require_CKAN_auth
 @require_GET
 def amplicon_options(request):
