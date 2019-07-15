@@ -2,11 +2,19 @@ from django.conf.urls import url
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.staticfiles.views import serve as static_serve
 from . import views
 
 admin.autodiscover()
 
 urlpatterns = [
+    url(r'^$', static_serve, kwargs={
+            'path': 'index.html', 'document_root': settings.STATIC_ROOT}),
+    url(r'^map$', static_serve, kwargs={
+            'path': 'index.html', 'document_root': settings.STATIC_ROOT}),
+    url(r'^contextual$', static_serve, kwargs={
+            'path': 'index.html', 'document_root': settings.STATIC_ROOT}),
+
     url(r'^private/api/v1/config$', views.api_config, name="api_config"),
     url(r'^private/api/v1/amplicon-options$', views.amplicon_options, name="amplicon_options"),
     url(r'^private/api/v1/taxonomy-options$', views.taxonomy_options, name="taxonomy_options"),
