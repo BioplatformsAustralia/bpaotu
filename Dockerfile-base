@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libpcre3 \
   libpq5 \
   gdal-bin \
-  libgeos-3.5.1 \
+  libgeos-3.7.1 \
   libproj-dev \
   ncbi-blast+ \
   mime-support \
