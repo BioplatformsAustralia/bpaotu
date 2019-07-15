@@ -36,7 +36,7 @@ const ArcGIS = {
 class BPAImages extends React.Component<any, any> {
     public render() {
         const tnUrl = (packageId, resourceId) => join(
-          [window.otu_search_config.base_url, 'site-image-thumbnail', packageId, resourceId], '/')
+          [window.otu_search_config.base_url, 'private/site-image-thumbnail', packageId, resourceId], '/')
         const rsUrl = (packageId, resourceId) => join(
           [window.otu_search_config.ckan_base_url, 'dataset', packageId, 'resource', resourceId], '/')
         return (

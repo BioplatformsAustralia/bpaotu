@@ -78,24 +78,6 @@ def make_environment_lookup():
         return dict(info.get_values(Environment))
 
 
-class OTUSearch(TemplateView):
-    template_name = 'bpaotu/search.html'
-    base_url = settings.BASE_URL
-    ckan_base_url = settings.CKAN_SERVER['base_url']
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['base_url'] = settings.BASE_URL
-        context['galaxy_base_url'] = settings.GALAXY_BASE_URL
-        context['ckan_base_url'] = settings.CKAN_SERVER['base_url']
-        context['ckan_check_permissions_url'] = (
-            settings.CKAN_CHECK_PERMISSIONS_URL if settings.PRODUCTION
-            else reverse('dev_only_ckan_check_permissions'))
-        context['galaxy_integration'] = settings.GALAXY_INTEGRATION
-
-        return context
-
-
 def int_if_not_already_none(v):
     if v is None or v == '':
         return None

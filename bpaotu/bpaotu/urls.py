@@ -7,10 +7,6 @@ from . import views
 admin.autodiscover()
 
 urlpatterns = [
-    url(r'^$', views.OTUSearch.as_view()),
-    url(r'^map$', views.OTUSearch.as_view()),
-    url(r'^contextual$', views.OTUSearch.as_view()),
-
     url(r'^private/api/v1/config$', views.api_config, name="api_config"),
     url(r'^private/api/v1/amplicon-options$', views.amplicon_options, name="amplicon_options"),
     url(r'^private/api/v1/taxonomy-options$', views.taxonomy_options, name="taxonomy_options"),
@@ -40,11 +36,11 @@ urlpatterns = [
         views.required_table_headers,
         name="required_table_headers"),
     url(
-        r'^contextual_csv_download_endpoint/$',
+        r'^private/csv-export/$',
         views.contextual_csv_download_endpoint,
         name="contextual_csv_download_endpoint"),
     url(
-        r'^site-image-thumbnail/(?P<package_id>[\w-]+)/(?P<resource_id>[\w-]+)/$',
+        r'^private/site-image-thumbnail/(?P<package_id>[\w-]+)/(?P<resource_id>[\w-]+)/$',
         views.site_image_thumbnail,
         name="site_image_thumbnail"),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
