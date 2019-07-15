@@ -14,7 +14,6 @@ from django.views.decorators.cache import cache_page
 from django.conf import settings
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
-from django.views.generic import TemplateView
 from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpResponse
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
