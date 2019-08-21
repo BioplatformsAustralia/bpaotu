@@ -9,15 +9,15 @@ ENV BUILD_VERSION $ARG_BUILD_VERSION
 RUN env | sort
 
 RUN mkdir -p /data \
-    && /bin/chown ccg-user:ccg-user /data
+    && /bin/chown bioplatforms:bioplatforms /data
 
 ADD build/${PROJECT_NAME}-${BUILD_VERSION}.tar.gz /
 
 EXPOSE 9100 9101
 VOLUME ["/data"]
 
-# Drop privileges, set home for ccg-user
-USER ccg-user
+# Drop privileges, set home for bioplatforms
+USER bioplatforms
 ENV HOME /data
 WORKDIR /data
 
