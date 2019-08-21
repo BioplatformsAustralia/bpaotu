@@ -18,13 +18,6 @@ services:
         file: docker-compose-common.yml
         service: cache
 
-    nginx:
-      extends:
-        file: docker-compose-common.yml
-        service: nginx
-      links:
-        - uwsgi
-
     runserver:
       extends:
         file: docker-compose-common.yml
