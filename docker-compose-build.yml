@@ -48,7 +48,7 @@ services:
     image: bioplatformsaustralia/bpaotu:${BUILD_VERSION}
 
   lint:
-    image: bioplatformsaustralia/linter:python3
+    image: bioplatformsaustralia/python-lint:python3
     working_dir: /app/bpaotu
     volumes:
       - ./:/app
