@@ -7,7 +7,7 @@ export default props => {
     <footer className="site-footer space-above">
       <div className="site-footer-links container-fluid">
         <a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a>
-        <a href="https://github.com/muccg/bpaotu">Source Code</a>
+        <a href="https://github.com/BioplatformsAustralia/bpaotu">Source Code</a>
         <a href="mailto:help@bioplatforms.com">Contact</a>
       </div>
       <div className="site-footer-logo container-fluid">

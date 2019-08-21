@@ -5,7 +5,7 @@ BPA-OTU is a web-based portal into Operational Taxonomic Unit (OTU) data, develo
 ## Quick Setup
 
 * [Install docker and compose](https://docs.docker.com/compose/install/)
-* git clone [https://github.com/muccg/bpaotu.git](https://github.com/muccg/bpaotu.git)
+* git clone [https://github.com/BioplatformsAustralia/bpaotu.git](https://github.com/BioplatformsAustralia/bpaotu.git)
 * `./develop.sh build base`
 * `./develop.sh build builder`
 * `./develop.sh build dev`

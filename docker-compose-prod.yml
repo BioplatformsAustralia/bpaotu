@@ -41,7 +41,7 @@ services:
         - cacheprod
 
     uwsgiprod:
-      image: muccg/bpaotu:${BUILD_VERSION}
+      image: bioplatformsaustralia/bpaotu:${BUILD_VERSION}
       command: uwsgi_local
       environment:
         - DEBUG=0

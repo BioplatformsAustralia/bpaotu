@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile-base
       args:
         http_proxy:
-    image: muccg/bpaotu-base
+    image: bioplatformsaustralia/bpaotu-base
 
   builder:
     build:
@@ -15,7 +15,7 @@ services:
       dockerfile: Dockerfile-builder
       args:
         http_proxy:
-    image: muccg/bpaotu-builder
+    image: bioplatformsaustralia/bpaotu-builder
     command: releasetarball
     network_mode: host
     environment:
@@ -35,7 +35,7 @@ services:
         ARG_PIP_INDEX_URL: ${PIP_INDEX_URL}
         ARG_PIP_TRUSTED_HOST: ${PIP_TRUSTED_HOST}
         http_proxy:
-    image: muccg/bpaotu-dev
+    image: bioplatformsaustralia/bpaotu-dev
     volumes:
       - .:/app
 
@@ -45,10 +45,10 @@ services:
       dockerfile: Dockerfile-prod
       args:
         ARG_BUILD_VERSION: ${BUILD_VERSION}
-    image: muccg/bpaotu:${BUILD_VERSION}
+    image: bioplatformsaustralia/bpaotu:${BUILD_VERSION}
 
   lint:
-    image: muccg/linter:python3
+    image: bioplatformsaustralia/linter:python3
     working_dir: /app/bpaotu
     volumes:
       - ./:/app

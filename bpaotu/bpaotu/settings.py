@@ -398,7 +398,7 @@ EXPLORER_TOKEN = env.get('EXPLORER_TOKEN', "EXPLOREIT")
 CKAN_CHECK_PERMISSIONS_URL = env.get('ckan_check_permissions_url', '/user/private/api/bpa/check_permissions')
 
 # email to use in development when CKAN auth integration is enabled
-CKAN_DEVELOPMENT_USER_EMAIL = env.get('ckan_devel_user_email', 'devops@ccg.murdoch.edu.au')
+CKAN_DEVELOPMENT_USER_EMAIL = env.get('ckan_devel_user_email', 'dev@bioplatforms.com')
 
 CKAN_AUTH_TOKEN_HEADER_NAME = env.get('ckan_auth_token_header_name', 'HTTP_X_BPAOTU_CKAN_TOKEN')
 

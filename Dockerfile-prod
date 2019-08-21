@@ -1,6 +1,6 @@
 # bpaotu production
-FROM muccg/bpaotu-base
-MAINTAINER https://github.com/muccg/bpaotu
+FROM bioplatformsaustralia/bpaotu-base
+MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
 
 ARG ARG_BUILD_VERSION
 

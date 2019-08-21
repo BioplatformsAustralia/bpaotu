@@ -6,7 +6,7 @@ data:
     - ./data/dev:/data
 
 db:
-  image: mdillon/postgis:10
+  image: mdillon/postgis:11
   environment:
     - POSTGRES_USER=webapp
     - POSTGRES_PASSWORD=webapp
