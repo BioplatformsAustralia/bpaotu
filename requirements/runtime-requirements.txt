@@ -32,8 +32,8 @@ django-webpack-loader==0.6.0
 https://github.com/BioplatformsAustralia/bpa-ingest/archive/5.3.7.tar.gz
 git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
 httplib2==0.13.1
-boto3==1.9.211
-botocore==1.12.211
+boto3==1.9.214
+botocore==1.12.214
 google-api-python-client
 python-dateutil==2.8.0
 shapely==1.6.4.post2
