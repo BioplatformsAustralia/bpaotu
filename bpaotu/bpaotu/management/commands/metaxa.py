@@ -5,7 +5,6 @@ import gzip
 import os
 from hashlib import sha256
 from django.core.management.base import BaseCommand
-from ...importer import DataImporter
 
 # This script converts metaxa data into the equivalent of the other OTU data,
 # issuing temporary (generated) OTU codes.
@@ -65,7 +64,8 @@ class Command(BaseCommand):
         mapping = {}
         with gzip.open(os.path.join(out_dir, 'metaxa.taxonomy.gz'), 'wt') as out_fd:
             writer = csv.writer(out_fd, dialect='excel-tab')
-            writer.writerow(['#OTU ID', 'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'amplicon'])
+            writer.writerow([
+                '#OTU ID', 'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'amplicon'])
             for row in self.read_metaxa(in_file):
                 taxonomy, sample, abundance, amplicon = self.parts(row)
                 otu = self.generate_otu(taxonomy)
