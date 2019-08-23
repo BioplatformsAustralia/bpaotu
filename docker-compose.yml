@@ -43,13 +43,3 @@ services:
       depends_on:
         - db
         - cache
-
-    uwsgi:
-      extends:
-        file: docker-compose-common.yml
-        service: uwsgi
-      volumes_from:
-        - datadev
-      depends_on:
-        - db
-        - cache
