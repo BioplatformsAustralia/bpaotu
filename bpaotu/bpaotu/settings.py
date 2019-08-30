@@ -44,14 +44,18 @@ ADMINS = [("alert", env.get("alert_email", "root@localhost"))]
 MANAGERS = ADMINS
 
 # anymail email
-DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'No Reply <no-reply@mg.ccgapps.com.au>')
+DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'Bioplaforms Data Portal <help@bioplatforms.com>')
 EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU] ')
 SERVER_EMAIL = env.get('DJANGO_SERVER_EMAIL', DEFAULT_FROM_EMAIL)
-# default to anymail/mailgun, but if the API key is not set, fall back to console
-EMAIL_BACKEND = env.get('DJANGO_EMAIL_BACKEND', 'anymail.backends.mailgun.MailgunBackend')
+EMAIL_BACKEND = "anymail.backends.amazon_ses.EmailBackend"
 ANYMAIL = {
-    "MAILGUN_API_KEY": env.get('DJANGO_MAILGUN_API_KEY', ''),
-    "MAILGUN_SENDER_DOMAIN": env.get('DJANGO_MAILGUN_SERVER_NAME', '')
+    "AMAZON_SES_MESSAGE_TAG_NAME": "Type",
+    "AMAZON_SES_CLIENT_PARAMS": {
+        # example: override normal Boto credentials specifically for Anymail
+        "aws_access_key_id": env.get("AWS_ACCESS_KEY_FOR_ANYMAIL_SES"),
+        "aws_secret_access_key": env.get("AWS_SECRET_KEY_FOR_ANYMAIL_SES"),
+        "region_name": env.get("AWS_REGION_FOR_ANYMAIL_SES"),
+    },
 }
 
 
@@ -387,12 +391,6 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 DOWNLOADS_CHECKER_USER = env.get('downloads_checker_user', 'downloads_checker')
 DOWNLOADS_CHECKER_PASS = env.get('downloads_checker_pass', 'ch3ck3r')
 DOWNLOADS_CHECKER_SLEEP = env.get('downloads_checker_sleep', 0.0)
-
-# sql explorer
-EXPLORER_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'No Reply <no-reply@mg.ccgapps.com.au>')
-EXPLORER_TASKS_ENABLED = True
-EXPLORER_TOKEN_AUTH_ENABLED = True
-EXPLORER_TOKEN = env.get('EXPLORER_TOKEN', "EXPLOREIT")
 
 # enable integration with CKAN authentication (specific to the Bioplatforms data portal)
 CKAN_CHECK_PERMISSIONS_URL = env.get('ckan_check_permissions_url', '/user/private/api/bpa/check_permissions')

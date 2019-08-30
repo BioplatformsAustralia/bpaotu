@@ -38,3 +38,4 @@ google-api-python-client
 python-dateutil==2.8.0
 shapely==1.6.4.post2
 fiona==1.8.6
+django-anymail[amazon_ses]==6.1.0
