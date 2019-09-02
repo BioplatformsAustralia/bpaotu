@@ -10,6 +10,7 @@ import os
 import re
 import time
 
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.cache import cache_page
 from django.conf import settings
 from django.urls import reverse
@@ -124,6 +125,7 @@ def normalise_blast_search_string(s):
 
 
 @require_GET
+@ensure_csrf_cookie
 def api_config(request):
     config = {
         'amplicon_endpoint': reverse('amplicon_options'),
