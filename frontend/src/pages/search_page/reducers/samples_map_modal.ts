@@ -20,7 +20,8 @@ export const {
 )
 
 export const fetchSampleMapModalSamples = () => (dispatch, getState) => {
-  const filters = describeSearch(getState().searchPage.filters)
+  const state = getState();
+  const filters = describeSearch(state.searchPage.filters, state.contextualDataDefinitions)
 
   dispatch(samplesMapModalFetchSamplesStarted())
   handleSimpleAPIResponse(dispatch, partial(executeSampleSitesSearch, filters), samplesMapModalFetchSamplesEnded)

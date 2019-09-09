@@ -32,7 +32,7 @@ export const submitToGalaxy = () => (dispatch, getState) => {
 
   dispatch(submitToGalaxyStarted())
 
-  const filters = describeSearch(state.searchPage.filters)
+  const filters = describeSearch(state.searchPage.filters, state.contextualDataDefinitions)
 
   executeSubmitToGalaxy(filters)
     .then(data => {
@@ -53,7 +53,7 @@ export const workflowOnGalaxy = () => (dispatch, getState) => {
 
   dispatch(submitToGalaxyStarted())
 
-  const filters = describeSearch(state.searchPage.filters)
+  const filters = describeSearch(state.searchPage.filters, state.contextualDataDefinitions)
 
   executeWorkflowOnGalaxy(filters)
     .then(data => {

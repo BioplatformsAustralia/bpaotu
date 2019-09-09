@@ -43,24 +43,24 @@ function marshallContextualFilters(filtersState, dataDefinitions) {
   return filters
 }
 
-function marshallContextual(state) {
+function marshallContextual(state, contextualDataDefinitions) {
   const { selectedEnvironment, filtersMode } = state
 
   return {
     environment: selectedEnvironment.value === '' ? null : selectedEnvironment,
     mode: filtersMode,
-    filters: marshallContextualFilters(state.filters, state.dataDefinitions)
+    filters: marshallContextualFilters(state.filters, contextualDataDefinitions)
   }
 }
 
-export const describeSearch = stateFilters => {
+export const describeSearch = (stateFilters, contextualDataDefinitions) => {
   const selectedAmplicon = stateFilters.selectedAmplicon
   const selectedTaxonomies = map(taxonomies, taxonomy => stateFilters.taxonomy[taxonomy].selected)
 
   return {
     amplicon_filter: selectedAmplicon,
     taxonomy_filters: selectedTaxonomies,
-    contextual_filters: marshallContextual(stateFilters.contextual)
+    contextual_filters: marshallContextual(stateFilters.contextual, contextualDataDefinitions)
   }
 }
 
@@ -69,7 +69,7 @@ export const search = () => (dispatch, getState) => {
 
   dispatch(searchStarted())
 
-  const filters = describeSearch(state.searchPage.filters)
+  const filters = describeSearch(state.searchPage.filters, state.contextualDataDefinitions)
 
   const options = {
     ...state.searchPage.results,

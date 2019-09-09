@@ -18,7 +18,6 @@ export const store = createStore(reducers, composeEnhancers(applyMiddleware(thun
 
 axios.get(window.otu_search_config.base_url + '/private/api/v1/config').then(function(response) {
     window.otu_search_config = response.data;
-    console.log(window.otu_search_config);
     ReactDOM.render(
     <Provider store={store}>
         <Router basename={window.otu_search_config.base_url}>

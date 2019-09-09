@@ -114,7 +114,7 @@ class SearchResultsCard extends React.Component<any, any> {
   public export(baseURL) {
     const params = new URLSearchParams()
     params.set('token', this.props.ckanAuthToken)
-    params.set('q', JSON.stringify(describeSearch(this.props.filters)))
+    params.set('q', JSON.stringify(describeSearch(this.props.filters, this.props.contexualDataDefinitions)))
 
     const url = `${baseURL}?${params.toString()}`
     window.open(url)
@@ -135,7 +135,8 @@ function mapStateToProps(state) {
     ckanAuthToken: state.auth.ckanAuthToken,
     galaxy: state.searchPage.galaxy,
     tips: state.searchPage.tips,
-    filters: state.searchPage.filters
+    filters: state.searchPage.filters,
+    contexualDataDefinitions: state.contextualDataDefinitions
   }
 }
 

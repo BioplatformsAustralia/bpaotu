@@ -10,6 +10,7 @@ import os
 import re
 import time
 
+from django.core.mail import send_mail
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.cache import cache_page
 from django.conf import settings
@@ -137,6 +138,7 @@ def api_config(request):
         'submit_to_galaxy_endpoint': reverse('submit_to_galaxy'),
         'execute_workflow_on_galaxy_endpoint': reverse('execute_workflow_on_galaxy'),
         'galaxy_submission_endpoint': reverse('galaxy_submission'),
+        'nondenoised_request_endpoint': reverse('nondenoised_request'),
         'submit_blast_endpoint': reverse('submit_blast'),
         'blast_submission_endpoint': reverse('blast_submission'),
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
@@ -306,6 +308,37 @@ def param_to_filters(query_str, contextual_filtering=True):
 @require_POST
 def required_table_headers(request):
     return otu_search(request, contextual_filtering=False)
+
+
+NONDENOISED_EMAIL_TEMPLATE = """\
+A request for non-denoised data has been received.
+
+User email: {email}
+
+Requested samples:
+{selected_samples}
+
+Match sequence:
+{match_sequence}
+
+Taxonomy string:
+{taxonomy_string}
+"""
+
+@require_CKAN_auth
+@require_POST
+def nondenoised_request(request):
+    format_obj = {
+        k: request.POST.get(k, '')
+        for k in ('match_sequence', 'taxonomy_string')
+    }
+    format_obj['email'] = request.ckan_data.get('email')
+    format_obj['selected_samples'] = '\n'.join(json.loads(request.POST.get('selected_samples', '[]')))
+    send_mail(
+        "[AMI] Non-denoised data request",
+        NONDENOISED_EMAIL_TEMPLATE.format(**format_obj),
+        "Bioplatforms Helpdesk <help@bioplatforms.com>", [settings.NONDENOISED_REQUEST_EMAIL])
+    return JsonResponse({'okay': True})
 
 
 @require_CKAN_auth

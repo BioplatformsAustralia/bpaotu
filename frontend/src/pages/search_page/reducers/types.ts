@@ -102,11 +102,6 @@ export const searchPageInitialState: PageState = {
       species: EmptySelectableLoadableValues
     },
     contextual: {
-      dataDefinitions: {
-        isLoading: false,
-        environment: [],
-        filters: []
-      },
       selectedEnvironment: EmptyOperatorAndValue,
       filtersMode: 'and',
       filters: []

@@ -3,7 +3,6 @@ import { combineReducers } from 'redux'
 import { createActions, handleActions } from 'redux-actions'
 
 import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils'
-import columnsDataDefinitionsReducer from './columns_data_definitions'
 
 export const {
   selectColumn,
@@ -41,5 +40,4 @@ const columnsReducer = handleActions(
 
 export default combineReducers({
   columns: columnsReducer,
-  dataDefinitions: columnsDataDefinitionsReducer
 })

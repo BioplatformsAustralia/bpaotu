@@ -57,6 +57,22 @@ function doSearch(url, filters, options) {
   })
 }
 
+export function nondenoisedDataRequest(selectedSamples, matchSequence, taxonomyString) {
+    const formData = new FormData()
+    formData.append('selected_samples', JSON.stringify(selectedSamples))
+    formData.append('match_sequence', matchSequence)
+    formData.append('taxonomy_string', taxonomyString)
+
+    return axios({
+      method: 'post',
+      url: window.otu_search_config.nondenoised_request_endpoint,
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+}
+
 export const executeSearch = partial(doSearch, window.otu_search_config.search_endpoint)
 export const executeContextualSearch = partial(doSearch, window.otu_search_config.required_table_headers_endpoint)
 

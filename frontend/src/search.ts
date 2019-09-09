@@ -15,6 +15,7 @@ export interface SearchConfig {
   search_endpoint: string
   export_endpoint: string
   export_biom_endpoint: string
+  nondenoised_request_endpoint: string
   submit_to_galaxy_endpoint: string
   execute_workflow_on_galaxy_endpoint: string
   galaxy_submission_endpoint: string

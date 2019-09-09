@@ -74,8 +74,8 @@ class EnvironmentFilter extends React.Component<any> {
 function mapStateToProps(state) {
   return {
     selected: state.searchPage.filters.contextual.selectedEnvironment,
-    optionsLoading: state.searchPage.filters.contextual.dataDefinitions.isLoading,
-    options: state.searchPage.filters.contextual.dataDefinitions.environment
+    optionsLoading: state.contextualDataDefinitions.isLoading,
+    options: state.contextualDataDefinitions.environment
   }
 }
 

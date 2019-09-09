@@ -1,8 +1,8 @@
 import { find, map, reject } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
 
-import { getContextualDataDefinitions } from '../../../api'
-import { handleSimpleAPIResponse } from '../../../reducers/utils'
+import { getContextualDataDefinitions } from '../api'
+import { handleSimpleAPIResponse } from './utils'
 
 const { fetchContextualDataDefinitionsStarted, fetchContextualDataDefinitionsEnded } = createActions(
   'FETCH_CONTEXTUAL_DATA_DEFINITIONS_STARTED',
@@ -29,13 +29,17 @@ export default handleActions(
       isLoading: true
     }),
     [fetchContextualDataDefinitionsEnded as any]: (state, action: any) => {
+      const isSampleID = definition => definition.type === 'sample_id'
       const isEnvironment = definition => definition.name === 'environment_id'
       const environment = find(action.payload.data.definitions, isEnvironment)
+      const sample_id = find(action.payload.data.definitions, isSampleID)
       const allButEnvironment = reject(action.payload.data.definitions, isEnvironment)
       return {
         isLoading: false,
         environment: map(environment.values, ([id, name]) => ({ id, name })),
-        filters: allButEnvironment
+        filters: allButEnvironment,
+        values: action.payload.data.definitions,
+        sample_ids: sample_id.values,
       }
     }
   },

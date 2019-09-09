@@ -15,7 +15,7 @@ import {
   selectContextualFilter,
   selectContextualFiltersMode
 } from '../reducers/contextual'
-import { fetchContextualDataDefinitions } from '../reducers/contextual_data_definitions'
+import { fetchContextualDataDefinitions } from '../../../reducers/contextual_data_definitions'
 
 import ContextualFilter from '../../../components/contextual_filter'
 import Octicon from '../../../components/octicon'
@@ -105,12 +105,12 @@ function mapStateToProps(state) {
   return {
     contextualFilters: state.searchPage.filters.contextual.filters,
     contextualFiltersMode: state.searchPage.filters.contextual.filtersMode,
-    dataDefinitions: state.searchPage.filters.contextual.dataDefinitions.filters,
+    dataDefinitions: state.contextualDataDefinitions.filters,
     contextualFilterOptions: getFilterOptions(
-      state.searchPage.filters.contextual.dataDefinitions.filters,
+      state.contextualDataDefinitions.filters,
       state.searchPage.filters.contextual.selectedEnvironment
     ),
-    optionsLoading: state.searchPage.filters.contextual.dataDefinitions.isLoading
+    optionsLoading: state.contextualDataDefinitions.isLoading
   }
 }
 

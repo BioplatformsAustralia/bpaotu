@@ -7,7 +7,7 @@ import { Button, Card, CardBody, CardFooter, CardHeader } from 'reactstrap'
 
 import { ContextualDropDown } from '../../../components/contextual_drop_down'
 
-import { fetchColumnsDataDefinitions } from '../reducers/columns_data_definitions'
+import { fetchContextualDataDefinitions } from '../../../reducers/contextual_data_definitions'
 import { search } from '../reducers/search'
 import { addColumn, clearColumns, removeColumn, selectColumn } from '../reducers/select_columns'
 
@@ -20,7 +20,7 @@ class SelectColumnsCard extends React.Component<any> {
   }
 
   public componentDidMount() {
-    this.props.fetchColumnsDataDefinitions()
+    this.props.fetchContextualDataDefinitions()
   }
 
   public render() {
@@ -70,17 +70,18 @@ class SelectColumnsCard extends React.Component<any> {
 }
 
 function mapStateToProps(state) {
+  console.log(state.contextualDataDefinitions.values)
   return {
     columns: state.contextualPage.selectColumns.columns,
-    dataDefinitions: state.contextualPage.selectColumns.dataDefinitions.values,
-    optionsLoading: state.contextualPage.selectColumns.dataDefinitions.isLoading
+    dataDefinitions: state.contextualDataDefinitions.values,
+    optionsLoading: state.contextualDataDefinitions.isLoading
   }
 }
 
 function mapDispatchToProps(dispatch: any) {
   return bindActionCreators(
     {
-      fetchColumnsDataDefinitions,
+      fetchContextualDataDefinitions,
       addColumn,
       removeColumn,
       selectColumn,

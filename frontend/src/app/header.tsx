@@ -25,14 +25,14 @@ export default class Header extends React.Component<any, any> {
     const logoPNG = window.otu_search_config.static_base_url + join(['bpa-logos', 'bpalogo_withdataportal.png'], '/')
     return (
       <Navbar color="light" light={true} expand="lg">
-        <NavbarBrand className="site-header-logo" href="https://data.bioplatforms.com/">
+        <NavbarBrand className="site-header-logo" href="/">
           <img src={logoPNG} alt="Bioplatform Australia" />
         </NavbarBrand>
         <NavbarToggler onClick={this.toggle} />
         <Collapse isOpen={this.state.isOpen} navbar={true}>
           <Nav className="navbar-nav">
             <NavItem>
-              <NavLink href="https://data.bioplatforms.com/organization/about/australian-microbiome">
+              <NavLink href="/organization/about/australian-microbiome">
                 Australian Microbiome Home
               </NavLink>
             </NavItem>
@@ -54,6 +54,13 @@ export default class Header extends React.Component<any, any> {
                 Contextual
               </NavLink>
             </NavItem>
+
+            <NavItem>
+              <NavLink to="/non-denoised" activeClassName="active" tag={RRNavLink}>
+                Non-denoised data
+              </NavLink>
+            </NavItem>
+
           </Nav>
           <Nav className="ml-auto" navbar={true}>
             <NavItem>

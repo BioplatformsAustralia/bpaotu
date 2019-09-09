@@ -4,7 +4,6 @@ import reduceReducers from 'reduce-reducers'
 import { combineActions, createActions, handleAction, handleActions } from 'redux-actions'
 
 import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils'
-import contextualDataDefinitionsReducer from './contextual_data_definitions'
 import { searchPageInitialState } from './types'
 
 export const { selectEnvironment, selectEnvironmentOperator, selectContextualFiltersMode } = createActions(
@@ -146,7 +145,6 @@ const contextualFiltersReducer = handleActions(
 const combinedContextualReducers = (state = searchPageInitialState.filters.contextual, action) => ({
   ...state,
   selectedEnvironment: selectedEnvironmentReducer(state.selectedEnvironment, action),
-  dataDefinitions: contextualDataDefinitionsReducer(state.dataDefinitions, action),
   filtersMode: contextualFiltersModeReducer(state.filtersMode, action)
   // filters: array of filters is filled in here by the reduceReducers below
 })
