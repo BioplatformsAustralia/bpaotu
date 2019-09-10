@@ -10,8 +10,6 @@ const { ckanAuthInfoStarted, ckanAuthInfoEnded } = createActions('CKAN_AUTH_INFO
 export { ckanAuthInfoStarted, ckanAuthInfoEnded }
 
 export const getCKANAuthInfo = () => (dispatch, getState) => {
-  const state = getState()
-
   dispatch(ckanAuthInfoStarted())
   handleSimpleAPIResponse(dispatch, ckanAuthInfo, ckanAuthInfoEnded)
 }
@@ -34,7 +32,7 @@ export default handleActions(
     [ckanAuthInfoEnded as any]: {
       next: (state: any, action: any) => {
         const ckanAuthToken = action.payload.data
-        const [_, data] = ckanAuthToken.split('||')
+        const [, data] = ckanAuthToken.split('||')
         const { email, organisations } = JSON.parse(data)
         axios.defaults.headers = {
           'X-BPAOTU-CKAN-Token': ckanAuthToken

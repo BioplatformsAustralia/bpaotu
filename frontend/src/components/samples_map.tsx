@@ -1,10 +1,10 @@
 import { first, join, keys, map } from 'lodash'
 import * as React from 'react'
-import { Button, Card, CardText, CardTitle, Col, Nav, NavItem, NavLink, Row, TabContent, TabPane } from 'reactstrap'
+import { Col, Nav, NavItem, NavLink, Row, TabContent, TabPane } from 'reactstrap'
 
 import * as L from 'leaflet'
 import * as MiniMap from 'leaflet-minimap'
-import { Map, Marker, Popup, TileLayer, Tooltip } from 'react-leaflet'
+import { Map, Marker, Popup, TileLayer } from 'react-leaflet'
 import FullscreenControl from 'react-leaflet-fullscreen'
 import MarkerClusterGroup from 'react-leaflet-markercluster'
 
@@ -44,7 +44,7 @@ class BPAImages extends React.Component<any, any> {
               {map(this.props.siteImages || [], ({package_id, resource_id}, index) => (
                 <Row key={index}>
                   <a href={rsUrl(package_id, resource_id)} target="_other">
-                    <img alt="Australian Microbiome site image" src={tnUrl(package_id, resource_id)} />
+                    <img alt="Australian Microbiome" src={tnUrl(package_id, resource_id)} />
                   </a>
                 </Row>
               ))}

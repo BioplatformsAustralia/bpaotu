@@ -1,11 +1,8 @@
-import { last } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
-import { Alert, Button, Card, CardBody, CardFooter, CardHeader, Col, Container, Input, Row } from 'reactstrap'
-
-import Octicon from '../../../components/octicon'
+import { Alert, Button, Card, CardBody, CardFooter, CardHeader, Input } from 'reactstrap'
 import LoadingSpinner from '../../../components/search_spinner'
 import { clearBlastAlert, handleBlastSequence, runBlast } from '../reducers/blast_search'
 

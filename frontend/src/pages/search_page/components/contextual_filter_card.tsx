@@ -18,7 +18,6 @@ import {
 import { fetchContextualDataDefinitions } from '../../../reducers/contextual_data_definitions'
 
 import ContextualFilter from '../../../components/contextual_filter'
-import Octicon from '../../../components/octicon'
 import EnvironmentFilter from './environment_filter'
 
 class ContextualFilterCard extends React.Component<any> {

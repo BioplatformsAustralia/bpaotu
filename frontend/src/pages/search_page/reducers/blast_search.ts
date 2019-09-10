@@ -165,7 +165,6 @@ export default handleActions(
         }
       },
       throw: (state, action) => {
-        const lastSubmission = last(state.submissions)
         return {
           ...state,
           submissions: changeElementAtIndex(state.submissions, state.submissions.length - 1, submission => ({

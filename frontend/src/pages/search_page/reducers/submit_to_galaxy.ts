@@ -7,7 +7,6 @@ import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/ut
 import { describeSearch } from './search'
 
 const GALAXY_SUBMISSION_POLL_FREQUENCY_MS = 5000
-const ALERT_AUTO_HIDE_MS = 3000
 
 export const {
   submitToGalaxyStarted,
@@ -193,7 +192,6 @@ export default handleActions(
         }
       },
       throw: (state, action) => {
-        const lastSubmission = last(state.submissions)
         return {
           ...state,
           submissions: changeElementAtIndex(state.submissions, state.submissions.length - 1, submission => ({

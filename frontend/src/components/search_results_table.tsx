@@ -1,9 +1,6 @@
 import { capitalize, concat, drop, first, get as _get, isEmpty, join, map, reject } from 'lodash'
 import * as React from 'react'
 
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
-
 import ReactTable from 'react-table'
 import 'react-table/react-table.css'
 
@@ -15,7 +12,7 @@ export class SearchResultsTable extends React.Component<any> {
       sortable: true,
       Cell: row => (
         <div>
-          <a href={bpaIDToCKANURL(row.value)} target="_blank">
+          <a href={bpaIDToCKANURL(row.value)} target="_blank" rel="noopener noreferrer">
             {row.value}
           </a>
         </div>

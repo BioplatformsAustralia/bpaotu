@@ -2,7 +2,7 @@ import { get as _get, isEmpty, map, reject } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
 
 import { executeContextualSearch } from '../../../api'
-import { ErrorList, taxonomies } from '../../../pages/search_page/reducers/types'
+import { ErrorList } from '../../../pages/search_page/reducers/types'
 import { EmptyOTUQuery } from '../../../search'
 
 export const { changeTableProperties, searchStarted, searchEnded } = createActions({

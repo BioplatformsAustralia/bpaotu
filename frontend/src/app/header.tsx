@@ -2,7 +2,7 @@ import { join } from 'lodash'
 import * as React from 'react'
 import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap'
 
-import { Link, NavLink as RRNavLink } from 'react-router-dom'
+import { NavLink as RRNavLink } from 'react-router-dom'
 import Octicon from '../components/octicon'
 
 export default class Header extends React.Component<any, any> {

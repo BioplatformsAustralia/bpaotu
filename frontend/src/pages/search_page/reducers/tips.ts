@@ -1,10 +1,6 @@
-import { get as _get, isNumber, join, last, reject } from 'lodash'
-import { executeSubmitToGalaxy, executeWorkflowOnGalaxy, getGalaxySubmission } from '../../../api'
-import { ErrorList, GalaxySubmission, searchPageInitialState } from './types'
+import { searchPageInitialState } from './types'
 
 import { createActions, handleActions } from 'redux-actions'
-import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils'
-import { describeSearch } from './search'
 
 export const {
   showPhinchTipAction,
@@ -15,14 +11,10 @@ export const {
 )
 
 export const showPhinchTip = () => (dispatch, getState) => {
-  const state = getState()
-
   dispatch(showPhinchTipAction())
 }
 
 export const clearTips = () => (dispatch, getState) => {
-  const state = getState()
-
   dispatch(clearTipsAction())
 }
 
