@@ -338,7 +338,7 @@ def nondenoised_request(request):
     send_mail(
         "[AMI] Non-denoised data request",
         NONDENOISED_EMAIL_TEMPLATE.format(**format_obj),
-        "Bioplatforms Helpdesk <help@bioplatforms.com>", [settings.NONDENOISED_REQUEST_EMAIL])
+        "Australian Microbiome Data Requests <am-data-requests@bioplatforms.com>", [settings.NONDENOISED_REQUEST_EMAIL])
     return JsonResponse({'okay': True})
 
 
