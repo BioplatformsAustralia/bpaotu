@@ -24,8 +24,8 @@ class Command(BaseCommand):
         'family',
         'genus',
         'species',
-        'Sample',
-        'Abundance',
+        'sample',
+        'abundance',
         'amplicon']
 
     def add_arguments(self, parser):
@@ -39,7 +39,7 @@ class Command(BaseCommand):
         with open(in_file) as fd:
             reader = csv.reader(fd, dialect='excel-tab')
             header = next(reader)
-            assert(header == self.METAXA_HEADER)
+            assert([t.lower() for t in header] == self.METAXA_HEADER)
             yield from reader
 
     def generate_otu(self, taxonomy):

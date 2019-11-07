@@ -308,6 +308,7 @@ class SampleContext(SchemaMixin, Base):
     pyrophytin_a = Column(Float)
     salinity_ctd = Column(Float)
     salinity_lab = Column(Float)
+    sample_storage_method = Column(CIText)
     samplename_depth = Column(CIText)
     sample_site = Column(CIText)
     sand = Column(Float)

@@ -310,6 +310,13 @@ def required_table_headers(request):
     return otu_search(request, contextual_filtering=False)
 
 
+ACKNOWLEDGEMENT_EMAIL_TEMPLATE = """\
+Your request for non-denoised data from the Australian Microbiome has been received.
+
+We will be in touch once the data is available, or if we require further information.
+"""
+
+
 NONDENOISED_EMAIL_TEMPLATE = """\
 A request for non-denoised data has been received.
 
@@ -335,6 +342,10 @@ def nondenoised_request(request):
     }
     format_obj['email'] = request.ckan_data.get('email')
     format_obj['selected_samples'] = '\n'.join(json.loads(request.POST.get('selected_samples', '[]')))
+    send_mail(
+        "Australian Microbiome: Data request received",
+        ACKNOWLEDGEMENT_EMAIL_TEMPLATE.format(**format_obj),
+        "Australian Microbiome Data Requests <am-data-requests@bioplatforms.com>", [format_obj['email']])
     send_mail(
         "[AMI] Non-denoised data request",
         NONDENOISED_EMAIL_TEMPLATE.format(**format_obj),
