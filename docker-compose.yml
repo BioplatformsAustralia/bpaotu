@@ -1,29 +1,31 @@
-version: '2'
+version: '3'
+
 services:
-
-    datadev:
-      extends:
-        file: docker-compose-common.yml
-        service: datadev
-
     db:
-      extends:
-        file: docker-compose-common.yml
-        service: db
-      volumes_from:
-        - datadev
+      image: mdillon/postgis:10
+      environment:
+        - POSTGRES_USER=webapp
+        - POSTGRES_PASSWORD=webapp
+      ports:
+        - "5432"
+      volumes:
+        - .:/app
+        - ./data/dev:/data
+        - dbdata:/var/lib/postgresql/data/
 
     cache:
-      extends:
-        file: docker-compose-common.yml
-        service: cache
+      image: redis:3-alpine
 
     runserver:
-      extends:
-        file: docker-compose-common.yml
-        service: runserver
-      volumes_from:
-        - datadev
+      image: bioplatformsaustralia/bpaotu-dev
+      env_file:
+        - .env_local
+      environment:
+        - WAIT_FOR_DB=1
+        - WAIT_FOR_CACHE=1
+      volumes:
+        - .:/app
+        - ./data/dev:/data
       ports:
           - "8000:8000"
       depends_on:
@@ -35,11 +37,16 @@ services:
             - web
 
     celeryworker:
-      extends:
-        file: docker-compose-common.yml
-        service: celeryworker
-      volumes_from:
-        - datadev
+      image: bioplatformsaustralia/bpaotu-dev
+      command: celery_worker
+      env_file:
+        - .env_local
+      environment:
+        - WAIT_FOR_DB=1
+        - WAIT_FOR_CACHE=1
       depends_on:
         - db
         - cache
+
+volumes:
+  dbdata:
