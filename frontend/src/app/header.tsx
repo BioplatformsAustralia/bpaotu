@@ -22,11 +22,11 @@ export default class Header extends React.Component<any, any> {
   }
 
   public render() {
-    const logoPNG = window.otu_search_config.static_base_url + join(['bpa-logos', 'bpalogo_withdataportal.png'], '/')
+    const logoPNG = window.otu_search_config.static_base_url + join(['bpa-logos', 'BIO-RGB_Full-POS_Portal.png'], '/')
     return (
       <Navbar color="light" light={true} expand="lg">
         <NavbarBrand className="site-header-logo" href="/">
-          <img src={logoPNG} alt="Bioplatform Australia" />
+          <img className="logo" src={logoPNG} alt="Bioplatform Australia" />
         </NavbarBrand>
         <NavbarToggler onClick={this.toggle} />
         <Collapse isOpen={this.state.isOpen} navbar={true}>
