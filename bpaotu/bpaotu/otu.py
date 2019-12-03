@@ -33,8 +33,8 @@ class OntologyMixin(SchemaMixin):
         return 'ontology_' + name.lower()
 
     @declared_attr
-    def __tablename__(cls):  # noqa: N805
-        return cls.make_tablename(cls.__name__)
+    def __tablename__(self):
+        return self.make_tablename(self.__name__)
 
     def __repr__(self):
         return "<%s(%s)>" % (type(self).__name__, self.value)
