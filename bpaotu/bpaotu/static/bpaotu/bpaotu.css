@@ -18,6 +18,11 @@ body {
     padding-left: 2em;
 }
 
+.site-header-logo .logo {
+    height: auto;
+    width: 500px;
+}
+
 .site-header-user {
     padding-right: 2em;
 }
@@ -148,7 +153,11 @@ body {
     margin-bottom: 4px;
 }
 
-.card-footer  .btn {
+.card-footer .btn {
     margin-left: 12px;
     margin-right: 12px;
+}
+
+.footer-logos {
+    max-width: 150px;
 }
