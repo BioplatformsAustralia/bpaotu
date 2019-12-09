@@ -82,6 +82,32 @@ and development. Appropiate configuration files are available depending on usage
 Note that for data ingestion to work you need passwords to the hosted data, these are available from BPA on request.
 Set passwords in your environment, these will be passed to the container.
 
+The steps to follow are basically those, above, for:
+* Quick Setup
+* Input Data
+But in summary:
+
+* Build images, source environment file (from one of the developers), and bring up containers
+```
+./develop.sh build base builder dev
+source  </path/to/your/bpa.env>
+docker-compose up -d
+```
+* Build frontend and launch browser window to portal
+```
+cd frontend
+yarn install
+yarn start
+```
+* Get (data file from 1 of developers), unarchive and copy data to ./data/dev, and ingest data using today's date:
+```
+cd ./data/dev
+tar -xvzf </path/to/dataarchive.tar.gz> ./
+docker-compose exec runserver bash
+/app/docker-entrypoint.sh django-admin otu_ingest /data/2019-02 2019-08-12
+```
+NB: In example above, today's data is: 2019-08-12
+
 ## Deployments
 
 [Bioplatforms Australia - Australian Microbiome Search Facility](https://data.bioplatforms.com/bpa/otu/)
