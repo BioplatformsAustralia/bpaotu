@@ -597,7 +597,7 @@ def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
     missing = {}
     for obj in ImportSamplesMissingMetadataLog.objects.all():
-        missing[obj.reason] = obj.samples
+        missing[obj.reason] = sorted(obj.samples)
     import_meta = ImportMetadata.objects.get()
     context = {
         'ckan_base_url': settings.CKAN_SERVER['base_url'],
