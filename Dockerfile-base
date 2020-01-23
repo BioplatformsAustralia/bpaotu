@@ -1,7 +1,6 @@
 FROM python:3.7-slim
 LABEL maintainer https://github.com/BioplatformsAustralia/bpaotu
 
-ENV PIP_NO_CACHE_DIR="off"
 ENV VIRTUAL_ENV /env
 ENV PATH $VIRTUAL_ENV/bin:$PATH
 ENV PROJECT_NAME bpaotu

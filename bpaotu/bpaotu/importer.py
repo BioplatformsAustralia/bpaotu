@@ -425,24 +425,24 @@ class DataImporter:
         present_sample_ids = set([t[0] for t in self._session.query(SampleContext.id)])
 
         for amplicon_code, sampleotu_fname in self.amplicon_files('*.txt.gz'):
-            def l(msg):
+            def log_amplicon(msg):
                 logger.warning('[{}] {}'.format(amplicon_code, msg))
             try:
-                l("reading from: {}".format(sampleotu_fname))
+                log_amplicon("reading from: {}".format(sampleotu_fname))
                 with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
                     fname = temp_fd.name
                     os.chmod(fname, 0o644)
-                    l("writing out OTU abundance data to CSV tempfile: {}".format(fname))
+                    log_amplicon("writing out OTU abundance data to CSV tempfile: {}".format(fname))
                     w = csv.writer(temp_fd)
                     w.writerow(['sample_id', 'otu_id', 'count'])
                     w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
-                l("loading OTU abundance data into database")
+                log_amplicon("loading OTU abundance data into database")
                 try:
                     self._engine.execute(
                         text('''COPY otu.sample_otu from :csv CSV header''').execution_options(autocommit=True),
                         csv=fname)
                 except:  # noqa
-                    l("unable to import {}".format(sampleotu_fname))
+                    log_amplicon("unable to import {}".format(sampleotu_fname))
                     traceback.print_exc()
             finally:
                 os.unlink(fname)

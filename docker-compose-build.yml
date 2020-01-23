@@ -21,9 +21,6 @@ services:
     environment:
         BUILD_VERSION:
         GIT_BRANCH:
-        PIP_INDEX_URL:
-        PIP_TRUSTED_HOST:
-        NO_PROXY:
     volumes:
       - ./build:/data
 
@@ -32,8 +29,6 @@ services:
       context: ./
       dockerfile: Dockerfile-dev
       args:
-        ARG_PIP_INDEX_URL: ${PIP_INDEX_URL}
-        ARG_PIP_TRUSTED_HOST: ${PIP_TRUSTED_HOST}
         http_proxy:
     image: bioplatformsaustralia/bpaotu-dev
     volumes:
