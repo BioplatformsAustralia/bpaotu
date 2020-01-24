@@ -1,15 +1,14 @@
 import datetime
 from functools import partial
 from itertools import chain
-from .util import make_cache_key
 import logging
 
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker, aliased
 
 from django.core.cache import caches
+from hashlib import sha256
 
-from .models import ImportMetadata
 from .otu import (
     Environment,
     OTU,
@@ -23,6 +22,10 @@ from .otu import (
     OTUSpecies,
     SampleContext,
     SampleOTU,
+    ImportMetadata,
+    ImportedFile,
+    ExcludedSamples,
+    OntologyErrors,
     make_engine)
 
 
@@ -33,6 +36,25 @@ Session = sessionmaker(bind=engine)
 
 CACHE_FOREVER = None
 CACHE_7DAYS = (60 * 60 * 24 * 7)
+
+
+__METADATA_UUID = None  # cache
+
+def make_cache_key(*args):
+    """
+    make a cache key, which will be tied to the UUID of the current import,
+    so we don't need to worry about old data being cached if we re-import
+
+    for this to work, repr() on each object passed in *args must return
+    something that is stable, and which completely represents the state of the
+    object for the cache
+    """
+    global __METADATA_UUID
+    if __METADATA_UUID is None:
+        with MetadataInfo() as info:
+            __METADATA_UUID = info.import_metadata().uuid
+    key = __METADATA_UUID + ':' + ':'.join(repr(t) for t in args)
+    return sha256(key.encode('utf8')).hexdigest()
 
 
 class OTUQueryParams:
@@ -90,7 +112,9 @@ class OTUQueryParams:
             return p
 
         def metadata_section():
-            metadata = ImportMetadata.objects.get()
+            session = Session()
+            metadata = session.query(ImportMetadata).one()
+            session.close()
             return [
                 'Australian Microbiome Database Metadata:',
                 indent + 'Dataset methodology={}'.format(metadata.methodology),
@@ -205,6 +229,29 @@ class TaxonomyOptions:
             'clear': clear
         }
         return result
+
+
+class MetadataInfo:
+    def __init__(self):
+        self._session = Session()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exec_type, exc_value, traceback):
+        self._session.close()
+
+    def import_metadata(self):
+        return self._session.query(ImportMetadata).one()
+
+    def file_logs(self):
+        return self._session.query(ImportedFile).all()
+
+    def excluded_samples(self):
+        return self._session.query(ExcludedSamples).all()
+
+    def ontology_errors(self):
+        return self._session.query(OntologyErrors).all()
 
 
 class OntologyInfo:

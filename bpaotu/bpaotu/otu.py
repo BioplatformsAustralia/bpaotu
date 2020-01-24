@@ -1,12 +1,13 @@
-import os
 import logging
-from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy import Column, Integer, ForeignKey, String, Date, Float
-from django.conf import settings
-from sqlalchemy import create_engine
-from sqlalchemy.orm import relationship
-from citext import CIText
+import os
 
+from citext import CIText
+from django.conf import settings
+from sqlalchemy import (ARRAY, Column, Date, Float, ForeignKey, Integer,
+                        String, create_engine)
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy.orm import relationship
 
 logger = logging.getLogger("rainbow")
 Base = declarative_base()
@@ -379,6 +380,46 @@ class SampleOTU(SchemaMixin, Base):
 
     def __repr__(self):
         return "<SampleOTU(%d,%d,%d)>" % (self.sample_id, self.otu_id, self.count)
+
+
+class OntologyErrors(SchemaMixin, Base):
+    __tablename__ = 'ontology_errors'
+    id = Column(Integer, primary_key=True)
+    environment = Column(String)
+    ontology_name = Column(String)
+    invalid_values = Column(ARRAY(String))
+
+    def __str__(self):
+        return self.ontology_name
+
+
+class ExcludedSamples(SchemaMixin, Base):
+    __tablename__ = 'excluded_samples'
+    id = Column(Integer, primary_key=True)
+    reason = Column(String)
+    samples = Column(ARRAY(String))
+
+
+class ImportMetadata(SchemaMixin, Base):
+    __tablename__ = 'import_metadata'
+    id = Column(Integer, primary_key=True)
+    methodology = Column(String)
+    revision_date = Column(Date)
+    imported_at = Column(Date)
+    otu_count = Column(postgresql.BIGINT)
+    sampleotu_count = Column(postgresql.BIGINT)
+    samplecontext_count = Column(postgresql.BIGINT)
+    uuid = Column(String)
+
+
+class ImportedFile(SchemaMixin, Base):
+    __tablename__ = 'imported_file'
+    id = Column(Integer, primary_key=True)
+    filename = Column(String)
+    file_type = Column(String)
+    file_size = Column(postgresql.BIGINT)
+    rows_imported = Column(postgresql.BIGINT)
+    rows_skipped = Column(postgresql.BIGINT)
 
 
 def make_engine():

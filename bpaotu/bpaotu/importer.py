@@ -3,31 +3,29 @@ import datetime
 import gzip
 import logging
 import os
+import re
 import tempfile
 import traceback
 import uuid
-import re
 from collections import OrderedDict, defaultdict
 from glob import glob
 from hashlib import md5
 from itertools import zip_longest
 
 import sqlalchemy
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.schema import CreateSchema, DropSchema
-from sqlalchemy.sql.expression import text
-
 from bpaingest.metadata import DownloadMetadata
 from bpaingest.projects.amdb.contextual import \
     AustralianMicrobiomeSampleContextual
 from bpaingest.projects.amdb.ingest import AccessAMDContextualMetadata
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.schema import CreateSchema, DropSchema
+from sqlalchemy.sql.expression import text
 
-from .models import (ImportFileLog, ImportMetadata, ImportOntologyLog,
-                     ImportSamplesMissingMetadataLog)
-from .otu import (OTU, SCHEMA, Base, Environment, OTUAmplicon, OTUClass,
-                  OTUFamily, OTUGenus, OTUKingdom, OTUOrder, OTUPhylum,
-                  OTUSpecies, SampleAustralianSoilClassification, SampleColor,
-                  SampleContext, SampleEcologicalZone,
+from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
+                  ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon,
+                  OTUClass, OTUFamily, OTUGenus, OTUKingdom, OTUOrder,
+                  OTUPhylum, OTUSpecies, SampleAustralianSoilClassification,
+                  SampleColor, SampleContext, SampleEcologicalZone,
                   SampleFAOSoilClassification, SampleHorizonClassification,
                   SampleLandUse, SampleOTU, SampleProfilePosition,
                   SampleStorageMethod, SampleTillage, SampleType,
@@ -79,7 +77,6 @@ class DataImporter:
 
     def __init__(self, import_base, revision_date):
         self.amplicon_code_names = {}  # mapping from dirname to amplicon ontology
-        self._clear_import_log()
         self._engine = make_engine()
         self._create_extensions()
         self._session = sessionmaker(bind=self._engine)()
@@ -123,9 +120,11 @@ class DataImporter:
 
     def complete(self):
         def write_missing(attr):
-            ImportSamplesMissingMetadataLog(
+            instance = ExcludedSamples(
                 reason=attr,
-                samples=list(getattr(self, attr))).save()
+                samples=list(getattr(self, attr)))
+            self._session.add(instance)
+            self._session.commit()
 
         write_missing("sample_metadata_incomplete")
         write_missing("sample_non_integer")
@@ -135,21 +134,15 @@ class DataImporter:
         self._analyze()
 
     def _write_metadata(self):
-        ImportMetadata.objects.all().delete()
-        meta = ImportMetadata(
+        self._session.add(ImportMetadata(
             methodology='v1',
             revision_date=datetime.datetime.strptime(self._revision_date, "%Y-%m-%d").date(),
             imported_at=datetime.date.today(),
             uuid=str(uuid.uuid4()),
             sampleotu_count=self._session.query(SampleOTU).count(),
             samplecontext_count=self._session.query(SampleContext).count(),
-            otu_count=self._session.query(OTU).count())
-        meta.save()
-
-    def _clear_import_log(self):
-        logger.info("Clearing import log")
-        for log_cls in (ImportSamplesMissingMetadataLog, ImportFileLog, ImportOntologyLog):
-            log_cls.objects.all().delete()
+            otu_count=self._session.query(OTU).count()))
+        self._session.commit()
 
     def _create_extensions(self):
         extensions = ('citext',)
@@ -233,6 +226,14 @@ class DataImporter:
             amplicon = fname.split('/')[-2]
             yield amplicon, fname
 
+    def make_file_log(self, filename, **attrs):
+        attrs['file_size'] = os.stat(filename).st_size
+        attrs['filename'] = os.path.basename(filename)
+        instance = ImportedFile(
+            **attrs)
+        self._session.add(instance)
+        self._session.commit()
+
     def load_taxonomies(self):
         # md5(otu code) -> otu ID, returned
 
@@ -281,7 +282,7 @@ class DataImporter:
                         obj.update(zip(taxo_header, row[1:-1]))
                         yield obj
                 self.amplicon_code_names[amplicon_code.lower()] = amplicon
-                ImportFileLog.make_file_log(fname, file_type='Taxonomy', rows_imported=idx + 1, rows_skipped=0)
+                self.make_file_log(fname, file_type='Taxonomy', rows_imported=idx + 1, rows_skipped=0)
 
         logger.warning("loading taxonomies - pass 1, defining ontologies")
         mappings = self._load_ontology(ontologies, _taxon_rows_iter())
@@ -316,11 +317,12 @@ class DataImporter:
         if environment_ontology_errors is None:
             return
         for (environment, ontology_name), invalid_values in environment_ontology_errors.items():
-            log = ImportOntologyLog(
+            log = OntologyErrors(
                 environment=environment,
                 ontology_name=ontology_name,
                 invalid_values=sorted(invalid_values))
-            log.save()
+            self._session.add(log)
+        self._session.commit()
 
     def contextual_rows(self, ingest_cls, name):
         # flatten contextual metadata into dicts
@@ -417,7 +419,7 @@ class DataImporter:
                         rows_skipped += 1
                         continue
                     yield (sample_id, otu_id, count)
-                ImportFileLog.make_file_log(
+                self.make_file_log(
                     fname, file_type='Abundance', rows_imported=entry, rows_skipped=rows_skipped)
 
         logger.warning('Loading OTU abundance tables')

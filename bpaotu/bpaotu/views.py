@@ -1,63 +1,43 @@
-from collections import defaultdict, OrderedDict
 import csv
-from functools import wraps
 import hmac
 import io
 import json
 import logging
-from operator import itemgetter
 import os
 import re
 import time
+from collections import OrderedDict, defaultdict
+from functools import wraps
+from operator import itemgetter
 
-from django.core.mail import send_mail
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.cache import cache_page
+from bpaingest.projects.amdb.contextual import \
+    AustralianMicrobiomeSampleContextual
 from django.conf import settings
+from django.core.mail import send_mail
+from django.http import (Http404, HttpResponse, JsonResponse,
+                         StreamingHttpResponse)
+from django.template import loader
 from django.urls import reverse
+from django.views.decorators.cache import cache_page
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
-from django.http import JsonResponse, StreamingHttpResponse, Http404, HttpResponse
-from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
+from . import tasks
+from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .importer import DataImporter
+from .models import NonDenoisedDataRequest
+from .otu import Environment, OTUAmplicon, SampleContext
+from .query import (ContextualFilter, ContextualFilterTermDate,
+                    ContextualFilterTermFloat, ContextualFilterTermOntology,
+                    ContextualFilterTermSampleID, ContextualFilterTermString,
+                    MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
+                    TaxonomyFilter, TaxonomyOptions, get_sample_ids)
+from .site_images import fetch_image, get_site_image_lookup_table
 from .spatial import spatial_query
-from .otu import (
-    Environment,
-    SampleContext,
-    OTUAmplicon)
-from .query import (
-    OTUQueryParams,
-    TaxonomyOptions,
-    OntologyInfo,
-    SampleQuery,
-    ContextualFilter,
-    ContextualFilterTermDate,
-    ContextualFilterTermFloat,
-    ContextualFilterTermOntology,
-    ContextualFilterTermSampleID,
-    ContextualFilterTermString,
-    TaxonomyFilter,
-    get_sample_ids)
-from django.template import loader
-from .models import (
-    ImportMetadata,
-    ImportFileLog,
-    ImportOntologyLog,
-    ImportSamplesMissingMetadataLog,
-    NonDenoisedDataRequest)
-from .util import (
-    make_timestamp,
-    parse_date,
-    parse_float)
-from .biom import biom_zip_file_generator
 from .tabular import tabular_zip_file_generator
-from . import tasks
-from .site_images import (
-    get_site_image_lookup_table,
-    fetch_image
-)
+from .util import make_timestamp, parse_date, parse_float
 
 logger = logging.getLogger("rainbow")
 
@@ -596,16 +576,17 @@ def blast_submission(request):
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
     missing = {}
-    for obj in ImportSamplesMissingMetadataLog.objects.all():
-        missing[obj.reason] = sorted(obj.samples)
-    import_meta = ImportMetadata.objects.get()
-    context = {
-        'ckan_base_url': settings.CKAN_SERVER['base_url'],
-        'files': ImportFileLog.objects.all(),
-        'ontology_errors': ImportOntologyLog.objects.all(),
-        'metadata': import_meta,
-    }
-    context.update(missing)
+    with MetadataInfo() as info:
+        for obj in info.excluded_samples():
+            missing[obj.reason] = sorted(obj.samples)
+        import_meta = info.import_metadata()
+        context = {
+            'ckan_base_url': settings.CKAN_SERVER['base_url'],
+            'files': sorted(info.file_logs(), key=lambda x: x.filename),
+            'ontology_errors': sorted(info.ontology_errors(), key=lambda x: x.ontology_name),
+            'metadata': import_meta,
+        }
+        context.update(missing)
     return HttpResponse(template.render(context, request))
 
 

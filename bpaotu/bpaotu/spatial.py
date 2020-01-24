@@ -4,12 +4,12 @@ from django.core.cache import caches
 from .query import (
     OntologyInfo,
     SampleQuery,
+    make_cache_key,
     CACHE_7DAYS)
 from .otu import (
     SampleContext)
 from .util import (
     format_sample_id,
-    make_cache_key,
     str_none_blank)
 import logging
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
