@@ -40,6 +40,7 @@ CACHE_7DAYS = (60 * 60 * 24 * 7)
 
 __METADATA_UUID = None  # cache
 
+
 def make_cache_key(*args):
     """
     make a cache key, which will be tied to the UUID of the current import,
