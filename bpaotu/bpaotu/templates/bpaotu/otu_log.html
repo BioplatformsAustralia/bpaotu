@@ -110,7 +110,7 @@
 
                 {% endfor %}
             </table>
-            <h2>Samples excluded: non-Bioplatforms Sample ID</h2>
+            <h2>Samples excluded: non-Bioplatforms Sample ID ({{ sample_non_integer | length }})</h2>
             
             <table>
                 <thead>
@@ -123,7 +123,7 @@
                 </td></tr>
             </table>
 
-            <h2>Samples excluded: metadata exists, but does not meet minimum standards</h2>
+            <h2>Samples excluded: metadata exists, but does not meet minimum standards ({{ sample_metadata_incomplete | length }})</h2>
             
             <table>
                 <thead>
@@ -136,7 +136,7 @@
                 </td></tr>
             </table>
 
-            <h2>Samples excluded: no metadata</h2>
+            <h2>Samples excluded: no metadata ({{ sample_not_in_metadata | length }})</h2>
             
             <table>
                 <thead>
