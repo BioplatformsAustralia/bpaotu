@@ -415,7 +415,7 @@ class ImportMetadata(SchemaMixin, Base):
 class ImportedFile(SchemaMixin, Base):
     __tablename__ = 'imported_file'
     id = Column(Integer, primary_key=True)
-    filename = Column(String)
+    filename = Column(String, unique=True)
     file_type = Column(String)
     file_size = Column(postgresql.BIGINT)
     rows_imported = Column(postgresql.BIGINT)

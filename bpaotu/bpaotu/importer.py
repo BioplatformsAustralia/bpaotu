@@ -252,6 +252,7 @@ class DataImporter:
             ('species', OTUSpecies),
             ('amplicon', OTUAmplicon),
         ])
+        taxonomy_file_info = {}
 
         def _taxon_rows_iter():
             code_re = re.compile(r'^[GATC]+')
@@ -282,7 +283,11 @@ class DataImporter:
                         obj.update(zip(taxo_header, row[1:-1]))
                         yield obj
                 self.amplicon_code_names[amplicon_code.lower()] = amplicon
-                self.make_file_log(fname, file_type='Taxonomy', rows_imported=idx + 1, rows_skipped=0)
+                taxonomy_file_info[fname] = {
+                    'file_type': 'Taxonomy',
+                    'rows_imported': idx + 1,
+                    'rows_skipped': 0
+                }
 
         logger.warning("loading taxonomies - pass 1, defining ontologies")
         mappings = self._load_ontology(ontologies, _taxon_rows_iter())
@@ -311,6 +316,8 @@ class DataImporter:
                 csv=fname)
         finally:
             os.unlink(fname)
+        for fname, info in taxonomy_file_info.items():
+            self.make_file_log(fname, **info)
         return otu_lookup
 
     def save_ontology_errors(self, environment_ontology_errors):
