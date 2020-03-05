@@ -134,9 +134,12 @@ class NonDenoisedPage extends React.Component<any> {
 }
 
 function mapStateToProps(state) {
+    // Note: metaxa is filtered out from this form. It would be nicer to have
+    // some higher-level description of relevant form fields.
     return {
         sample_ids: state.contextualDataDefinitions.sample_ids,
-        amplicons: state.referenceData.amplicons.values
+        amplicons: state.referenceData.amplicons.values.filter(
+            amplicon => amplicon.value !== "metaxa_from_metagenomes")
     }
 }
 
