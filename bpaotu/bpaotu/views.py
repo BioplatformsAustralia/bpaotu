@@ -295,6 +295,25 @@ ACKNOWLEDGEMENT_EMAIL_TEMPLATE = """\
 Your request for non-denoised data from the Australian Microbiome has been received.
 
 We will be in touch once the data is available, or if we require further information.
+
+The details of your request are provided below for your reference.
+
+User email: {email}
+
+Request ID:
+{id}
+
+Requested amplicon:
+{amplicon}
+
+Requested samples:
+{selected_samples}
+
+Match sequence:
+{match_sequence}
+
+Taxonomy string:
+{taxonomy_string}
 """
 
 
