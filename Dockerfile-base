@@ -14,6 +14,7 @@ ENV MEDIA_ROOT /data/static/media
 ENV LOG_DIRECTORY /data/log
 ENV MONGO_DB_PREFIX=prod_
 ENV DJANGO_SETTINGS_MODULE bpaotu.settings
+ENV PYTHONUNBUFFERED 1
 
 RUN python3 -m venv $VIRTUAL_ENV
 
