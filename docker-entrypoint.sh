@@ -239,7 +239,7 @@ if [ "$1" = 'celery_worker' ]; then
     info "[Run] Starting celery_worker"
 
     set -x
-    exec celery -A bpaotu worker -l info --uid 1000
+    exec celery -A bpaotu worker -l info
 fi
 
 
