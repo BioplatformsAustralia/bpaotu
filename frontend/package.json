@@ -22,7 +22,7 @@
     "leaflet": "1.5.1",
     "leaflet-minimap": "3.6.1",
     "leaflet.markercluster": "1.4.1",
-    "lodash": "4.17.15",
+    "lodash": "4.17.19",
     "octicons": "8.5.0",
     "popper.js": "1.15.0",
     "react": "16.9.0",
