@@ -4,6 +4,8 @@ from itertools import chain
 import logging
 
 import sqlalchemy
+from sqlalchemy import func
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import sessionmaker, aliased
 
 from django.core.cache import caches
@@ -397,6 +399,17 @@ class SampleQuery:
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
         # it can be iterated over
+        return q
+
+    def matching_sample_otus_abundance(self, *args, kingdom_id=None):
+        q = self._session.query(*args, func.sum(SampleOTU.count)) \
+            .filter(OTU.id == SampleOTU.otu_id) \
+            .filter(SampleContext.id == SampleOTU.sample_id) \
+            .group_by(SampleContext.latitude, SampleContext.longitude)
+        q = self._taxonomy_filter.apply(q)
+        q = self._contextual_filter.apply(q)
+        if kingdom_id is not None:
+            q = q.filter(OTU.kingdom_id == kingdom_id)
         return q
 
     def _build_taxonomy_subquery(self):

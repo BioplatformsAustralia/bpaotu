@@ -33,6 +33,7 @@ export default handleActions(
       isLoading: false,
       samples: map(action.payload.data.data, sample => ({
         bpadata: sample.bpa_data,
+        abundance: sample.sample_otus_abundance,
         lat: sample.latitude,
         lng: sample.longitude,
         site_images: sample.site_images

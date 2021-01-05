@@ -4,9 +4,10 @@ import { Col, Nav, NavItem, NavLink, Row, TabContent, TabPane } from 'reactstrap
 
 import * as L from 'leaflet'
 import * as MiniMap from 'leaflet-minimap'
-import { Map, Marker, Popup, TileLayer } from 'react-leaflet'
+import { Map, Marker, Popup, TileLayer, LayersControl } from 'react-leaflet'
 import FullscreenControl from 'react-leaflet-fullscreen'
 import MarkerClusterGroup from 'react-leaflet-markercluster'
+import HeatmapLayer from 'react-leaflet-heatmap-layer'
 
 /*
 Unfortunately, react-leaflet fails to load markers if the css isn't included in the html file, so
@@ -29,7 +30,7 @@ const MapInitialViewport = {
 const ArcGIS = {
   url: '//server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
   attribution:
-    '&amp;copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    '&copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
 }
 
 // tslint:disable-next-line:max-classes-per-file
@@ -127,6 +128,14 @@ export default class SamplesMap extends React.Component<any> {
 
   public render() {
     const position: [number, number] = [this.state.lat, this.state.lng]
+    const samplePoints = []
+    for (var x of this.props.markers){
+      var abundance = 0.0;
+      if (typeof(x['abundance']) !== "undefined" && x['abundance'])
+        abundance = x['abundance']; 
+      // console.log(x['lat'], x['lng'], "abud:", abundance)
+      samplePoints.push([x['lat'], x['lng'], abundance]);
+    }
 
     return (
       <div style={{ height: '100%' }}>
@@ -142,19 +151,35 @@ export default class SamplesMap extends React.Component<any> {
           }}
         >
           <FullscreenControl position="topright" />
-          <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
-          <MarkerClusterGroup>
-            {this.props.markers.map((marker, index) => (
-              <Marker key={`marker-${index}`} position={marker}>
-                  <Popup minWidth={640} maxHeight={480}>
-                  <div>
-                      <BPAImages siteImages={marker.site_images} />
-                      <BPASamples bpadata={marker.bpadata} />
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MarkerClusterGroup>
+          <LayersControl>
+              <LayersControl.BaseLayer name="Base" checked>
+                <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
+              </LayersControl.BaseLayer>
+              <LayersControl.Overlay name="Sites" checked>
+                <MarkerClusterGroup>
+                  {this.props.markers.map((marker, index) => (
+                    <Marker key={`marker-${index}`} position={marker}>
+                        <Popup minWidth={640} maxHeight={480}>
+                        <div>
+                            <BPAImages siteImages={marker.site_images} />
+                            <BPASamples bpadata={marker.bpadata} />
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MarkerClusterGroup>
+            </LayersControl.Overlay>
+            <LayersControl.Overlay name="Heatmap" checked>
+              <HeatmapLayer
+                fitBoundsOnLoad
+                fitBoundsOnUpdate
+                points={samplePoints}
+                longitudeExtractor={m => m[1]}
+                latitudeExtractor={m => m[0]}
+                intensityExtractor={m => parseFloat(m[2])}
+              />
+            </LayersControl.Overlay>
+          </LayersControl>
         </Map>
       </div>
     )
