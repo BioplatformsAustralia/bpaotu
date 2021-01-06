@@ -3,7 +3,6 @@ from collections import defaultdict
 from django.core.cache import caches
 from .query import (
     OntologyInfo,
-    SampleOTU,
     log_query,
     SampleQuery,
     make_cache_key,
@@ -67,7 +66,7 @@ def _spatial_query(params):
 
         with SampleQuery(params) as query:
             sample_otus = {}
-            abundance_tbl = sample_otus_abundance_tbl(query)                    
+            abundance_tbl = sample_otus_abundance_tbl(query)
             for sample_otu in abundance_tbl:
                 key = f"{sample_otu[1]}-{sample_otu[0]}"
                 sample_otus[key] = sample_otu[2]
@@ -79,7 +78,7 @@ def _spatial_query(params):
             latlng['longitude'] = _corrected_longitude(sample.longitude)
             latlng['sample_otus_abundance'] = sample_otus.get(f"{sample.latitude}-{sample.longitude}")
             latlng['bpa_data'][sample.id] = samples_contextual_data(sample)
-            
+
     return list(result.values())
 
 

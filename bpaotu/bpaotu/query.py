@@ -5,7 +5,6 @@ import logging
 
 import sqlalchemy
 from sqlalchemy import func
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import sessionmaker, aliased
 
 from django.core.cache import caches
