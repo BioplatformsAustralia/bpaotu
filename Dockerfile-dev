@@ -26,13 +26,24 @@ COPY ./requirements/runtime-requirements.txt /app/bpaotu/
 RUN pip install --upgrade -r bpaotu/runtime-requirements.txt
 COPY ./requirements/biom-requirements.txt /app/bpaotu/
 RUN pip install --upgrade -r bpaotu/biom-requirements.txt
-COPY ./bpa-ingest/requirements.txt /app/bpaotu/bpaingest-requirements.txt
-RUN pip install --upgrade -r bpaotu/bpaingest-requirements.txt
+# COPY ./bpa-ingest/requirements.txt /app/bpaotu/bpaingest-requirements.txt
+# RUN pip install --upgrade -r bpaotu/bpaingest-requirements.txt
 
 # Copy code and install the app
 COPY . /app
 RUN pip ${PIP_OPTS} install --upgrade -e bpaotu
-RUN pip ${PIP_OPTS} install --upgrade -e bpa-ingest
+# RUN pip ${PIP_OPTS} install --upgrade -e bpa-ingest
+WORKDIR /app/bpa-ingest
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir poetry \
+ && poetry config virtualenvs.create false \
+ && poetry build --format sdist \
+ && tar -xvf dist/*-`poetry version -s`.tar.gz \
+    -O bpaingest-`poetry version -s`/setup.py > setup.py \
+ && mv pyproject.toml pyproject.toml.bkup \
+ && pip ${PIP_OPTS} install --upgrade -e . \
+ && mv pyproject.toml.bkup pyproject.toml \
+ && pip uninstall --yes poetry
 
 EXPOSE 8000 9000 9001 9100 9101
 VOLUME ["/app", "/data"]
