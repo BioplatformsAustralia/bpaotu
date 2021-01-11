@@ -259,7 +259,7 @@ class DataImporter:
                     'exc_potassium',
                     'exc_sodium',
                     'boron_hot_cacl2'
-                    ]
+                ]
                 environment = "Soil" if field_name in hardcoded_soil_fields else 'Marine'
                 if environment == 'Soil':
                     soil_fields.add(field_name)
