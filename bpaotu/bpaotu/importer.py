@@ -14,8 +14,8 @@ from itertools import zip_longest
 
 import sqlalchemy
 from bpaingest.metadata import DownloadMetadata
-from bpaingest.projects.amdb.contextual import \
-    AustralianMicrobiomeSampleContextual
+from bpaingest.projects.amdb.sqlite_contextual import \
+    AustralianMicrobiomeSampleContextualSQLite
 from bpaingest.projects.amdb.ingest import AccessAMDContextualMetadata
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema, DropSchema
@@ -61,18 +61,18 @@ class DataImporter:
     amd_ontologies = OrderedDict([
         ('environment', Environment),
         ('sample_type', SampleType),
-        ('horizon_classification', SampleHorizonClassification),
-        ('soil_sample_storage_method', SampleStorageMethod),
-        ('broad_land_use', SampleLandUse),
-        ('detailed_land_use', SampleLandUse),
-        ('general_ecological_zone', SampleEcologicalZone),
+        ('horizon_control_vocab_1', SampleHorizonClassification),
+        ('sample_storage_method', SampleStorageMethod),
+        ('broad_land_use_major_head_control_vocab_2', SampleLandUse),
+        ('detailed_land_use_sub_head_control_vocab_2', SampleLandUse),
+        ('general_env_feature_control_vocab_3', SampleEcologicalZone),
         ('vegetation_type', SampleVegetationType),
-        ('profile_position', SampleProfilePosition),
-        ('australian_soil_classification', SampleAustralianSoilClassification),
-        ('fao_soil_classification', SampleFAOSoilClassification),
-        ('immediate_previous_land_use', SampleLandUse),
-        ('tillage', SampleTillage),
-        ('color', SampleColor),
+        ('profile_position_control_vocab_5', SampleProfilePosition),
+        ('australian_soil_classification_control_vocab_6', SampleAustralianSoilClassification),
+        ('fao_soil_classification_control_vocab_7', SampleFAOSoilClassification),
+        ('immediate_previous_land_use_control_vocab_2', SampleLandUse),
+        ('tillage_control_vocab_9', SampleTillage),
+        ('color_control_vocab_10', SampleColor),
     ])
 
     def __init__(self, import_base, revision_date):
@@ -202,14 +202,65 @@ class DataImporter:
 
         soil_fields = set()
         marine_fields = set()
-        for sheet_name, fields in AustralianMicrobiomeSampleContextual.field_specs.items():
-            environment = AustralianMicrobiomeSampleContextual.environment_for_sheet(sheet_name)
+        for sheet_name, fields in AustralianMicrobiomeSampleContextualSQLite.field_specs.items():
+            environment = AustralianMicrobiomeSampleContextualSQLite.environment_for_sheet(sheet_name)
             for field_info in fields:
                 field_name = field_info[0]
                 if field_name in DataImporter.amd_ontologies:
                     field_name += '_id'
                 elif field_name == 'sample_id':
                     field_name = 'id'
+                # TODO: Remove hardcoded soil fields
+                # Hardcoded Soil fields
+                hardcoded_soil_fields = [
+                    'id',
+                    'utc_date_sampled',
+                    'utc_time_sampled',
+                    'latitude',
+                    'longitude',
+                    'depth_lower',
+                    'depth_upper',
+                    'sample_storage_method_id',
+                    'geo_loc_country_subregion',
+                    'sample_site_location_description',
+                    'broad_land_use_major_head_control_vocab_2_id',
+                    'detailed_land_use_sub_head_control_vocab_2_id',
+                    'general_env_feature_control_vocab_3_id',
+                    'vegetation_type_id',
+                    'elevation',
+                    'slope',
+                    'slope_aspect_direction_or_degrees',
+                    'australian_soil_classification_control_vocab_6_id',
+                    'soil_moisture',
+                    'color_control_vocab_10_id',
+                    'gravel',
+                    'texture',
+                    'course_sand',
+                    'fine_sand',
+                    'sand',
+                    'silt',
+                    'clay',
+                    'ammonium_nitrogen',
+                    'nitrate_nitrogen',
+                    'phosphorus_colwell',
+                    'potassium_colwell',
+                    'sulphur',
+                    'organic_carbon',
+                    'conductivity_ds_per_m',
+                    'ph_solid_cacl2',
+                    'ph_solid_h2o',
+                    'dtpa_copper',
+                    'dtpa_iron',
+                    'dtpa_manganese',
+                    'dtpa_zinc',
+                    'exc_aluminium',
+                    'exc_calcium',
+                    'exc_magnesium',
+                    'exc_potassium',
+                    'exc_sodium',
+                    'boron_hot_cacl2'
+                    ]
+                environment = "Soil" if field_name in hardcoded_soil_fields else 'Marine'
                 if environment == 'Soil':
                     soil_fields.add(field_name)
                 else:
@@ -334,7 +385,7 @@ class DataImporter:
     def contextual_rows(self, ingest_cls, name):
         # flatten contextual metadata into dicts
         metadata = defaultdict(dict)
-        with DownloadMetadata(ingest_cls, path='/data/{}/'.format(name)) as dlmeta:
+        with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name), has_sql_context=True) as dlmeta:
             for contextual_source in dlmeta.meta.contextual_metadata:
                 self.save_ontology_errors(
                     getattr(contextual_source, "environment_ontology_errors", None))
@@ -343,8 +394,8 @@ class DataImporter:
                     metadata[sample_id].update(contextual_source.get(sample_id))
 
         def has_minimum_metadata(row):
-            return 'latitude' in row and 'longitude' in row \
-                and isinstance(row['latitude'], float) and isinstance(row['longitude'], float)
+            return 'latitude_decimal_degrees' in row and 'longitude_decimal_degrees' in row \
+                and isinstance(row['latitude_decimal_degrees'], float) and isinstance(row['longitude_decimal_degrees'], float)
 
         rows = []
         for entry in metadata.values():
@@ -368,8 +419,18 @@ class DataImporter:
                     continue
                 attrs[field + '_id'] = mappings[field][row[field]]
             for field, value in row.items():
-                if field in attrs or (field + '_id') in attrs or field == 'sample_id':
+                # Changing lat/lon field name as in sample_context table in otu DB
+                field = field.replace("latitude_decimal_degrees", "latitude")
+                field = field.replace("longitude_decimal_degrees", "longitude")
+
+                # Skipping fields already added to attrs dict and those not exists in sample_context table of otu DB
+                if field in attrs or (field + '_id') in attrs or field == 'sample_id' or field not in set(t.name for t in SampleContext.__table__.columns):
                     continue
+
+                # Replacing empty value with None
+                if value == '':
+                    value = None
+
                 attrs[field] = value
             fields_used.update(set(attrs.keys()))
             yield SampleContext(**attrs)
@@ -379,7 +440,7 @@ class DataImporter:
         # check whether or not we are using all the fields to assist us when
         # updating the code for new versions of the source spreadsheet
         utilised_fields = set()
-        logger.warning("loading Soil contextual metadata")
+        logger.warning("loading contextual metadata")
         metadata = self.contextual_rows(AccessAMDContextualMetadata, name='amd-metadata')
         mappings = self._load_ontology(DataImporter.amd_ontologies, metadata)
         for obj in self.contextual_row_context(metadata, DataImporter.amd_ontologies, mappings, utilised_fields):
