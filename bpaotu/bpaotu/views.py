@@ -466,7 +466,7 @@ def otu_export(request):
     """
     timestamp = make_timestamp()
     params, errors = param_to_filters(request.GET['q'])
-    zf = tabular_zip_file_generator(params)
+    zf = tabular_zip_file_generator(params, request.GET['only_contextual'])
     response = StreamingHttpResponse(zf, content_type='application/zip')
     filename = params.filename(timestamp, '-csv.zip')
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
