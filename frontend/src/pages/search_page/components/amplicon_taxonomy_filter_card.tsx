@@ -4,7 +4,7 @@ import { bindActionCreators } from 'redux'
 
 import { fetchAmplicons } from '../../../reducers/reference_data/amplicons'
 
-import { Button, Card, CardBody, CardFooter, CardHeader } from 'reactstrap'
+import { Button, Card, CardBody, CardFooter, CardHeader, UncontrolledTooltip } from 'reactstrap'
 import { clearAllTaxonomyFilters, fetchKingdoms } from '../reducers/taxonomy'
 
 import Octicon from '../../../components/octicon'
@@ -40,13 +40,19 @@ export class AmpliconTaxonomyFilterCard extends React.Component<any> {
       <Card>
         <CardHeader>
           Filter by Amplicon{' '}
-          <span title={AmpliconFilterInfo}>
-            <Octicon name="info" />
-          </span>{' '}
-          and Taxonomy{' '}
-          <span title={TaxonomyFilterInfo}>
+          <span id="ampliconTip">
             <Octicon name="info" />
           </span>
+          <UncontrolledTooltip target="ampliconTip" placement="auto">
+            {AmpliconFilterInfo}
+          </UncontrolledTooltip>{' '}
+          and Taxonomy{' '}
+          <span id="taxonomyTip">
+            <Octicon name="info" />
+          </span>
+          <UncontrolledTooltip target="taxonomyTip" placement="auto">
+            {TaxonomyFilterInfo}
+          </UncontrolledTooltip>
         </CardHeader>
         <CardBody className="filters">
           <AmpliconFilter />
