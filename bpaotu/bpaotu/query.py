@@ -323,7 +323,7 @@ class SampleQuery:
         return result
 
     def matching_sample_headers(self, required_headers=None, sorting=()):
-        query_headers = [SampleContext.id, SampleContext.environment_id]
+        query_headers = [SampleContext.id, SampleContext.am_environment_id]
         joins = []  # Keep track of any foreign ontology classes which may be needed to be joined to.
 
         if required_headers:
@@ -509,7 +509,7 @@ class ContextualFilter:
     def describe(self):
         descr = []
         with OntologyInfo() as info:
-            env_descr = describe_op_and_val(info, 'environment_id', Environment, self.environment_filter)
+            env_descr = describe_op_and_val(info, 'am_environment_id', Environment, self.environment_filter)
             descr.append(env_descr)
             descr += [term.describe() for term in self.terms]
         return [t for t in descr if t]
@@ -650,8 +650,6 @@ class ContextualFilterTermSampleID(ContextualFilterTerm):
     def __init__(self, field_name, operator, val_is_in):
         super().__init__(field_name, operator)
         assert(type(val_is_in) is list)
-        for t in val_is_in:
-            assert(type(t) is int)
         self.val_is_in = val_is_in
 
     def __repr__(self):
@@ -708,7 +706,7 @@ def apply_otu_filter(otu_attr, q, op_and_val):
 
 
 apply_amplicon_filter = partial(apply_otu_filter, 'amplicon_id')
-apply_environment_filter = partial(apply_op_and_val_filter, SampleContext.environment_id)
+apply_environment_filter = partial(apply_op_and_val_filter, SampleContext.am_environment_id)
 
 
 def log_query(q):

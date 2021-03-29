@@ -235,7 +235,7 @@ def _parse_contextual_term(filter_spec):
     if column.name == 'id':
         if len(filter_spec['is']) == 0:
             raise ValueError("Value can't be empty")
-        return ContextualFilterTermSampleID(field_name, operator, [int(t) for t in filter_spec['is']])
+        return ContextualFilterTermSampleID(field_name, operator, [t for t in filter_spec['is']])
     elif hasattr(column, 'ontology_class'):
         return ContextualFilterTermOntology(field_name, operator, int(filter_spec['is']))
     elif typ == 'DATE':

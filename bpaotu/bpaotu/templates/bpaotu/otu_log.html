@@ -131,7 +131,11 @@
                 </thead>
                 <tr><td>
                     {% for sample_id in sample_metadata_incomplete %}
-                    <a target="_other" href="{{ ckan_base_url }}/organization/australian-microbiome?q=bpa_id:102.100.100/{{ sample_id}}">{{ sample_id }}</a>
+                        {% if sample_id|first in "SAMN" %}
+                        <a target="_other" href="https://www.ncbi.nlm.nih.gov/biosample/?term={{ sample_id}}">{{ sample_id }}</a>
+                        {% else %}
+                        <a target="_other" href="{{ ckan_base_url }}/organization/australian-microbiome?q=102.100.100/{{ sample_id}}">{{ sample_id }}</a>
+                        {% endif %}
                     {% endfor %}
                 </td></tr>
             </table>
@@ -144,7 +148,11 @@
                 </thead>
                 <tr><td>
                     {% for sample_id in sample_not_in_metadata %}
-                    <a target="_other" href="{{ ckan_base_url }}/organization/australian-microbiome?q=bpa_id:102.100.100/{{ sample_id}}">{{ sample_id }}</a>
+                    {% if sample_id|first in "SAMN" %}
+                        <a target="_other" href="https://www.ncbi.nlm.nih.gov/biosample/?term={{ sample_id}}">{{ sample_id }}</a>
+                        {% else %}
+                        <a target="_other" href="{{ ckan_base_url }}/organization/australian-microbiome?q=102.100.100/{{ sample_id}}">{{ sample_id }}</a>
+                        {% endif %}
                     {% endfor %}
                 </td></tr>
             </table>

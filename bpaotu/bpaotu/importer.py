@@ -29,7 +29,11 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   SampleFAOSoilClassification, SampleHorizonClassification,
                   SampleLandUse, SampleOTU, SampleProfilePosition,
                   SampleStorageMethod, SampleTillage, SampleType,
-                  SampleVegetationType, make_engine)
+                  SampleVegetationType,
+                  SampleIntegrityWarnings, SampleVolumeNotes, SampleBioticRelationship,
+                  SampleEnvironmentMedium, SampleEnvironmentMaterial,
+                  SampleHostAssociatedMicrobiomeZone, SampleHostType,
+                  make_engine)
 
 logger = logging.getLogger("rainbow")
 
@@ -59,20 +63,27 @@ def otu_hash(code, amplicon_id):
 class DataImporter:
     # note: some files have species, some don't
     amd_ontologies = OrderedDict([
-        ('environment', Environment),
+        ('am_environment', Environment),
         ('sample_type', SampleType),
-        ('horizon_control_vocab_1', SampleHorizonClassification),
-        ('sample_storage_method', SampleStorageMethod),
-        ('broad_land_use_major_head_control_vocab_2', SampleLandUse),
-        ('detailed_land_use_sub_head_control_vocab_2', SampleLandUse),
-        ('general_env_feature_control_vocab_3', SampleEcologicalZone),
+        ('host_type', SampleHostType),
+        ('host_associated_microbiome_zone', SampleHostAssociatedMicrobiomeZone),
+        ('env_medium', SampleEnvironmentMedium),
+        ('env_material', SampleEnvironmentMaterial),
+        ('horizon', SampleHorizonClassification),
+        ('env_broad_scale', SampleLandUse),
+        ('env_local_scale', SampleLandUse),
+        ('cur_land_use', SampleLandUse),
+        ('immediate_previous_land_use', SampleLandUse),
+        ('general_env_feature', SampleEcologicalZone),
         ('vegetation_type', SampleVegetationType),
-        ('profile_position_control_vocab_5', SampleProfilePosition),
-        ('australian_soil_classification_control_vocab_6', SampleAustralianSoilClassification),
-        ('fao_soil_classification_control_vocab_7', SampleFAOSoilClassification),
-        ('immediate_previous_land_use_control_vocab_2', SampleLandUse),
-        ('tillage_control_vocab_9', SampleTillage),
-        ('color_control_vocab_10', SampleColor),
+        ('profile_position', SampleProfilePosition),
+        ('local_class', SampleAustralianSoilClassification),
+        ('tillage', SampleTillage),
+        ('color', SampleColor),
+        ('sample_volume_notes', SampleVolumeNotes),
+        ('sample_integrity_warnings', SampleIntegrityWarnings),
+        ('biotic_relationship', SampleBioticRelationship),
+        ('store_cond', SampleStorageMethod),
     ])
 
     def __init__(self, import_base, revision_date):
@@ -199,77 +210,261 @@ class DataImporter:
     def classify_fields(cls, environment_lookup):
         # flip around to name -> id
         pl = dict((t[1], t[0]) for t in environment_lookup.items())
+        # TODO: Remove hardcoded soil fields
+        # Hardcoded Soil fields
+        hardcoded_soil_fields = [
+            'id',
+            'source_mat_id',
+            'utc_date_sampled',
+            'utc_time_sampled',
+            'collection_date',
+            'longitude',
+            'latitude',
+            'lat_lon',
+            'geo_loc_name',
+            'sample_site_location_description',
+            'sample_submitter',
+            'sample_attribution',
+            'funding_agency',
+            'samp_collect_device',
+            'samp_mat_process',
+            'store_cond',
+            'biotic_relationship',
+            'env_medium',
+            'env_material',
+            'env_broad_scale',
+            'env_local_scale',
+            'general_env_feature',
+            'vegetation_type',
+            'notes',
+            'depth_lower',
+            'depth_upper',
+            'depth',
+            'sample_type',
+            'sample_integrity_warnings',
+            'nucl_acid_ext',
+            'agrochem_addition',
+            'ammonium_nitrogen_wt',
+            'ammonium_nitrogen_wt_meth',
+            'antimony',
+            'antimony_meth',
+            'arsenic',
+            'arsenic_meth',
+            'barium',
+            'barium_meth',
+            'boron_hot_cacl2',
+            'boron_hot_cacl2_meth',
+            'cadmium',
+            'cadmium_meth',
+            'cation_exchange_capacity',
+            'cation_exchange_capacity_meth',
+            'cerium',
+            'cerium_meth',
+            'cesium',
+            'cesium_meth',
+            'chromium',
+            'chromium_meth',
+            'citation',
+            'clay',
+            'clay_meth',
+            'coastal_id',
+            'cobalt',
+            'cobalt_meth',
+            'color',
+            'conductivity',
+            'conductivity_meth',
+            'course_sand',
+            'course_sand_meth',
+            'crop_rotation_1yr_since_present',
+            'crop_rotation_2yrs_since_present',
+            'crop_rotation_3yrs_since_present',
+            'crop_rotation_4yrs_since_present',
+            'crop_rotation_5yrs_since_present',
+            'cur_land_use',
+            'date_since_change_in_land_use',
+            'density',
+            'density_meth',
+            'description',
+            'dtpa_copper',
+            'dtpa_copper_meth',
+            'dtpa_iron',
+            'dtpa_iron_meth',
+            'dtpa_manganese',
+            'dtpa_manganese_meth',
+            'dtpa_zinc',
+            'dtpa_zinc_meth',
+            'dysprosium',
+            'dysprosium_meth',
+            'elev',
+            'erbium',
+            'erbium_meth',
+            'europium',
+            'europium_meth',
+            'exc_aluminium',
+            'exc_aluminium_meth',
+            'exc_calcium',
+            'exc_calcium_meth',
+            'exc_magnesium',
+            'exc_magnesium_meth',
+            'exc_potassium',
+            'exc_potassium_meth',
+            'exc_sodium',
+            'exc_sodium_meth',
+            'extreme_event',
+            'fine_sand',
+            'fine_sand_meth',
+            'fire',
+            'fire_intensity_if_known',
+            'flooding',
+            'gadolinium',
+            'gadolinium_meth',
+            'gallium',
+            'gallium_meth',
+            'germanium',
+            'germanium_meth',
+            'gold',
+            'gold_meth',
+            'gravel',
+            'gravel_percent_meth',
+            'hafnium',
+            'hafnium_meth',
+            'holmium',
+            'holmium_meth',
+            'horizon',
+            'immediate_previous_land_use',
+            'iridium',
+            'iridium_meth',
+            'lanthanum',
+            'lanthanum_meth',
+            'lead',
+            'lead_meth',
+            'local_class',
+            'local_class_meth',
+            'lutetium',
+            'lutetium_meth',
+            'microbial_biomass',
+            'microbial_biomass_meth',
+            'molybdenum',
+            'molybdenum_meth',
+            'neodymium',
+            'neodymium_meth',
+            'nickel',
+            'nickel_meth',
+            'niobium_columbium',
+            'niobium_columbium_meth',
+            'nitrate_nitrogen',
+            'nitrate_nitrogen_meth',
+            'nitrite',
+            'nitrite_meth',
+            'organic_carbon',
+            'organic_carbon_meth',
+            'osmium',
+            'osmium_meth',
+            'palladium',
+            'palladium_meth',
+            'ph',
+            'ph_meth',
+            'ph_solid_h2o',
+            'ph_solid_h2o_meth',
+            'phosphorus_colwell',
+            'phosphorus_colwell_meth',
+            'platinum',
+            'platinum_meth',
+            'potassium_colwell',
+            'potassium_colwell_meth',
+            'praseodymium',
+            'praseodymium_meth',
+            'profile_position',
+            'rhodium',
+            'rhodium_meth',
+            'rubidium',
+            'rubidium_meth',
+            'ruthenium',
+            'ruthenium_meth',
+            'samarium',
+            'samarium_meth',
+            'sand',
+            'sand_meth',
+            'scandium',
+            'scandium_meth',
+            'selenium',
+            'selenium_meth',
+            'silt',
+            'silt_meth',
+            'silver',
+            'silver_meth',
+            'slope_aspect',
+            'slope_aspect_meth',
+            'slope_gradient',
+            'slope_gradient_meth',
+            'strontium',
+            'strontium_meth',
+            'sulphur',
+            'sulphur_meth',
+            'tantalum',
+            'tantalum_meth',
+            'temp',
+            'temp_meth',
+            'terbium',
+            'terbium_meth',
+            'texture',
+            'texture_meth',
+            'thorium',
+            'thorium_meth',
+            'thulium',
+            'thulium_meth',
+            'tillage',
+            'tin',
+            'tin_meth',
+            'tungsten',
+            'tungsten_meth',
+            'uranium',
+            'uranium_meth',
+            'url',
+            'vanadium',
+            'vanadium_meth',
+            'vegetation_dom_grasses',
+            'vegetation_dom_shrubs',
+            'vegetation_dom_trees',
+            'vegetation_total_cover',
+            'water_content',
+            'water_content_soil_meth',
+            'water_holding_capacity',
+            'water_holding_capacity_meth',
+            'ytterbium',
+            'ytterbium_meth',
+            'yttrium',
+            'yttrium_meth',
+            'zirconium',
+            'zirconium_meth',
+            'sample_metadata_ingest_date',
+            'sample_metadata_ingest_file',
+            'sample_metadata_update_history'
+        ]
 
         soil_fields = set()
         marine_fields = set()
         for sheet_name, fields in AustralianMicrobiomeSampleContextualSQLite.field_specs.items():
-            environment = AustralianMicrobiomeSampleContextualSQLite.environment_for_sheet(sheet_name)
+            # environment = AustralianMicrobiomeSampleContextualSQLite.environment_for_sheet(sheet_name)
             for field_info in fields:
                 field_name = field_info[0]
                 if field_name in DataImporter.amd_ontologies:
                     field_name += '_id'
                 elif field_name == 'sample_id':
                     field_name = 'id'
-                # TODO: Remove hardcoded soil fields
-                # Hardcoded Soil fields
-                hardcoded_soil_fields = [
-                    'id',
-                    'utc_date_sampled',
-                    'utc_time_sampled',
-                    'latitude',
-                    'longitude',
-                    'depth_lower',
-                    'depth_upper',
-                    'sample_storage_method_id',
-                    'geo_loc_country_subregion',
-                    'sample_site_location_description',
-                    'broad_land_use_major_head_control_vocab_2_id',
-                    'detailed_land_use_sub_head_control_vocab_2_id',
-                    'general_env_feature_control_vocab_3_id',
-                    'vegetation_type_id',
-                    'elevation',
-                    'slope',
-                    'slope_aspect_direction_or_degrees',
-                    'australian_soil_classification_control_vocab_6_id',
-                    'soil_moisture',
-                    'color_control_vocab_10_id',
-                    'gravel',
-                    'texture',
-                    'course_sand',
-                    'fine_sand',
-                    'sand',
-                    'silt',
-                    'clay',
-                    'ammonium_nitrogen',
-                    'nitrate_nitrogen',
-                    'phosphorus_colwell',
-                    'potassium_colwell',
-                    'sulphur',
-                    'organic_carbon',
-                    'conductivity_ds_per_m',
-                    'ph_solid_cacl2',
-                    'ph_solid_h2o',
-                    'dtpa_copper',
-                    'dtpa_iron',
-                    'dtpa_manganese',
-                    'dtpa_zinc',
-                    'exc_aluminium',
-                    'exc_calcium',
-                    'exc_magnesium',
-                    'exc_potassium',
-                    'exc_sodium',
-                    'boron_hot_cacl2'
-                ]
-                environment = "Soil" if field_name in hardcoded_soil_fields else 'Marine'
-                if environment == 'Soil':
+                # am_environment = field_info.am_environment
+                am_environment = "Soil" if field_name in hardcoded_soil_fields else 'Marine'
+                if 'Soil' in [am_environment]:
                     soil_fields.add(field_name)
-                else:
+                if 'Marine' in [am_environment]:
                     marine_fields.add(field_name)
         soil_only = soil_fields - marine_fields
         marine_only = marine_fields - soil_fields
         r = {}
-        r.update((t, pl['Soil']) for t in soil_only)
-        r.update((t, pl['Marine']) for t in marine_only)
+        if pl.get('Soil'):
+            r.update((t, pl['Soil']) for t in soil_only)
+        if pl.get('Marine'):
+            r.update((t, pl['Marine']) for t in marine_only)
         return r
 
     def amplicon_files(self, pattern):
@@ -394,14 +589,14 @@ class DataImporter:
                     metadata[sample_id].update(contextual_source.get(sample_id))
 
         def has_minimum_metadata(row):
-            return 'latitude_decimal_degrees' in row and 'longitude_decimal_degrees' in row \
-                and isinstance(row['latitude_decimal_degrees'], float) and isinstance(row['longitude_decimal_degrees'], float)
+            return 'latitude' in row and 'longitude' in row \
+                and isinstance(row['latitude'], float) and isinstance(row['longitude'], float)
 
         rows = []
         for entry in metadata.values():
             if not has_minimum_metadata(entry):
                 self.sample_metadata_incomplete.add(
-                    int(entry['sample_id'].split('/')[-1]))
+                    entry['sample_id'].split('/')[-1])
                 continue
             rows.append(entry)
         return rows
@@ -412,17 +607,13 @@ class DataImporter:
             if sample_id is None:
                 continue
             attrs = {
-                'id': int(sample_id.split('/')[-1])
+                'id': sample_id.split('/')[-1]
             }
             for field in ontologies:
-                if field not in row:
+                if field not in row or field == '' or row[field] == '':
                     continue
                 attrs[field + '_id'] = mappings[field][row[field]]
             for field, value in row.items():
-                # Changing lat/lon field name as in sample_context table in otu DB
-                field = field.replace("latitude_decimal_degrees", "latitude")
-                field = field.replace("longitude_decimal_degrees", "longitude")
-
                 # Skipping fields already added to attrs dict and those not exists in sample_context table of otu DB
                 if field in attrs or (field + '_id') in attrs or field == 'sample_id' or field not in set(t.name for t in SampleContext.__table__.columns):
                     continue
@@ -459,6 +650,7 @@ class DataImporter:
 
         assert(header == ["#OTU ID", "Sample_only", "Abundance"])
         integer_re = re.compile(r'^[0-9]+$')
+        samn_id_re = re.compile(r"^SAMN(\d+)$")
 
         for otu_code, sample_id, count in reader:
             float_count = float(count)
@@ -466,13 +658,15 @@ class DataImporter:
             # make sure that fractional values don't creep in on a future ingest
             assert(int_count - float_count == 0)
             if not integer_re.match(sample_id):
-                if sample_id not in self.sample_non_integer:
-                    logger.warning('[{}] skipped non-integer sample ID: {}'.format(amplicon_code, sample_id))
-                    self.sample_non_integer.add(sample_id)
+                if not samn_id_re.match(sample_id):
+                    if sample_id not in self.sample_non_integer:
+                        logger.warning('[{}] skipped non-integer sample ID: {}'.format(amplicon_code, sample_id))
+                        self.sample_non_integer.add(sample_id)
+                    continue
+            otu_id = otu_lookup.get(otu_hash(otu_code, self.amplicon_code_names[amplicon_code.lower()]))
+            if not otu_id:
                 continue
-            sample_id_int = int(sample_id)
-            otu_id = otu_lookup[otu_hash(otu_code, self.amplicon_code_names[amplicon_code.lower()])]
-            yield otu_id, sample_id_int, int_count
+            yield otu_id, sample_id, int_count
 
     def load_otu_abundance(self, otu_lookup):
         def _make_sample_otus(fname, amplicon_code, present_sample_ids):
@@ -494,7 +688,7 @@ class DataImporter:
 
         present_sample_ids = set([t[0] for t in self._session.query(SampleContext.id)])
 
-        for amplicon_code, sampleotu_fname in self.amplicon_files('*.txt.gz'):
+        for amplicon_code, sampleotu_fname in self.amplicon_files('*[0-9].txt.gz'):
             def log_amplicon(msg):
                 logger.warning('[{}] {}'.format(amplicon_code, msg))
             try:
