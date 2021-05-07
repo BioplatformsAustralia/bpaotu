@@ -12,6 +12,7 @@ from glob import glob
 from hashlib import md5
 from itertools import zip_longest
 
+import subprocess
 import sqlalchemy
 from bpaingest.metadata import DownloadMetadata
 from bpaingest.projects.amdb.sqlite_contextual import \
@@ -92,6 +93,7 @@ class DataImporter:
         self._create_extensions()
         self._session = sessionmaker(bind=self._engine)()
         self._import_base = import_base
+        self._methodology = 'v1'
         self._revision_date = revision_date
 
         # these are used exclusively for reporting back to CSIRO on the state of the ingest
@@ -146,7 +148,7 @@ class DataImporter:
 
     def _write_metadata(self):
         self._session.add(ImportMetadata(
-            methodology='v1',
+            methodology=self._methodology,
             revision_date=datetime.datetime.strptime(self._revision_date, "%Y-%m-%d").date(),
             imported_at=datetime.date.today(),
             uuid=str(uuid.uuid4()),
@@ -643,6 +645,11 @@ class DataImporter:
             logger.info("Unutilised fields:")
             for field in sorted(unused):
                 logger.info(field)
+        # set methodology to store version of git_revision and contextual DB in format (bpaotu_<git_revision>_<SQLite DB>)
+        if len(metadata) > 0:
+            git_revision = subprocess.check_output(["git", "describe", "--always"], cwd=os.path.dirname(os.path.realpath(__file__))).strip().decode()
+            db_file = metadata[0]["sample_database_file"]
+            self._methodology = f"bpaotu_{git_revision}_{db_file}"
 
     def _otu_abundance_rows(self, fd, amplicon_code, otu_lookup):
         reader = csv.reader(fd, dialect='excel-tab')
