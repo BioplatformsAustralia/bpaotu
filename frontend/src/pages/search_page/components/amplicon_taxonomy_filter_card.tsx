@@ -22,7 +22,7 @@ import {
 const AmpliconFilterInfo =
   'Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, Eukaryotes (v4 and v9) and Fungi.  To filter data from a single amplicon select that amplicon here.  To search all amplicons for a taxa select "all".  Note the "all" search will return non-target sequences as well as target, for example searching "Amplicon = all" + "Kingdom = Bacteria" will return all sequences classified as bacteria in all assays.'
 const TaxonomyFilterInfo =
-  'Taxonomy is assigned to sequences using consensus taxonomy of the top 3 hits against SILVA132 for rRNA targets and UNITE for ITS1 targets.'
+  'Taxonomy is assigned with bayesian classifier using SILVA v138 for rRNA genes and UNITE_SH v8 for ITS regions.'
 
 export class AmpliconTaxonomyFilterCard extends React.Component<any> {
   constructor(props) {
