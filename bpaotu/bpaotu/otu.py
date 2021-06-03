@@ -681,6 +681,7 @@ class SampleContext(SchemaMixin, Base):
     sample_metadata_ingest_file = Column(CIText)
     sample_metadata_update_history = Column(CIText)
     sample_database_file = Column(CIText)
+    database_schema_definitions_url = Column(CIText)
     #
     # ontologies: note the default, which is by definition the empty string (''), we don't permit NULLs
     # in ontology columns

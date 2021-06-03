@@ -458,6 +458,23 @@ class SampleQuery:
             q = q.filter(OTU.kingdom_id == kingdom_id)
         return q
 
+class SampleSchemaDefinition:
+    """
+    find samples contextual database schema definition
+    """
+    def __init__(self):
+        self._session = Session()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exec_type, exc_value, traceback):
+        self._session.close()
+
+    def get_schema_definition_url(self):
+        # TODO: replace hardcoded url with database_schema_definitions_url field value from db 
+        # return 'https://raw.githubusercontent.com/AusMicrobiome/contextualdb_doc/2.0.2/db_schema_definitions/db_schema_definitions.xlsx'
+        return self._session.query(SampleContext.database_schema_definitions_url).distinct().one()
 
 class TaxonomyFilter:
     def __init__(self, amplicon_filter, state_vector):

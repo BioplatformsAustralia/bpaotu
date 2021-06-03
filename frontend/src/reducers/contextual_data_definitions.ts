@@ -40,6 +40,7 @@ export default handleActions(
         filters: allButEnvironment,
         values: action.payload.data.definitions,
         sample_ids: sample_id.values,
+        definitions_url: action.payload.data.definitions_url,
       }
     }
   },
