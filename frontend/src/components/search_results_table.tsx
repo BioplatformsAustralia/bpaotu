@@ -1,5 +1,6 @@
 import { capitalize, concat, drop, first, get as _get, isEmpty, join, map, reject } from 'lodash'
 import * as React from 'react'
+import {Alert} from 'reactstrap'
 
 import ReactTable from 'react-table'
 import 'react-table/react-table.css'
@@ -50,7 +51,10 @@ export class SearchResultsTable extends React.Component<any> {
 
   public render() {
     return (
-      <div>
+      <>
+        <Alert color="secondary" className="text-center">
+          <h6 className="alert-heading">{this.props.results.isLoading ? `Searching samples...` : `Found ${this.props.results.rowsCount} samples`}</h6>
+        </Alert>
         <ReactTable
           columns={this.getColumns()}
           manual={true}
@@ -64,7 +68,7 @@ export class SearchResultsTable extends React.Component<any> {
           onPageChange={this.onPageChange}
           onPageSizeChange={this.onPageSizeChange}
         />
-      </div>
+      </>
     )
   }
 
