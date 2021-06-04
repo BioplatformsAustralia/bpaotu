@@ -71,10 +71,10 @@ function BetweenOperatorAndValue({ filter, dataDefinition, changeOperator, chang
         </Input>
       </Col>
       <Col sm={sizes[valueType].values} className="no-padding-right">
-        <Input type={valueType} value={filter.value} onChange={forTargetValue(changeValue)} />
+        <Input type={valueType} value={filter.value} onChange={forTargetValue(changeValue)} placeholder="lower value"/>
       </Col>
       <Col sm={sizes[valueType].values} className="no-padding-right">
-        <Input type={valueType} value={filter.value2} onChange={forTargetValue(changeValue2)} />
+        <Input type={valueType} value={filter.value2} onChange={forTargetValue(changeValue2)} placeholder="higher value"/>
       </Col>
     </Row>
   )
