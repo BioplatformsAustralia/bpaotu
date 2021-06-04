@@ -41,8 +41,11 @@ def temporary_file(contents):
         os.remove(path)
 
 
-def format_sample_id(int_id):
-    return '102.100.100/%d' % int_id
+def format_sample_id(sample_id):
+    if(sample_id.startswith("SAMN")):
+        return f'{sample_id}'
+    else:
+        return f'102.100.100/{sample_id}'
 
 
 def make_timestamp():

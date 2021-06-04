@@ -37,6 +37,10 @@ urlpatterns = [
         views.required_table_headers,
         name="required_table_headers"),
     url(
+        r'^private/api/v1/contextual_schema_definition/$',
+        views.contextual_schema_definition,
+        name="contextual_schema_definition"),
+    url(
         r'^private/csv-export/$',
         views.contextual_csv_download_endpoint,
         name="contextual_csv_download_endpoint"),

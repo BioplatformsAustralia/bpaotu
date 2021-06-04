@@ -94,7 +94,10 @@ export class SearchResultsTable extends React.Component<any> {
 }
 
 function bpaIDToCKANURL(bpaId) {
-  return `${window.otu_search_config.ckan_base_url}/organization/australian-microbiome?q=sample_id:102.100.100/${bpaId}`
+  if(bpaId.startsWith("SAMN"))
+    return `https://www.ncbi.nlm.nih.gov/biosample/?term=${bpaId}`
+  else
+    return `${window.otu_search_config.ckan_base_url}/organization/australian-microbiome?q=sample_id:102.100.100/${bpaId}`
 }
 
 function fieldToDisplayName(fieldName) {

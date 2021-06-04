@@ -12,10 +12,11 @@ from glob import glob
 from hashlib import md5
 from itertools import zip_longest
 
+import subprocess
 import sqlalchemy
 from bpaingest.metadata import DownloadMetadata
-from bpaingest.projects.amdb.contextual import \
-    AustralianMicrobiomeSampleContextual
+from bpaingest.projects.amdb.sqlite_contextual import \
+    AustralianMicrobiomeSampleContextualSQLite
 from bpaingest.projects.amdb.ingest import AccessAMDContextualMetadata
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema, DropSchema
@@ -29,7 +30,11 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   SampleFAOSoilClassification, SampleHorizonClassification,
                   SampleLandUse, SampleOTU, SampleProfilePosition,
                   SampleStorageMethod, SampleTillage, SampleType,
-                  SampleVegetationType, make_engine)
+                  SampleVegetationType,
+                  SampleIntegrityWarnings, SampleVolumeNotes, SampleBioticRelationship,
+                  SampleEnvironmentMedium,
+                  SampleHostAssociatedMicrobiomeZone, SampleHostType,
+                  make_engine)
 
 logger = logging.getLogger("rainbow")
 
@@ -59,20 +64,25 @@ def otu_hash(code, amplicon_id):
 class DataImporter:
     # note: some files have species, some don't
     amd_ontologies = OrderedDict([
-        ('environment', Environment),
+        ('am_environment', Environment),
         ('sample_type', SampleType),
-        ('horizon_classification', SampleHorizonClassification),
-        ('soil_sample_storage_method', SampleStorageMethod),
-        ('broad_land_use', SampleLandUse),
-        ('detailed_land_use', SampleLandUse),
-        ('general_ecological_zone', SampleEcologicalZone),
+        ('host_type', SampleHostType),
+        ('host_associated_microbiome_zone', SampleHostAssociatedMicrobiomeZone),
+        ('env_medium', SampleEnvironmentMedium),
+        ('horizon', SampleHorizonClassification),
+        ('env_broad_scale', SampleLandUse),
+        ('env_local_scale', SampleLandUse),
+        ('immediate_previous_land_use', SampleLandUse),
+        ('general_env_feature', SampleEcologicalZone),
         ('vegetation_type', SampleVegetationType),
         ('profile_position', SampleProfilePosition),
-        ('australian_soil_classification', SampleAustralianSoilClassification),
-        ('fao_soil_classification', SampleFAOSoilClassification),
-        ('immediate_previous_land_use', SampleLandUse),
+        ('local_class', SampleAustralianSoilClassification),
         ('tillage', SampleTillage),
         ('color', SampleColor),
+        ('sample_volume_notes', SampleVolumeNotes),
+        ('sample_integrity_warnings', SampleIntegrityWarnings),
+        ('biotic_relationship', SampleBioticRelationship),
+        ('store_cond', SampleStorageMethod),
     ])
 
     def __init__(self, import_base, revision_date):
@@ -81,6 +91,7 @@ class DataImporter:
         self._create_extensions()
         self._session = sessionmaker(bind=self._engine)()
         self._import_base = import_base
+        self._methodology = 'v1'
         self._revision_date = revision_date
 
         # these are used exclusively for reporting back to CSIRO on the state of the ingest
@@ -135,7 +146,7 @@ class DataImporter:
 
     def _write_metadata(self):
         self._session.add(ImportMetadata(
-            methodology='v1',
+            methodology=self._methodology,
             revision_date=datetime.datetime.strptime(self._revision_date, "%Y-%m-%d").date(),
             imported_at=datetime.date.today(),
             uuid=str(uuid.uuid4()),
@@ -196,29 +207,38 @@ class DataImporter:
         return mappings
 
     @classmethod
-    def classify_fields(cls, environment_lookup):
+    def classify_fields(cls, environment_lookup, schema_definition_dict):
         # flip around to name -> id
         pl = dict((t[1], t[0]) for t in environment_lookup.items())
 
+        definition = schema_definition_dict.get("definition", {})
+        fields = definition.get("Field", {})
+        AM_enviro = definition.get("AM_enviro", {})
+        am_environment_fields = {}
+        for key in fields.keys():
+            am_environment_fields[fields[key]] = AM_enviro[key]
+
         soil_fields = set()
         marine_fields = set()
-        for sheet_name, fields in AustralianMicrobiomeSampleContextual.field_specs.items():
-            environment = AustralianMicrobiomeSampleContextual.environment_for_sheet(sheet_name)
+        for sheet_name, fields in AustralianMicrobiomeSampleContextualSQLite.field_specs.items():
             for field_info in fields:
                 field_name = field_info[0]
+                am_environment = am_environment_fields.get(field_name)
+                if 'Soil' == am_environment:
+                    soil_fields.add(field_name)
+                if 'Marine' == am_environment:
+                    marine_fields.add(field_name)
                 if field_name in DataImporter.amd_ontologies:
                     field_name += '_id'
                 elif field_name == 'sample_id':
                     field_name = 'id'
-                if environment == 'Soil':
-                    soil_fields.add(field_name)
-                else:
-                    marine_fields.add(field_name)
-        soil_only = soil_fields - marine_fields
-        marine_only = marine_fields - soil_fields
+        soil_only = set(soil_fields)
+        marine_only = set(marine_fields)
         r = {}
-        r.update((t, pl['Soil']) for t in soil_only)
-        r.update((t, pl['Marine']) for t in marine_only)
+        if pl.get('Soil'):
+            r.update((t, pl['Soil']) for t in soil_only)
+        if pl.get('Marine'):
+            r.update((t, pl['Marine']) for t in marine_only)
         return r
 
     def amplicon_files(self, pattern):
@@ -334,7 +354,7 @@ class DataImporter:
     def contextual_rows(self, ingest_cls, name):
         # flatten contextual metadata into dicts
         metadata = defaultdict(dict)
-        with DownloadMetadata(ingest_cls, path='/data/{}/'.format(name)) as dlmeta:
+        with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name), has_sql_context=True) as dlmeta:
             for contextual_source in dlmeta.meta.contextual_metadata:
                 self.save_ontology_errors(
                     getattr(contextual_source, "environment_ontology_errors", None))
@@ -350,7 +370,7 @@ class DataImporter:
         for entry in metadata.values():
             if not has_minimum_metadata(entry):
                 self.sample_metadata_incomplete.add(
-                    int(entry['sample_id'].split('/')[-1]))
+                    entry['sample_id'].split('/')[-1])
                 continue
             rows.append(entry)
         return rows
@@ -361,15 +381,21 @@ class DataImporter:
             if sample_id is None:
                 continue
             attrs = {
-                'id': int(sample_id.split('/')[-1])
+                'id': sample_id.split('/')[-1]
             }
             for field in ontologies:
-                if field not in row:
+                if field not in row or field == '' or row[field] == '':
                     continue
                 attrs[field + '_id'] = mappings[field][row[field]]
             for field, value in row.items():
-                if field in attrs or (field + '_id') in attrs or field == 'sample_id':
+                # Skipping fields already added to attrs dict and those not exists in sample_context table of otu DB
+                if field in attrs or (field + '_id') in attrs or field == 'sample_id' or field not in set(t.name for t in SampleContext.__table__.columns):
                     continue
+
+                # Replacing empty value with None
+                if value == '':
+                    value = None
+
                 attrs[field] = value
             fields_used.update(set(attrs.keys()))
             yield SampleContext(**attrs)
@@ -379,7 +405,7 @@ class DataImporter:
         # check whether or not we are using all the fields to assist us when
         # updating the code for new versions of the source spreadsheet
         utilised_fields = set()
-        logger.warning("loading Soil contextual metadata")
+        logger.warning("loading contextual metadata")
         metadata = self.contextual_rows(AccessAMDContextualMetadata, name='amd-metadata')
         mappings = self._load_ontology(DataImporter.amd_ontologies, metadata)
         for obj in self.contextual_row_context(metadata, DataImporter.amd_ontologies, mappings, utilised_fields):
@@ -391,6 +417,11 @@ class DataImporter:
             logger.info("Unutilised fields:")
             for field in sorted(unused):
                 logger.info(field)
+        # set methodology to store version of git_revision and contextual DB in format (bpaotu_<git_revision>_<SQLite DB>)
+        if len(metadata) > 0:
+            git_revision = subprocess.check_output(["git", "describe", "--always"], cwd=os.path.dirname(os.path.realpath(__file__))).strip().decode()
+            db_file = metadata[0]["sample_database_file"]
+            self._methodology = f"bpaotu_{git_revision}_{db_file}"
 
     def _otu_abundance_rows(self, fd, amplicon_code, otu_lookup):
         reader = csv.reader(fd, dialect='excel-tab')
@@ -398,6 +429,7 @@ class DataImporter:
 
         assert(header == ["#OTU ID", "Sample_only", "Abundance"])
         integer_re = re.compile(r'^[0-9]+$')
+        samn_id_re = re.compile(r"^SAMN(\d+)$")
 
         for otu_code, sample_id, count in reader:
             float_count = float(count)
@@ -405,13 +437,15 @@ class DataImporter:
             # make sure that fractional values don't creep in on a future ingest
             assert(int_count - float_count == 0)
             if not integer_re.match(sample_id):
-                if sample_id not in self.sample_non_integer:
-                    logger.warning('[{}] skipped non-integer sample ID: {}'.format(amplicon_code, sample_id))
-                    self.sample_non_integer.add(sample_id)
+                if not samn_id_re.match(sample_id):
+                    if sample_id not in self.sample_non_integer:
+                        logger.warning('[{}] skipped non-integer sample ID: {}'.format(amplicon_code, sample_id))
+                        self.sample_non_integer.add(sample_id)
+                    continue
+            otu_id = otu_lookup.get(otu_hash(otu_code, self.amplicon_code_names[amplicon_code.lower()]))
+            if not otu_id:
                 continue
-            sample_id_int = int(sample_id)
-            otu_id = otu_lookup[otu_hash(otu_code, self.amplicon_code_names[amplicon_code.lower()])]
-            yield otu_id, sample_id_int, int_count
+            yield otu_id, sample_id, int_count
 
     def load_otu_abundance(self, otu_lookup):
         def _make_sample_otus(fname, amplicon_code, present_sample_ids):
@@ -433,7 +467,7 @@ class DataImporter:
 
         present_sample_ids = set([t[0] for t in self._session.query(SampleContext.id)])
 
-        for amplicon_code, sampleotu_fname in self.amplicon_files('*.txt.gz'):
+        for amplicon_code, sampleotu_fname in self.amplicon_files('*[0-9].txt.gz'):
             def log_amplicon(msg):
                 logger.warning('[{}] {}'.format(amplicon_code, msg))
             try:
