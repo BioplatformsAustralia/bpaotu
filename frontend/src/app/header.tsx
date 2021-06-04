@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap'
 
 import { NavLink as RRNavLink } from 'react-router-dom'
-import Octicon from '../components/octicon'
+import BPAOTUTour from '../components/bpaotu_tour'
 
 export default class Header extends React.Component<any, any> {
   constructor(props) {
@@ -32,7 +32,7 @@ export default class Header extends React.Component<any, any> {
         <Collapse isOpen={this.state.isOpen} navbar={true}>
           <Nav className="navbar-nav">
             <NavItem>
-              <NavLink href="/organization/about/australian-microbiome">
+              <NavLink target="_am" href="https://data.bioplatforms.com/organization/about/australian-microbiome">
                 Australian Microbiome Home
               </NavLink>
             </NavItem>
@@ -61,8 +61,21 @@ export default class Header extends React.Component<any, any> {
               </NavLink>
             </NavItem>
 
+            <NavItem>
+              <NavLink target="_am" href="https://data.bioplatforms.com/organization/pages/australian-microbiome/processed">
+                Help
+              </NavLink>
+            </NavItem>
+
+            <NavItem>
+              <NavLink>
+                <BPAOTUTour/> 
+              </NavLink>
+            </NavItem>
+
           </Nav>
-          <Nav className="ml-auto" navbar={true}>
+          {/* TODO: Apply proper CKAN authentication */}
+          {/* <Nav className="ml-auto" navbar={true}>
             <NavItem>
               {this.props.userEmailAddress ? (
                 <div>
@@ -73,7 +86,7 @@ export default class Header extends React.Component<any, any> {
                 ''
               )}
             </NavItem>
-          </Nav>
+          </Nav> */}
         </Collapse>
       </Navbar>
     )
