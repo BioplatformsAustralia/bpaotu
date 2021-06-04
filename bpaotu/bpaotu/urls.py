@@ -33,6 +33,10 @@ urlpatterns = [
         views.otu_log,
         name="otu_log"),
     url(
+        r'^ingest/download$',
+        views.otu_log_download,
+        name="otu_log_download"),
+    url(
         r'^private/api/v1/required_table_headers/$',
         views.required_table_headers,
         name="required_table_headers"),

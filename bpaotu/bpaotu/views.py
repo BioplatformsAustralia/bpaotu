@@ -10,6 +10,8 @@ import time
 from collections import OrderedDict, defaultdict
 from functools import wraps
 from operator import itemgetter
+from io import BytesIO
+from xhtml2pdf import pisa
 from requests.models import HTTPError
 
 from bpaingest.projects.amdb.contextual import \
@@ -611,9 +613,63 @@ def otu_log(request):
             'files': sorted(info.file_logs(), key=lambda x: x.filename),
             'ontology_errors': sorted(info.ontology_errors(), key=lambda x: x.ontology_name),
             'metadata': import_meta,
+            'pdf': request.GET.get('pdf')
         }
         context.update(missing)
-    return HttpResponse(template.render(context, request))
+    html = template.render(context, request)
+    if request.GET.get("pdf"):
+        result = BytesIO()
+        pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            filename = "out_log_%s.pdf" %(str(import_meta.revision_date))
+            content = "inline; filename=%s" %(filename)
+            download = request.GET.get("download")
+            if download:
+                content = "attachment; filename=%s" %(filename)
+            response['Content-Disposition'] = content
+    else:
+        response = HttpResponse(html)
+    return response
+
+@require_GET
+def otu_log_download(request):
+    missing = {}
+    with MetadataInfo() as info:
+        for obj in info.excluded_samples():
+            missing[obj.reason] = sorted(obj.samples)
+        metadata = info.import_metadata()
+        file_logs = []
+        for file in sorted(info.file_logs(), key=lambda x: x.filename):
+            file_log = {
+                'File name': file.filename,
+                'File type': file.file_type,
+                'File size': file.file_size,
+                'Rows imported': file.rows_imported,
+                'Rows skipped': file.rows_skipped
+            }
+            file_logs.append(file_log)
+        context = {
+            'ckan_base_url': settings.CKAN_SERVER['base_url'],
+            'files': file_logs,
+            'ontology_errors': sorted(info.ontology_errors(), key=lambda x: x.ontology_name),
+            'metadata': {
+                'Methodology': metadata.methodology,
+                'Revision': str(metadata.revision_date),
+                'Imported': str(metadata.imported_at),
+                'Samples': metadata.samplecontext_count,
+                'OTUs': metadata.otu_count,
+                'Abundance entries': metadata.sampleotu_count
+            }
+        }
+        context.update(missing)
+
+    data = json.dumps(context, indent=4)
+
+    response = HttpResponse(data, content_type='application/json')
+    filename = f"{metadata.revision_date}-csv.json"
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+    return response
 
 @require_GET
 def contextual_schema_definition(request):
