@@ -4,6 +4,7 @@
   "private": true,
   "homepage": "https://data.bioplatforms.com/bpa/otu",
   "dependencies": {
+    "@turf/turf": "6.3.0",
     "@types/axios": "0.14.0",
     "@types/jest": "24.0.18",
     "@types/lodash": "4.14.137",

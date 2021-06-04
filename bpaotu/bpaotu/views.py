@@ -382,15 +382,18 @@ def otu_search_sample_sites(request):
         return JsonResponse({
             'errors': [str(e) for e in errors],
             'data': [],
+            'sample_otus': []
         })
-    data = spatial_query(params)
+    data, sample_otus = spatial_query(params)
 
     site_image_lookup_table = get_site_image_lookup_table()
 
     for d in data:
         key = (str(d['latitude']), str(d['longitude']))
         d['site_images'] = site_image_lookup_table.get(key)
-    return JsonResponse({'data': data})
+    logger.info(f"sample_otus size: {len(sample_otus)}")
+    logger.info(f"data size: {len(data)}")
+    return JsonResponse({'data': data, 'sample_otus': sample_otus})
 
 
 # technically we should be using GET, but the specification

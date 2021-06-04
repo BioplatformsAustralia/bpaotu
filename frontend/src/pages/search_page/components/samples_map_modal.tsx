@@ -7,21 +7,27 @@ import { Modal, ModalBody, ModalHeader } from 'reactstrap'
 import SamplesMap from '../../../components/samples_map'
 import { closeSamplesMapModal, fetchSampleMapModalSamples } from '../reducers/samples_map_modal'
 
-const SamplesMapModal = props => (
-  <Modal isOpen={props.isOpen}>
-    <ModalHeader toggle={props.closeSamplesMapModal}>Sample Collection Sites</ModalHeader>
-    <ModalBody>
-      <SamplesMap fetchSamples={props.fetchSampleMapModalSamples} isLoading={props.isLoading} markers={props.markers} />
-    </ModalBody>
-  </Modal>
-)
+class SamplesMapModal extends React.Component<any> {
+
+  render() {
+    return (
+      <Modal isOpen={this.props.isOpen} data-tut="reactour__SamplesMap" id="reactour__SamplesMap">
+      <ModalHeader toggle={this.props.closeSamplesMapModal} data-tut="reactour__CloseSamplesMapModal" id="reactour__CloseSamplesMapModal">Sample Collection Sites</ModalHeader>
+      <ModalBody>
+        <SamplesMap fetchSamples={this.props.fetchSampleMapModalSamples} isLoading={this.props.isLoading} isOpen={this.props.isOpen}  markers={this.props.markers} sample_otus={this.props.sample_otus} />
+      </ModalBody>
+    </Modal>
+    );
+  }
+}
 
 function mapStateToProps(state) {
-  const { isLoading, isOpen, markers } = state.searchPage.samplesMapModal
+  const { isLoading, isOpen, markers, sample_otus } = state.searchPage.samplesMapModal
   return {
     isLoading,
     isOpen,
-    markers
+    markers,
+    sample_otus
   }
 }
 

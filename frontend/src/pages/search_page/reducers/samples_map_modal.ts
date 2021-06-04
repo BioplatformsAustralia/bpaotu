@@ -40,7 +40,8 @@ export default handleActions(
     [samplesMapModalFetchSamplesStarted as any]: (state, action) => ({
       ...state,
       isLoading: true,
-      markers: []
+      markers: [],
+      sample_otus: []
     }),
     [samplesMapModalFetchSamplesEnded as any]: (state, action: any) => ({
       ...state,
@@ -51,7 +52,8 @@ export default handleActions(
         lat: sample.latitude,
         lng: sample.longitude,
         site_images: sample.site_images
-      }))
+      })),
+      sample_otus: action.payload.data.sample_otus
     })
   },
   searchPageInitialState.samplesMapModal

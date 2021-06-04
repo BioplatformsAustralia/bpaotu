@@ -49,7 +49,7 @@ def _spatial_query(params):
             write_fns[column.name] = (title, fn)
 
         with SampleQuery(params) as query:
-            samples = query.matching_samples()
+            samples = query.matching_samples_20k()
 
         def samples_contextual_data(sample):
             return {
@@ -58,28 +58,48 @@ def _spatial_query(params):
                 if not (v is None or v.strip() == '')
             }
 
-        def sample_otus_abundance_tbl(query):
-            q = query.matching_sample_otus_abundance(SampleContext.latitude, SampleContext.longitude)
-            log_query(q)
-            for otu_id, sample_id, count in q.yield_per(50):
-                yield (sample_id, otu_id, count)
+        # def sample_otus_abundance_tbl(query):
+        #     q = query.matching_sample_otus_abundance(SampleContext.latitude, SampleContext.longitude)
+        #     log_query(q)
+        #     for lat, lng, count in q.yield_per(50):
+        #         yield (lat, lng, count)
+
+        # with SampleQuery(params) as query:
+        #     sample_otus = {}
+        #     abundance_tbl = sample_otus_abundance_tbl(query)
+        #     for sample_otu in abundance_tbl:
+        #         key = f"{sample_otu[0]}-{sample_otu[1]}"
+        #         sample_otus[key] = sample_otu[2]
+        #     logger.info(f"Ending query - sample_otus size: {len(sample_otus)}")
+
+        def sample_otus_abundance(query):
+            q = query.matching_sample_otus_groupby_lat_lng_id(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
+            for lat, lng, sample_id, otus, abundance in q.yield_per(50):
+                yield (lat, lng, sample_id, otus, abundance)
+
+        def sample_otus_abundance_20k(query):
+            q = query.matching_sample_otus_groupby_lat_lng_id_20k(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
+            for lat, lng, sample_id, otus, abundance in q.yield_per(50):
+                yield (lat, lng, sample_id, otus, abundance)
 
         with SampleQuery(params) as query:
-            sample_otus = {}
-            abundance_tbl = sample_otus_abundance_tbl(query)
+            sample_otus_all = []
+            # sample_otus = {}
+            abundance_tbl = sample_otus_abundance_20k(query)
             for sample_otu in abundance_tbl:
-                key = f"{sample_otu[1]}-{sample_otu[0]}"
-                sample_otus[key] = sample_otu[2]
+                sample_otus_all.append(sample_otu)
+                # logger.info(f"sample_otu: {sample_otu}")
+            logger.info(f"Ending query - sample_otus_all size: {len(sample_otus_all)}")
 
         result = defaultdict(lambda: defaultdict(dict))
         for sample in samples:
             latlng = result[(sample.latitude, sample.longitude)]
             latlng['latitude'] = sample.latitude
             latlng['longitude'] = _corrected_longitude(sample.longitude)
-            latlng['sample_otus_abundance'] = sample_otus.get(f"{sample.latitude}-{sample.longitude}")
+            # latlng['sample_otus_abundance'] = sample_otus.get(f"{sample.latitude}-{sample.longitude}")
             latlng['bpa_data'][sample.id] = samples_contextual_data(sample)
 
-    return list(result.values())
+    return list(result.values()), sample_otus_all
 
 
 def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=False):

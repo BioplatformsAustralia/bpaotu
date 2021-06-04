@@ -6,6 +6,7 @@ import logging
 import sqlalchemy
 from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker, aliased
+from sqlalchemy.dialects import postgresql
 
 from django.core.cache import caches
 from hashlib import sha256
@@ -23,6 +24,9 @@ from .otu import (
     OTUSpecies,
     SampleContext,
     SampleOTU,
+    OTUSampleOTU,
+    OTUSampleOTU20K,
+    SampleOTU20K,
     ImportMetadata,
     ImportedFile,
     ExcludedSamples,
@@ -367,6 +371,12 @@ class SampleQuery:
         q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
         return self._q_all_cached('matching_samples', q)
 
+    def matching_samples_20k(self):
+        q = self._session.query(SampleContext)
+        subq = self._build_taxonomy_subquery_20k()
+        q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
+        return self._q_all_cached('matching_samples_20k', q)
+
     def matching_otus(self, kingdom_id=None):
         q = self._session.query(OTU)
         subq = self._build_contextual_subquery()
@@ -411,6 +421,96 @@ class SampleQuery:
             q = q.filter(OTU.kingdom_id == kingdom_id)
         return q
 
+    def matching_sample_otus_groupby_lat_lng_id(self, *args, kingdom_id=None):
+        q = self._session.query(*args, func.sum(OTUSampleOTU.richness), func.sum(OTUSampleOTU.count)) \
+            .filter(SampleContext.id == OTUSampleOTU.sample_id) \
+            .group_by(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
+        q = apply_op_and_val_filter(getattr(OTUSampleOTU, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
+        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
+            q = apply_op_and_val_filter(getattr(OTUSampleOTU, otu_attr), q, taxonomy)
+        q = self._contextual_filter.apply(q)
+        if kingdom_id is not None:
+            q = q.filter(OTU.kingdom_id == kingdom_id)
+        logger.info("\n\nmatching_sample_otus_groupby_lat_lng_id\n\n")
+        log_query(q)
+        logger.info("\n\nmatching_sample_otus_groupby_lat_lng_id\n\n")
+        return q
+
+    def matching_sample_otus_groupby_lat_lng_id_20k(self, *args, kingdom_id=None):
+        q = self._session.query(*args, func.sum(OTUSampleOTU20K.richness), func.sum(OTUSampleOTU20K.count)) \
+            .filter(SampleContext.id == OTUSampleOTU20K.sample_id) \
+            .group_by(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
+            # .group_by(SampleContext.latitude, SampleContext.longitude)
+        q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
+        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
+            q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, otu_attr), q, taxonomy)
+        q = self._contextual_filter.apply(q)
+        if kingdom_id is not None:
+            q = q.filter(OTU.kingdom_id == kingdom_id)
+        logger.info("\n\nmatching_sample_otus_groupby_lat_lng_id\n\n")
+        log_query(q)
+        logger.info("\n\nmatching_sample_otus_groupby_lat_lng_id\n\n")
+        return q
+
+    # def matching_sample_otus_groupby_lat_lng_id(self, *args, kingdom_id=None):
+    #     # q = self._session.query(*args, func.array_to_string(func.array_agg(SampleOTU.otu_id), ','), func.sum(SampleOTU.count)) \
+    #     q = self._session.query(*args, func.count(SampleOTU.otu_id), func.sum(SampleOTU.count)) \
+    #         .filter(OTU.id == SampleOTU.otu_id) \
+    #         .filter(SampleContext.id == SampleOTU.sample_id) \
+    #         .group_by(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
+    #     q = self._taxonomy_filter.apply(q)
+    #     q = self._contextual_filter.apply(q)
+    #     if kingdom_id is not None:
+    #         q = q.filter(OTU.kingdom_id == kingdom_id)
+    #     logger.info("\n\nmatching_sample_otus_groupby_lat_lng_id\n\n")
+    #     log_query(q)
+    #     logger.info("\n\nmatching_sample_otus_groupby_lat_lng_id\n\n")
+    #     return q
+
+    # def matching_sample_otus_groupby_lat_lng_id_20k(self, *args, kingdom_id=None):
+    #     # q = self._session.query(*args, func.array_to_string(func.array_agg(SampleOTU20K.otu_id), ','), func.sum(SampleOTU20K.count)) \
+    #     q = self._session.query(*args, func.count(SampleOTU20K.otu_id), func.sum(SampleOTU20K.count)) \
+    #         .filter(OTU.id == SampleOTU20K.otu_id) \
+    #         .filter(SampleContext.id == SampleOTU20K.sample_id) \
+    #         .group_by(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
+    #     q = self._taxonomy_filter.apply(q)
+    #     q = self._contextual_filter.apply(q)
+    #     if kingdom_id is not None:
+    #         q = q.filter(OTU.kingdom_id == kingdom_id)
+    #     return q
+
+    # def _build_taxonomy_subquery_matview1(self):
+    #     """
+    #     return the Sample IDs (as ints) which have a non-zero OTU count for OTUs
+    #     matching the taxonomy filter
+    #     """
+    #     if self._taxonomy_filter.is_empty():
+    #         return None
+    #     q = self._session.query(OTUSampleOTU.sample_id, func.sum(OTUSampleOTU.count)).group_by(OTUSampleOTU.sample_id)  # .distinct()
+    #     q = apply_op_and_val_filter(getattr(OTUSampleOTU, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
+    #     for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
+    #         q = apply_op_and_val_filter(getattr(OTUSampleOTU, otu_attr), q, taxonomy)
+    #     logger.info("\n\n_build_taxonomy_subquery_matview1\n\n")
+    #     log_query(q)
+    #     logger.info("\n\n_build_taxonomy_subquery_matview1\n\n")
+    #     return q
+
+    def _build_taxonomy_subquery_matview(self):
+        """
+        return the Sample IDs (as ints) which have a non-zero OTU count for OTUs
+        matching the taxonomy filter
+        """
+        if self._taxonomy_filter.is_empty():
+            return None
+        q = self._session.query(OTUSampleOTU.sample_id).group_by(OTUSampleOTU.sample_id)  # .distinct()
+        q = apply_op_and_val_filter(getattr(OTUSampleOTU, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
+        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
+            q = apply_op_and_val_filter(getattr(OTUSampleOTU, otu_attr), q, taxonomy)
+        logger.info("\n\n_build_taxonomy_subquery_matview\n\n")
+        log_query(q)
+        logger.info("\n\n_build_taxonomy_subquery_matview\n\n")
+        return q
+
     def _build_taxonomy_subquery(self):
         """
         return the Sample IDs (as ints) which have a non-zero OTU count for OTUs
@@ -418,10 +518,23 @@ class SampleQuery:
         """
         if self._taxonomy_filter.is_empty():
             return None
-        q = (self._session.query(SampleOTU.sample_id)
-                          .distinct()
+        q = (self._session.query(SampleOTU.sample_id)  # .distinct()
                           .join(OTU)
-                          .filter(OTU.id == SampleOTU.otu_id))
+                          .filter(OTU.id == SampleOTU.otu_id)
+                          .group_by(SampleOTU.sample_id))
+        return self._taxonomy_filter.apply(q)
+
+    def _build_taxonomy_subquery_20k(self):
+        """
+        return the Sample IDs (as ints) which have a non-zero OTU count for OTUs
+        matching the taxonomy filter
+        """
+        if self._taxonomy_filter.is_empty():
+            return None
+        q = (self._session.query(SampleOTU20K.sample_id)  # .distinct()
+                          .join(OTU)
+                          .filter(OTU.id == SampleOTU20K.otu_id)
+                          .group_by(SampleOTU20K.sample_id))
         return self._taxonomy_filter.apply(q)
 
     def _build_contextual_subquery(self):
@@ -433,9 +546,9 @@ class SampleQuery:
         if self._contextual_filter.is_empty():
             return None
         q = (self._session.query(SampleOTU.otu_id)
-                          .distinct()
                           .join(SampleContext)
-                          .filter(SampleContext.id == SampleOTU.sample_id))
+                          .filter(SampleContext.id == SampleOTU.sample_id)
+                          .group_by(SampleOTU.otu_id))
         return self._contextual_filter.apply(q)
 
     def _assemble_sample_query(self, sample_query, taxonomy_subquery):
@@ -739,6 +852,8 @@ apply_environment_filter = partial(apply_op_and_val_filter, SampleContext.am_env
 
 
 def log_query(q):
-    from sqlalchemy.dialects import postgresql
-    s = q.statement.compile(dialect=postgresql.dialect())
+    try:
+        s = q.statement.compile(dialect=postgresql.dialect(), compile_kwargs={'literal_binds': True})
+    except NotImplementedError:
+        s = q.statement.compile(dialect=postgresql.dialect())
     logger.debug('Query: \n%s', s)

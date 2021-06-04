@@ -3,15 +3,21 @@ import os
 
 from citext import CIText
 from django.conf import settings
-from sqlalchemy import (ARRAY, Column, Date, Time, Float, ForeignKey, Integer,
-                        String, create_engine)
+from sqlalchemy import (MetaData, ARRAY, Column, Date, Time, Float, ForeignKey, Integer,
+                        String, create_engine, select, Index)
+from sqlalchemy.sql import func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship
+from sqlalchemy_utils import (
+    create_materialized_view,
+    refresh_materialized_view
+)
 
 logger = logging.getLogger("rainbow")
-Base = declarative_base()
+# Base = declarative_base()
 SCHEMA = 'otu'
+Base = declarative_base(metadata=MetaData(schema=SCHEMA))
 
 
 class SchemaMixin():
@@ -107,6 +113,7 @@ class OTU(SchemaMixin, Base):
     id = Column(Integer, primary_key=True)
     code = Column(String(length=1024), nullable=False)  # long GATTACAt-ype string
 
+    
     # we query OTUs via heirarchy, so indexes on the first few
     # layers are sufficient
     kingdom_id = ontology_fkey(OTUKingdom, index=True)
@@ -736,6 +743,214 @@ class SampleOTU(SchemaMixin, Base):
         return "<SampleOTU(%d,%d,%d)>" % (self.sample_id, self.otu_id, self.count)
 
 
+class SampleOTU20K(SchemaMixin, Base):
+    __tablename__ = 'sample_otu_20k'
+    sample_id = Column(String, ForeignKey(SCHEMA + '.sample_context.id'), nullable=False, primary_key=True, index=True)
+    otu_id = Column(Integer, ForeignKey(SCHEMA + '.otu.id'), nullable=False, primary_key=True, index=True)
+    count = Column(Integer, nullable=False)
+
+    def __repr__(self):
+        return "<SampleOTU20K(%d,%d,%d)>" % (self.sample_id, self.otu_id, self.count)
+
+# class OTUSampleOTU(SchemaMixin, Base):
+#     # logger.info(f"\n\n\nOTUBase.metadata.schema: {OTUBase.metadata.schema}")
+#     logger.info(f"\n\n\nBase.metadata.schema: {Base.metadata.schema}")
+#     __table__ = create_mat_view(
+#         Base.metadata,
+#         "otu.otu_sample_otu",
+#         select([
+#             SampleOTU.sample_id,
+#             SampleOTU.otu_id,
+#             SampleOTU.count,
+#             OTU.kingdom_id,
+#             OTU.phylum_id,
+#             OTU.class_id,
+#             OTU.order_id,
+#             OTU.family_id,
+#             OTU.genus_id,
+#             OTU.species_id,
+#             OTU.amplicon_id
+#         ])
+#         .where(OTU.id == SampleOTU.otu_id)
+#         )
+
+
+# Index('test_index', OTUSampleOTU.id, unique=True)
+# Index('otu_sample_otu_index_sample_id_idx', OTUSampleOTU.sample_id),
+# Index('otu_sample_otu_index_otu_id_idx', OTUSampleOTU.otu_id),
+# Index('otu_sample_otu_index_kingdom_id_idx', OTUSampleOTU.kingdom_id),
+# Index('otu_sample_otu_index_phylum_id_idx', OTUSampleOTU.phylum_id),
+# Index('otu_sample_otu_index_class_id_idx', OTUSampleOTU.class_id),
+# Index('otu_sample_otu_index_order_id_idx', OTUSampleOTU.order_id),
+# Index('otu_sample_otu_index_family_id_idx', OTUSampleOTU.family_id),
+# Index('otu_sample_otu_index_genus_id_idx', OTUSampleOTU.genus_id),
+# Index('otu_sample_otu_index_species_id_idx', OTUSampleOTU.species_id),
+# Index('otu_sample_otu_index_amplicon_id_idx', OTUSampleOTU.amplicon_id),
+
+class OTUSampleOTU(SchemaMixin, Base):
+    # logger.info(f"\n\n\nOTUBase.metadata.schema: {OTUBase.metadata.schema}")
+    # logger.info(f"\n\n\nBase.metadata.schema: {Base.metadata.schema}")
+    # __table_args__ = {
+    #     "schema": SCHEMA
+    # }
+    # __tablename__ = 'sample_otu'
+    __table_args__ = {'schema': 'otu'}
+    __table__ = create_materialized_view(
+        name='otu_sample_otu',
+        selectable=select(
+            [
+                SampleOTU.sample_id,
+                func.count(SampleOTU.otu_id).label("richness"),
+                func.sum(SampleOTU.count).label("count"),
+                OTU.kingdom_id,
+                OTU.phylum_id,
+                OTU.class_id,
+                OTU.order_id,
+                OTU.family_id,
+                OTU.genus_id,
+                OTU.species_id,
+                OTU.amplicon_id
+            ],
+            from_obj=(
+                SampleOTU.__table__
+                .join(OTU, OTU.id == SampleOTU.otu_id)
+            )
+            # .group_by(SampleOTU.sample_id)
+            # .group_by(OTU.kingdom_id)
+            # .group_by(OTU.phylum_id)
+            # .group_by(OTU.class_id)
+            # .group_by(OTU.order_id)
+            # .group_by(OTU.family_id)
+            # .group_by(OTU.genus_id)
+            # .group_by(OTU.species_id)
+            # .group_by(OTU.amplicon_id)
+        ).group_by(SampleOTU.sample_id)
+        .group_by(SampleOTU.sample_id)
+        .group_by(OTU.kingdom_id)
+        .group_by(OTU.phylum_id)
+        .group_by(OTU.class_id)
+        .group_by(OTU.order_id)
+        .group_by(OTU.family_id)
+        .group_by(OTU.genus_id)
+        .group_by(OTU.species_id)
+        .group_by(OTU.amplicon_id),
+        # aliases={'count': 'countid'},
+        metadata=Base.metadata,
+        indexes=[
+            Index('otu_sample_otu_index_sample_id_idx', 'sample_id'),
+            Index('otu_sample_otu_index_kingdom_id_idx', 'kingdom_id'),
+            Index('otu_sample_otu_index_phylum_id_idx', 'phylum_id'),
+            Index('otu_sample_otu_index_class_id_idx', 'class_id'),
+            Index('otu_sample_otu_index_order_id_idx', 'order_id'),
+            Index('otu_sample_otu_index_family_id_idx', 'family_id'),
+            Index('otu_sample_otu_index_genus_id_idx', 'genus_id'),
+            Index('otu_sample_otu_index_species_id_idx', 'species_id'),
+            Index('otu_sample_otu_index_amplicon_id_idx', 'amplicon_id'),
+        ]
+    )
+
+class OTUSampleOTU20K(SchemaMixin, Base):
+    # logger.info(f"\n\n\nOTUBase.metadata.schema: {OTUBase.metadata.schema}")
+    # logger.info(f"\n\n\nBase.metadata.schema: {Base.metadata.schema}")
+    # __table_args__ = {
+    #     "schema": SCHEMA
+    # }
+    # __tablename__ = 'sample_otu_20k'
+    __table_args__ = {'schema': 'otu'}
+    __table__ = create_materialized_view(
+        name='otu_sample_otu_20k',
+        selectable=select(
+            [
+                SampleOTU20K.sample_id,
+                func.count(SampleOTU20K.otu_id).label("richness"),
+                func.sum(SampleOTU20K.count).label("count"),
+                OTU.kingdom_id,
+                OTU.phylum_id,
+                OTU.class_id,
+                OTU.order_id,
+                OTU.family_id,
+                OTU.genus_id,
+                OTU.species_id,
+                OTU.amplicon_id
+            ],
+            from_obj=(
+                SampleOTU20K.__table__
+                .join(OTU, OTU.id == SampleOTU20K.otu_id)
+                
+            )
+        ).group_by(SampleOTU20K.sample_id)
+        .group_by(OTU.kingdom_id)
+        .group_by(OTU.phylum_id)
+        .group_by(OTU.class_id)
+        .group_by(OTU.order_id)
+        .group_by(OTU.family_id)
+        .group_by(OTU.genus_id)
+        .group_by(OTU.species_id)
+        .group_by(OTU.amplicon_id),
+        # aliases={'count': 'countid'},
+        metadata=Base.metadata,
+        indexes=[
+            Index('otu_sample_otu_20k_index_sample_id_idx', 'sample_id'),
+            Index('otu_sample_otu_20k_index_kingdom_id_idx', 'kingdom_id'),
+            Index('otu_sample_otu_20k_index_phylum_id_idx', 'phylum_id'),
+            Index('otu_sample_otu_20k_index_class_id_idx', 'class_id'),
+            Index('otu_sample_otu_20k_index_order_id_idx', 'order_id'),
+            Index('otu_sample_otu_20k_index_family_id_idx', 'family_id'),
+            Index('otu_sample_otu_20k_index_genus_id_idx', 'genus_id'),
+            Index('otu_sample_otu_20k_index_species_id_idx', 'species_id'),
+            Index('otu_sample_otu_20k_index_amplicon_id_idx', 'amplicon_id'),
+        ]
+    )
+
+
+# Index('otu_sample_otu_index_sample_id_idx', OTUSampleOTU.sample_id)
+# Index('otu_sample_otu_index_otu_id_idx', OTUSampleOTU.otu_id)
+# Index('otu_sample_otu_index_kingdom_id_idx', OTUSampleOTU.kingdom_id)
+# Index('otu_sample_otu_index_phylum_id_idx', OTUSampleOTU.phylum_id)
+# Index('otu_sample_otu_index_class_id_idx', OTUSampleOTU.class_id)
+# Index('otu_sample_otu_index_order_id_idx', OTUSampleOTU.order_id)
+# Index('otu_sample_otu_index_family_id_idx', OTUSampleOTU.family_id)
+# Index('otu_sample_otu_index_genus_id_idx', OTUSampleOTU.genus_id)
+# Index('otu_sample_otu_index_species_id_idx', OTUSampleOTU.species_id)
+# Index('otu_sample_otu_index_amplicon_id_idx', OTUSampleOTU.amplicon_id)
+
+# class OTUSampleOTU(SchemaMixin, OTUBase):
+#     logger.info(f"\n\n\nOTUBase.metadata.schema: {OTUBase.metadata.schema}")
+#     logger.info(f"\n\n\nBase.metadata.schema: {Base.metadata.schema}")
+#     __table__ = create_materialized_view(
+#         name='otu_sample_otu',
+#         selectable=select(
+#             [
+#                 SampleOTU.sample_id,
+#                 SampleOTU.otu_id,
+#                 SampleOTU.count,
+#                 OTU.kingdom_id,
+#                 OTU.phylum_id,
+#                 OTU.class_id,
+#                 OTU.order_id,
+#                 OTU.family_id,
+#                 OTU.genus_id,
+#                 OTU.species_id,
+#                 OTU.amplicon_id
+#             ]
+#         ).select_from(SampleOTU.__table__.outerjoin(OTU, OTU.id == SampleOTU.otu_id)),
+#         # aliases={'name': 'article_name'},
+#         metadata=OTUBase.metadata,
+
+#         indexes=[
+#             Index('otu_sample_otu_index_sample_id_idx', 'sample_id'),
+#             Index('otu_sample_otu_index_otu_id_idx', 'otu_id'),
+#             Index('otu_sample_otu_index_kingdom_id_idx', 'kingdom_id'),
+#             Index('otu_sample_otu_index_phylum_id_idx', 'phylum_id'),
+#             Index('otu_sample_otu_index_class_id_idx', 'class_id'),
+#             Index('otu_sample_otu_index_order_id_idx', 'order_id'),
+#             Index('otu_sample_otu_index_family_id_idx', 'family_id'),
+#             Index('otu_sample_otu_index_genus_id_idx', 'genus_id'),
+#             Index('otu_sample_otu_index_species_id_idx', 'species_id'),
+#             Index('otu_sample_otu_index_amplicon_id_idx', 'amplicon_id'),
+#         ]
+#     )
+
 class OntologyErrors(SchemaMixin, Base):
     __tablename__ = 'ontology_errors'
     id = Column(Integer, primary_key=True)
@@ -780,4 +995,11 @@ def make_engine():
     conf = settings.DATABASES['default']
     engine_string = 'postgres://%(USER)s:%(PASSWORD)s@%(HOST)s:%(PORT)s/%(NAME)s' % (conf)
     echo = os.environ.get('BPAOTU_ECHO') == '1'
-    return create_engine(engine_string, echo=echo)
+    engine = create_engine(engine_string, echo=echo)
+    with engine.connect() as conn:
+        conn.execute('SET search_path TO {schema}'.format(schema=SCHEMA))
+    return engine
+
+
+def refresh_otu_sample_otu_mv(session, mv):
+    refresh_materialized_view(session, mv)

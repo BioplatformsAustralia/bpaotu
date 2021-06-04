@@ -53,7 +53,8 @@ export interface PageState {
   samplesMapModal: {
     isOpen: boolean
     isLoading: boolean
-    markers: SampleMarker[]
+    markers: SampleMarker[],
+    sample_otus: any[]
   }
   galaxy: {
     isSubmitting: boolean
@@ -110,7 +111,8 @@ export const searchPageInitialState: PageState = {
   samplesMapModal: {
     isOpen: false,
     isLoading: false,
-    markers: []
+    markers: [],
+    sample_otus: []
   },
   galaxy: {
     alerts: [],
