@@ -31,7 +31,7 @@ const makeTaxonomyFetcher = config => () => (dispatch, getState) => {
   const selectedAmplicon = state.searchPage.filters.selectedAmplicon
   const selectedTaxonomies = map(config.taxonomies, taxonomy => state.searchPage.filters.taxonomy[taxonomy].selected)
 
-  if (selectedTaxonomies.length > 0 && last(selectedTaxonomies).value === '') {
+  if (selectedAmplicon.value === '' || (selectedTaxonomies.length > 0 && last(selectedTaxonomies).value === '')) {
     dispatch(clearTaxonomyFilter(config.type)())
     return Promise.resolve()
   }

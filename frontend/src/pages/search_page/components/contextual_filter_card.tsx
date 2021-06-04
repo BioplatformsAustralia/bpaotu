@@ -1,10 +1,13 @@
 import { filter, find } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
-import { Button, Card, CardBody, CardFooter, CardHeader, Col, Form, Input, Row, UncontrolledTooltip, Badge } from 'reactstrap'
+import { Button, Card, CardBody, CardFooter, CardHeader, Col, Form, FormGroup, Input, Row, Label, UncontrolledTooltip, Badge } from 'reactstrap'
 import Octicon from '../../../components/octicon'
+
 import { bindActionCreators } from 'redux'
 import {
+  addWarningContextualFilter,
+  removeWarningContextualFilter,
   addContextualFilter,
   changeContextualFilterOperator,
   changeContextualFilterValue,
@@ -23,14 +26,16 @@ import EnvironmentFilter from './environment_filter'
 
 class ContextualFilterCard extends React.Component<any> {
   public componentDidMount() {
-    this.props.fetchContextualDataDefinitions()
+    // this.props.fetchContextualDataDefinitions()
+    if(this.props.fetchContextualDataDefinitions())
+      this.props.addWarningContextualFilter()
   }
 
   public render() {
     return (
       <Card>
         <CardHeader>
-          <Row>
+        <Row>
               <Col>
                   Contextual Filters  
               </Col>
@@ -84,6 +89,21 @@ class ContextualFilterCard extends React.Component<any> {
               </Col>
             </Row>
           )}
+
+          <Row>
+            <Col sm={12}>
+              <FormGroup check>
+                <Label sm={9} check>
+                  <Input
+                      type="checkbox"
+                      defaultChecked={true}
+                      onChange={evt => evt.target.checked? this.props.removeWarningContextualFilter():this.props.addWarningContextualFilter() }
+                    />
+                    Tick to include data that has sample integrity warnings
+                </Label>
+              </FormGroup>
+            </Col>
+          </Row>
 
           <Row className="space-above" />
 
@@ -139,6 +159,8 @@ function mapDispatchToProps(dispatch: any) {
     {
       fetchContextualDataDefinitions,
       selectContextualFiltersMode,
+      addWarningContextualFilter,
+      removeWarningContextualFilter,
       addContextualFilter,
       removeContextualFilter,
       selectContextualFilter,
