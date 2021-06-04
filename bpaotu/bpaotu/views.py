@@ -1,4 +1,5 @@
 import csv
+import numpy as np
 import pandas as pd
 import hmac
 import io
@@ -38,6 +39,7 @@ from .query import (ContextualFilter, ContextualFilterTermDate,
                     ContextualFilterTermFloat, ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
                     MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
+                    OTUSampleOTUQuery,
                     TaxonomyFilter, TaxonomyOptions, get_sample_ids,
                     SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
 from .site_images import fetch_image, get_site_image_lookup_table
@@ -119,6 +121,8 @@ def api_config(request):
         'amplicon_endpoint': reverse('amplicon_options'),
         'taxonomy_endpoint': reverse('taxonomy_options'),
         'contextual_endpoint': reverse('contextual_fields'),
+        'contextual_graph_endpoint': reverse('contextual_graph_fields'),
+        'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),
         'search_endpoint': reverse('otu_search'),
         'export_endpoint': reverse('otu_export'),
         'export_biom_endpoint': reverse('otu_biom_export'),
@@ -233,6 +237,123 @@ def contextual_fields(request):
         'definitions_url': get_contextual_schema_definition().get("download_url")
     })
 
+@require_CKAN_auth
+@require_POST
+def contextual_graph_fields(request, contextual_filtering=True):
+    additional_headers = json.loads(request.POST.get('columns', '[]'))
+    # all_headers = ['am_environment_id', 'vegetation_type_id', 'ph'] + additional_headers
+    all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph', 'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id', 'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
+
+    # logger.debug(f"all_headers: {all_headers}")
+    # logger.debug(f"request.POST['otu_query']: {request.POST['otu_query']}")
+    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+    # logger.debug(f"contextual_graph_fields- param: {params}")
+    if errors:
+        return JsonResponse({
+            'errors': [str(t) for t in errors],
+            'graphdata': {}
+        })
+    graph_results = {}
+
+    with SampleQuery(params) as query:
+        results = query.matching_sample_graph_data(all_headers)
+
+    if results:
+        data = np.array(results)
+        tdata = data.T
+
+        for i in range(len(all_headers)):
+            ll = []
+            cleaned_data = [x for x in tdata[i] if (x)]
+            for test in np.unique(cleaned_data, return_counts=True):
+                ll.append(test.tolist())
+            graph_results[all_headers[i]] = ll
+
+    return JsonResponse({
+        'graphdata': graph_results
+    })
+
+@require_CKAN_auth
+@require_POST
+def taxonomy_graph_fields(request, contextual_filtering=True):
+    # additional_headers = json.loads(request.POST.get('columns', '[]'))
+    # all_headers = ['am_environment_id', 'vegetation_type_id', 'ph'] + additional_headers
+    # all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph', 'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id', 'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
+    # all_headers = []
+    # logger.debug(f"all_headers: {all_headers}")
+    # logger.debug(f"request.POST['otu_query']: {request.POST['otu_query']}")
+    # Exclude environment field of contextual_filters
+    otu_query = request.POST['otu_query']
+    otu_query_dict = json.loads(otu_query)
+    if(otu_query_dict.get('contextual_filters') and otu_query_dict.get('contextual_filters').get('environment')):
+        # logger.info(f"environment>>>>>>>>>>> {otu_query_dict.get('contextual_filters').get('environment')}")
+        otu_query_dict['contextual_filters']['environment'] = None
+        otu_query = json.dumps(otu_query_dict)
+
+    params_all, errors_all = param_to_filters(otu_query, contextual_filtering=False)
+    if errors_all:
+        return JsonResponse({
+            'errors': [str(t) for t in errors_all],
+            'graphdata': {}
+        })
+
+    with OTUSampleOTUQuery(params_all) as query:
+        am_environment_results_all = query.matching_taxonomy_graph_data_all()
+        # logger.info(f"am_environment_results_all: {am_environment_results_all}")
+
+    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=False)
+    if errors:
+        return JsonResponse({
+            'errors': [str(t) for t in errors],
+            'graphdata': {}
+        })
+
+    with OTUSampleOTUQuery(params) as query:
+        results = query.matching_taxonomy_graph_data()
+
+    params_selected, errors_selected = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+    if errors_selected:
+        return JsonResponse({
+            'errors': [str(t) for t in errors_selected],
+            'graphdata': {}
+        })
+
+    with OTUSampleOTUQuery(params_selected) as query:
+        results_selected = query.matching_taxonomy_graph_data()
+
+    df_results = pd.DataFrame(results, columns=['amplicon', 'taxonomy', 'am_environment', 'sum'])
+    df_results_selected = pd.DataFrame(results_selected, columns=['amplicon', 'taxonomy', 'am_environment', 'sum'])
+    # logger.info(f"df_results: {df_results}")
+    taxonomy_results = dict(df_results.groupby('taxonomy').agg({'sum': ['sum']}).itertuples(index=True, name=None))
+    # logger.info(f"taxonomy_results: {taxonomy_results}")
+    amplicon_results = dict(df_results.groupby('amplicon').agg({'sum': ['sum']}).itertuples(index=True, name=None))
+    # logger.info(f"amplicon_results: {amplicon_results}")
+    
+    am_environment_results = {}
+    for taxonomy_am_environment, sum in df_results.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        if am_environment_results.get(taxonomy_am_environment[0]):
+            am_environment_results[taxonomy_am_environment[0]].append([taxonomy_am_environment[1], sum])
+        else:
+            am_environment_results[taxonomy_am_environment[0]] = [[taxonomy_am_environment[1], sum]]
+    # logger.info(f"am_environment_results: {am_environment_results}")
+    
+    am_environment_results_selected = {}
+    for taxonomy_am_environment, sum in df_results_selected.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        if am_environment_results_selected.get(taxonomy_am_environment[0]):
+            am_environment_results_selected[taxonomy_am_environment[0]].append([taxonomy_am_environment[1], sum])
+        else:
+            am_environment_results_selected[taxonomy_am_environment[0]] = [[taxonomy_am_environment[1], sum]]
+    # logger.info(f"am_environment_results_selected: {am_environment_results_selected}")
+
+    return JsonResponse({
+        'graphdata': {
+            "amplicon": amplicon_results,
+            "taxonomy": taxonomy_results,
+            "am_environment_all": am_environment_results_all,
+            "am_environment": am_environment_results,
+            "am_environment_selected": am_environment_results_selected
+        }
+    })
 
 def _parse_contextual_term(filter_spec):
     field_name = filter_spec['field']

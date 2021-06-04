@@ -12,6 +12,8 @@ export interface SearchConfig {
   amplicon_endpoint: string
   taxonomy_endpoint: string
   contextual_endpoint: string
+  contextual_graph_endpoint: string
+  taxonomy_graph_endpoint: string
   search_endpoint: string
   export_endpoint: string
   export_biom_endpoint: string

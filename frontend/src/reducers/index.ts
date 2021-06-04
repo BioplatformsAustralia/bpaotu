@@ -5,6 +5,8 @@ import searchPageReducer from '../pages/search_page/reducers'
 import authReducer from './auth'
 import referenceDataReducer from './reference_data'
 import contextualDataDefinitionsReducer from './contextual_data_definitions'
+import contextualDataForGraphReducer from './contextual_data_graph'
+import taxonomyDataForGraphReducer from './taxonomy_data_graph'
 
 const rootReducer = combineReducers({
   referenceData: referenceDataReducer,
@@ -12,6 +14,8 @@ const rootReducer = combineReducers({
   searchPage: searchPageReducer,
   contextualPage: contextualPageReducer,
   contextualDataDefinitions: contextualDataDefinitionsReducer,
+  contextualDataForGraph: contextualDataForGraphReducer,
+  taxonomyDataForGraph: taxonomyDataForGraphReducer,
   auth: authReducer
 })
 

@@ -2,9 +2,10 @@ import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
-import { fetchAmplicons } from '../../../reducers/reference_data/amplicons'
+import { fetchAmplicons} from '../../../reducers/reference_data/amplicons'
+import { selectAmplicon } from '../reducers/amplicon'
 
-import { Button, Card, CardBody, CardFooter, CardHeader, UncontrolledTooltip } from 'reactstrap'
+import { Button, Card, CardBody, CardFooter, CardHeader, Row, Col, UncontrolledTooltip } from 'reactstrap'
 import { clearAllTaxonomyFilters, fetchKingdoms } from '../reducers/taxonomy'
 
 import Octicon from '../../../components/octicon'
@@ -19,10 +20,12 @@ import {
   SpeciesFilter
 } from './taxonomy_filters'
 
-const AmpliconFilterInfo =
+export const AmpliconFilterInfo =
   'Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, Eukaryotes (v4 and v9) and Fungi.  To filter data from a single amplicon select that amplicon here.  To search all amplicons for a taxa select "all".  Note the "all" search will return non-target sequences as well as target, for example searching "Amplicon = all" + "Kingdom = Bacteria" will return all sequences classified as bacteria in all assays.'
-const TaxonomyFilterInfo =
+export const TaxonomyFilterInfo =
   'Taxonomy is assigned with bayesian classifier using SILVA v138 for rRNA genes and UNITE_SH v8 for ITS regions.'
+export const TaxonomyNoAmpliconInfo = 
+  'Select Amplicon to filter taxonomy'
 
 export class AmpliconTaxonomyFilterCard extends React.Component<any> {
   constructor(props) {
@@ -32,6 +35,7 @@ export class AmpliconTaxonomyFilterCard extends React.Component<any> {
 
   public componentDidMount() {
     this.props.fetchAmplicons()
+    this.props.selectAmplicon('3')  // TODO: HARDCODED 16S Amplicon
     this.props.fetchKingdoms()
   }
 
@@ -59,6 +63,13 @@ export class AmpliconTaxonomyFilterCard extends React.Component<any> {
 
           <hr />
           <h5 className="text-center">Taxonomy</h5>
+          <Row>
+            <Col>
+              <p className="text-center">
+              {TaxonomyNoAmpliconInfo}
+              </p>
+            </Col>
+          </Row>
 
           <KingdomFilter />
           <PhylumFilter />
@@ -89,6 +100,7 @@ function mapDispatchToProps(dispatch: any) {
     {
       fetchAmplicons,
       fetchKingdoms,
+      selectAmplicon,
       clearAllTaxonomyFilters
     },
     dispatch

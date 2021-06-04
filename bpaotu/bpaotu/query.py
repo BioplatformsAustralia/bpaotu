@@ -286,6 +286,97 @@ class OntologyInfo:
         return self._session.query(ontology_class.id).filter(ontology_class.value == value).one()[0]
 
 
+class OTUSampleOTUQuery:
+    """
+    find samples IDs which match the given taxonomical and
+    contextual filters
+    """
+
+    def __init__(self, params):
+        self._session = Session()
+        # amplicon filter is a master filter over the taxonomy; it's not
+        # a strict part of the hierarchy, but affects taxonomy options
+        # available
+        self._taxonomy_filter = params.taxonomy_filter
+        self._contextual_filter = params.contextual_filter
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exec_type, exc_value, traceback):
+        self._session.close()
+
+    def _q_all_cached(self, topic, q, mutate_result=None):
+        cache = caches['search_results']
+
+        stmt = q.with_labels().statement
+        compiled = stmt.compile()
+        params = compiled.params
+
+        key = make_cache_key(
+            'OTUSampleOTUQuery._q_all_cached',
+            topic,
+            str(compiled),
+            params)
+
+        result = cache.get(key)
+        if not result:
+            result = q.all()
+            if mutate_result:
+                result = mutate_result(result)
+            cache.set(key, result, CACHE_7DAYS)
+        return result
+
+    def matching_taxonomy_graph_data(self, all=False):
+        taxolistall = {}
+        groupByAttr = getattr(OTUSampleOTU, "species_id")
+        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
+            # logger.info(f"OTU_ATTR: {otu_attr} - {ontology_class} - {taxonomy}")
+            if taxonomy is None or taxonomy.get('value') is None:
+                groupByAttr = getattr(OTUSampleOTU, otu_attr)
+                break
+            taxolistall[otu_attr] = taxonomy
+
+        if groupByAttr:
+            # logger.info(f"taxolistall: {taxolistall} --- groupByAttr: {groupByAttr}")
+            ampliconAttr = getattr(OTUSampleOTU, 'amplicon_id')
+            amEnvironmentAttr = getattr(SampleContext, 'am_environment_id')
+            q = self._session.query(
+                ampliconAttr, groupByAttr, amEnvironmentAttr, func.sum(OTUSampleOTU.count)
+                ).group_by(groupByAttr).group_by(ampliconAttr).group_by(amEnvironmentAttr)
+            q = apply_op_and_val_filter(ampliconAttr, q, self._taxonomy_filter.amplicon_filter)
+            for otu_attr, taxonomy in taxolistall.items():
+                q = apply_op_and_val_filter(getattr(OTUSampleOTU, otu_attr), q, taxonomy)
+            q = q.filter(SampleContext.id == OTUSampleOTU.sample_id)
+            q = self._contextual_filter.apply(q)
+            log_query(q)
+        return self._q_all_cached('matching_taxonomy_graph_data', q)
+
+    def matching_taxonomy_graph_data_all(self, all=True):
+        taxolistall = {}
+        groupByAttr = getattr(OTUSampleOTU, "species_id")
+        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
+            logger.info(f"OTU_ATTR: {otu_attr} - {ontology_class} - {taxonomy}")
+            if taxonomy is None or taxonomy.get('value') is None:
+                groupByAttr = getattr(OTUSampleOTU, otu_attr)
+                break
+            taxolistall[otu_attr] = taxonomy
+
+        if groupByAttr:
+            logger.info(f"taxolistall: {taxolistall} --- groupByAttr: {groupByAttr}")
+            ampliconAttr = getattr(OTUSampleOTU, 'amplicon_id')
+            q = self._session.query(
+                groupByAttr, func.sum(OTUSampleOTU.count)
+                ).group_by(groupByAttr)
+            q = apply_op_and_val_filter(ampliconAttr, q, self._taxonomy_filter.amplicon_filter)
+            for otu_attr, taxonomy in taxolistall.items():
+                q = apply_op_and_val_filter(getattr(OTUSampleOTU, otu_attr), q, taxonomy)
+            q = q.filter(SampleContext.id == OTUSampleOTU.sample_id)
+            q = self._contextual_filter.apply(q)
+            log_query(q)
+        return self._q_all_cached('matching_taxonomy_graph_data_all', q)
+
+
 class SampleQuery:
     """
     find samples IDs which match the given taxonomical and
@@ -326,6 +417,22 @@ class SampleQuery:
                 result = mutate_result(result)
             cache.set(key, result, CACHE_7DAYS)
         return result
+
+    def matching_sample_graph_data(self, headers=None):
+        query_headers = []
+        if headers:
+            for h in headers:
+                if not h:
+                    continue
+                col = getattr(SampleContext, h)
+                query_headers.append(col)
+
+        q = self._session.query(*query_headers)
+        subq = self._build_taxonomy_subquery_matview()
+        # subq = self._build_taxonomy_subquery()
+        q = self._assemble_sample_query(q, subq)
+        log_query(q)
+        return self._q_all_cached('matching_sample_graph', q)
 
     def matching_sample_headers(self, required_headers=None, sorting=()):
         query_headers = [SampleContext.id, SampleContext.am_environment_id]
@@ -597,8 +704,6 @@ class SampleSchemaDefinition:
         self._session.close()
 
     def get_schema_definition_url(self):
-        # TODO: replace hardcoded url with database_schema_definitions_url field value from db 
-        # return 'https://raw.githubusercontent.com/AusMicrobiome/contextualdb_doc/2.0.2/db_schema_definitions/db_schema_definitions.xlsx'
         return self._session.query(SampleContext.database_schema_definitions_url).distinct().one()
 
 class TaxonomyFilter:

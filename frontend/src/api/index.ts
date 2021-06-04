@@ -28,6 +28,36 @@ export function getContextualDataDefinitions() {
   return axios.get(window.otu_search_config.contextual_endpoint)
 }
 
+export function getContextualDataForGraph(filters, options) {
+  const formData = new FormData()
+  formData.append('columns', JSON.stringify(_get(options, 'columns', [])))
+  formData.append('otu_query', JSON.stringify(filters))
+
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.contextual_graph_endpoint,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+export function getTaxonomyDataForGraph(filters, options) {
+  const formData = new FormData()
+  formData.append('columns', JSON.stringify(_get(options, 'columns', [])))
+  formData.append('otu_query', JSON.stringify(filters))
+
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.taxonomy_graph_endpoint,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
 export function getTaxonomy(selectedAmplicon = { value: '' }, selectedTaxonomies) {
   const taxonomies = completeArray(selectedTaxonomies, 7, { value: '' })
 
