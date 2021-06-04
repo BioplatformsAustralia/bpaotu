@@ -8,7 +8,6 @@ import PieChartAmplicon from './charts/pie_chart_amplicon'
 import HistogramChart from './charts/histogram_chart'
 import StackChart from './charts/stack_chart'
 // import TreePlotsChart from './charts/treeplots_chart'
-// import BarChart from './charts/bar_chart'
 import SunBurstChart from './charts/sunburst_chart';
 import { JellyfishSpinner } from "react-spinners-kit";
 import { connect } from 'react-redux'
