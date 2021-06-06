@@ -377,6 +377,7 @@ CELERY_TIMEZONE = TIME_ZONE
 
 CACHES['search_results'] = CACHES['default']
 CACHES['image_results'] = CACHES['default']
+CACHES['contextual_schema_definition_results'] = CACHES['default']
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 

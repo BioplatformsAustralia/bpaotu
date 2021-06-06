@@ -2,6 +2,7 @@
 from django.core.management.base import BaseCommand
 from ...query import TaxonomyOptions, OntologyInfo, OTUQueryParams, CACHE_FOREVER, ContextualFilter, TaxonomyFilter
 from ...spatial import spatial_query
+from ...views import get_contextual_schema_definition
 from ...otu import OTUKingdom, OTUAmplicon
 from collections import OrderedDict
 
@@ -33,6 +34,11 @@ class Command(BaseCommand):
         spatial_query(params, cache_duration=CACHE_FOREVER, force_cache=True)
         print("Complete")
 
+    def warm_schema_definitions(self):
+        print("Warming schema definitions")
+        get_contextual_schema_definition(cache_duration=CACHE_FOREVER, force_cache=True)
+        print("Complete")
+
     def handle(self, *args, **kwargs):
         self.kingdom_possibilities = [None]
         self.amplicon_possibilities = [None]
@@ -41,5 +47,6 @@ class Command(BaseCommand):
             self.amplicon_possibilities = [None] + [t for (t, _) in info.get_values(OTUAmplicon)]
             self.kingdom_possibilities = [None] + [t for (t, _) in info.get_values(OTUKingdom)]
 
+        self.warm_schema_definitions()
         self.warm_taxonomies()
         self.warm_map()

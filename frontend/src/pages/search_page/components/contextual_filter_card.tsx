@@ -1,7 +1,8 @@
 import { filter, find } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
-import { Button, Card, CardBody, CardFooter, CardHeader, Col, Form, Input, Row } from 'reactstrap'
+import { Button, Card, CardBody, CardFooter, CardHeader, Col, Form, Input, Row, UncontrolledTooltip, Badge } from 'reactstrap'
+import Octicon from '../../../components/octicon'
 import { bindActionCreators } from 'redux'
 import {
   addContextualFilter,
@@ -29,7 +30,26 @@ class ContextualFilterCard extends React.Component<any> {
     return (
       <Card>
         <CardHeader>
-          Contextual Filters
+          <Row>
+              <Col>
+                  Contextual Filters  
+              </Col>
+              <Col className="text-right">
+                <Badge pill color="secondary" style={{cursor:'pointer'}}
+                  onClick={() => {
+                    window.open(this.props.definitions_url)
+                  }}>
+                  <Octicon name="link" />{' '}Download Metadata Description{' '}
+                  <Badge color="secondary" id="downloadContextualTip">
+                    <Octicon name="info" />
+                  </Badge>
+                </Badge>
+                
+                <UncontrolledTooltip target="downloadContextualTip" placement="auto">
+                  {"Download Metadata for Contextual Data fields including units, field descriptions"}
+                </UncontrolledTooltip>
+              </Col>
+            </Row>
         </CardHeader>
         <CardBody className="filters">
           <EnvironmentFilter />
@@ -109,7 +129,8 @@ function mapStateToProps(state) {
       state.contextualDataDefinitions.filters,
       state.searchPage.filters.contextual.selectedEnvironment
     ),
-    optionsLoading: state.contextualDataDefinitions.isLoading
+    optionsLoading: state.contextualDataDefinitions.isLoading,
+    definitions_url: state.contextualDataDefinitions.definitions_url
   }
 }
 

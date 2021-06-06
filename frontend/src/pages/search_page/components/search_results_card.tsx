@@ -32,6 +32,7 @@ class SearchResultsCard extends React.Component<any, any> {
   constructor(props) {
     super(props)
     this.exportCSV = this.exportCSV.bind(this)
+    this.exportCSVOnlyContextual = this.exportCSVOnlyContextual.bind(this)
     this.exportBIOM = this.exportBIOM.bind(this)
   }
 
@@ -67,6 +68,7 @@ class SearchResultsCard extends React.Component<any, any> {
                 />
               )}
               <HeaderButton octicon="desktop-download" text="Export Search Results (CSV)" onClick={this.exportCSV} />
+              <HeaderButton octicon="desktop-download" text="Export Search Results - Only Contextual Data (CSV)" onClick={this.exportCSVOnlyContextual} />
               <HeaderButton octicon="desktop-download" text="Export Search Results (Phinch compatible BIOM)" onClick={this.exportBIOM} />
             </div>
           </CardHeader>
@@ -111,10 +113,11 @@ class SearchResultsCard extends React.Component<any, any> {
     return lastSubmission && !lastSubmission.finished
   }
 
-  public export(baseURL) {
+  public export(baseURL, onlyContextual=false) {
     const params = new URLSearchParams()
     params.set('token', this.props.ckanAuthToken)
     params.set('q', JSON.stringify(describeSearch(this.props.filters, this.props.contexualDataDefinitions)))
+    params.set('only_contextual', onlyContextual?'t':'f')
 
     const url = `${baseURL}?${params.toString()}`
     window.open(url)
@@ -127,6 +130,10 @@ class SearchResultsCard extends React.Component<any, any> {
 
   public exportCSV() {
     this.export(window.otu_search_config.export_endpoint)
+  }
+
+  public exportCSVOnlyContextual() {
+    this.export(window.otu_search_config.export_endpoint, true)
   }
 }
 

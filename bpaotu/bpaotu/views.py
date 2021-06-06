@@ -1,4 +1,5 @@
 import csv
+import pandas as pd
 import hmac
 import io
 import json
@@ -9,6 +10,7 @@ import time
 from collections import OrderedDict, defaultdict
 from functools import wraps
 from operator import itemgetter
+from requests.models import HTTPError
 
 from bpaingest.projects.amdb.contextual import \
     AustralianMicrobiomeSampleContextual
@@ -21,6 +23,7 @@ from django.urls import reverse
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
+from django.core.cache import caches
 
 from . import tasks
 from .biom import biom_zip_file_generator
@@ -33,7 +36,8 @@ from .query import (ContextualFilter, ContextualFilterTermDate,
                     ContextualFilterTermFloat, ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
                     MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
-                    TaxonomyFilter, TaxonomyOptions, get_sample_ids)
+                    TaxonomyFilter, TaxonomyOptions, get_sample_ids,
+                    SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
 from .site_images import fetch_image, get_site_image_lookup_table
 from .spatial import spatial_query
 from .tabular import tabular_zip_file_generator
@@ -125,6 +129,7 @@ def api_config(request):
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
         'required_table_headers_endpoint': reverse('required_table_headers'),
         'contextual_csv_download_endpoint': reverse('contextual_csv_download_endpoint'),
+        'contextual_schema_definition': reverse('contextual_schema_definition'),
         'base_url': settings.BASE_URL,
         'static_base_url': settings.STATIC_URL,
         'galaxy_base_url': settings.GALAXY_BASE_URL,
@@ -175,7 +180,7 @@ def contextual_fields(request):
     """
     fields_by_type = defaultdict(list)
 
-    classifications = DataImporter.classify_fields(make_environment_lookup())
+    classifications = DataImporter.classify_fields(make_environment_lookup(), get_contextual_schema_definition())
     field_units = AustralianMicrobiomeSampleContextual.units_for_fields()
 
     ontology_classes = {}
@@ -215,13 +220,15 @@ def contextual_fields(request):
     definitions = (
         [make_defn('sample_id', 'id', display_name='Sample ID', values=sorted(get_sample_ids()))] +
         [make_defn('date', field_name) for field_name in fields_by_type['DATE']] +
+        [make_defn('time', field_name) for field_name in fields_by_type['TIME']] +
         [make_defn('float', field_name) for field_name in fields_by_type['FLOAT']] +
         [make_defn('string', field_name) for field_name in fields_by_type['CITEXT']] +
         [make_defn('ontology', field_name, values=values) for field_name, values in fields_with_values])
     definitions.sort(key=itemgetter('display_name'))
 
     return JsonResponse({
-        'definitions': definitions
+        'definitions': definitions,
+        'definitions_url': get_contextual_schema_definition().get("download_url")
     })
 
 
@@ -234,7 +241,7 @@ def _parse_contextual_term(filter_spec):
     if column.name == 'id':
         if len(filter_spec['is']) == 0:
             raise ValueError("Value can't be empty")
-        return ContextualFilterTermSampleID(field_name, operator, [int(t) for t in filter_spec['is']])
+        return ContextualFilterTermSampleID(field_name, operator, [t for t in filter_spec['is']])
     elif hasattr(column, 'ontology_class'):
         return ContextualFilterTermOntology(field_name, operator, int(filter_spec['is']))
     elif typ == 'DATE':
@@ -465,7 +472,7 @@ def otu_export(request):
     """
     timestamp = make_timestamp()
     params, errors = param_to_filters(request.GET['q'])
-    zf = tabular_zip_file_generator(params)
+    zf = tabular_zip_file_generator(params, request.GET['only_contextual'])
     response = StreamingHttpResponse(zf, content_type='application/zip')
     filename = params.filename(timestamp, '-csv.zip')
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
@@ -608,6 +615,37 @@ def otu_log(request):
         context.update(missing)
     return HttpResponse(template.render(context, request))
 
+@require_GET
+def contextual_schema_definition(request):
+    return JsonResponse(get_contextual_schema_definition())
+
+def contextual_schema_definition_query():
+    try:
+        with SampleSchemaDefinition() as query:
+            for path in query.get_schema_definition_url():
+                download_url = str(path)
+        df_definition = pd.read_excel(download_url)
+        df_definition = df_definition.fillna(value="")
+    except Exception as e:
+        logger.error(f"Link {download_url} doesn't exists. {e}")
+        download_url = ""
+        df_definition = pd.DataFrame()
+
+    return {
+        'download_url': download_url,
+        'definition': df_definition.to_dict(),
+    }
+
+def get_contextual_schema_definition(cache_duration=CACHE_7DAYS, force_cache=False):
+    cache = caches['contextual_schema_definition_results']
+    key = make_cache_key('contextual_schema_definition_query')
+    result = None
+    if not force_cache:
+        result = cache.get(key)
+    if result is None:
+        result = contextual_schema_definition_query()
+        cache.set(key, result, cache_duration)
+    return result
 
 @require_CKAN_auth
 @require_GET

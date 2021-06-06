@@ -1,7 +1,7 @@
 import { concat, map } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
-import { Col, FormGroup, Input, Label } from 'reactstrap'
+import { Col, FormGroup, Input, Label, UncontrolledTooltip } from 'reactstrap'
 import { bindActionCreators } from 'redux'
 import Octicon from '../../../components/octicon'
 import { selectEnvironment, selectEnvironmentOperator } from '../reducers/contextual'
@@ -15,9 +15,12 @@ class EnvironmentFilter extends React.Component<any> {
       <FormGroup row={true}>
         <Label sm={3}>
           Environment{' '}
-          <span title={EnvironmentInfo}>
+          <span id="environmentTip">
             <Octicon name="info" />
           </span>
+          <UncontrolledTooltip target="environmentTip" placement="auto">
+            {EnvironmentInfo}
+          </UncontrolledTooltip>
         </Label>
         <Col sm={3}>
           <Input
