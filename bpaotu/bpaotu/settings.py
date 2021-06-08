@@ -408,3 +408,6 @@ GALAXY_ADMIN_USER_API_KEY = env.get('galaxy_admin_user_api_key', '')
 GALAXY_INTEGRATION = GALAXY_ADMIN_USER_API_KEY != ''
 GALAXY_KRONA_WORKFLOW_ID = env.get('galaxy_krona_workflow_id', 'bf002aa8f96f4e7b')
 NONDENOISED_REQUEST_EMAIL = env.get('nondenoised_request_email', 'am-data-requests@bioplatforms.com')
+
+# Default amplicon
+DEFAULT_AMPLICON = env.get('DEFAULT_AMPLICON', '27f519r_bacteria')

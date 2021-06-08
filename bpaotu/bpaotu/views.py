@@ -144,6 +144,7 @@ def api_config(request):
             settings.CKAN_CHECK_PERMISSIONS_URL if settings.PRODUCTION
             else reverse('dev_only_ckan_check_permissions')),
         'galaxy_integration': settings.GALAXY_INTEGRATION,
+        'default_amplicon': settings.DEFAULT_AMPLICON,
     }
     return JsonResponse(config)
 

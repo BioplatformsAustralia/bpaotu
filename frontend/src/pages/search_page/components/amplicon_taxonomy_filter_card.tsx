@@ -8,6 +8,7 @@ import { selectAmplicon } from '../reducers/amplicon'
 import { Button, Card, CardBody, CardFooter, CardHeader, Row, Col, UncontrolledTooltip } from 'reactstrap'
 import { clearAllTaxonomyFilters, fetchKingdoms } from '../reducers/taxonomy'
 
+import { find } from 'lodash'
 import Octicon from '../../../components/octicon'
 import AmpliconFilter from './amplicon_filter'
 import {
@@ -33,9 +34,18 @@ export class AmpliconTaxonomyFilterCard extends React.Component<any> {
     this.clearFilters = this.clearFilters.bind(this)
   }
 
-  public componentDidMount() {
+  initAmplicon() {
+    const defaultAmplicon = find(this.props.amplicons.values, amplicon => amplicon.value === window.otu_search_config.default_amplicon)
+    if(defaultAmplicon)
+      this.props.selectAmplicon(defaultAmplicon.id)
+  }
+  
+  componentDidMount() {
     this.props.fetchAmplicons()
-    this.props.selectAmplicon('3')  // TODO: HARDCODED 16S Amplicon
+  }
+
+  componentDidUpdate() {
+    this.initAmplicon()
     this.props.fetchKingdoms()
   }
 
@@ -91,7 +101,14 @@ export class AmpliconTaxonomyFilterCard extends React.Component<any> {
   public clearFilters() {
     this.props.clearAllTaxonomyFilters()
     this.props.fetchAmplicons()
+    this.initAmplicon()
     this.props.fetchKingdoms()
+  }
+}
+
+function mapStateToProps(state) {
+  return {
+    amplicons: state.referenceData.amplicons,
   }
 }
 
@@ -108,6 +125,6 @@ function mapDispatchToProps(dispatch: any) {
 }
 
 export default connect(
-  null,
+  mapStateToProps,
   mapDispatchToProps
 )(AmpliconTaxonomyFilterCard)
