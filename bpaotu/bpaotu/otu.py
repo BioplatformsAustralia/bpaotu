@@ -786,15 +786,15 @@ class OTUSampleOTU(SchemaMixin, Base):
         # aliases={'count': 'countid'},
         metadata=Base.metadata,
         indexes=[
-            Index('otu_sample_otu_index_small_sample_id_idx', 'sample_id'),
-            Index('otu_sample_otu_index_small_kingdom_id_idx', 'kingdom_id'),
-            Index('otu_sample_otu_index_small_phylum_id_idx', 'phylum_id'),
-            Index('otu_sample_otu_index_small_class_id_idx', 'class_id'),
-            Index('otu_sample_otu_index_small_order_id_idx', 'order_id'),
-            Index('otu_sample_otu_index_small_family_id_idx', 'family_id'),
-            Index('otu_sample_otu_index_small_genus_id_idx', 'genus_id'),
-            Index('otu_sample_otu_index_small_species_id_idx', 'species_id'),
-            Index('otu_sample_otu_index_small_amplicon_id_idx', 'amplicon_id'),
+            Index('otu_sample_otu_index_sample_id_idx', 'sample_id'),
+            Index('otu_sample_otu_index_kingdom_id_idx', 'kingdom_id'),
+            Index('otu_sample_otu_index_phylum_id_idx', 'phylum_id'),
+            Index('otu_sample_otu_index_class_id_idx', 'class_id'),
+            Index('otu_sample_otu_index_order_id_idx', 'order_id'),
+            Index('otu_sample_otu_index_family_id_idx', 'family_id'),
+            Index('otu_sample_otu_index_genus_id_idx', 'genus_id'),
+            Index('otu_sample_otu_index_species_id_idx', 'species_id'),
+            Index('otu_sample_otu_index_amplicon_id_idx', 'amplicon_id'),
         ]
     )
 
@@ -832,15 +832,15 @@ class OTUSampleOTU20K(SchemaMixin, Base):
         # aliases={'count': 'countid'},
         metadata=Base.metadata,
         indexes=[
-            Index('otu_sample_otu_20k_index_small_sample_id_idx', 'sample_id'),
-            Index('otu_sample_otu_20k_index_small_kingdom_id_idx', 'kingdom_id'),
-            Index('otu_sample_otu_20k_index_small_phylum_id_idx', 'phylum_id'),
-            Index('otu_sample_otu_20k_index_small_class_id_idx', 'class_id'),
-            Index('otu_sample_otu_20k_index_small_order_id_idx', 'order_id'),
-            Index('otu_sample_otu_20k_index_small_family_id_idx', 'family_id'),
-            Index('otu_sample_otu_20k_index_small_genus_id_idx', 'genus_id'),
-            Index('otu_sample_otu_20k_index_small_species_id_idx', 'species_id'),
-            Index('otu_sample_otu_20k_index_small_amplicon_id_idx', 'amplicon_id'),
+            Index('otu_sample_otu_20k_index_sample_id_idx', 'sample_id'),
+            Index('otu_sample_otu_20k_index_kingdom_id_idx', 'kingdom_id'),
+            Index('otu_sample_otu_20k_index_phylum_id_idx', 'phylum_id'),
+            Index('otu_sample_otu_20k_index_class_id_idx', 'class_id'),
+            Index('otu_sample_otu_20k_index_order_id_idx', 'order_id'),
+            Index('otu_sample_otu_20k_index_family_id_idx', 'family_id'),
+            Index('otu_sample_otu_20k_index_genus_id_idx', 'genus_id'),
+            Index('otu_sample_otu_20k_index_species_id_idx', 'species_id'),
+            Index('otu_sample_otu_20k_index_amplicon_id_idx', 'amplicon_id'),
         ]
     )
 
