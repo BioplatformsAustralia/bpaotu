@@ -21,7 +21,7 @@ export default class HeatMapLegendControl extends MapControl {
     : "blue";
 
   componentWillMount() {
-    const legend = L.control({position: 'bottomleft'});
+    const legend = new L.Control({position: 'bottomleft'});
     
 
     legend.onAdd = function (map) {

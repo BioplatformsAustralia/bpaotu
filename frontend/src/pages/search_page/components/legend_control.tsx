@@ -6,7 +6,7 @@ import { MapControl } from 'react-leaflet';
 export default class LegendControl extends MapControl {
 
   componentWillMount() {
-    const legend = L.control({position: 'bottomleft'});
+    const legend = new L.Control({position: 'bottomleft'});
     const jsx = (
       <div {...this.props}>
         {this.props.children}

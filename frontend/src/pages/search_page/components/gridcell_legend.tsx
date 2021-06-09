@@ -28,7 +28,7 @@ export default class GridCellLegendControl extends MapControl {
     : "#9ECAE1";
 
   componentWillMount() {
-    const legend = L.control({position: 'bottomleft'});
+    const legend = new L.Control({position: 'bottomleft'});
     
 
     legend.onAdd = function (map) {
