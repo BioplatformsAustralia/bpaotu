@@ -3,6 +3,7 @@ import * as React from 'react'
 import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap'
 
 import { NavLink as RRNavLink } from 'react-router-dom'
+import Octicon from '../components/octicon'
 import BPAOTUTour from '../components/bpaotu_tour'
 
 export default class Header extends React.Component<any, any> {
@@ -74,8 +75,7 @@ export default class Header extends React.Component<any, any> {
             </NavItem>
 
           </Nav>
-          {/* TODO: Apply proper CKAN authentication */}
-          {/* <Nav className="ml-auto" navbar={true}>
+          <Nav className="ml-auto" navbar={true}>
             <NavItem>
               {this.props.userEmailAddress ? (
                 <div>
@@ -86,7 +86,7 @@ export default class Header extends React.Component<any, any> {
                 ''
               )}
             </NavItem>
-          </Nav> */}
+          </Nav>
         </Collapse>
       </Navbar>
     )
