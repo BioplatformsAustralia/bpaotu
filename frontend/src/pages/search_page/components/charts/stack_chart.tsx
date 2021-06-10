@@ -33,7 +33,8 @@ class StackChart extends React.Component<any> {
         const taxa_id = taxa_values[0]
         const taxa_abundance = taxa_values[1]
         let taxonomy = {}
-        let taxa = find(selectedTaxonomy[this.getSelectedTaxonomy(selectedTaxonomy)]['options'], (option) => option.id === parseInt(taxa_id))
+        const selectedTaxa = this.getSelectedTaxonomy(selectedTaxonomy)
+        const taxa = selectedTaxa?find(selectedTaxonomy[selectedTaxa]['options'], (option) => option.id === parseInt(taxa_id)):undefined
         if(taxa) {
           taxonomy["name"] = taxa.value
           taxonomy["x"] = am_environments
