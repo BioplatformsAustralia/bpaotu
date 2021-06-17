@@ -466,7 +466,7 @@ class DataImporter:
                         continue
                     yield (sample_id, otu_id, count)
                 self.make_file_log(
-                    fname, file_type='Abundance', rows_imported=entry, rows_skipped=rows_skipped)
+                    fname, file_type='Abundance', rows_imported=(entry + 1), rows_skipped=rows_skipped)
 
         logger.warning('Loading OTU abundance tables')
 
@@ -509,7 +509,7 @@ class DataImporter:
                         continue
                     yield (sample_id, otu_id, count)
                 self.make_file_log(
-                    fname, file_type='Abundance', rows_imported=entry, rows_skipped=rows_skipped)
+                    fname, file_type='Abundance', rows_imported=(entry + 1), rows_skipped=rows_skipped)
 
         logger.warning('Loading OTU abundance 20k tables')
 
