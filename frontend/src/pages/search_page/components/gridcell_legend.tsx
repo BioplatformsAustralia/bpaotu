@@ -27,11 +27,9 @@ export default class GridCellLegendControl extends MapControl {
     ? "#FFFFCC"
     : "#9ECAE1";
 
-  componentWillMount() {
-    const legend = new L.Control({position: 'bottomleft'});
-    
-
-    legend.onAdd = function (map) {
+  createLeafletElement() {
+    const legend = L.Control.extend({
+      onAdd: map => {
         const div = L.DomUtil.create("div", "");
         const levels = [-0.0, 0.0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
         let labels = [];
@@ -45,7 +43,7 @@ export default class GridCellLegendControl extends MapControl {
           '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="11" fill="#ffffff">Gridcell</text>'+
           '</svg>'
           );
-  
+
         for (let i = 0; i < levels.length; i++) {
           from = levels[i];
           to = levels[i + 1];
@@ -62,8 +60,8 @@ export default class GridCellLegendControl extends MapControl {
         }
         div.innerHTML = labels.join("");
         return div;
-    };
-
-    this.leafletElement = legend;
+      }
+    });
+    return new legend({ position: "bottomleft" });
   }
 }
