@@ -8,8 +8,7 @@ import { Map, Marker, Popup, TileLayer, LayersControl, GeoJSON, FeatureGroup, Re
 import { EditControl } from "react-leaflet-draw"
 import HeatMapLegendControl from '../pages/search_page/components/heatmap_legend'
 import GridCellLegendControl from '../pages/search_page/components/gridcell_legend'
-// import LegendControl from '../pages/search_page/components/legend_control'
-import { JellyfishSpinner } from "react-spinners-kit";
+import AnimateHelix from './animate_helix'
 
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
@@ -357,7 +356,7 @@ class SamplesMap extends React.Component<any> {
         this.props.isLoading
         ? 
         <div style={loadingstyle}>
-            <JellyfishSpinner size={300} color="#999" loading={this.props.contextualIsLoading} />
+            <AnimateHelix />
         </div>
         :
         <>

@@ -5,7 +5,7 @@ import { bindActionCreators } from 'redux'
 import { Col, Container, Row } from 'reactstrap'
 
 import SearchButton from '../../components/search_button'
-import LoadingSpinner from '../../components/search_spinner'
+import AnimateHelix from '../../components/animate_helix'
 import AmpliconTaxonomyFilterCard from './components/amplicon_taxonomy_filter_card'
 import BlastSearchCard from './components/blast_search_card'
 import ContextualFilterCard from './components/contextual_filter_card'
@@ -43,8 +43,8 @@ export const SearchPage = props => (
 
     <Row className="space-above">
       {props.isSearchInProgress ? (
-        <Col sm={{ size: 2, offset: 6 }}>
-          <LoadingSpinner />
+        <Col className="text-center" sm={12}>
+          <AnimateHelix scale={0.2} />
         </Col>
       ) : (
         <Col sm={{ size: 2, offset: 5 }} data-tut="reactour__SearchButton">
@@ -52,6 +52,9 @@ export const SearchPage = props => (
         </Col>
       )}
     </Row>
+
+    <Row className="space-above"></Row>
+
     <Row className="space-above">
       <Col sm={12} data-tut="reactour__SearchResultsCard">
         <SearchResultsCard />

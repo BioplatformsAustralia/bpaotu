@@ -2,6 +2,7 @@ import React from 'react';
 import { find } from 'lodash';
 import { Container, Card, CardHeader, CardBody, Row, Col, UncontrolledTooltip} from 'reactstrap'
 import Octicon from '../../../components/octicon'
+import AnimateHelix from '../../../components/animate_helix'
 import PieChart from './charts/pie_chart'
 import PieChartEnvironment from './charts/pie_chart_environment'
 import PieChartAmplicon from './charts/pie_chart_amplicon'
@@ -9,7 +10,6 @@ import HistogramChart from './charts/histogram_chart'
 import StackChart from './charts/stack_chart'
 // import TreePlotsChart from './charts/treeplots_chart'
 import SunBurstChart from './charts/sunburst_chart';
-import { JellyfishSpinner } from "react-spinners-kit";
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { fetchContextualDataForGraph } from '../../../reducers/contextual_data_graph'
@@ -22,7 +22,6 @@ class GraphDashboard extends React.Component<any> {
         const el = document.getElementById(elName)
         if (el) {
             setTimeout(() => {  el.scrollIntoView({block: 'end', behavior: 'smooth'}) }, 1000);
-            // console.log("scrolling to", elName)
         }
     }
 
@@ -43,7 +42,6 @@ class GraphDashboard extends React.Component<any> {
     }
   
     componentDidUpdate() {
-        // this.scrollTo(this.state.scrollToSelected)
         this.scrollTo(this.props.scrollToSelected)
     }
 
@@ -60,10 +58,10 @@ class GraphDashboard extends React.Component<any> {
         
         return (
             <>
-                {this.props.contextualIsLoading
+                {this.props.contextualIsLoading || this.props.taxonomyIsLoading
                     ? 
                     <div style={loadingstyle}>
-                        <JellyfishSpinner size={300} color="#999" loading={this.props.contextualIsLoading} />
+                        <AnimateHelix />
                     </div>
                     :
                     <Container fluid={true}>
@@ -187,4 +185,3 @@ export default connect(
     mapStateToProps,
     mapDispatchToProps
 )(GraphDashboard)
-
