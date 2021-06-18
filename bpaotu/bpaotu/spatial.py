@@ -95,7 +95,7 @@ def _spatial_query(params):
         for sample in samples:
             latlng = result[(sample.latitude, sample.longitude)]
             latlng['latitude'] = sample.latitude
-            latlng['longitude'] = _corrected_longitude(sample.longitude)
+            latlng['longitude'] = sample.longitude
             # latlng['sample_otus_abundance'] = sample_otus.get(f"{sample.latitude}-{sample.longitude}")
             latlng['bpa_data'][sample.id] = samples_contextual_data(sample)
 
@@ -119,17 +119,6 @@ def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=False):
         result = _spatial_query(params)
         cache.set(key, result, cache_duration)
     return result
-
-
-# TODO:
-# this is a workaround for a leaflet bug; this should
-# be moved into the frontend rather than being in this
-# backend code. it resolves an issue with samples wrapping
-# on the dateline and being shown off-screen (off coast NZ)
-def _corrected_longitude(lng):
-    if lng is None:
-        return None
-    return lng + 360 if lng < 0 else lng
 
 
 def non_empty_val(fv):

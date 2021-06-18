@@ -370,8 +370,8 @@ class SamplesMap extends React.Component<any> {
           ref={m => {
             this.leafletMap = m
           }}
-          minZoom={3}
-          maxZoom={18}
+          minZoom={2}
+          maxBounds={[[90, 180], [-90, -180]]}
           onclick={this.handleClick}
         >
           <FullscreenControl position="topright" />
