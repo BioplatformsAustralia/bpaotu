@@ -41,7 +41,6 @@ function aggregateSampleOtusBySite(sample_Otus) {
   let siteAggs = {};
   for (let i in sample_Otus) {
     let sampleOtus = new SampleOtus(sample_Otus[i][0], sample_Otus[i][1], sample_Otus[i][2], parseInt(sample_Otus[i][3]), parseInt(sample_Otus[i][4]));
-    sampleOtus.longitude = sampleOtus.longitude
     let siteId = sampleOtus.sampleId;
     if (!(siteId in siteAggs)) {
       siteAggs[siteId] = new SiteAggregate(sampleOtus);
