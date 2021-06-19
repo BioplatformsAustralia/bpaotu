@@ -2,6 +2,7 @@ import { concat, map } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
 import { Col, FormGroup, Input, Label, UncontrolledTooltip } from 'reactstrap'
+import Select from 'react-select';
 import { bindActionCreators } from 'redux'
 import Octicon from '../../../components/octicon'
 import { selectEnvironment, selectEnvironmentOperator } from '../reducers/contextual'
@@ -34,32 +35,23 @@ class EnvironmentFilter extends React.Component<any> {
           </Input>
         </Col>
         <Col sm={6}>
-          <Input
-            type="select"
-            name="value"
-            value={this.props.selected.value}
-            onChange={evt => this.props.selectEnvironment(evt.target.value)}
-          >
-            {this.renderOptions()}
-          </Input>
+          <Select
+            placeholder="---"
+            isSearchable={true}
+            options={this.renderOptions()}
+            defaultValue={{ value: "", label: "---"}}
+            value={map(this.props.options, this.renderOption).filter(option => option.value === this.props.selected.value)}
+            onChange={evt => this.props.selectEnvironment(evt.value)}
+          />
         </Col>
       </FormGroup>
     )
   }
 
   public renderOptions() {
-    if (this.props.optionsLoading) {
-      return (
-        <option key="loading" value="">
-          Loading...
-        </option>
-      )
-    }
     return concat(
       [
-        <option key="" value="">
-          ---
-        </option>
+        { value: "", label: "---"}
       ],
       map(this.props.options, this.renderOption)
     )
@@ -67,9 +59,7 @@ class EnvironmentFilter extends React.Component<any> {
 
   public renderOption(option) {
     return (
-      <option key={option.id} value={option.id}>
-        {option.name}
-      </option>
+      { value: option.id, label: option.name}
     )
   }
 }

@@ -26,7 +26,6 @@ import EnvironmentFilter from './environment_filter'
 
 class ContextualFilterCard extends React.Component<any> {
   public componentDidMount() {
-    // this.props.fetchContextualDataDefinitions()
     if(this.props.fetchContextualDataDefinitions())
       this.props.addWarningContextualFilter()
   }
@@ -93,13 +92,13 @@ class ContextualFilterCard extends React.Component<any> {
           <Row>
             <Col sm={12}>
               <FormGroup check>
-                <Label sm={9} check>
+                <Label sm={12} check>
                   <Input
                       type="checkbox"
-                      defaultChecked={true}
+                      checked={this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?false:true}
                       onChange={evt => evt.target.checked? this.props.removeWarningContextualFilter():this.props.addWarningContextualFilter() }
                     />
-                    Tick to include data that has sample integrity warnings
+                    {this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?"Check to show all data including samples with integrity warnings.":"Showing all data including samples with integrity warnings. Uncheck to apply filter."}
                 </Label>
               </FormGroup>
             </Col>

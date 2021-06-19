@@ -1,6 +1,7 @@
 import { concat, map } from 'lodash'
 import * as React from 'react'
 import { Col, FormGroup, Input, Label } from 'reactstrap'
+import Select from 'react-select';
 import { OperatorAndValue } from '../pages/search_page/reducers/types'
 
 interface Props {
@@ -37,16 +38,15 @@ export default class DropDownFilter extends React.Component<any> {
           </Input>
         </Col>
         <Col sm={6}>
-          <Input
-            type="select"
-            name="value"
-            invalid={this.props.optionsLoadingError}
-            disabled={this.props.isDisabled || this.props.optionsLoadingError}
-            value={this.props.selected.value}
+        <Select
+            placeholder={this.props.optionsLoadingError?this.props.optionsLoadingError:"---"}
+            isSearchable={true}
+            isLoading={this.props.optionsLoading}
+            options={this.renderOptions()}
+            isDisabled={this.props.isDisabled || this.props.optionsLoadingError}
+            value={map(this.props.options, this.renderOption).filter(option => option.value === this.props.selected.value)}
             onChange={this.onValueChange}
-          >
-            {this.renderOptions()}
-          </Input>
+          />
         </Col>
       </FormGroup>
     )
@@ -55,38 +55,25 @@ export default class DropDownFilter extends React.Component<any> {
   public renderOptions() {
     if (this.props.optionsLoadingError) {
       return (
-        <option key="error" value="">
-          Couldn't load values!
-        </option>
-      )
-    }
-    if (this.props.optionsLoading) {
-      return (
-        <option key="loading" value="">
-          Loading...
-        </option>
+        { value: "", label: "Couldn't load values!" }
       )
     }
     return concat(
       [
-        <option key="" value="">
-          ---
-        </option>
+        { value: "", label: "---" }
       ],
       map(this.props.options, this.renderOption)
     )
   }
-
+  
   public renderOption(option) {
     return (
-      <option key={option.id} value={option.id}>
-        {option.value}
-      </option>
+      { value: option.id, label: option.value }
     )
   }
 
   public onValueChange(evt) {
-    const id = evt.target.value
+    const id = evt.value
     this.props.selectValue(id)
     if (this.props.onChange) {
       this.props.onChange()
