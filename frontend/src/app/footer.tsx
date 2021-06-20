@@ -14,7 +14,7 @@ export default props => {
       <div className="site-footer-links container-fluid">
         <a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a>
         <a href="https://github.com/BioplatformsAustralia/bpaotu">Source Code</a>
-        <a href="mailto:help@bioplatforms.com">Contact</a>
+        <a href="mailto:help@bioplatforms.com" data-tut="reactour__Contact">Contact</a>
       </div>
       <div className="site-footer-logo container-fluid">
         <span>

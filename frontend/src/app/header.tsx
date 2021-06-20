@@ -33,7 +33,7 @@ export default class Header extends React.Component<any, any> {
         <Collapse isOpen={this.state.isOpen} navbar={true}>
           <Nav className="navbar-nav">
             <NavItem>
-              <NavLink target="_am" href="https://data.bioplatforms.com/organization/about/australian-microbiome">
+              <NavLink target="_am" href={window.otu_search_config.ckan_base_url+"organization/about/australian-microbiome"}>
                 Australian Microbiome Home
               </NavLink>
             </NavItem>
@@ -63,7 +63,7 @@ export default class Header extends React.Component<any, any> {
             </NavItem>
 
             <NavItem>
-              <NavLink target="_am" href="https://data.bioplatforms.com/organization/pages/australian-microbiome/processed">
+              <NavLink target="_am" href={window.otu_search_config.ckan_base_url+"organization/pages/australian-microbiome/processed"}>
                 Help
               </NavLink>
             </NavItem>
