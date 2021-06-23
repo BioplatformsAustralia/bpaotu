@@ -210,41 +210,6 @@ class DataImporter:
                 mappings[field] = map_dict
         return mappings
 
-    @classmethod
-    def classify_fields(cls, environment_lookup, schema_definition_dict):
-        # flip around to name -> id
-        pl = dict((t[1], t[0]) for t in environment_lookup.items())
-
-        definition = schema_definition_dict.get("definition", {})
-        fields = definition.get("Field", {})
-        AM_enviro = definition.get("AM_enviro", {})
-        am_environment_fields = {}
-        for key in fields.keys():
-            am_environment_fields[fields[key]] = AM_enviro[key]
-
-        soil_fields = set()
-        marine_fields = set()
-        for sheet_name, fields in AustralianMicrobiomeSampleContextualSQLite.field_specs.items():
-            for field_info in fields:
-                field_name = field_info[0]
-                am_environment = am_environment_fields.get(field_name)
-                if 'Soil' == am_environment:
-                    soil_fields.add(field_name)
-                if 'Marine' == am_environment:
-                    marine_fields.add(field_name)
-                if field_name in DataImporter.amd_ontologies:
-                    field_name += '_id'
-                elif field_name == 'sample_id':
-                    field_name = 'id'
-        soil_only = set(soil_fields)
-        marine_only = set(marine_fields)
-        r = {}
-        if pl.get('Soil'):
-            r.update((t, pl['Soil']) for t in soil_only)
-        if pl.get('Marine'):
-            r.update((t, pl['Marine']) for t in marine_only)
-        return r
-
     def amplicon_files(self, pattern):
         for fname in glob(self._import_base + '/*/' + pattern):
             amplicon = fname.split('/')[-2]

@@ -185,12 +185,21 @@ def contextual_fields(request):
     private API: return the available fields, and their types, so that
     the contextual filtering UI can be built
     """
-    fields_by_type = defaultdict(list)
-
-    classifications = DataImporter.classify_fields(make_environment_lookup(), get_contextual_schema_definition())
+    field_definitions, classifications, ontology_classes, fields_by_type = {}, {}, {}, defaultdict(list)
     field_units = AustralianMicrobiomeSampleContextual.units_for_fields()
+    contextual_schema_definition = get_contextual_schema_definition().get("definition", {})
+    for key, field in contextual_schema_definition.get("Field", {}).items():
+        if field in DataImporter.amd_ontologies:
+            field += '_id'
+        elif field == 'sample_id':
+            field = 'id'
+        field_definitions[field] = contextual_schema_definition.get("Field_Definition", {}).get(key)
+        am_environment = contextual_schema_definition.get("AM_enviro", {}).get(key).lstrip().rstrip()
+        am_environment_lookup = dict((t[1], t[0]) for t in make_environment_lookup().items())
+        am_environment_id = am_environment_lookup.get(am_environment, "")
+        if am_environment_id:
+            classifications[field] = am_environment_id
 
-    ontology_classes = {}
 
     # TODO Note TS: I don't understand why do we group columns together by their type.
     # Why can't we just got through them once and map them to the definitions?
@@ -208,14 +217,14 @@ def contextual_fields(request):
         fields_by_type[ty].append(column.name)
 
     def make_defn(typ, name, **kwargs):
-        environment = classifications.get(name)
         r = kwargs.copy()
         r.update({
             'type': typ,
             'name': name,
-            'environment': environment,
+            'environment': classifications.get(name),
             'display_name': SampleContext.display_name(name),
-            'units': field_units.get(name)
+            'units': field_units.get(name),
+            'definition': field_definitions.get(name),
         })
         return r
 
@@ -811,7 +820,6 @@ def contextual_schema_definition_query():
         logger.error(f"Link {download_url} doesn't exists. {e}")
         download_url = ""
         df_definition = pd.DataFrame()
-
     return {
         'download_url': download_url,
         'definition': df_definition.to_dict(),
@@ -821,11 +829,12 @@ def get_contextual_schema_definition(cache_duration=CACHE_7DAYS, force_cache=Fal
     cache = caches['contextual_schema_definition_results']
     key = make_cache_key('contextual_schema_definition_query')
     result = None
-    if not force_cache:
-        result = cache.get(key)
+    # if not force_cache:
+    #     result = cache.get(key)
     if result is None:
         result = contextual_schema_definition_query()
         cache.set(key, result, cache_duration)
+    # logger.info(f"resultget_contextual_schema_definition::{result}")
     return result
 
 @require_CKAN_auth

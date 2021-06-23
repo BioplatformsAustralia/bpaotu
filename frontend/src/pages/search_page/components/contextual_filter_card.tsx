@@ -120,6 +120,7 @@ class ContextualFilterCard extends React.Component<any> {
               changeValue={this.props.changeContextualFilterValue}
               changeValue2={this.props.changeContextualFilterValue2}
               changeValues={this.props.changeContextualFilterValues}
+              definitions={this.props.definitions}
             />
           ))}
         </CardBody>
@@ -149,7 +150,8 @@ function mapStateToProps(state) {
       state.searchPage.filters.contextual.selectedEnvironment
     ),
     optionsLoading: state.contextualDataDefinitions.isLoading,
-    definitions_url: state.contextualDataDefinitions.definitions_url
+    definitions_url: state.contextualDataDefinitions.definitions_url,
+    definitions: state.contextualDataDefinitions.values
   }
 }
 

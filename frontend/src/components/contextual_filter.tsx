@@ -1,6 +1,7 @@
-import { filter as _filter, get as _get, isArray } from 'lodash'
+import { filter as _filter, get as _get, isArray, find } from 'lodash'
 import * as React from 'react'
-import { Col, Input, Row } from 'reactstrap'
+import { Col, Input, Row, UncontrolledTooltip } from 'reactstrap'
+import Octicon from './octicon'
 
 import { ContextualDropDown } from './contextual_drop_down'
 
@@ -20,18 +21,30 @@ export default class ContextualFilter extends ContextualDropDown {
     const TypeBasedOperatorAndValue = TypeToOperatorAndValue[type]
 
     return (
-      <Col sm={8}>
+      <>
         {TypeBasedOperatorAndValue ? (
-          <TypeBasedOperatorAndValue
-            filter={this.props.filter}
-            dataDefinition={this.props.dataDefinition}
-            changeOperator={op => this.props.changeOperator(this.props.index, op)}
-            changeValue={value => this.props.changeValue(this.props.index, value)}
-            changeValue2={value => this.props.changeValue2(this.props.index, value)}
-            changeValues={value => this.props.changeValues(this.props.index, value)}
-          />
+          <>
+          <Col sm={{size:'auto'}} className="text-center">
+          <span id={"FilterTip"+this.props.index}>
+            <Octicon name="info" />
+          </span>
+          <UncontrolledTooltip target={"FilterTip"+this.props.index} placement="auto">
+            {find(this.props.definitions, def => def.name === this.props.filter.name).definition}
+          </UncontrolledTooltip>
+          </Col>
+          <Col sm={7}>
+            <TypeBasedOperatorAndValue
+              filter={this.props.filter}
+              dataDefinition={this.props.dataDefinition}
+              changeOperator={op => this.props.changeOperator(this.props.index, op)}
+              changeValue={value => this.props.changeValue(this.props.index, value)}
+              changeValue2={value => this.props.changeValue2(this.props.index, value)}
+              changeValues={value => this.props.changeValues(this.props.index, value)}
+            />
+            </Col>
+          </>
         ) : null}
-      </Col>
+      </>
     )
   }
 }
