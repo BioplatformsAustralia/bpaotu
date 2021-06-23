@@ -90,33 +90,55 @@ class SiteAggregate {
 function aggregateSamplesByCell(siteAggs) {
   let cellAggs = {};
   let detailLevel = 2;
-  let [max, min] = calculateCellBounds(siteAggs)
-  let xMax = Math.abs(max[0])-Math.abs(min[0])
-  let yMax = Math.abs(max[0])-Math.abs(min[1])
-  let xyMax = xMax > yMax ? yMax : xMax
-  detailLevel = detailLevel > xyMax ? xyMax : detailLevel
-  // console.log("max, min: ", max, min, "xMax:", xMax, "yMax:", yMax, "detailLevel:", detailLevel, "xyMax:", xyMax)
-  var bbbox: [number, number, number, number] = [max[0]+detailLevel, max[1]+detailLevel, min[0]-detailLevel, min[1]-detailLevel];
-  var options: { [index: string]: any } =  {units: 'degrees'};
-  var gridFeatures = turf.squareGrid(bbbox, detailLevel, options);
-  var polyFeatures: { [index: string]: any } = {}
-
-  turf.featureEach(gridFeatures, function (currentFeature, featureIndex) {
-    let bbox = turf.bbox(currentFeature)
-    let poly = turf.bboxPolygon(bbox);
-    polyFeatures[featureIndex] = poly
-  });
+  let siteCoordinates = []
 
   for (let siteId in siteAggs) {
     let site = siteAggs[siteId];
-    let pt = turf.point([site.longitude, site.latitude]);
+    siteCoordinates.push(site)
+  }
+
+  let [min, max] = calculateCellBounds(siteAggs)
+
+  // Add buffer of detailLevel for bounds
+  max = [max[0]+detailLevel, max[1]+detailLevel] 
+  min = [min[0]-detailLevel,	min[1]-detailLevel]
+
+  // calculate width/height of bounding box
+  let xLength = Math.abs(max[0]-min[0])
+  let yLength = Math.abs(max[1]-min[1])
+
+  // Check if detailLevel is higher than width/height of the bounding box
+  let xyLength = xLength > yLength ? yLength : xLength
+  detailLevel = detailLevel > xyLength ? xyLength : detailLevel
+
+  // Calculate cell counts
+  const xCellCnt = Math.floor(xLength/detailLevel)
+  const yCellCnt = Math.floor(yLength/detailLevel)
+
+  // 
+  var polyFeatures: { [index: string]: any } = {}
+  for(let x=0; x<xCellCnt; x++) {
+    for(let y=0; y<yCellCnt; y++) {
+      const x1 = min[0] + x * detailLevel
+      const y1 = min[1] + y * detailLevel
+      const x2 = x1 + detailLevel
+      const y2 = y1 + detailLevel
+      let poly = turf.bboxPolygon([x1, y1, x2, y2]);
+      for (let site of siteCoordinates) {
+        if(turf.booleanPointInPolygon([site.longitude, site.latitude], poly))
+        {
+          polyFeatures[x+"_"+y] = poly
+          break
+        }
+      }
+    }
+  }
+
+  for (let site of siteCoordinates) {
     for (const [featureIndex, poly] of Object.entries(polyFeatures)) {
-      let conta = false;
-      if(turf.booleanPointInPolygon(pt, poly)) {
-      // if(turf.booleanContains(poly, pt)) {
-        conta = true
+      if(turf.booleanPointInPolygon([site.longitude, site.latitude], poly))
+      {
         if ((cellAggs[featureIndex] === undefined)) {
-        // if (!(featureIndex in cellAggs)) {
           cellAggs[featureIndex] = {
             abundance: 0,
             richness: 0,
@@ -124,14 +146,11 @@ function aggregateSamplesByCell(siteAggs) {
             coordinates:  poly.geometry.coordinates[0]
           };
         }
-        // Adding values that are allowed to overlap/accumulate.
         let cell = cellAggs[featureIndex];
         cell.abundance += parseInt(site.abundance);
         cell.richness += parseInt(site.richness);
-        cell.sites.push(siteId);
+        cell.sites.push(site.sampleId);
       }
-      if(conta)
-        break
     }
   }
   return cellAggs;
@@ -151,7 +170,7 @@ function calculateCellBounds(siteAggs) {
   const xmin = Math.min(...xseries);
   const ymin = Math.min(...yseries);
 
-  return [[xmax, ymax], [xmin, ymin]];
+  return [[xmin, ymin], [xmax, ymax]];
 }
 
 /**
