@@ -1,8 +1,8 @@
 import L from 'leaflet';
-import { MapControl } from 'react-leaflet';
+import { withLeaflet, MapControl } from 'react-leaflet';
+// import GridCellConstants from './gridcell_constants';
 
-export default class GridCellLegendControl extends MapControl {
-
+export class GridCellConstants {
   static outlineOpacity = 0.15;
   static outlineColor = "#000000";
   static fillOpacity = d => (d > 0.0 ? 0.5 : 0.2);
@@ -26,9 +26,12 @@ export default class GridCellLegendControl extends MapControl {
     : d > 0.0
     ? "#FFFFCC"
     : "#9ECAE1";
+}
+
+class GridCellLegendControl extends MapControl {
 
   createLeafletElement() {
-    const legend = L.Control.extend({
+    const GridCellLegendControl = L.Control.extend({
       onAdd: map => {
         const div = L.DomUtil.create("div", "");
         const levels = [-0.0, 0.0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
@@ -39,7 +42,7 @@ export default class GridCellLegendControl extends MapControl {
         labels.push(
           '<svg width="50" height="16">'+
           '<rect width="50" height="16" style="fill:#000000; fill-opacity:1; fill-rule;evenodd; '+
-            'stroke:'+GridCellLegendControl.outlineColor+'; stroke-opacity:'+GridCellLegendControl.outlineOpacity+'; stroke-width:1; stroke-linecap:round; stroke-linejoin:round"></rect>'+
+            'stroke:'+GridCellConstants.outlineColor+'; stroke-opacity:'+GridCellConstants.outlineOpacity+'; stroke-width:1; stroke-linecap:round; stroke-linejoin:round"></rect>'+
           '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="11" fill="#ffffff">Gridcell</text>'+
           '</svg>'
           );
@@ -49,8 +52,8 @@ export default class GridCellLegendControl extends MapControl {
           to = levels[i + 1];
           labels.push(
           '<svg width="50" height="16">'+
-          '<rect width="50" height="16" style="fill:'+GridCellLegendControl.fillColor(from>0? from +0.01:-0.0)+'; fill-opacity:'+GridCellLegendControl.fillOpacity(from + 0.01)+'; fill-rule:evenodd; '+
-          'stroke:'+GridCellLegendControl.outlineColor+'; stroke-opacity:'+GridCellLegendControl.outlineOpacity+'; stroke-width:1; stroke-linecap:round; stroke-linejoin:round">'+
+          '<rect width="50" height="16" style="fill:'+GridCellConstants.fillColor(from>0? from +0.01:-0.0)+'; fill-opacity:'+GridCellConstants.fillOpacity(from + 0.01)+'; fill-rule:evenodd; '+
+          'stroke:'+GridCellConstants.outlineColor+'; stroke-opacity:'+GridCellConstants.outlineOpacity+'; stroke-width:1; stroke-linecap:round; stroke-linejoin:round">'+
           '</rect>'+
           '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="11" fill="black">'+
           (to ? from + "-" + to : (from>0? ">": "<")+from) + 
@@ -59,9 +62,13 @@ export default class GridCellLegendControl extends MapControl {
           );
         }
         div.innerHTML = labels.join("");
+        div.style.margin = "0px";
+        div.style.padding = "0px";
         return div;
       }
     });
-    return new legend({ position: "bottomleft" });
+    return new GridCellLegendControl({ position: "bottomleft" });
   }
 }
+
+export default withLeaflet(GridCellLegendControl)

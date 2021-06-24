@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import L from 'leaflet';
-import { MapControl } from 'react-leaflet';
+import { withLeaflet, MapControl } from 'react-leaflet';
 
-export default class LegendControl extends MapControl {
+class LegendControl extends MapControl {
 
   createLeafletElement() {
     const content = (
@@ -11,14 +11,16 @@ export default class LegendControl extends MapControl {
         {this.props.children}
       </div>
     );
-    const legend = L.Control.extend({
+    const LegendControl = L.Control.extend({
       onAdd: map => {
         let div = L.DomUtil.create('div', '');
         ReactDOM.render(content, div);
         return div;
       }
     });
-    return new legend({ position: "bottomleft" });
+    return new LegendControl({ position: "bottomleft" });
   }
 
 }
+
+export default withLeaflet(LegendControl)

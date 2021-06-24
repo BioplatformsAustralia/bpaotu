@@ -7,7 +7,7 @@ import * as MiniMap from 'leaflet-minimap'
 import { Map, Marker, Popup, TileLayer, LayersControl, GeoJSON, FeatureGroup, Rectangle  } from 'react-leaflet'
 import { EditControl } from "react-leaflet-draw"
 import HeatMapLegendControl from '../pages/search_page/components/heatmap_legend'
-import GridCellLegendControl from '../pages/search_page/components/gridcell_legend'
+import GridCellLegendControl, {GridCellConstants}  from '../pages/search_page/components/gridcell_legend'
 import LatLngCoordinatesControl from '../pages/search_page/components/coordinates_control'
 import AnimateHelix from './animate_helix'
 
@@ -372,7 +372,7 @@ class SamplesMap extends React.Component<any> {
             this.leafletMap = m
           }}
           minZoom={2}
-          maxBounds={[[90, 180], [-90, -180]]}
+          // maxBounds={[[90, 180], [-90, -180]]}
           onclick={this.handleClick}
         >
           <FullscreenControl position="topright" />
@@ -669,13 +669,12 @@ class SamplesMap extends React.Component<any> {
   // }
 
   public layerStyle(feature, property) {
-    
     return {
-      fillColor: GridCellLegendControl.fillColor(feature.properties[property]),
+      fillColor: GridCellConstants.fillColor(feature.properties[property]),
       weight: 1,
-      opacity: GridCellLegendControl.outlineOpacity,
-      color: GridCellLegendControl.outlineColor,
-      fillOpacity: GridCellLegendControl.fillOpacity(feature.properties[property])
+      opacity: GridCellConstants.outlineOpacity,
+      color: GridCellConstants.outlineColor,
+      fillOpacity: GridCellConstants.fillOpacity(feature.properties[property])
     };
   }
 

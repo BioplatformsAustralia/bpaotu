@@ -1,7 +1,7 @@
 import L from 'leaflet';
-import {  MapControl } from 'react-leaflet';
+import { withLeaflet, MapControl } from 'react-leaflet';
 
-export default class LatLngCoordinatesControl extends MapControl {
+class LatLngCoordinatesControl extends MapControl {
 
   createLeafletElement() {
     const LatLngCoordinatesControl = L.Control.extend({
@@ -10,7 +10,7 @@ export default class LatLngCoordinatesControl extends MapControl {
       options: {
         position: 'bottomleft',
         separator: ' : ',
-        emptyString: 'Unavailable',
+        emptyString: '',
         lngFirst: false,
         numDigits: 5,
         lngFormatter: undefined,
@@ -30,7 +30,6 @@ export default class LatLngCoordinatesControl extends MapControl {
         map.on('mousemove', this._onMouseMove, this);
         this._container.style.backgroundColor = "rgba(255, 255, 255, 0.7)";
         this._container.style.fontSize = "11px";
-        this._container.style.padding = "2px 5px";
         this._container.innerHTML = this.options.emptyString;
         return this._container;
       },
@@ -63,3 +62,5 @@ export default class LatLngCoordinatesControl extends MapControl {
     return new LatLngCoordinatesControl();
   }
 }
+
+export default withLeaflet(LatLngCoordinatesControl)

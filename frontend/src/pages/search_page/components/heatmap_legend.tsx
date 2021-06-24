@@ -1,13 +1,12 @@
 import L from 'leaflet';
-import { MapControl } from 'react-leaflet';
+import { withLeaflet, MapControl } from 'react-leaflet';
 // import * as d3 from "d3";
 // https://stackoverflow.com/questions/49739119/legend-with-smooth-gradient-and-corresponding-labels
-
-export default class HeatMapLegendControl extends MapControl {
-  static outlineOpacity = 1;
-  static outlineColor = "transparent";
-  static fillOpacity = d => (d > 0.0 ? 1 : 1);
-  static fillColor = d =>
+class HeatMapLegendControl extends MapControl {
+  outlineOpacity = 1;
+  outlineColor = "transparent";
+  fillOpacity = d => (d > 0.0 ? 1 : 1);
+  fillColor = d =>
     d > 0.8
     ? "red"
     : d > 0.7
@@ -21,11 +20,9 @@ export default class HeatMapLegendControl extends MapControl {
     : "blue";
 
     createLeafletElement() {
-      const legend = L.Control.extend({
+      const HeatMapLegendControl = L.Control.extend({
         onAdd: map => {
           const div = L.DomUtil.create("div", "");
-          // const levels = [0.4, 0.6, 0.7, 0.8, 1.0];
-          // const widths = [0.4, 0.2, 0.1, 0.1, 0.2];
           let labels = [];
           // let from;
           // let to;
@@ -34,7 +31,7 @@ export default class HeatMapLegendControl extends MapControl {
           labels.push(
             '<svg width="50" height="16">'+
             '<rect width="50" height="16" style="fill:#000000; fill-opacity:1; fill-rule;evenodd; '+
-              'stroke:'+HeatMapLegendControl.outlineColor+'; stroke-opacity:'+HeatMapLegendControl.outlineOpacity+'; stroke-width:1; stroke-linecap:round; stroke-linejoin:round"></rect>'+
+              'stroke:'+this.outlineColor+'; stroke-opacity:'+this.outlineOpacity+'; stroke-width:1; stroke-linecap:round; stroke-linejoin:round"></rect>'+
             '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="11" fill="#ffffff">Heatmap</text>'+
             '</svg>'+
             '<svg width="500" height="16">'+
@@ -56,8 +53,8 @@ export default class HeatMapLegendControl extends MapControl {
           //   to = levels[i + 1]
           //   labels.push(
           //   '<svg width="'+width+'" height="16">'+
-          // //   '<rect width="'+width+'" height="16" style="fill:'+HeatMapLegendControl.fillColor(from>0? from +0.01:-0.0)+'; fill-opacity:'+HeatMapLegendControl.fillOpacity(from + 0.01)+'; fill-rule:evenodd; '+
-          // //   'stroke:'+HeatMapLegendControl.outlineColor+'; stroke-opacity:'+HeatMapLegendControl.outlineOpacity+'; stroke-width:1; stroke-linecap:round; stroke-linejoin:round">'+
+          // //   '<rect width="'+width+'" height="16" style="fill:'+this.fillColor(from>0? from +0.01:-0.0)+'; fill-opacity:'+this.fillOpacity(from + 0.01)+'; fill-rule:evenodd; '+
+          // //   'stroke:'+this.outlineColor+'; stroke-opacity:'+this.outlineOpacity+'; stroke-width:1; stroke-linecap:round; stroke-linejoin:round">'+
           // //   '</rect>'+
           //   '<text x="100%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="11" fill="black">'+
           //   (from) + 
@@ -66,9 +63,13 @@ export default class HeatMapLegendControl extends MapControl {
           //   );
           // }
           div.innerHTML = labels.join("");
+          div.style.margin = "0px";
+          div.style.padding = "0px";
           return div;
         }
       });
-      return new legend({ position: "bottomleft" });
+      return new HeatMapLegendControl({ position: "bottomleft" });
     }
 }
+
+export default withLeaflet(HeatMapLegendControl)
