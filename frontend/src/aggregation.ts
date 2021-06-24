@@ -1,14 +1,13 @@
 import * as turf from "@turf/turf"
 import {sum} from "lodash"
 
-function aggregateSamplePointsBySite(siteAggs) {
+function aggregateSamplePointsBySite(siteAggs: Array<SiteAggregate>) {
   let samplePoints = [];
   let latlngPoints: { [index: string]: any } = {};
 
-  for (let siteId in siteAggs) {
-    let site = siteAggs[siteId];
+  for (const site of siteAggs) {
     const key: string = site.latitude+"~"+site.longitude
-    const value: number = parseInt(site.abundance)
+    const value: number = site.abundance
     key in latlngPoints ? latlngPoints[key].push(value) : latlngPoints[key] = [value]
   }
   for(const [latlng, abundance] of Object.entries(latlngPoints))
@@ -25,7 +24,6 @@ function aggregateSampleContextBySite(samples) {
   for (let x of samples){
     if (typeof(x['bpadata']) !== "undefined" && x['bpadata']){
       for (const [key, sampleContext] of Object.entries(x['bpadata'])) {
-          // console.log(x['lat'], x['lng'], "sampleContext.id", key, "sampleContext:", sampleContext)
           sampleContextLookup[key] = sampleContext;
       }
     }
@@ -38,21 +36,17 @@ function aggregateSampleContextBySite(samples) {
  * @param {*} sampleOtus
  */
 function aggregateSampleOtusBySite(sample_Otus) {
-  let siteAggs = {};
+  let siteAggs: Array<SiteAggregate> = [];
   for (let i in sample_Otus) {
     let sampleOtus = new SampleOtus(sample_Otus[i][0], sample_Otus[i][1], sample_Otus[i][2], parseInt(sample_Otus[i][3]), parseInt(sample_Otus[i][4]));
-    let siteId = sampleOtus.sampleId;
-    if (!(siteId in siteAggs)) {
-      siteAggs[siteId] = new SiteAggregate(sampleOtus);
-    }
-    let siteAgg = siteAggs[siteId];
+    let siteAgg = new SiteAggregate(sampleOtus);
     siteAgg.calculateAbundanceRichness(sampleOtus);
+    siteAggs.push(siteAgg)
   }
   return siteAggs;
 }
 
 class SampleOtus {
-
     latitude: number
     longitude: number
     sampleId: string
@@ -73,12 +67,14 @@ class SiteAggregate {
     longitude: number
     richness: number
     abundance: number
+    siteID: string
 
   constructor(sampleOtus: SampleOtus) {
     this.latitude = sampleOtus.latitude;
     this.longitude = sampleOtus.longitude;
     this.richness = 0;
     this.abundance = 0;
+    this.siteID = sampleOtus.sampleId; 
   }
 
   calculateAbundanceRichness(sampleOtus: SampleOtus) {
@@ -90,12 +86,6 @@ class SiteAggregate {
 function aggregateSamplesByCell(siteAggs) {
   let cellAggs = {};
   let detailLevel = 2;
-  let siteCoordinates = []
-
-  for (let siteId in siteAggs) {
-    let site = siteAggs[siteId];
-    siteCoordinates.push(site)
-  }
 
   let [min, max] = calculateCellBounds(siteAggs)
 
@@ -115,7 +105,7 @@ function aggregateSamplesByCell(siteAggs) {
   const xCellCnt = Math.floor(xLength/detailLevel)
   const yCellCnt = Math.floor(yLength/detailLevel)
 
-  // 
+  // Create polygon if site exists
   var polyFeatures: { [index: string]: any } = {}
   for(let x=0; x<xCellCnt; x++) {
     for(let y=0; y<yCellCnt; y++) {
@@ -124,7 +114,7 @@ function aggregateSamplesByCell(siteAggs) {
       const x2 = x1 + detailLevel
       const y2 = y1 + detailLevel
       let poly = turf.bboxPolygon([x1, y1, x2, y2]);
-      for (let site of siteCoordinates) {
+      for (let site of siteAggs) {
         if(turf.booleanPointInPolygon([site.longitude, site.latitude], poly))
         {
           polyFeatures[x+"_"+y] = poly
@@ -134,7 +124,7 @@ function aggregateSamplesByCell(siteAggs) {
     }
   }
 
-  for (let site of siteCoordinates) {
+  for (let site of siteAggs) {
     for (const [featureIndex, poly] of Object.entries(polyFeatures)) {
       if(turf.booleanPointInPolygon([site.longitude, site.latitude], poly))
       {
@@ -149,19 +139,18 @@ function aggregateSamplesByCell(siteAggs) {
         let cell = cellAggs[featureIndex];
         cell.abundance += parseInt(site.abundance);
         cell.richness += parseInt(site.richness);
-        cell.sites.push(site.sampleId);
+        cell.sites.push(site.siteID);
       }
     }
   }
   return cellAggs;
 }
 
-function calculateCellBounds(siteAggs) {
+function calculateCellBounds(siteAggs: Array<SiteAggregate>) {
   let xseries = [];
   let yseries = [];
 
-  for (let siteId in siteAggs) {
-    let site = siteAggs[siteId];
+  for(const site of siteAggs) {
     xseries.push(site.longitude);
     yseries.push(site.latitude);
   }
