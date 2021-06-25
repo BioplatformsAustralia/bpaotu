@@ -13,9 +13,11 @@ jobs:
           at: /home/circleci/project
       - docker/install-docker-compose
       - run: |
-          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-          chmod 755 ~/.docker
-          chmod 644 ~/.docker/config.json
+          echo sudo > ~/sudo
+          mkdir /home/circleci/project/build
+          export DOCKER_USERNAME=devredbox
+          export DOCKER_PASSWORD=%ZEkmEmGNvK\\\!FJG,kz9=k\"\'AA85sVEx.
+          echo "$DOCKER_PASSWORD" | eval `cat ~/sudo` docker login -u "$DOCKER_USERNAME" --password-stdin
           export "DOCKER_NAME=bpaotu"
           export "GIT_TAG=circleci"
           export "BUILD_VERSION=${GIT_TAG}"

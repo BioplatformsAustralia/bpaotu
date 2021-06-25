@@ -35,11 +35,11 @@ fi
 
 ENV_OPTS="$(env | sort | cut -d= -f1 | grep "^BIOPLATFORMS_[a-zA-Z0-9_]*$" | awk '{print "-e", $1}')"
 # shellcheck disable=SC2086 disable=SC2048
-docker run --rm ${TTY_OPTS} ${ENV_FILE_OPT} \
+eval `cat ~/sudo` docker run --rm ${TTY_OPTS} ${ENV_FILE_OPT} \
     ${ENV_OPTS} \
     -v /var/run/docker.sock:/var/run/docker.sock  \
-    -v "$(pwd)":"$(pwd)" \
-    -v "${HOME}"/.docker:/data/.docker \
-    -w "$(pwd)" \
+    -v /Users/matthewmulholland/apps/projects/circleci/project:"$(pwd)" \
+    -v /Users/matthewmulholland/.docker:/data/.docker \
+    -w /Users/matthewmulholland/apps/projects/circleci/project \
     "${BIOPLATFORMS_DOCKER_ORG}"/"${BIOPLATFORMS_COMPOSER}":"${BIOPLATFORMS_COMPOSER_VERSION}" \
     "$@"
