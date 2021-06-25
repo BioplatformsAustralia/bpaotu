@@ -17,7 +17,7 @@ jobs:
           chmod 755 ~/.docker
           chmod 644 ~/.docker/config.json
           export "DOCKER_NAME=bpaotu"
-          export "GIT_TAG=$CIRCLE_TAG"
+          export "GIT_TAG=circleci"
           export "BUILD_VERSION=${GIT_TAG}"
           "./circleci-prodbuild.sh"
 workflows:
@@ -27,8 +27,6 @@ workflows:
       - build:
           context: Bioplatforms
           filters:
-            tags:
-              only: /^\d+\.\d+(\.\d+)?(-\S*)?$/
             branches:
-#              only: master
+              only: circleci
               ignore: /.*/

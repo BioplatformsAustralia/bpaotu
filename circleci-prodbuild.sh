@@ -13,10 +13,8 @@ mkdir -p data/ build/
 sudo chown 1000:1000 data/ build/
 cp .env .env_local
 
-./develop.sh build base
-./develop.sh build builder
-./develop.sh build dev
-./develop.sh run build lint
+docker-compose -f docker-compose-build.yml build base
+docker-compose -f docker-compose-build.yml build builder
 
 #
 # Production (deployable) build and tests
