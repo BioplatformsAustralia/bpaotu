@@ -1,7 +1,7 @@
 import { filter, find } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
-import { Button, Card, CardBody, CardFooter, CardHeader, Col, Form, FormGroup, Input, Row, Label, UncontrolledTooltip, Badge } from 'reactstrap'
+import { Button, Card, CardBody, CardFooter, CardHeader, Col, Form, FormGroup, Input, Row, Label, UncontrolledTooltip, Badge, Alert } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 
 import { bindActionCreators } from 'redux'
@@ -69,42 +69,45 @@ class ContextualFilterCard extends React.Component<any> {
             </Col>
           </Row>
 
-          {this.props.contextualFilters.length >= 2 && (
-            <Row>
-              <Col sm={12}>
-                <Form inline={true}>
-                  Samples must match &nbsp;
-                  <Input
-                    type="select"
-                    bsSize="sm"
-                    value={this.props.contextualFiltersMode}
-                    onChange={evt => this.props.selectContextualFiltersMode(evt.target.value)}
-                  >
-                    <option value="and">all</option>
-                    <option value="or">any</option>
-                  </Input>
-                  &nbsp; of the following contextual filters.
-                </Form>
-              </Col>
-            </Row>
-          )}
-
           <Row>
             <Col sm={12}>
-              <FormGroup check>
-                <Label sm={12} check>
-                  <Input
-                      type="checkbox"
-                      checked={this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?false:true}
-                      onChange={evt => evt.target.checked? this.props.removeWarningContextualFilter():this.props.addWarningContextualFilter() }
-                    />
-                    {this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?"Check to show all data including samples with integrity warnings.":"Showing all data including samples with integrity warnings. Uncheck to apply filter."}
-                </Label>
-              </FormGroup>
+              <Alert  pill color="secondary">
+                <FormGroup check>
+                  <Label sm={12} check color="primary" outline>
+                    <Input
+                        type="checkbox"
+                        checked={this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?false:true}
+                        onChange={evt => evt.target.checked? this.props.removeWarningContextualFilter():this.props.addWarningContextualFilter() }
+                      />
+                      
+                        {this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?"Check to show all data including samples with integrity warnings.":"Uncheck to remove samples with integrity warnings."}
+                  </Label>
+                </FormGroup>
+                </Alert>
             </Col>
           </Row>
 
-          <Row className="space-above" />
+          {this.props.contextualFilters.length >= 2 && (
+            <Row>
+              <Col sm={12}>
+                <Alert  pill color="secondary">
+                  <Form inline={true}>
+                    Samples must match &nbsp;
+                    <Input
+                      type="select"
+                      bsSize="sm"
+                      value={this.props.contextualFiltersMode}
+                      onChange={evt => this.props.selectContextualFiltersMode(evt.target.value)}
+                    >
+                      <option value="and">all</option>
+                      <option value="or">any</option>
+                    </Input>
+                    &nbsp; of the following contextual filters.
+                  </Form>
+                </Alert>
+              </Col>
+            </Row>
+          )}
 
           {this.props.contextualFilters.map((fltr, index) => (
             <ContextualFilter
