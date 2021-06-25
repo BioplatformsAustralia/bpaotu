@@ -19,7 +19,7 @@ if [ "$1" = 'checkout' ]; then
     # clone and install the app
     set -x
     cd /data/app
-    git clone --depth=1 --branch="${GIT_BRANCH}" "${PROJECT_SOURCE}" .
+    git clone --depth=1 --branch="${GIT_TAG}" "${PROJECT_SOURCE}" .
     git rev-parse HEAD > .version
     cat .version
     exit 0

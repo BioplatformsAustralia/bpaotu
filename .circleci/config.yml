@@ -18,6 +18,7 @@ jobs:
           chmod 644 ~/.docker/config.json
           export "DOCKER_NAME=bpaotu"
           export "GIT_TAG=$CIRCLE_TAG"
+          export "BUILD_VERSION=${GIT_TAG}"
           "./circleci-prodbuild.sh"
 workflows:
   version: 2
