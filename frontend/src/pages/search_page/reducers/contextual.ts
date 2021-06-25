@@ -1,4 +1,4 @@
-import { find, isNull, map, negate, toNumber } from 'lodash'
+import { find, filter, isNull, negate, toNumber } from 'lodash'
 import reduceReducers from 'reduce-reducers'
 
 import { combineActions, createActions, handleAction, handleActions } from 'redux-actions'
@@ -74,7 +74,7 @@ export const doesFilterMatchEnvironment = environment => filter => {
   if (environment.value === '') {
     return true
   }
-  const eq = fltr => fltr.environment === toNumber(environment.value)
+  const eq = fltr => toNumber(fltr.environment) === toNumber(environment.value)
   const op = environment.operator === 'is' ? eq : negate(eq)
   return isNull(filter.environment) || op(filter)
 }
@@ -95,12 +95,15 @@ const contextualFiltersReducer = handleActions(
     }),
     [combineActions(selectEnvironment, selectEnvironmentOperator) as any]: (state, action) => ({
       ...state,
-      filters: map(state.filters, f => {
+      filters: filter(state.filters, f => {
         if (f.name === '') {
-          return f
+          return true
         }
-        const dataDefinition = find(state.dataDefinitions.filters, dd => dd.name === f.name)
-        return doesFilterMatchEnvironment(state.selectedEnvironment)(dataDefinition) ? f : EmptyContextualFilter
+        if(state.dataDefinitions) 
+        {
+          const dataDefinition = find(state.dataDefinitions.filters, dd => dd.name === f.name)
+          return doesFilterMatchEnvironment(state.selectedEnvironment)(dataDefinition) ? f : EmptyContextualFilter
+        }
       })
     }),
     [selectContextualFilter as any]: (state: any, action: any) => ({

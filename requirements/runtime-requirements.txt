@@ -29,7 +29,7 @@ celery==4.4.2
 Pillow==6.2.2
 python-resize-image==1.1.19
 django-webpack-loader==0.7.0
-https://github.com/BioplatformsAustralia/bpa-ingest/archive/5.3.7.tar.gz
+git+https://github.com/BioplatformsAustralia/bpa-ingest.git@6.8.1
 git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
 httplib2==0.17.2
 boto3==1.12.39

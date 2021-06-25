@@ -30,7 +30,7 @@ export default handleActions(
     }),
     [fetchContextualDataDefinitionsEnded as any]: (state, action: any) => {
       const isSampleID = definition => definition.type === 'sample_id'
-      const isEnvironment = definition => definition.name === 'environment_id'
+      const isEnvironment = definition => definition.name === 'am_environment_id'
       const environment = find(action.payload.data.definitions, isEnvironment)
       const sample_id = find(action.payload.data.definitions, isSampleID)
       const allButEnvironment = reject(action.payload.data.definitions, isEnvironment)
@@ -40,6 +40,7 @@ export default handleActions(
         filters: allButEnvironment,
         values: action.payload.data.definitions,
         sample_ids: sample_id.values,
+        definitions_url: action.payload.data.definitions_url,
       }
     }
   },

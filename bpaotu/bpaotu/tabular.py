@@ -77,7 +77,7 @@ def contextual_csv(samples):
     return csv_fd.getvalue()
 
 
-def tabular_zip_file_generator(params):
+def tabular_zip_file_generator(params, onlyContextual):
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     with SampleQuery(params) as query:
         def sample_otu_csv_rows(kingdom_id):
@@ -118,11 +118,12 @@ def tabular_zip_file_generator(params):
 
         zf.writestr('contextual.csv', contextual_csv(query.matching_samples()).encode('utf8'))
         zf.writestr('info.txt', info_text(params))
-        with OntologyInfo() as info:
-            for kingdom_id, kingdom_label in info.get_values(OTUKingdom):
-                if not query.has_matching_sample_otus(kingdom_id):
-                    continue
-                zf.write_iter('%s.csv' % (kingdom_label), sample_otu_csv_rows(kingdom_id))
+        if onlyContextual=='f':
+            with OntologyInfo() as info:
+                for kingdom_id, kingdom_label in info.get_values(OTUKingdom):
+                    if not query.has_matching_sample_otus(kingdom_id):
+                        continue
+                    zf.write_iter('%s.csv' % (kingdom_label), sample_otu_csv_rows(kingdom_id))
         return zf
 
 
