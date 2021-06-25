@@ -1,0 +1,33 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine. See: https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+orbs:
+  docker: circleci/docker@1.5.0
+jobs:
+  build:
+    docker:
+      - image: 'cimg/base:stable'
+    steps:
+      - checkout
+      - setup_remote_docker
+      - attach_workspace:
+          at: /home/circleci/project
+      - docker/install-docker-compose
+      - run: |
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          chmod 755 ~/.docker
+          chmod 644 ~/.docker/config.json
+          export "DOCKER_NAME=bpaotu"
+          export "GIT_TAG=$CIRCLE_TAG"
+          "./circleci-prodbuild.sh"
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - build:
+          context: Bioplatforms
+          filters:
+            tags:
+              only: /^\d+\.\d+(\.\d+)?(-\S*)?$/
+            branches:
+#              only: master
+              ignore: /.*/
