@@ -71,9 +71,9 @@ class ContextualFilterCard extends React.Component<any> {
 
           <Row>
             <Col sm={12}>
-              <Alert  pill color="secondary">
+              <Alert color="secondary">
                 <FormGroup check>
-                  <Label sm={12} check color="primary" outline>
+                  <Label sm={12} check color="primary">
                     <Input
                         type="checkbox"
                         checked={this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?false:true}
