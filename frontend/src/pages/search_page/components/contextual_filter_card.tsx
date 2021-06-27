@@ -90,7 +90,7 @@ class ContextualFilterCard extends React.Component<any> {
           {this.props.contextualFilters.length >= 2 && (
             <Row>
               <Col sm={12}>
-                <Alert  pill color="secondary">
+                <Alert color="secondary">
                   <Form inline={true}>
                     Samples must match &nbsp;
                     <Input
