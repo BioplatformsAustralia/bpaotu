@@ -13,6 +13,7 @@ mkdir -p data/ build/
 sudo chown 1000:1000 data/ build/
 cp .env .env_local
 
+
 eval `cat ~/sudo` docker-compose -f docker-compose-build.yml build base
 eval `cat ~/sudo` docker-compose -f docker-compose-build.yml build builder
 
@@ -22,6 +23,8 @@ eval `cat ~/sudo` docker-compose -f docker-compose-build.yml build builder
 echo "pre-prod BUILD_VERSION is ${BUILD_VERSION}"
 eval `cat ~/sudo` docker run --rm -v /Users/matthewmulholland/apps/projects/circleci/project/build:/build -v /Users/matthewmulholland/apps/projects/circleci/project/frontend:/frontend node:latest bash /frontend/prodbuild.sh
 
+
+echo "testing with tag..."
 ./develop.sh run-builder checkout
 ./develop.sh run-builder releasetarball
 sudo chown -R 1000 build
