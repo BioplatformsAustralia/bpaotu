@@ -58,15 +58,10 @@ def _spatial_query(params):
                 if not (v is None or v.strip() == '')
             }
 
-        def sample_otus_abundance(query):
-            q = query.matching_sample_otus_groupby_lat_lng_id(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
-            for lat, lng, sample_id, otus, abundance in q.yield_per(50):
-                yield (lat, lng, sample_id, otus, abundance)
-
         def sample_otus_abundance_20k(query):
             q = query.matching_sample_otus_groupby_lat_lng_id_20k(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
-            for lat, lng, sample_id, otus, abundance in q.yield_per(50):
-                yield (lat, lng, sample_id, otus, abundance)
+            for lat, lng, sample_id, richness, abundance in q.yield_per(50):
+                yield (lat, lng, sample_id, richness, abundance)
 
         with SampleQuery(params) as query:
             sample_otus_all = []
