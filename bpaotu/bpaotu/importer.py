@@ -388,7 +388,7 @@ class DataImporter:
                 logger.info(field)
         # set methodology to store version of git_revision and contextual DB in format (bpaotu_<git_revision>_<SQLite DB>)
         if len(metadata) > 0:
-            git_revision = subprocess.check_output(["git", "describe", "--always"], cwd=os.path.dirname(os.path.realpath(__file__))).strip().decode()
+            git_revision = subprocess.check_output(["git", "describe", "--tags"], cwd=os.path.dirname(os.path.realpath(__file__))).strip().decode()
             db_file = metadata[0]["sample_database_file"]
             self._methodology = f"bpaotu_{git_revision}_{db_file}"
 
