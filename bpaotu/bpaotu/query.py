@@ -332,14 +332,12 @@ class OTUSampleOTUQuery:
         taxolistall = {}
         groupByAttr = getattr(OTUSampleOTU, "species_id")
         for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
-            # logger.info(f"OTU_ATTR: {otu_attr} - {ontology_class} - {taxonomy}")
             if taxonomy is None or taxonomy.get('value') is None:
                 groupByAttr = getattr(OTUSampleOTU, otu_attr)
                 break
             taxolistall[otu_attr] = taxonomy
 
         if groupByAttr:
-            # logger.info(f"taxolistall: {taxolistall} --- groupByAttr: {groupByAttr}")
             ampliconAttr = getattr(OTUSampleOTU, 'amplicon_id')
             amEnvironmentAttr = getattr(SampleContext, 'am_environment_id')
             q = self._session.query(
@@ -357,14 +355,12 @@ class OTUSampleOTUQuery:
         taxolistall = {}
         groupByAttr = getattr(OTUSampleOTU, "species_id")
         for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
-            logger.info(f"OTU_ATTR: {otu_attr} - {ontology_class} - {taxonomy}")
             if taxonomy is None or taxonomy.get('value') is None:
                 groupByAttr = getattr(OTUSampleOTU, otu_attr)
                 break
             taxolistall[otu_attr] = taxonomy
 
         if groupByAttr:
-            logger.info(f"taxolistall: {taxolistall} --- groupByAttr: {groupByAttr}")
             ampliconAttr = getattr(OTUSampleOTU, 'amplicon_id')
             q = self._session.query(
                 groupByAttr, func.sum(OTUSampleOTU.count)

@@ -296,7 +296,6 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
     otu_query = request.POST['otu_query']
     otu_query_dict = json.loads(otu_query)
     if(otu_query_dict.get('contextual_filters') and otu_query_dict.get('contextual_filters').get('environment')):
-        # logger.info(f"environment>>>>>>>>>>> {otu_query_dict.get('contextual_filters').get('environment')}")
         otu_query_dict['contextual_filters']['environment'] = None
         otu_query = json.dumps(otu_query_dict)
 
@@ -309,7 +308,6 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
 
     with OTUSampleOTUQuery(params_all) as query:
         am_environment_results_all = query.matching_taxonomy_graph_data_all()
-        # logger.info(f"am_environment_results_all: {am_environment_results_all}")
 
     params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=False)
     if errors:
@@ -333,11 +331,8 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
 
     df_results = pd.DataFrame(results, columns=['amplicon', 'taxonomy', 'am_environment', 'sum'])
     df_results_selected = pd.DataFrame(results_selected, columns=['amplicon', 'taxonomy', 'am_environment', 'sum'])
-    # logger.info(f"df_results: {df_results}")
     taxonomy_results = dict(df_results.groupby('taxonomy').agg({'sum': ['sum']}).itertuples(index=True, name=None))
-    # logger.info(f"taxonomy_results: {taxonomy_results}")
     amplicon_results = dict(df_results.groupby('amplicon').agg({'sum': ['sum']}).itertuples(index=True, name=None))
-    # logger.info(f"amplicon_results: {amplicon_results}")
     
     am_environment_results = {}
     for taxonomy_am_environment, sum in df_results.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
@@ -345,7 +340,6 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
             am_environment_results[taxonomy_am_environment[0]].append([taxonomy_am_environment[1], sum])
         else:
             am_environment_results[taxonomy_am_environment[0]] = [[taxonomy_am_environment[1], sum]]
-    # logger.info(f"am_environment_results: {am_environment_results}")
     
     am_environment_results_selected = {}
     for taxonomy_am_environment, sum in df_results_selected.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
@@ -353,7 +347,6 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
             am_environment_results_selected[taxonomy_am_environment[0]].append([taxonomy_am_environment[1], sum])
         else:
             am_environment_results_selected[taxonomy_am_environment[0]] = [[taxonomy_am_environment[1], sum]]
-    # logger.info(f"am_environment_results_selected: {am_environment_results_selected}")
 
     return JsonResponse({
         'graphdata': {
@@ -522,8 +515,6 @@ def otu_search_sample_sites(request):
     for d in data:
         key = (str(d['latitude']), str(d['longitude']))
         d['site_images'] = site_image_lookup_table.get(key)
-    logger.info(f"sample_otus size: {len(sample_otus)}")
-    logger.info(f"data size: {len(data)}")
     return JsonResponse({'data': data, 'sample_otus': sample_otus})
 
 
@@ -834,7 +825,6 @@ def get_contextual_schema_definition(cache_duration=CACHE_7DAYS, force_cache=Fal
     if result is None:
         result = contextual_schema_definition_query()
         cache.set(key, result, cache_duration)
-    # logger.info(f"resultget_contextual_schema_definition::{result}")
     return result
 
 @require_CKAN_auth
