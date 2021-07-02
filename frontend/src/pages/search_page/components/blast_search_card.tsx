@@ -3,7 +3,7 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
 import { Alert, Button, Card, CardBody, CardFooter, CardHeader, Input } from 'reactstrap'
-import LoadingSpinner from '../../../components/search_spinner'
+import AnimateHelix from '../../../components/animate_helix'
 import { clearBlastAlert, handleBlastSequence, runBlast } from '../reducers/blast_search'
 
 export class BlastSearchCard extends React.Component<any> {
@@ -34,10 +34,9 @@ export class BlastSearchCard extends React.Component<any> {
               </Alert>
             ))}
           </div>
+          <div className="text-center">{this.props.isSubmitting && <AnimateHelix scale={0.2} />}</div>
         </CardBody>
         <CardFooter className="text-center">
-          {this.props.isSubmitting && <LoadingSpinner />}
-
           <Button color="warning" disabled={this.props.isSearchDisabled} onClick={this.props.runBlast}>
             Run BLAST
           </Button>

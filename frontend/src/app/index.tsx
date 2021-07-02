@@ -13,7 +13,7 @@ import LoginRequiredPage from '../pages/login_required_page'
 import { getCKANAuthInfo } from '../reducers/auth'
 
 class App extends React.Component<any> {
-  public componentWillMount() {
+  public componentDidMount() {
     this.props.getCKANAuthInfo()
   }
 

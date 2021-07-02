@@ -7,15 +7,26 @@ import { Alert, Button, Card, CardBody, CardHeader } from 'reactstrap'
 
 import Octicon from '../../../components/octicon'
 import { openSamplesMapModal } from '../reducers/samples_map_modal'
+import { openSamplesGraphModal } from '../reducers/samples_graph_modal'
 import { describeSearch } from '../reducers/search'
 import { clearGalaxyAlert, submitToGalaxy, workflowOnGalaxy } from '../reducers/submit_to_galaxy'
 import { clearTips, showPhinchTip } from '../reducers/tips'
 import { GalaxySubmission } from '../reducers/types'
 import SamplesMapModal from './samples_map_modal'
+import SamplesGraphModal from './samples_graph_modal'
 import SearchResultsTable from './search_results_table'
 
 const HeaderButton = props => (
-  <Button style={{ marginRight: 10 }} outline={true} color="primary" disabled={props.disabled} onClick={props.onClick}>
+  <Button 
+    id={props.text} 
+    style={{ marginRight: 10 }} 
+    outline={true} 
+    color="primary" 
+    disabled={props.disabled} 
+    onClick={props.onClick} 
+    data-tut={props.text} 
+    title={props.disabled?'Select Amplicon to '+props.text:''}
+  >
     {props.octicon ? (
       <span>
         <Octicon name={props.octicon} />
@@ -50,12 +61,13 @@ class SearchResultsCard extends React.Component<any, any> {
         <Card>
           <CardHeader>
             <div>
-              <HeaderButton octicon="globe" text="Show results on Map" onClick={this.props.openSamplesMapModal} />
+              <HeaderButton octicon="globe" text="Show results on Map" onClick={this.props.openSamplesMapModal} disabled={this.isAmpliconSelected()} />
+              <HeaderButton octicon="graph" text="Show results on Graph" onClick={this.props.openSamplesGraphModal} disabled={this.isAmpliconSelected()}/>
               {window.otu_search_config.galaxy_integration && (
                 <HeaderButton
                   octicon="clippy"
                   text="Export Data to Galaxy Australia for further analysis"
-                  disabled={this.isGalaxySubmissionDisabled()}
+                  disabled={this.isGalaxySubmissionDisabled() || this.isAmpliconSelected()}
                   onClick={this.props.submitToGalaxy}
                 />
               )}
@@ -63,7 +75,7 @@ class SearchResultsCard extends React.Component<any, any> {
                 <HeaderButton
                   octicon="graph"
                   text="Make Krona Taxonomic Abundance Graph using Galaxy Australia"
-                  disabled={this.isGalaxySubmissionDisabled()}
+                  disabled={this.isGalaxySubmissionDisabled() || this.isAmpliconSelected()}
                   onClick={this.props.workflowOnGalaxy}
                 />
               )}
@@ -100,7 +112,9 @@ class SearchResultsCard extends React.Component<any, any> {
             <SearchResultsTable />
           </CardBody>
         </Card>
+        
         <SamplesMapModal />
+        <SamplesGraphModal />
       </div>
     )
   }
@@ -111,6 +125,10 @@ class SearchResultsCard extends React.Component<any, any> {
     }
     const lastSubmission: GalaxySubmission = last(this.props.galaxy.submissions)
     return lastSubmission && !lastSubmission.finished
+  }
+
+  public isAmpliconSelected() {
+    return this.props.filters.selectedAmplicon.value===""?true:false
   }
 
   public export(baseURL, onlyContextual=false) {
@@ -151,6 +169,7 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
       openSamplesMapModal,
+      openSamplesGraphModal,
       submitToGalaxy,
       workflowOnGalaxy,
       clearGalaxyAlert,

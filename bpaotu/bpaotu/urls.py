@@ -11,6 +11,8 @@ urlpatterns = [
     url(r'^private/api/v1/amplicon-options$', views.amplicon_options, name="amplicon_options"),
     url(r'^private/api/v1/taxonomy-options$', views.taxonomy_options, name="taxonomy_options"),
     url(r'^private/api/v1/contextual-fields$', views.contextual_fields, name="contextual_fields"),
+    url(r'^private/api/v1/contextual-graph-fields$', views.contextual_graph_fields, name="contextual_graph_fields"),
+    url(r'^private/api/v1/taxonomy-graph-fields$', views.taxonomy_graph_fields, name="taxonomy_graph_fields"),
     url(r'^private/api/v1/nondenoised-request$', views.nondenoised_request, name="nondenoised_request"),
     url(r'^private/api/v1/search$', views.otu_search, name="otu_search"),
     url(r'^private/api/v1/search-sample-sites$', views.otu_search_sample_sites, name="otu_search_sample_sites"),
@@ -32,6 +34,10 @@ urlpatterns = [
         r'^ingest/$',
         views.otu_log,
         name="otu_log"),
+    url(
+        r'^ingest/download$',
+        views.otu_log_download,
+        name="otu_log_download"),
     url(
         r'^private/api/v1/required_table_headers/$',
         views.required_table_headers,

@@ -18,7 +18,8 @@ export const fetchSampleMapSamples = () => dispatch => {
 
 const initialState = {
   isLoading: false,
-  samples: []
+  samples: [],
+  sample_otus: []
 }
 
 export default handleActions(
@@ -33,10 +34,12 @@ export default handleActions(
       isLoading: false,
       samples: map(action.payload.data.data, sample => ({
         bpadata: sample.bpa_data,
+        abundance: sample.sample_otus_abundance,
         lat: sample.latitude,
         lng: sample.longitude,
         site_images: sample.site_images
-      }))
+      })),
+      sample_otus: action.payload.data.sample_otus
     })
   },
   initialState

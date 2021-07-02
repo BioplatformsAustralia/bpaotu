@@ -4,6 +4,7 @@ import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } f
 
 import { NavLink as RRNavLink } from 'react-router-dom'
 import Octicon from '../components/octicon'
+import BPAOTUTour from '../components/bpaotu_tour'
 
 export default class Header extends React.Component<any, any> {
   constructor(props) {
@@ -32,7 +33,7 @@ export default class Header extends React.Component<any, any> {
         <Collapse isOpen={this.state.isOpen} navbar={true}>
           <Nav className="navbar-nav">
             <NavItem>
-              <NavLink href="/organization/about/australian-microbiome">
+              <NavLink target="_am" href={window.otu_search_config.ckan_base_url+"organization/about/australian-microbiome"}>
                 Australian Microbiome Home
               </NavLink>
             </NavItem>
@@ -58,6 +59,18 @@ export default class Header extends React.Component<any, any> {
             <NavItem>
               <NavLink to="/non-denoised" activeClassName="active" tag={RRNavLink}>
                 Non-denoised data
+              </NavLink>
+            </NavItem>
+
+            <NavItem>
+              <NavLink target="_am" href={window.otu_search_config.ckan_base_url+"organization/pages/australian-microbiome/processed"}>
+                Help
+              </NavLink>
+            </NavItem>
+
+            <NavItem>
+              <NavLink>
+                <BPAOTUTour/> 
               </NavLink>
             </NavItem>
 

@@ -28,13 +28,14 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   OTUPhylum, OTUSpecies, SampleAustralianSoilClassification,
                   SampleColor, SampleContext, SampleEcologicalZone,
                   SampleFAOSoilClassification, SampleHorizonClassification,
-                  SampleLandUse, SampleOTU, SampleProfilePosition,
+                  SampleLandUse, SampleOTU, SampleOTU20K, OTUSampleOTU, OTUSampleOTU20K, 
+                  SampleProfilePosition,
                   SampleStorageMethod, SampleTillage, SampleType,
                   SampleVegetationType,
                   SampleIntegrityWarnings, SampleVolumeNotes, SampleBioticRelationship,
                   SampleEnvironmentMedium,
                   SampleHostAssociatedMicrobiomeZone, SampleHostType,
-                  make_engine)
+                  make_engine, refresh_otu_sample_otu_mv)
 
 logger = logging.getLogger("rainbow")
 
@@ -113,7 +114,10 @@ class DataImporter:
     def run(self):
         self.load_contextual_metadata()
         otu_lookup = self.load_taxonomies()
+        self.load_otu_abundance_20k(otu_lookup)
         self.load_otu_abundance(otu_lookup)
+        refresh_otu_sample_otu_mv(self._session, OTUSampleOTU.__table__)
+        refresh_otu_sample_otu_mv(self._session, OTUSampleOTU20K.__table__)
         self.complete()
 
     def ontology_init(self):
@@ -205,41 +209,6 @@ class DataImporter:
             for field in fields:
                 mappings[field] = map_dict
         return mappings
-
-    @classmethod
-    def classify_fields(cls, environment_lookup, schema_definition_dict):
-        # flip around to name -> id
-        pl = dict((t[1], t[0]) for t in environment_lookup.items())
-
-        definition = schema_definition_dict.get("definition", {})
-        fields = definition.get("Field", {})
-        AM_enviro = definition.get("AM_enviro", {})
-        am_environment_fields = {}
-        for key in fields.keys():
-            am_environment_fields[fields[key]] = AM_enviro[key]
-
-        soil_fields = set()
-        marine_fields = set()
-        for sheet_name, fields in AustralianMicrobiomeSampleContextualSQLite.field_specs.items():
-            for field_info in fields:
-                field_name = field_info[0]
-                am_environment = am_environment_fields.get(field_name)
-                if 'Soil' == am_environment:
-                    soil_fields.add(field_name)
-                if 'Marine' == am_environment:
-                    marine_fields.add(field_name)
-                if field_name in DataImporter.amd_ontologies:
-                    field_name += '_id'
-                elif field_name == 'sample_id':
-                    field_name = 'id'
-        soil_only = set(soil_fields)
-        marine_only = set(marine_fields)
-        r = {}
-        if pl.get('Soil'):
-            r.update((t, pl['Soil']) for t in soil_only)
-        if pl.get('Marine'):
-            r.update((t, pl['Marine']) for t in marine_only)
-        return r
 
     def amplicon_files(self, pattern):
         for fname in glob(self._import_base + '/*/' + pattern):
@@ -419,7 +388,7 @@ class DataImporter:
                 logger.info(field)
         # set methodology to store version of git_revision and contextual DB in format (bpaotu_<git_revision>_<SQLite DB>)
         if len(metadata) > 0:
-            git_revision = subprocess.check_output(["git", "describe", "--always"], cwd=os.path.dirname(os.path.realpath(__file__))).strip().decode()
+            git_revision = subprocess.check_output(["git", "describe", "--tags"], cwd=os.path.dirname(os.path.realpath(__file__))).strip().decode()
             db_file = metadata[0]["sample_database_file"]
             self._methodology = f"bpaotu_{git_revision}_{db_file}"
 
@@ -442,7 +411,8 @@ class DataImporter:
                         logger.warning('[{}] skipped non-integer sample ID: {}'.format(amplicon_code, sample_id))
                         self.sample_non_integer.add(sample_id)
                     continue
-            otu_id = otu_lookup.get(otu_hash(otu_code, self.amplicon_code_names[amplicon_code.lower()]))
+            hash = otu_hash(otu_code, self.amplicon_code_names[amplicon_code.lower()])
+            otu_id = otu_lookup.get(hash)
             if not otu_id:
                 continue
             yield otu_id, sample_id, int_count
@@ -461,7 +431,7 @@ class DataImporter:
                         continue
                     yield (sample_id, otu_id, count)
                 self.make_file_log(
-                    fname, file_type='Abundance', rows_imported=entry, rows_skipped=rows_skipped)
+                    fname, file_type='Abundance', rows_imported=(entry + 1), rows_skipped=rows_skipped)
 
         logger.warning('Loading OTU abundance tables')
 
@@ -483,6 +453,49 @@ class DataImporter:
                 try:
                     self._engine.execute(
                         text('''COPY otu.sample_otu from :csv CSV header''').execution_options(autocommit=True),
+                        csv=fname)
+                except:  # noqa
+                    log_amplicon("unable to import {}".format(sampleotu_fname))
+                    traceback.print_exc()
+            finally:
+                os.unlink(fname)
+
+    def load_otu_abundance_20k(self, otu_lookup):
+        def _make_sample_otus(fname, amplicon_code, present_sample_ids):
+            with gzip.open(fname, 'rt') as fd:
+                tuple_rows = self._otu_abundance_rows(fd, amplicon_code, otu_lookup)
+                rows_skipped = 0
+                for entry, (otu_id, sample_id, count) in enumerate(tuple_rows):
+                    if sample_id not in present_sample_ids:
+                        if sample_id not in self.sample_metadata_incomplete \
+                                and sample_id not in self.sample_non_integer:
+                            self.sample_not_in_metadata.add(sample_id)
+                        rows_skipped += 1
+                        continue
+                    yield (sample_id, otu_id, count)
+                self.make_file_log(
+                    fname, file_type='Abundance', rows_imported=(entry + 1), rows_skipped=rows_skipped)
+
+        logger.warning('Loading OTU abundance 20k tables')
+
+        present_sample_ids = set([t[0] for t in self._session.query(SampleContext.id)])
+
+        for amplicon_code, sampleotu_fname in self.amplicon_files('*_20K.txt.gz'):
+            def log_amplicon(msg):
+                logger.warning('[{}] {}'.format(amplicon_code, msg))
+            try:
+                log_amplicon("reading from: {}".format(sampleotu_fname))
+                with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
+                    fname = temp_fd.name
+                    os.chmod(fname, 0o644)
+                    log_amplicon("writing out OTU abundance 20k data to CSV tempfile: {}".format(fname))
+                    w = csv.writer(temp_fd)
+                    w.writerow(['sample_id', 'otu_id', 'count'])
+                    w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
+                log_amplicon("loading OTU abundance 20k data into database")
+                try:
+                    self._engine.execute(
+                        text('''COPY otu.sample_otu_20k from :csv CSV header''').execution_options(autocommit=True),
                         csv=fname)
                 except:  # noqa
                     log_amplicon("unable to import {}".format(sampleotu_fname))

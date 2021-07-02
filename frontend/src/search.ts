@@ -8,10 +8,13 @@ export interface SearchConfig {
   galaxy_integration: boolean
   ckan_base_url: string
   ckan_check_permissions: string
+  default_amplicon: string
 
   amplicon_endpoint: string
   taxonomy_endpoint: string
   contextual_endpoint: string
+  contextual_graph_endpoint: string
+  taxonomy_graph_endpoint: string
   search_endpoint: string
   export_endpoint: string
   export_biom_endpoint: string

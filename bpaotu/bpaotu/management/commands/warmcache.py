@@ -5,6 +5,7 @@ from ...spatial import spatial_query
 from ...views import get_contextual_schema_definition
 from ...otu import OTUKingdom, OTUAmplicon
 from collections import OrderedDict
+from django.conf import settings
 
 
 class Command(BaseCommand):
@@ -28,9 +29,12 @@ class Command(BaseCommand):
 
     def warm_map(self):
         print("Warming spatial cache")
+        default_amplicon = None
+        with OntologyInfo() as info:
+            default_amplicon = self.make_is(info.value_to_id(OTUAmplicon, settings.DEFAULT_AMPLICON))
         params = OTUQueryParams(
             contextual_filter=ContextualFilter('and', None),
-            taxonomy_filter=TaxonomyFilter(None, [None, None, None, None, None, None, None]))
+            taxonomy_filter=TaxonomyFilter(default_amplicon, [None, None, None, None, None, None, None]))
         spatial_query(params, cache_duration=CACHE_FOREVER, force_cache=True)
         print("Complete")
 

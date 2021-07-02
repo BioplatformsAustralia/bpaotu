@@ -6,44 +6,44 @@ import { describeSearch } from './search'
 import { searchPageInitialState } from './types'
 
 export const {
-  openSamplesMapModal,
-  closeSamplesMapModal,
+  openSamplesGraphModal,
+  closeSamplesGraphModal,
 
-  samplesMapModalFetchSamplesStarted,
-  samplesMapModalFetchSamplesEnded
+  samplesGraphModalFetchSamplesStarted,
+  samplesGraphModalFetchSamplesEnded
 } = createActions(
-  'OPEN_SAMPLES_MAP_MODAL',
-  'CLOSE_SAMPLES_MAP_MODAL',
+  'OPEN_SAMPLES_Graph_MODAL',
+  'CLOSE_SAMPLES_Graph_MODAL',
 
-  'SAMPLES_MAP_MODAL_FETCH_SAMPLES_STARTED',
-  'SAMPLES_MAP_MODAL_FETCH_SAMPLES_ENDED',
+  'SAMPLES_Graph_MODAL_FETCH_SAMPLES_STARTED',
+  'SAMPLES_Graph_MODAL_FETCH_SAMPLES_ENDED',
 )
 
-export const fetchSampleMapModalSamples = () => (dispatch, getState) => {
+export const fetchSampleGraphModalSamples = () => (dispatch, getState) => {
   const state = getState();
   const filters = describeSearch(state.searchPage.filters, state.contextualDataDefinitions)
 
-  dispatch(samplesMapModalFetchSamplesStarted())
-  handleSimpleAPIResponse(dispatch, partial(executeSampleSitesSearch, filters), samplesMapModalFetchSamplesEnded)
+  dispatch(samplesGraphModalFetchSamplesStarted())
+  handleSimpleAPIResponse(dispatch, partial(executeSampleSitesSearch, filters), samplesGraphModalFetchSamplesEnded)
 }
 
 export default handleActions(
   {
-    [openSamplesMapModal as any]: (state, action) => ({
+    [openSamplesGraphModal as any]: (state, action) => ({
       ...state,
       isOpen: true
     }),
-    [closeSamplesMapModal as any]: (state, action) => ({
+    [closeSamplesGraphModal as any]: (state, action) => ({
       ...state,
       isOpen: false
     }),
-    [samplesMapModalFetchSamplesStarted as any]: (state, action) => ({
+    [samplesGraphModalFetchSamplesStarted as any]: (state, action) => ({
       ...state,
       isLoading: true,
       markers: [],
       sample_otus: []
     }),
-    [samplesMapModalFetchSamplesEnded as any]: (state, action: any) => ({
+    [samplesGraphModalFetchSamplesEnded as any]: (state, action: any) => ({
       ...state,
       isLoading: false,
       markers: map(action.payload.data.data, sample => ({
@@ -56,5 +56,5 @@ export default handleActions(
       sample_otus: action.payload.data.sample_otus
     })
   },
-  searchPageInitialState.samplesMapModal
+  searchPageInitialState.samplesGraphModal
 )

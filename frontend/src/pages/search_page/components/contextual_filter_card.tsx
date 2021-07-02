@@ -1,10 +1,13 @@
 import { filter, find } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
-import { Button, Card, CardBody, CardFooter, CardHeader, Col, Form, Input, Row, UncontrolledTooltip, Badge } from 'reactstrap'
+import { Button, Card, CardBody, CardFooter, CardHeader, Col, Form, FormGroup, Input, Row, Label, UncontrolledTooltip, Badge, Alert } from 'reactstrap'
 import Octicon from '../../../components/octicon'
+
 import { bindActionCreators } from 'redux'
 import {
+  addWarningContextualFilter,
+  removeWarningContextualFilter,
   addContextualFilter,
   changeContextualFilterOperator,
   changeContextualFilterValue,
@@ -23,14 +26,15 @@ import EnvironmentFilter from './environment_filter'
 
 class ContextualFilterCard extends React.Component<any> {
   public componentDidMount() {
-    this.props.fetchContextualDataDefinitions()
+    if(this.props.fetchContextualDataDefinitions())
+      this.props.addWarningContextualFilter()
   }
 
   public render() {
     return (
       <Card>
         <CardHeader>
-          <Row>
+        <Row>
               <Col>
                   Contextual Filters  
               </Col>
@@ -65,27 +69,45 @@ class ContextualFilterCard extends React.Component<any> {
             </Col>
           </Row>
 
+          <Row>
+            <Col sm={12}>
+              <Alert color="secondary">
+                <FormGroup check>
+                  <Label sm={12} check color="primary">
+                    <Input
+                        type="checkbox"
+                        checked={this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?false:true}
+                        onChange={evt => evt.target.checked? this.props.removeWarningContextualFilter():this.props.addWarningContextualFilter() }
+                      />
+                      
+                        {this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?"Check to show all data including samples with integrity warnings.":"Uncheck to remove samples with integrity warnings."}
+                  </Label>
+                </FormGroup>
+                </Alert>
+            </Col>
+          </Row>
+
           {this.props.contextualFilters.length >= 2 && (
             <Row>
               <Col sm={12}>
-                <Form inline={true}>
-                  Samples must match &nbsp;
-                  <Input
-                    type="select"
-                    bsSize="sm"
-                    value={this.props.contextualFiltersMode}
-                    onChange={evt => this.props.selectContextualFiltersMode(evt.target.value)}
-                  >
-                    <option value="and">all</option>
-                    <option value="or">any</option>
-                  </Input>
-                  &nbsp; of the following contextual filters.
-                </Form>
+                <Alert color="secondary">
+                  <Form inline={true}>
+                    Samples must match &nbsp;
+                    <Input
+                      type="select"
+                      bsSize="sm"
+                      value={this.props.contextualFiltersMode}
+                      onChange={evt => this.props.selectContextualFiltersMode(evt.target.value)}
+                    >
+                      <option value="and">all</option>
+                      <option value="or">any</option>
+                    </Input>
+                    &nbsp; of the following contextual filters.
+                  </Form>
+                </Alert>
               </Col>
             </Row>
           )}
-
-          <Row className="space-above" />
 
           {this.props.contextualFilters.map((fltr, index) => (
             <ContextualFilter
@@ -101,6 +123,7 @@ class ContextualFilterCard extends React.Component<any> {
               changeValue={this.props.changeContextualFilterValue}
               changeValue2={this.props.changeContextualFilterValue2}
               changeValues={this.props.changeContextualFilterValues}
+              definitions={this.props.definitions}
             />
           ))}
         </CardBody>
@@ -130,7 +153,8 @@ function mapStateToProps(state) {
       state.searchPage.filters.contextual.selectedEnvironment
     ),
     optionsLoading: state.contextualDataDefinitions.isLoading,
-    definitions_url: state.contextualDataDefinitions.definitions_url
+    definitions_url: state.contextualDataDefinitions.definitions_url,
+    definitions: state.contextualDataDefinitions.values
   }
 }
 
@@ -139,6 +163,8 @@ function mapDispatchToProps(dispatch: any) {
     {
       fetchContextualDataDefinitions,
       selectContextualFiltersMode,
+      addWarningContextualFilter,
+      removeWarningContextualFilter,
       addContextualFilter,
       removeContextualFilter,
       selectContextualFilter,

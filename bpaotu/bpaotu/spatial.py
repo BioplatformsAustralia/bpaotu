@@ -3,6 +3,7 @@ from collections import defaultdict
 from django.core.cache import caches
 from .query import (
     OntologyInfo,
+    log_query,
     SampleQuery,
     make_cache_key,
     CACHE_7DAYS)
@@ -48,7 +49,7 @@ def _spatial_query(params):
             write_fns[column.name] = (title, fn)
 
         with SampleQuery(params) as query:
-            samples = query.matching_samples()
+            samples = query.matching_samples_20k()
 
         def samples_contextual_data(sample):
             return {
@@ -57,14 +58,25 @@ def _spatial_query(params):
                 if not (v is None or v.strip() == '')
             }
 
+        def sample_otus_abundance_20k(query):
+            q = query.matching_sample_otus_groupby_lat_lng_id_20k(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
+            for lat, lng, sample_id, richness, abundance in q.yield_per(50):
+                yield (lat, lng, sample_id, richness, abundance)
+
+        with SampleQuery(params) as query:
+            sample_otus_all = []
+            abundance_tbl = sample_otus_abundance_20k(query)
+            for sample_otu in abundance_tbl:
+                sample_otus_all.append(sample_otu)
+
         result = defaultdict(lambda: defaultdict(dict))
         for sample in samples:
             latlng = result[(sample.latitude, sample.longitude)]
             latlng['latitude'] = sample.latitude
-            latlng['longitude'] = _corrected_longitude(sample.longitude)
+            latlng['longitude'] = sample.longitude
             latlng['bpa_data'][sample.id] = samples_contextual_data(sample)
 
-    return list(result.values())
+    return list(result.values()), sample_otus_all
 
 
 def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=False):
@@ -84,17 +96,6 @@ def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=False):
         result = _spatial_query(params)
         cache.set(key, result, cache_duration)
     return result
-
-
-# TODO:
-# this is a workaround for a leaflet bug; this should
-# be moved into the frontend rather than being in this
-# backend code. it resolves an issue with samples wrapping
-# on the dateline and being shown off-screen (off coast NZ)
-def _corrected_longitude(lng):
-    if lng is None:
-        return None
-    return lng + 360 if lng < 0 else lng
 
 
 def non_empty_val(fv):

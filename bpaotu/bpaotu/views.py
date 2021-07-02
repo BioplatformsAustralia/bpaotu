@@ -1,4 +1,5 @@
 import csv
+import numpy as np
 import pandas as pd
 import hmac
 import io
@@ -10,6 +11,8 @@ import time
 from collections import OrderedDict, defaultdict
 from functools import wraps
 from operator import itemgetter
+from io import BytesIO
+from xhtml2pdf import pisa
 from requests.models import HTTPError
 
 from bpaingest.projects.amdb.contextual import \
@@ -36,6 +39,7 @@ from .query import (ContextualFilter, ContextualFilterTermDate,
                     ContextualFilterTermFloat, ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
                     MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
+                    OTUSampleOTUQuery,
                     TaxonomyFilter, TaxonomyOptions, get_sample_ids,
                     SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
 from .site_images import fetch_image, get_site_image_lookup_table
@@ -117,6 +121,8 @@ def api_config(request):
         'amplicon_endpoint': reverse('amplicon_options'),
         'taxonomy_endpoint': reverse('taxonomy_options'),
         'contextual_endpoint': reverse('contextual_fields'),
+        'contextual_graph_endpoint': reverse('contextual_graph_fields'),
+        'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),
         'search_endpoint': reverse('otu_search'),
         'export_endpoint': reverse('otu_export'),
         'export_biom_endpoint': reverse('otu_biom_export'),
@@ -138,6 +144,7 @@ def api_config(request):
             settings.CKAN_CHECK_PERMISSIONS_URL if settings.PRODUCTION
             else reverse('dev_only_ckan_check_permissions')),
         'galaxy_integration': settings.GALAXY_INTEGRATION,
+        'default_amplicon': settings.DEFAULT_AMPLICON,
     }
     return JsonResponse(config)
 
@@ -178,12 +185,21 @@ def contextual_fields(request):
     private API: return the available fields, and their types, so that
     the contextual filtering UI can be built
     """
-    fields_by_type = defaultdict(list)
-
-    classifications = DataImporter.classify_fields(make_environment_lookup(), get_contextual_schema_definition())
+    field_definitions, classifications, ontology_classes, fields_by_type = {}, {}, {}, defaultdict(list)
     field_units = AustralianMicrobiomeSampleContextual.units_for_fields()
+    contextual_schema_definition = get_contextual_schema_definition().get("definition", {})
+    for key, field in contextual_schema_definition.get("Field", {}).items():
+        if field in DataImporter.amd_ontologies:
+            field += '_id'
+        elif field == 'sample_id':
+            field = 'id'
+        field_definitions[field] = contextual_schema_definition.get("Field_Definition", {}).get(key)
+        am_environment = contextual_schema_definition.get("AM_enviro", {}).get(key).lstrip().rstrip()
+        am_environment_lookup = dict((t[1], t[0]) for t in make_environment_lookup().items())
+        am_environment_id = am_environment_lookup.get(am_environment, "")
+        if am_environment_id:
+            classifications[field] = am_environment_id
 
-    ontology_classes = {}
 
     # TODO Note TS: I don't understand why do we group columns together by their type.
     # Why can't we just got through them once and map them to the definitions?
@@ -201,14 +217,14 @@ def contextual_fields(request):
         fields_by_type[ty].append(column.name)
 
     def make_defn(typ, name, **kwargs):
-        environment = classifications.get(name)
         r = kwargs.copy()
         r.update({
             'type': typ,
             'name': name,
-            'environment': environment,
+            'environment': classifications.get(name),
             'display_name': SampleContext.display_name(name),
-            'units': field_units.get(name)
+            'units': field_units.get(name),
+            'definition': field_definitions.get(name),
         })
         return r
 
@@ -231,6 +247,116 @@ def contextual_fields(request):
         'definitions_url': get_contextual_schema_definition().get("download_url")
     })
 
+@require_CKAN_auth
+@require_POST
+def contextual_graph_fields(request, contextual_filtering=True):
+    additional_headers = json.loads(request.POST.get('columns', '[]'))
+    # all_headers = ['am_environment_id', 'vegetation_type_id', 'ph'] + additional_headers
+    all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph', 'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id', 'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
+
+    # logger.debug(f"all_headers: {all_headers}")
+    # logger.debug(f"request.POST['otu_query']: {request.POST['otu_query']}")
+    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+    # logger.debug(f"contextual_graph_fields- param: {params}")
+    if errors:
+        return JsonResponse({
+            'errors': [str(t) for t in errors],
+            'graphdata': {}
+        })
+    graph_results = {}
+
+    with SampleQuery(params) as query:
+        results = query.matching_sample_graph_data(all_headers)
+
+    if results:
+        data = np.array(results)
+        tdata = data.T
+
+        for i in range(len(all_headers)):
+            ll = []
+            cleaned_data = [x for x in tdata[i] if (x)]
+            for test in np.unique(cleaned_data, return_counts=True):
+                ll.append(test.tolist())
+            graph_results[all_headers[i]] = ll
+
+    return JsonResponse({
+        'graphdata': graph_results
+    })
+
+@require_CKAN_auth
+@require_POST
+def taxonomy_graph_fields(request, contextual_filtering=True):
+    # additional_headers = json.loads(request.POST.get('columns', '[]'))
+    # all_headers = ['am_environment_id', 'vegetation_type_id', 'ph'] + additional_headers
+    # all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph', 'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id', 'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
+    # all_headers = []
+    # logger.debug(f"all_headers: {all_headers}")
+    # logger.debug(f"request.POST['otu_query']: {request.POST['otu_query']}")
+    # Exclude environment field of contextual_filters
+    otu_query = request.POST['otu_query']
+    otu_query_dict = json.loads(otu_query)
+    if(otu_query_dict.get('contextual_filters') and otu_query_dict.get('contextual_filters').get('environment')):
+        otu_query_dict['contextual_filters']['environment'] = None
+        otu_query = json.dumps(otu_query_dict)
+
+    params_all, errors_all = param_to_filters(otu_query, contextual_filtering=False)
+    if errors_all:
+        return JsonResponse({
+            'errors': [str(t) for t in errors_all],
+            'graphdata': {}
+        })
+
+    with OTUSampleOTUQuery(params_all) as query:
+        am_environment_results_all = query.matching_taxonomy_graph_data_all()
+
+    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=False)
+    if errors:
+        return JsonResponse({
+            'errors': [str(t) for t in errors],
+            'graphdata': {}
+        })
+
+    with OTUSampleOTUQuery(params) as query:
+        results = query.matching_taxonomy_graph_data()
+
+    params_selected, errors_selected = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+    if errors_selected:
+        return JsonResponse({
+            'errors': [str(t) for t in errors_selected],
+            'graphdata': {}
+        })
+
+    with OTUSampleOTUQuery(params_selected) as query:
+        results_selected = query.matching_taxonomy_graph_data()
+
+    df_results = pd.DataFrame(results, columns=['amplicon', 'taxonomy', 'am_environment', 'sum'])
+    df_results_selected = pd.DataFrame(results_selected, columns=['amplicon', 'taxonomy', 'am_environment', 'sum'])
+    taxonomy_results = dict(df_results.groupby('taxonomy').agg({'sum': ['sum']}).itertuples(index=True, name=None))
+    amplicon_results = dict(df_results.groupby('amplicon').agg({'sum': ['sum']}).itertuples(index=True, name=None))
+    
+    am_environment_results = {}
+    for taxonomy_am_environment, sum in df_results.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        if am_environment_results.get(taxonomy_am_environment[0]):
+            am_environment_results[taxonomy_am_environment[0]].append([taxonomy_am_environment[1], sum])
+        else:
+            am_environment_results[taxonomy_am_environment[0]] = [[taxonomy_am_environment[1], sum]]
+    
+    am_environment_results_selected = {}
+    for taxonomy_am_environment, sum in df_results_selected.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        if am_environment_results_selected.get(taxonomy_am_environment[0]):
+            am_environment_results_selected[taxonomy_am_environment[0]].append([taxonomy_am_environment[1], sum])
+        else:
+            am_environment_results_selected[taxonomy_am_environment[0]] = [[taxonomy_am_environment[1], sum]]
+
+    return JsonResponse({
+        'graphdata': {
+            "amplicon": amplicon_results,
+            "taxonomy": taxonomy_results,
+            "am_environment_all": am_environment_results_all,
+            "am_environment": am_environment_results,
+            "am_environment_selected": am_environment_results_selected
+        }
+    })
 
 def _parse_contextual_term(filter_spec):
     field_name = filter_spec['field']
@@ -380,15 +506,16 @@ def otu_search_sample_sites(request):
         return JsonResponse({
             'errors': [str(e) for e in errors],
             'data': [],
+            'sample_otus': []
         })
-    data = spatial_query(params)
+    data, sample_otus = spatial_query(params)
 
     site_image_lookup_table = get_site_image_lookup_table()
 
     for d in data:
         key = (str(d['latitude']), str(d['longitude']))
         d['site_images'] = site_image_lookup_table.get(key)
-    return JsonResponse({'data': data})
+    return JsonResponse({'data': data, 'sample_otus': sample_otus})
 
 
 # technically we should be using GET, but the specification
@@ -611,9 +738,63 @@ def otu_log(request):
             'files': sorted(info.file_logs(), key=lambda x: x.filename),
             'ontology_errors': sorted(info.ontology_errors(), key=lambda x: x.ontology_name),
             'metadata': import_meta,
+            'pdf': request.GET.get('pdf')
         }
         context.update(missing)
-    return HttpResponse(template.render(context, request))
+    html = template.render(context, request)
+    if request.GET.get("pdf"):
+        result = BytesIO()
+        pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            filename = "out_log_%s.pdf" %(str(import_meta.revision_date))
+            content = "inline; filename=%s" %(filename)
+            download = request.GET.get("download")
+            if download:
+                content = "attachment; filename=%s" %(filename)
+            response['Content-Disposition'] = content
+    else:
+        response = HttpResponse(html)
+    return response
+
+@require_GET
+def otu_log_download(request):
+    missing = {}
+    with MetadataInfo() as info:
+        for obj in info.excluded_samples():
+            missing[obj.reason] = sorted(obj.samples)
+        metadata = info.import_metadata()
+        file_logs = []
+        for file in sorted(info.file_logs(), key=lambda x: x.filename):
+            file_log = {
+                'File name': file.filename,
+                'File type': file.file_type,
+                'File size': file.file_size,
+                'Rows imported': file.rows_imported,
+                'Rows skipped': file.rows_skipped
+            }
+            file_logs.append(file_log)
+        context = {
+            'ckan_base_url': settings.CKAN_SERVER['base_url'],
+            'files': file_logs,
+            'ontology_errors': sorted(info.ontology_errors(), key=lambda x: x.ontology_name),
+            'metadata': {
+                'Methodology': metadata.methodology,
+                'Revision': str(metadata.revision_date),
+                'Imported': str(metadata.imported_at),
+                'Samples': metadata.samplecontext_count,
+                'OTUs': metadata.otu_count,
+                'Abundance entries': metadata.sampleotu_count
+            }
+        }
+        context.update(missing)
+
+    data = json.dumps(context, indent=4)
+
+    response = HttpResponse(data, content_type='application/json')
+    filename = f"{metadata.revision_date}-csv.json"
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+    return response
 
 @require_GET
 def contextual_schema_definition(request):
@@ -630,7 +811,6 @@ def contextual_schema_definition_query():
         logger.error(f"Link {download_url} doesn't exists. {e}")
         download_url = ""
         df_definition = pd.DataFrame()
-
     return {
         'download_url': download_url,
         'definition': df_definition.to_dict(),
@@ -640,8 +820,8 @@ def get_contextual_schema_definition(cache_duration=CACHE_7DAYS, force_cache=Fal
     cache = caches['contextual_schema_definition_results']
     key = make_cache_key('contextual_schema_definition_query')
     result = None
-    if not force_cache:
-        result = cache.get(key)
+    # if not force_cache:
+    #     result = cache.get(key)
     if result is None:
         result = contextual_schema_definition_query()
         cache.set(key, result, cache_duration)
