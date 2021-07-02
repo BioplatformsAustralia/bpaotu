@@ -230,7 +230,7 @@ class DataImporter:
         taxonomy_fields = [
             'id', 'code',
             # order here must match `ontologies' below
-            'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id']
+            'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id', 'Traits']
         ontologies = OrderedDict([
             ('kingdom', OTUKingdom),
             ('phylum', OTUPhylum),
@@ -247,21 +247,29 @@ class DataImporter:
             code_re = re.compile(r'^[GATC]+')
             otu_header = '#OTU ID'
             amplicon_header = 'amplicon'
+            traits_header = 'Traits'
             for amplicon_code, fname in self.amplicon_files('*.taxonomy.gz'):
                 logger.warning('reading taxonomy file: {}'.format(fname))
                 amplicon = None
                 with gzip.open(fname, 'rt') as fd:
                     reader = csv.reader(fd, dialect='excel-tab')
                     header = next(reader)
+                    header_length = len(header)
+                    isTraits = header_length>10
+                    header_length = -10 if isTraits else -1
+                    logger.info(f"header: {header}\n{header[1:header_length]}")
+                    if isTraits:
+                        assert(header[11] == traits_header)
                     assert(header[0] == otu_header)
-                    assert(header[-1] == amplicon_header)
-                    taxo_header = header[1:-1]
+                    assert(header[header_length] == amplicon_header)
+                    taxo_header = header[1:header_length]
                     for idx, row in enumerate(csv.reader(fd, dialect='excel-tab')):
                         code = row[0]
                         if not code_re.match(code) and not code.startswith('mxa_'):
                             raise Exception("invalid OTU code: {}".format(code))
                         obj = {
-                            'amplicon': row[-1],
+                            'traits': row[11] if isTraits else "",
+                            'amplicon': row[header_length],
                             'otu': code,
                         }
                         if amplicon is None:
@@ -269,7 +277,7 @@ class DataImporter:
                         if amplicon != obj['amplicon']:
                             raise Exception(
                                 'more than one amplicon in folder: {} vs {}'.format(amplicon, obj['amplicon']))
-                        obj.update(zip(taxo_header, row[1:-1]))
+                        obj.update(zip(taxo_header, row[1:header_length]))
                         yield obj
                 self.amplicon_code_names[amplicon_code.lower()] = amplicon
                 taxonomy_file_info[fname] = {
@@ -298,6 +306,7 @@ class DataImporter:
                     for field in ontologies:
                         val = row.get(field, '')
                         otu_row.append(mappings[field][val])
+                    otu_row.append(row['traits'])
                     w.writerow(otu_row)
             logger.warning("loading taxonomy data from temporary CSV file")
             self._engine.execute(

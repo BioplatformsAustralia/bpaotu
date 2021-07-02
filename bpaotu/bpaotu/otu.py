@@ -124,6 +124,7 @@ class OTU(SchemaMixin, Base):
     genus_id = ontology_fkey(OTUGenus, index=True)
     species_id = ontology_fkey(OTUSpecies, index=True)
     amplicon_id = ontology_fkey(OTUAmplicon, index=True)
+    traits = Column(String(length=1024), nullable=False)
 
     kingdom = relationship(OTUKingdom)
     phylum = relationship(OTUPhylum)
@@ -144,7 +145,8 @@ class OTU(SchemaMixin, Base):
             self.order_id,
             self.family_id,
             self.genus_id,
-            self.species_id)
+            self.species_id,
+            self.traits)
 
 
 class SampleHorizonClassification(OntologyMixin, Base):
