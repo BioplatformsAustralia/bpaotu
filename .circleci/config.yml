@@ -28,5 +28,5 @@ workflows:
           context: Bioplatforms
           filters:
             branches:
-              only: circleci
+              only: circleci-local
               ignore: /.*/
