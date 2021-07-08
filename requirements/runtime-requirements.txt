@@ -5,7 +5,6 @@ Werkzeug==0.16.1
 beautifulsoup4==4.9.0
 boto==2.49.0
 ccg-django-utils==0.4.2
-ckanapi==4.3
 psycopg2==2.8.5
 pytz==2019.3
 requests==2.23.0
