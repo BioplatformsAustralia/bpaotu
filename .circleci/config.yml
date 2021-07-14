@@ -9,6 +9,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
+#         https://support:circleci:com/hc/en-us/articles/360050934711-Docker-build-fails-with-EPERM-operation-not-permitted-copyfile-when-using-node-14-9-0-or-later-:
           version: 19.03.13
       - attach_workspace:
           at: /home/circleci/project
