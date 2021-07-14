@@ -63,5 +63,3 @@ RUN rm -f "${TARBALL}.gz" && gzip "${TARBALL}"
 RUN rm -rf /env && rm -rf /data/app && rm -rf /data/env
 
 VOLUME ["/data"]
-
-CMD ["-c", "cp ${TARBALL}.gz /tmp"]

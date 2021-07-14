@@ -16,8 +16,6 @@ services:
         GIT_BRANCH:
     image: bioplatformsaustralia/bpaotu-builder
     network_mode: host
-    volumes:
-      - ./build:/tmp
 
   prod:
     build:

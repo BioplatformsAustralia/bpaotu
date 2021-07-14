@@ -2,15 +2,23 @@
 
 set -e
 
-#docker-compose -f docker-compose-build.yml build base
-#
-#docker run --rm -v $(pwd)/build:/build -v $(pwd)/frontend:/frontend node:latest bash /frontend/prodbuild.sh
+docker-compose -f docker-compose-build.yml build base
+
+echo "building and archiving frontend..."
+docker create -v /build -v /frontend --name fend node:latest /bin/true
+docker cp frontend fend:/
+docker run --volumes-from fend --name fend-archive node:latest bash /frontend/prodbuild.sh
+mkdir ./build
+docker cp fend-archive:/build .
+docker rm fend && docker rm fend-archive
 
 docker-compose -f docker-compose-build.yml build builder
 
-docker-compose -f docker-compose-build.yml run --rm builder
+echo "Retrieving prod-build archive..."
+docker create --name prod-archive bioplatformsaustralia/bpaotu-builder /bin/true
+docker cp prod-archive:/data/${PROJECT_NAME}-${BUILD_VERSION}.tar.gz ./build/
 
-docker-compose -f docker-compose-build.yml build prod
+eval docker-compose -f docker-compose-build.yml build prod
 
 #docker push bioplatformsaustralia/${DOCKER_NAME}
 #if [ x"$GIT_TAG" != x"" ]; then
