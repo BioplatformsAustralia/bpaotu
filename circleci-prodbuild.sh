@@ -2,9 +2,6 @@
 
 set -e
 
-mkdir -p /home/circleci/project/build
-mkdir -p /home/circleci/project/frontend
-
 docker-compose -f docker-compose-build.yml build base
 
 docker run --rm -v /home/circleci/project/build:/build -v /home/circleci/project/frontend:/frontend node:latest bash /frontend/prodbuild.sh

@@ -21,6 +21,8 @@ jobs:
           export "GIT_BRANCH=${CIRCLE_BRANCH}"
           export "BUILD_VERSION=${GIT_BRANCH}"
           export "PROJECT_NAME=bpaotu"
+          mkdir -p /home/circleci/project/build
+          mkdir -p /home/circleci/project/frontend
           "./circleci-prodbuild.sh"
 workflows:
   version: 2
