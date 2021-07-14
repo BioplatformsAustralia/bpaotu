@@ -18,8 +18,8 @@ jobs:
           echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
           chmod 755 ~/.docker
           chmod 644 ~/.docker/config.json
-          export "GIT_BRANCH=${CIRCLE_TAG}"
-          export "BUILD_VERSION=${CIRCLE_TAG}"
+          export "GIT_BRANCH=${CIRCLE_BRANCH}"
+          export "BUILD_VERSION=debug"
           export "PROJECT_NAME=bpaotu"
           "./circleci-prodbuild.sh"
 workflows:

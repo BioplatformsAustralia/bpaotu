@@ -1,4 +1,4 @@
-#
+# NB: the following dev file has NOT been refactored yet to incorporate new CI - if needed, refactor then add back to docker-compose-build.yml
 FROM bioplatformsaustralia/bpaotu-builder
 MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
 
