@@ -2,6 +2,8 @@
 
 set -e 
 
+chown -R root:root /frontend
+
 ls -lhrta /
 ls -lhrta /frontend
 
