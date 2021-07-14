@@ -32,7 +32,7 @@ ENV PYTHON_PIP_VERSION 21.1.3
 RUN . ${VIRTUAL_ENV}/bin/activate && pip install --upgrade pip==$PYTHON_PIP_VERSION
 
 RUN git clone --depth=1 --recurse-submodules --branch="${GIT_BRANCH}" "${PROJECT_SOURCE}" ${WORKINGDIR}
-RUN git rev-parse HEAD | eval $(cat ~/sudo) tee .version
+RUN git rev-parse HEAD | tee .version
 
 RUN pip install --upgrade -r requirements/runtime-requirements.txt \
 && pip install --upgrade -r requirements/biom-requirements.txt \

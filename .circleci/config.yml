@@ -23,7 +23,8 @@ jobs:
           export "PROJECT_NAME=bpaotu"
           mkdir -p /home/circleci/project/build
           mkdir -p /home/circleci/project/frontend
-          "./circleci-prodbuild.sh"
+          docker-compose -f docker-compose-build.yml build base
+          docker run --rm -v $(pwd)/build:/build -v $(pwd)/frontend:/frontend node:latest bash /frontend/prodbuild.sh
 workflows:
   version: 2
   build-deploy:
