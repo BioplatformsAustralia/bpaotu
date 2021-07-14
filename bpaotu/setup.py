@@ -24,7 +24,7 @@ package_scripts = ["manage.py"]
 package_data = get_data_files()
 
 setup(name='bpaotu',
-      version='1.30.4',
+      version='1.30.5',
       description="BPA OTU",
       author='Centre for Comparative Genomics',
       author_email='help@bioplatforms.com',
