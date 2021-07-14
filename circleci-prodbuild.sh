@@ -4,7 +4,7 @@ set -e
 
 docker-compose -f docker-compose-build.yml build base
 
-docker run --rm -v /home/circleci/project/build:/build -v /home/circleci/project/frontend:/frontend node:latest bash /frontend/prodbuild.sh
+docker run --rm -v $(pwd)/build:/build -v $(pwd)/frontend:/frontend node:latest bash ls -lhrta && pwd
 
 docker-compose -f docker-compose-build.yml build builder
 
