@@ -31,6 +31,8 @@ workflows:
       - build:
           context: Bioplatforms
           filters:
+            tags:
+              only: /^\d+\.\d+(\.\d+)?(-\S*)?$/
             branches:
 #              only: circleci
               ignore: /.*/
