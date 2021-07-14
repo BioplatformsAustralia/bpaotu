@@ -17,6 +17,7 @@ docker-compose -f docker-compose-build.yml build builder
 echo "Retrieving prod-build archive..."
 docker create --name prod-archive bioplatformsaustralia/bpaotu-builder /bin/true
 docker cp prod-archive:/data/${PROJECT_NAME}-${BUILD_VERSION}.tar.gz ./build/
+docker rm prod-archive
 
 eval docker-compose -f docker-compose-build.yml build prod
 
