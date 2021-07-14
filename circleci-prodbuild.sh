@@ -12,7 +12,7 @@ docker-compose -f docker-compose-build.yml build builder
 
 docker-compose -f docker-compose-build.yml run --rm builder
 
-docker-compose -f docker-compose-build.yml build prod
+eval docker-compose -f docker-compose-build.yml build prod
 
 #docker push bioplatformsaustralia/${DOCKER_NAME}
 #if [ x"$GIT_TAG" != x"" ]; then
