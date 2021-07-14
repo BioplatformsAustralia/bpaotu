@@ -8,8 +8,7 @@ jobs:
       - image: 'cimg/base:stable'
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - setup_remote_docker
       - attach_workspace:
           at: /home/circleci/project
       - docker/install-docker-compose
