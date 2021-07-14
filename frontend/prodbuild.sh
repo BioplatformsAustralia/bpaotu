@@ -5,7 +5,7 @@ set -e
 cd /frontend
 
 # run production build (under travis)
-yarn cache clean
+yarn cache clean --all
 yarn install
 yarn build
 
