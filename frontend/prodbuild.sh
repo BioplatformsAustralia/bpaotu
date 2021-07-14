@@ -4,6 +4,10 @@ set -e
 
 chown -R root:root /frontend
 
+whoami
+
+mkdir -p /frontend/node_modules/@babel/code-frame/
+
 ls -lhrta /
 ls -lhrta /frontend
 
