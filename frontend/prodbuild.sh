@@ -10,7 +10,8 @@ mkdir -p /frontend/node_modules/@babel/code-frame/
 
 ls -lhrta /
 ls -lhrta /frontend
-
+echo "cache..."
+ls -lhrta /usr/local/share/.cache/yarn/v6/
 cd /frontend
 
 # run production build (under travis)
