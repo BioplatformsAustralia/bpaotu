@@ -23,5 +23,5 @@ services:
       dockerfile: Dockerfile-prod
       args:
         BUILD_VERSION:
-    image: bioplatformsaustralia/bpaotu:${BUILD_VERSION}
+    image: bioplatformsaustralia/bpaotu
 

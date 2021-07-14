@@ -21,8 +21,8 @@ docker rm prod-archive
 
 eval docker-compose -f docker-compose-build.yml build prod
 
-#docker push bioplatformsaustralia/${DOCKER_NAME}
-#if [ x"$GIT_TAG" != x"" ]; then
-#  docker tag bioplatformsaustralia/${DOCKER_NAME}:latest bioplatformsaustralia/${DOCKER_NAME}:${GIT_TAG}
-#  docker push bioplatformsaustralia/${DOCKER_NAME}:${GIT_TAG}
-#fi
+docker push bioplatformsaustralia/${DOCKER_NAME}
+if [ x"$GIT_TAG" != x"" ]; then
+  docker tag bioplatformsaustralia/${DOCKER_NAME}:latest bioplatformsaustralia/${DOCKER_NAME}:${GIT_TAG}
+  docker push bioplatformsaustralia/${DOCKER_NAME}:${GIT_TAG}
+fi

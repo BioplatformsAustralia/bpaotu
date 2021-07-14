@@ -18,11 +18,11 @@ jobs:
           echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
           chmod 755 ~/.docker
           chmod 644 ~/.docker/config.json
-          export "DOCKER_NAME=bpaotu"
           export "GIT_TAG=${CIRCLE_TAG}"
           export "GIT_BRANCH=${CIRCLE_BRANCH}"
-          export "BUILD_VERSION=${GIT_BRANCH}"
+          export "BUILD_VERSION=${GIT_TAG}"
           export "PROJECT_NAME=bpaotu"
+          export "DOCKER_NAME=${PROJECT_NAME}"
           "./circleci-prodbuild.sh"
 workflows:
   version: 2
@@ -32,5 +32,5 @@ workflows:
           context: Bioplatforms
           filters:
             branches:
-              only: circleci
+#              only: circleci
               ignore: /.*/
