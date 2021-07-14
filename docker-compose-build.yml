@@ -5,8 +5,6 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile-base
-      args:
-        http_proxy:
     image: bioplatformsaustralia/bpaotu-base
 
   builder:
@@ -14,38 +12,18 @@ services:
       context: ./
       dockerfile: Dockerfile-builder
       args:
-        http_proxy:
-    image: bioplatformsaustralia/bpaotu-builder
-    command: releasetarball
-    network_mode: host
-    environment:
         BUILD_VERSION:
         GIT_BRANCH:
+    image: bioplatformsaustralia/bpaotu-builder
+    network_mode: host
     volumes:
-      - ./build:/data
-
-  dev:
-    build:
-      context: ./
-      dockerfile: Dockerfile-dev
-      args:
-        http_proxy:
-    image: bioplatformsaustralia/bpaotu-dev
-    volumes:
-      - .:/app
+      - ./build:/tmp
 
   prod:
     build:
       context: ./
       dockerfile: Dockerfile-prod
       args:
-        ARG_BUILD_VERSION: ${BUILD_VERSION}
+        BUILD_VERSION:
     image: bioplatformsaustralia/bpaotu:${BUILD_VERSION}
 
-  lint:
-    image: bioplatformsaustralia/python-lint:python3
-    working_dir: /app/bpaotu
-    volumes:
-      - ./:/app
-    command:
-      - flake8

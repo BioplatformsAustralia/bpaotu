@@ -5,7 +5,7 @@ orbs:
 jobs:
   build:
     docker:
-      - image: 'circleci/python:3.7'
+      - image: 'cimg/base:stable'
     steps:
       - checkout
       - setup_remote_docker
@@ -17,8 +17,10 @@ jobs:
           chmod 755 ~/.docker
           chmod 644 ~/.docker/config.json
           export "DOCKER_NAME=bpaotu"
-          export "GIT_TAG=circleci"
-          export "BUILD_VERSION=${GIT_TAG}"
+          export "GIT_TAG=${CIRCLE_TAG}"
+          export "GIT_BRANCH=${CIRCLE_BRANCH}"
+          export "BUILD_VERSION=${GIT_BRANCH}"
+          export "PROJECT_NAME=bpaotu"
           "./circleci-prodbuild.sh"
 workflows:
   version: 2
@@ -28,5 +30,5 @@ workflows:
           context: Bioplatforms
           filters:
             branches:
-              only: circleci-local
+              only: circleci
               ignore: /.*/
