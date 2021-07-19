@@ -11,6 +11,7 @@ from collections import OrderedDict, defaultdict
 from glob import glob
 from hashlib import md5
 from itertools import zip_longest
+from ._version import __version__
 
 import subprocess
 import sqlalchemy
@@ -417,11 +418,11 @@ class DataImporter:
             logger.info("Unutilised fields:")
             for field in sorted(unused):
                 logger.info(field)
-        # set methodology to store version of git_revision and contextual DB in format (bpaotu_<git_revision>_<SQLite DB>)
+        # set methodology to store version of code and contextual DB in this format (<packagename>_<version>_<SQLite DB>)
+        db_file = ""
         if len(metadata) > 0:
-            git_revision = subprocess.check_output(["git", "describe", "--always"], cwd=os.path.dirname(os.path.realpath(__file__))).strip().decode()
             db_file = metadata[0]["sample_database_file"]
-            self._methodology = f"bpaotu_{git_revision}_{db_file}"
+        self._methodology = f"{__package__}_{__version__}_{db_file}"
 
     def _otu_abundance_rows(self, fd, amplicon_code, otu_lookup):
         reader = csv.reader(fd, dialect='excel-tab')

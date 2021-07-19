@@ -1,5 +1,5 @@
 import os.path
-
+import ast
 from setuptools import setup, find_packages
 
 
@@ -19,12 +19,26 @@ def get_data_files():
     return data_files
 
 
+def find_version():
+    """Return value of __version__.
+    """
+    file_path = os.path.join(os.path.dirname(__file__), 'bpaotu', '_version.py')
+    with open(file_path) as file_obj:
+        root_node = ast.parse(file_obj.read())
+    for node in ast.walk(root_node):
+        if isinstance(node, ast.Assign):
+            if len(node.targets) == 1 and node.targets[0].id == "__version__":
+                return node.value.s
+    raise RuntimeError("Unable to find version string.")
+
+
+version=find_version()
 packages = [p.replace(".", "/") for p in sorted(find_packages())]
 package_scripts = ["manage.py"]
 package_data = get_data_files()
 
 setup(name='bpaotu',
-      version='1.30.8',
+      version=version,
       description="BPA OTU",
       author='Centre for Comparative Genomics',
       author_email='help@bioplatforms.com',
