@@ -28,7 +28,7 @@ Pillow==6.2.2
 python-resize-image==1.1.19
 django-webpack-loader==0.7.0
 git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
-httplib2==0.17.2
+httplib2==0.19.0
 google-api-python-client
 python-dateutil==2.8.1
 shapely==1.7.0
