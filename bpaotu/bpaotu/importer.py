@@ -354,7 +354,7 @@ class DataImporter:
     def contextual_rows(self, ingest_cls, name):
         # flatten contextual metadata into dicts
         metadata = defaultdict(dict)
-        with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name), has_sql_context=False) as dlmeta:
+        with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name), has_sql_context=False, force_fetch=True) as dlmeta:
             for contextual_source in dlmeta.meta.contextual_metadata:
                 self.save_ontology_errors(
                     getattr(contextual_source, "environment_ontology_errors", None))
