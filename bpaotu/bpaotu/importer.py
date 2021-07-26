@@ -332,9 +332,19 @@ class DataImporter:
                         otu_row.append(mappings[field][val])
                     w.writerow(otu_row)
             logger.warning("loading taxonomy data from temporary CSV file")
-            self._engine.execute(
-                text('''COPY otu.otu from :csv CSV header''').execution_options(autocommit=True),
-                csv=fname)
+            try:
+                with open(fname, 'r') as fd:
+                    raw_conn = self._engine.raw_connection()
+                    cur = raw_conn.cursor()
+                    cur.copy_expert("COPY otu.otu from stdin CSV HEADER", fd)
+                    raw_conn.commit()
+                    cur.close()
+            except:
+                logger.error("Problem loading taxonomy data using raw connection.")
+                traceback.print_exc()
+            finally:
+                raw_conn.commit()
+                cur.close()
         finally:
             os.unlink(fname)
         for fname, info in taxonomy_file_info.items():
@@ -482,11 +492,15 @@ class DataImporter:
                     w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
                 log_amplicon("loading OTU abundance data into database")
                 try:
-                    self._engine.execute(
-                        text('''COPY otu.sample_otu from :csv CSV header''').execution_options(autocommit=True),
-                        csv=fname)
+                    with open(fname, 'r') as fd:
+                        raw_conn = self._engine.raw_connection()
+                        cur = raw_conn.cursor()
+                        cur.copy_expert("COPY otu.sample_otu from stdin CSV HEADER", fd)
                 except:  # noqa
                     log_amplicon("unable to import {}".format(sampleotu_fname))
                     traceback.print_exc()
+                finally:
+                    raw_conn.commit()
+                    cur.close()
             finally:
                 os.unlink(fname)
