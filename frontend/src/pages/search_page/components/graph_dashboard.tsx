@@ -6,6 +6,7 @@ import AnimateHelix from '../../../components/animate_helix'
 import PieChart from './charts/pie_chart'
 import PieChartEnvironment from './charts/pie_chart_environment'
 import PieChartAmplicon from './charts/pie_chart_amplicon'
+import PieChartTraits from './charts/pie_chart_traits'
 import HistogramChart from './charts/histogram_chart'
 import StackChart from './charts/stack_chart'
 // import TreePlotsChart from './charts/treeplots_chart'
@@ -78,7 +79,7 @@ class GraphDashboard extends React.Component<any> {
                                         </UncontrolledTooltip>
                                         </CardHeader>
                                     <CardBody>
-                                        <PieChartAmplicon selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="amplicon_id" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
+                                        <PieChartAmplicon selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="amplicon" taxonomyGraphdata={this.props.taxonomyGraphdata.amplicon} />
                                     </CardBody>
                                 </Card>
                             </Col>
@@ -104,6 +105,22 @@ class GraphDashboard extends React.Component<any> {
                                                 <SunBurstChart selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy_id" taxonomyIsLoading={this.props.taxonomyIsLoading} contextualIsLoading={this.props.contextualIsLoading} taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
                                                 {/* <TreePlotsChart selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} /> */}
                                                 <StackChart selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="amplicon_id" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
+                                            </>
+                                        } 
+                                    </CardBody>
+                                </Card>
+                            </Col>
+                        </Row>
+                        <Row style={{marginBottom: '10px'}}>
+                            <Col>
+                                <Card>
+                                    <CardHeader tag="h3">
+                                        Traits
+                                    </CardHeader>
+                                    <CardBody>
+                                        {(!this.props.taxonomyIsLoading) && (!this.props.contextualIsLoading) && (!this.props.taxonomy.kingdom.isDisabled) &&
+                                            <>
+                                                <PieChartTraits selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="traits" taxonomyGraphdata={this.props.taxonomyGraphdata.traits} />
                                             </>
                                         } 
                                     </CardBody>
@@ -162,6 +179,7 @@ function mapStateToProps(state) {
     return {
         selectedEnvironment: state.searchPage.filters.contextual.selectedEnvironment,
         selectedAmplicon:  state.searchPage.filters.selectedAmplicon,
+        selectedTrait:  state.searchPage.filters.selectedTrait,
         taxonomy: state.searchPage.filters.taxonomy,
         optionsEnvironment: state.contextualDataDefinitions.environment,
         contextualIsLoading: state.contextualDataForGraph.isLoading,

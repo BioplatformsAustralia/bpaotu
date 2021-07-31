@@ -85,12 +85,23 @@ def get_operator_and_int_value(v):
         ('value', int_if_not_already_none(v['value'])),
     ))
 
+def get_operator_and_string_value(v):
+    if v is None or v == '':
+        return None
+    if v.get('value', '') == '':
+        return None
+    return OrderedDict((
+        ('operator', v.get('operator', '=')),
+        ('value', v['value']),
+    ))
 
+
+clean_trait_filter = get_operator_and_string_value
 clean_amplicon_filter = get_operator_and_int_value
 clean_environment_filter = get_operator_and_int_value
 
 
-def make_clean_taxonomy_filter(amplicon_filter, state_vector):
+def make_clean_taxonomy_filter(amplicon_filter, state_vector, trait_filter):
     """
     take an amplicon filter and a taxonomy filter
     # (a list of phylum, kingdom, ...) and clean it
@@ -101,7 +112,8 @@ def make_clean_taxonomy_filter(amplicon_filter, state_vector):
         clean_amplicon_filter(amplicon_filter),
         list(map(
             get_operator_and_int_value,
-            state_vector)))
+            state_vector)),
+        clean_trait_filter(trait_filter))
 
 
 def normalise_blast_search_string(s):
@@ -119,6 +131,7 @@ def normalise_blast_search_string(s):
 def api_config(request):
     config = {
         'amplicon_endpoint': reverse('amplicon_options'),
+        'trait_endpoint': reverse('trait_options'),
         'taxonomy_endpoint': reverse('taxonomy_options'),
         'contextual_endpoint': reverse('contextual_fields'),
         'contextual_graph_endpoint': reverse('contextual_graph_fields'),
@@ -161,6 +174,19 @@ def amplicon_options(request):
         'possibilities': vals
     })
 
+@require_CKAN_auth
+@require_GET
+def trait_options(request):
+    """
+    private API: return the possible traits
+    """
+    with OTUSampleOTUQuery(OTUQueryParams(None,None)) as query:
+        amplicon_filter = clean_amplicon_filter(json.loads(request.GET['amplicon']))
+        vals = [[x[0], x[0]] for x in query.import_traits(amplicon_filter)]
+    return JsonResponse({
+        'possibilities': vals
+    })
+
 
 @require_CKAN_auth
 @require_GET
@@ -168,10 +194,12 @@ def taxonomy_options(request):
     """
     private API: given taxonomy constraints, return the possible options
     """
+    
     with TaxonomyOptions() as options:
         taxonomy_filter = make_clean_taxonomy_filter(
             json.loads(request.GET['amplicon']),
-            json.loads(request.GET['selected']))
+            json.loads(request.GET['selected']),
+            json.loads(request.GET['trait']))
         possibilities = options.possibilities(taxonomy_filter)
     return JsonResponse({
         'possibilities': possibilities
@@ -293,9 +321,12 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
     # logger.debug(f"all_headers: {all_headers}")
     # logger.debug(f"request.POST['otu_query']: {request.POST['otu_query']}")
     # Exclude environment field of contextual_filters
+
+    am_environment_selected = None 
     otu_query = request.POST['otu_query']
     otu_query_dict = json.loads(otu_query)
     if(otu_query_dict.get('contextual_filters') and otu_query_dict.get('contextual_filters').get('environment')):
+        am_environment_selected = otu_query_dict['contextual_filters']['environment']
         otu_query_dict['contextual_filters']['environment'] = None
         otu_query = json.dumps(otu_query_dict)
 
@@ -307,17 +338,7 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
         })
 
     with OTUSampleOTUQuery(params_all) as query:
-        am_environment_results_all = query.matching_taxonomy_graph_data_all()
-
-    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=False)
-    if errors:
-        return JsonResponse({
-            'errors': [str(t) for t in errors],
-            'graphdata': {}
-        })
-
-    with OTUSampleOTUQuery(params) as query:
-        results = query.matching_taxonomy_graph_data()
+        results_all = query.matching_taxonomy_graph_data()
 
     params_selected, errors_selected = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
     if errors_selected:
@@ -329,13 +350,29 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
     with OTUSampleOTUQuery(params_selected) as query:
         results_selected = query.matching_taxonomy_graph_data()
 
-    df_results = pd.DataFrame(results, columns=['amplicon', 'taxonomy', 'am_environment', 'sum'])
-    df_results_selected = pd.DataFrame(results_selected, columns=['amplicon', 'taxonomy', 'am_environment', 'sum'])
-    taxonomy_results = dict(df_results.groupby('taxonomy').agg({'sum': ['sum']}).itertuples(index=True, name=None))
-    amplicon_results = dict(df_results.groupby('amplicon').agg({'sum': ['sum']}).itertuples(index=True, name=None))
+    df_results_all = pd.DataFrame(results_all, columns=['amplicon', 'taxonomy', 'am_environment', 'traits', 'sum'])
+    df_results_selected = pd.DataFrame(results_selected, columns=['amplicon', 'taxonomy', 'am_environment', 'traits', 'sum'])
+    taxonomy_results = dict(df_results_selected.groupby('taxonomy').agg({'sum': ['sum']}).itertuples(index=True, name=None))
+    amplicon_results = dict(df_results_selected.groupby('amplicon').agg({'sum': ['sum']}).itertuples(index=True, name=None))
+
+    df_traits = df_results_selected.explode('traits')
+    trait_filter = otu_query_dict['trait_filter']
+    traits_filter_value = trait_filter.get('value')
+    if traits_filter_value != "":
+        traits_filter_operator = '==' if (trait_filter.get('operator') == 'is') else '!='
+        traits_filter_query = f"traits {traits_filter_operator} \"{traits_filter_value}\""
+        df_traits = df_traits.query(f'{traits_filter_query}')
+    df_traits_group = df_traits.groupby('traits')
+    traits_results = dict(df_traits_group.agg({'sum': ['sum']}).itertuples(index=True, name=None))
+
+    am_environment_results_all = []
+    for taxonomy_am_environment, sum in df_results_all.groupby(['taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        am_environment_results_all.append([taxonomy_am_environment, sum])
     
     am_environment_results = {}
-    for taxonomy_am_environment, sum in df_results.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+    if am_environment_selected and am_environment_selected.get('value', None):
+        df_results_all = df_results_all.query('am_environment == @am_environment_selected.get("value", None)')
+    for taxonomy_am_environment, sum in df_results_all.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
         if am_environment_results.get(taxonomy_am_environment[0]):
             am_environment_results[taxonomy_am_environment[0]].append([taxonomy_am_environment[1], sum])
         else:
@@ -350,6 +387,7 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
 
     return JsonResponse({
         'graphdata': {
+            "traits": traits_results,
             "amplicon": amplicon_results,
             "taxonomy": taxonomy_results,
             "am_environment_all": am_environment_results_all,
@@ -394,7 +432,8 @@ def param_to_filters(query_str, contextual_filtering=True):
     otu_query = json.loads(query_str)
     taxonomy_filter = make_clean_taxonomy_filter(
         otu_query['amplicon_filter'],
-        otu_query['taxonomy_filters'])
+        otu_query['taxonomy_filters'],
+        otu_query['trait_filter'])
 
     context_spec = otu_query['contextual_filters']
     contextual_filter = ContextualFilter(context_spec['mode'], context_spec['environment'])

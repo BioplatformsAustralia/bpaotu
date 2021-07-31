@@ -48,6 +48,7 @@ export interface PageState {
       genus: SelectableLoadableValues
       species: SelectableLoadableValues
     }
+    selectedTrait: OperatorAndValue
     contextual: any // TODO
   }
   samplesMapModal: {
@@ -108,6 +109,7 @@ export const searchPageInitialState: PageState = {
       genus: EmptySelectableLoadableValues,
       species: EmptySelectableLoadableValues
     },
+    selectedTrait: EmptyOperatorAndValue,
     contextual: {
       selectedEnvironment: EmptyOperatorAndValue,
       filtersMode: 'and',

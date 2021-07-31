@@ -99,20 +99,42 @@ class SunBurstChart extends React.Component<any> {
   render() {
     const title = "Taxonomy Plot"
     const graphData = this.generateGraphData()
-    var data = [{
-      type: "sunburst",
-      parents: graphData.parents,
-      ids:  graphData.ids,
-      text:  graphData.text,
-      values:  graphData.values,
-      branchvalues: "total",
-      texttemplate: ('%{label}<br>%{text}<br>%{value}<br>%{percentEntry:.2%}'),
-      hovertemplate: ('%{label}<br>%{text}<br>%{value}<br>%{percentEntry:.2%}<extra></extra>'),
-      labels: graphData.labels,
-      leaf: {opacity: 0.8},
-      marker: {line: {width: 2}},
-      textposition: 'inside',
-    }];
+    let data = []
+    if(graphData.ids.length>1) {
+      data = [{
+        type: "sunburst",
+        parents: graphData.parents,
+        ids:  graphData.ids,
+        text:  graphData.text,
+        values:  graphData.values,
+        branchvalues: "total",
+        texttemplate: ('%{label}<br>%{text}<br>%{value}<br>%{percentEntry:.2%}'),
+        hovertemplate: ('%{label}<br>%{text}<br>%{value}<br>%{percentEntry:.2%}<extra></extra>'),
+        labels: graphData.labels,
+        leaf: {opacity: 0.8},
+        marker: {line: {width: 2}},
+        textposition: 'inside',
+      }];
+    }
+    else {
+      data = [{
+        labels: graphData.labels,
+        values:graphData.values,
+        text: graphData.text,
+        textinfo: 'label+value+percent',
+        type: 'pie',
+        opacity: 0.8,
+        automargin: true,
+        insidetextorientation: "radial",
+        textposition: 'inside',
+        marker: {
+          line: {
+            width: 2,
+            color: 'white'
+          }
+        },
+      }];
+    }
 
     return (
       <>

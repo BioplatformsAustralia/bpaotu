@@ -5,6 +5,7 @@ import { Button } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 import { selectEnvironment, removeContextualFilter } from '../reducers/contextual'
 import { selectAmplicon } from '../reducers/amplicon'
+import { selectTrait } from '../reducers/trait'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import { fetchContextualDataForGraph } from '../../../reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from '../../../reducers/taxonomy_data_graph'
@@ -62,6 +63,15 @@ class SearchFilters extends React.Component<any> {
         }
     }
     return selectedFilterValue
+  }
+
+  onSelectTrait = () => {
+    // console.log("selectTrait")
+    this.props.selectTrait('')
+    this.props.updateTaxonomy()
+    this.props.fetchContextualDataForGraph()
+    this.props.fetchTaxonomyDataForGraph()
+    this.props.selectToScroll('amplicon_id')
   }
 
   onSelectAmplicon = () => {
@@ -127,14 +137,18 @@ class SearchFilters extends React.Component<any> {
   }
 
   render() {
-    // console.log(this.props.filters)
-    // console.log("environment", this.props.environment)
     let searchFilters = []
     for (const [key, value] of Object.entries(this.props.filters)) {
       switch(key) {
         case "selectedAmplicon":
           if (value['value']) {
             let searchFilter = <SearchFilterButton onClick={() => this.onSelectAmplicon()}  color="primary" key={key} octicon="x" text={"Amplicon <"+value['operator']+"> "+this.getSelectedFilter(this.props.amplicons, value['value'], 'value')} />
+            searchFilters.push(searchFilter)
+          }
+          break
+        case "selectedTrait":
+          if (value['value']) {
+            let searchFilter = <SearchFilterButton onClick={() => this.onSelectTrait()}  color="secondary" key={key} octicon="x" text={"Trait <"+value['operator']+"> "+this.getSelectedFilter(this.props.traits, value['value'], 'value')} />
             searchFilters.push(searchFilter)
           }
           break
@@ -203,6 +217,7 @@ class SearchFilters extends React.Component<any> {
 function mapStateToProps(state) {
   return {
     amplicons: state.referenceData.amplicons.values,
+    traits: state.referenceData.traits.values,
     filters: state.searchPage.filters,
     environment: state.contextualDataDefinitions.environment,
     contextualFilters: state.contextualDataDefinitions.filters,
@@ -213,6 +228,7 @@ function mapDispatchToProps(dispatch: any, props) {
   return bindActionCreators(
     {
       selectAmplicon,
+      selectTrait,
       updateTaxonomy: updateTaxonomyDropDowns(''),
       selectValueKingdom: createAction('SELECT_KINGDOM'),
       onChangeKingdom: updateTaxonomyDropDowns('kingdom'),

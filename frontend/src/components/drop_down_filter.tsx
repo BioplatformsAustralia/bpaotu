@@ -1,17 +1,21 @@
 import { concat, map } from 'lodash'
 import * as React from 'react'
-import { Col, FormGroup, Input, Label } from 'reactstrap'
+import { Col, FormGroup, Input, Label, UncontrolledTooltip } from 'reactstrap'
+import Octicon from './octicon'
+
 import Select from 'react-select';
 import { OperatorAndValue } from '../pages/search_page/reducers/types'
 
 interface Props {
   label: string
+  info: string
   selected: OperatorAndValue
   optionsLoading: boolean
   options: OperatorAndValue[]
   selectValue: (id: string) => void
   selectOperator: (id: string) => void
   onChange: (id: string) => void
+  updateTraits: (id: string) => void
 }
 
 export default class DropDownFilter extends React.Component<any> {
@@ -24,7 +28,17 @@ export default class DropDownFilter extends React.Component<any> {
   public render() {
     return (
       <FormGroup row={true}>
-        <Label sm={3}>{this.props.label}</Label>
+        {this.props.info 
+          ? 
+          <Label sm={3}>{this.props.label+" "}<span id={this.props.label+"Tip"}>
+          <Octicon name="info" />
+        </span>
+        <UncontrolledTooltip target={this.props.label+"Tip"} placement="auto">
+          {this.props.info}
+        </UncontrolledTooltip></Label>
+          :
+          <Label sm={3}>{this.props.label}</Label>
+        }
         <Col sm={3}>
           <Input
             type="select"
@@ -75,6 +89,9 @@ export default class DropDownFilter extends React.Component<any> {
   public onValueChange(evt) {
     const id = evt.value
     this.props.selectValue(id)
+    if (this.props.updateTraits) {
+      this.props.updateTraits()
+    }
     if (this.props.onChange) {
       this.props.onChange()
     }

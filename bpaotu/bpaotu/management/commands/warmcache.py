@@ -24,7 +24,8 @@ class Command(BaseCommand):
                     q.possibilities(
                         TaxonomyFilter(
                             self.make_is(amplicon_id),
-                            [self.make_is(kingdom_id), None, None, None, None, None, None]), force_cache=True)
+                            [self.make_is(kingdom_id), None, None, None, None, None, None],
+                            None), force_cache=True)
         print("Complete")
 
     def warm_map(self):
@@ -34,7 +35,7 @@ class Command(BaseCommand):
             default_amplicon = self.make_is(info.value_to_id(OTUAmplicon, settings.DEFAULT_AMPLICON))
         params = OTUQueryParams(
             contextual_filter=ContextualFilter('and', None),
-            taxonomy_filter=TaxonomyFilter(default_amplicon, [None, None, None, None, None, None, None]))
+            taxonomy_filter=TaxonomyFilter(default_amplicon, [None, None, None, None, None, None, None], None))
         spatial_query(params, cache_duration=CACHE_FOREVER, force_cache=True)
         print("Complete")
 

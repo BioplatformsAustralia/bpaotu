@@ -3,7 +3,7 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { selectAmplicon, selectAmpliconOperator } from '../reducers/amplicon'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
-
+import { fetchTraits } from '../../../reducers/reference_data/traits'
 import DropDownFilter from '../../../components/drop_down_filter'
 
 function mapStateToProps(state) {
@@ -22,7 +22,8 @@ function mapDispatchToProps(dispatch) {
     {
       selectValue: selectAmplicon,
       selectOperator: selectAmpliconOperator,
-      onChange: updateTaxonomyDropDowns('')
+      onChange: updateTaxonomyDropDowns(''),
+      updateTraits: fetchTraits
     },
     dispatch
   )
