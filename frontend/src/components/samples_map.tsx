@@ -362,7 +362,7 @@ class SamplesMap extends React.Component<any> {
         :
         <>
         <div className="text-center">
-          {this.props.isLoading ? 'Processing...' : `Showing ${this.props.markers.length} sample locations`}
+          {this.props.isLoading ? 'Processing...' : `Showing ${this.props.sample_otus.length} samples in ${this.props.markers.length} sample locations`}
         </div>
         <Map
           className="space-above"
