@@ -293,9 +293,11 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
     # logger.debug(f"all_headers: {all_headers}")
     # logger.debug(f"request.POST['otu_query']: {request.POST['otu_query']}")
     # Exclude environment field of contextual_filters
+    am_environment_selected = None 
     otu_query = request.POST['otu_query']
     otu_query_dict = json.loads(otu_query)
     if(otu_query_dict.get('contextual_filters') and otu_query_dict.get('contextual_filters').get('environment')):
+        am_environment_selected = otu_query_dict['contextual_filters']['environment']
         otu_query_dict['contextual_filters']['environment'] = None
         otu_query = json.dumps(otu_query_dict)
 
@@ -307,17 +309,7 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
         })
 
     with OTUSampleOTUQuery(params_all) as query:
-        am_environment_results_all = query.matching_taxonomy_graph_data_all()
-
-    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=False)
-    if errors:
-        return JsonResponse({
-            'errors': [str(t) for t in errors],
-            'graphdata': {}
-        })
-
-    with OTUSampleOTUQuery(params) as query:
-        results = query.matching_taxonomy_graph_data()
+        results_all = query.matching_taxonomy_graph_data()
 
     params_selected, errors_selected = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
     if errors_selected:
@@ -329,13 +321,19 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
     with OTUSampleOTUQuery(params_selected) as query:
         results_selected = query.matching_taxonomy_graph_data()
 
-    df_results = pd.DataFrame(results, columns=['amplicon', 'taxonomy', 'am_environment', 'sum'])
+    df_results_all = pd.DataFrame(results_all, columns=['amplicon', 'taxonomy', 'am_environment', 'sum'])
     df_results_selected = pd.DataFrame(results_selected, columns=['amplicon', 'taxonomy', 'am_environment', 'sum'])
-    taxonomy_results = dict(df_results.groupby('taxonomy').agg({'sum': ['sum']}).itertuples(index=True, name=None))
-    amplicon_results = dict(df_results.groupby('amplicon').agg({'sum': ['sum']}).itertuples(index=True, name=None))
+    taxonomy_results = dict(df_results_selected.groupby('taxonomy').agg({'sum': ['sum']}).itertuples(index=True, name=None))
+    amplicon_results = dict(df_results_selected.groupby('amplicon').agg({'sum': ['sum']}).itertuples(index=True, name=None))
+
+    am_environment_results_all = []
+    for taxonomy_am_environment, sum in df_results_all.groupby(['taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        am_environment_results_all.append([taxonomy_am_environment, sum])
     
     am_environment_results = {}
-    for taxonomy_am_environment, sum in df_results.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+    if am_environment_selected and am_environment_selected.get('value', None):
+        df_results_all = df_results_all.query('am_environment == @am_environment_selected.get("value", None)')
+    for taxonomy_am_environment, sum in df_results_all.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
         if am_environment_results.get(taxonomy_am_environment[0]):
             am_environment_results[taxonomy_am_environment[0]].append([taxonomy_am_environment[1], sum])
         else:
