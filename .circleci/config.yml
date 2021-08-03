@@ -8,7 +8,9 @@ jobs:
       - image: 'cimg/base:stable'
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker:
+#         https://support:circleci:com/hc/en-us/articles/360050934711-Docker-build-fails-with-EPERM-operation-not-permitted-copyfile-when-using-node-14-9-0-or-later-:
+          version: 19.03.13
       - attach_workspace:
           at: /home/circleci/project
       - docker/install-docker-compose
@@ -16,9 +18,9 @@ jobs:
           echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
           chmod 755 ~/.docker
           chmod 644 ~/.docker/config.json
-          export "DOCKER_NAME=bpaotu"
-          export "GIT_TAG=$CIRCLE_TAG"
-          export "BUILD_VERSION=${GIT_TAG}"
+          export "GIT_BRANCH=${CIRCLE_TAG}"
+          export "BUILD_VERSION=${CIRCLE_TAG}"
+          export "PROJECT_NAME=bpaotu"
           "./circleci-prodbuild.sh"
 workflows:
   version: 2
@@ -30,5 +32,5 @@ workflows:
             tags:
               only: /^\d+\.\d+(\.\d+)?(-\S*)?$/
             branches:
-#              only: master
+#              only: circleci
               ignore: /.*/

@@ -16,18 +16,11 @@ ENV MONGO_DB_PREFIX=prod_
 ENV DJANGO_SETTINGS_MODULE bpaotu.settings
 ENV PYTHONUNBUFFERED 1
 
-RUN python3 -m venv $VIRTUAL_ENV
-
-RUN mkdir /app
-
 RUN addgroup --gid 1000 bioplatforms \
   && adduser --disabled-password --home /data --no-create-home --system -q --uid 1000 --ingroup bioplatforms bioplatforms \
-  && mkdir /data \
+  && mkdir /data /app \
   && chown bioplatforms:bioplatforms /data
 
-RUN env | sort
-
-# Project specific deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
   gettext \
   libpcre3 \
@@ -39,5 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   mime-support \
   unixodbc \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN python3 -m venv $VIRTUAL_ENV
 
 ENTRYPOINT ["/bin/sh"]
