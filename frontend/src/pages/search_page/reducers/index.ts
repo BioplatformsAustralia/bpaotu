@@ -1,6 +1,7 @@
 import { combineReducers } from 'redux'
 
 import selectedAmpliconReducer from './amplicon'
+import selectedTraitReducer from './trait'
 import blastSearchReducer from './blast_search'
 import contextualReducer from './contextual'
 import samplesMapModalReducer from './samples_map_modal'
@@ -12,6 +13,7 @@ import tipsReducer from './tips'
 
 const filtersReducer = combineReducers({
   selectedAmplicon: selectedAmpliconReducer,
+  selectedTrait: selectedTraitReducer,
   taxonomy: taxonomyReducer,
   contextual: contextualReducer
 })

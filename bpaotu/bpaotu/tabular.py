@@ -7,7 +7,8 @@ from .otu import (
 from .util import (
     format_sample_id,
     str_none_blank,
-    val_or_empty)
+    val_or_empty,
+    array_or_empty)
 from .query import (
     OntologyInfo,
     SampleQuery)
@@ -94,7 +95,8 @@ def tabular_zip_file_generator(params, onlyContextual):
                 'Order',
                 'Family',
                 'Genus',
-                'Species'])
+                'Species',
+                'Traits'])
             yield fd.getvalue().encode('utf8')
             fd.seek(0)
             fd.truncate(0)
@@ -111,7 +113,8 @@ def tabular_zip_file_generator(params, onlyContextual):
                     val_or_empty(otu.order),
                     val_or_empty(otu.family),
                     val_or_empty(otu.genus),
-                    val_or_empty(otu.species)])
+                    val_or_empty(otu.species),
+                    array_or_empty(otu.traits).replace(",", ";")])
                 yield fd.getvalue().encode('utf8')
                 fd.seek(0)
                 fd.truncate(0)

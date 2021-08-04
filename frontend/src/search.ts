@@ -11,6 +11,7 @@ export interface SearchConfig {
   default_amplicon: string
 
   amplicon_endpoint: string
+  trait_endpoint: string
   taxonomy_endpoint: string
   contextual_endpoint: string
   contextual_graph_endpoint: string
@@ -50,6 +51,7 @@ export interface OTUQuery {
   taxonomy_filters: TaxonomyFilter[]
   contextual_filters: ContextualFilters
   amplicon_filter: string
+  trait_filter: string
   required_headers?: string[]
 }
 
@@ -67,5 +69,6 @@ export const emptyContextualFilters: ContextualFilters = {
 export const EmptyOTUQuery: OTUQuery = {
   taxonomy_filters: times(7, _ => emptyTaxonomyFilter),
   contextual_filters: emptyContextualFilters,
-  amplicon_filter: ''
+  amplicon_filter: '',
+  trait_filter: ''
 }

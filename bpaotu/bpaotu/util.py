@@ -18,6 +18,15 @@ def val_or_empty(obj):
     return obj.value
 
 
+def array_or_empty(obj):
+    if obj is None:
+        return ''
+    elif type(obj) is list:
+        return ','.join(t for t in obj)
+    else:
+        return obj
+
+
 def empty_to_none(v):
     # FIXME: push this back in the core metadata handling
     if v == '':

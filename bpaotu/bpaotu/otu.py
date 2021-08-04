@@ -124,6 +124,7 @@ class OTU(SchemaMixin, Base):
     genus_id = ontology_fkey(OTUGenus, index=True)
     species_id = ontology_fkey(OTUSpecies, index=True)
     amplicon_id = ontology_fkey(OTUAmplicon, index=True)
+    traits = Column(ARRAY(String))
 
     kingdom = relationship(OTUKingdom)
     phylum = relationship(OTUPhylum)
@@ -135,7 +136,7 @@ class OTU(SchemaMixin, Base):
     amplicon = relationship(OTUAmplicon)
 
     def __repr__(self):
-        return "<OTU(%d: %s,%s,%s,%s,%s,%s,%s,%s)>" % (
+        return "<OTU(%d: %s,%s,%s,%s,%s,%s,%s,%s,%s)>" % (
             self.id,
             self.amplicon_id,
             self.kingdom_id,
@@ -144,7 +145,8 @@ class OTU(SchemaMixin, Base):
             self.order_id,
             self.family_id,
             self.genus_id,
-            self.species_id)
+            self.species_id,
+            self.traits)
 
 
 class SampleHorizonClassification(OntologyMixin, Base):
@@ -768,7 +770,8 @@ class OTUSampleOTU(SchemaMixin, Base):
                 OTU.family_id,
                 OTU.genus_id,
                 OTU.species_id,
-                OTU.amplicon_id
+                OTU.amplicon_id,
+                OTU.traits
             ],
             from_obj=(
                 SampleOTU.__table__
@@ -782,8 +785,8 @@ class OTUSampleOTU(SchemaMixin, Base):
         .group_by(OTU.family_id)
         .group_by(OTU.genus_id)
         .group_by(OTU.species_id)
-        .group_by(OTU.amplicon_id),
-        # aliases={'count': 'countid'},
+        .group_by(OTU.amplicon_id)
+        .group_by(OTU.traits),
         metadata=Base.metadata,
         indexes=[
             Index('otu_sample_otu_index_sample_id_idx', 'sample_id'),
@@ -795,6 +798,7 @@ class OTUSampleOTU(SchemaMixin, Base):
             Index('otu_sample_otu_index_genus_id_idx', 'genus_id'),
             Index('otu_sample_otu_index_species_id_idx', 'species_id'),
             Index('otu_sample_otu_index_amplicon_id_idx', 'amplicon_id'),
+            Index('otu_sample_otu_index_traits_idx', 'traits', postgresql_using='gin'),
         ]
     )
 
@@ -814,7 +818,8 @@ class OTUSampleOTU20K(SchemaMixin, Base):
                 OTU.family_id,
                 OTU.genus_id,
                 OTU.species_id,
-                OTU.amplicon_id
+                OTU.amplicon_id,
+                OTU.traits,
             ],
             from_obj=(
                 SampleOTU20K.__table__
@@ -828,8 +833,8 @@ class OTUSampleOTU20K(SchemaMixin, Base):
         .group_by(OTU.family_id)
         .group_by(OTU.genus_id)
         .group_by(OTU.species_id)
-        .group_by(OTU.amplicon_id),
-        # aliases={'count': 'countid'},
+        .group_by(OTU.amplicon_id)
+        .group_by(OTU.traits),
         metadata=Base.metadata,
         indexes=[
             Index('otu_sample_otu_20k_index_sample_id_idx', 'sample_id'),
@@ -841,6 +846,7 @@ class OTUSampleOTU20K(SchemaMixin, Base):
             Index('otu_sample_otu_20k_index_genus_id_idx', 'genus_id'),
             Index('otu_sample_otu_20k_index_species_id_idx', 'species_id'),
             Index('otu_sample_otu_20k_index_amplicon_id_idx', 'amplicon_id'),
+            Index('otu_sample_otu_20k_index_traits_idx', 'traits', postgresql_using='gin'),
         ]
     )
 

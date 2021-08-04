@@ -163,7 +163,7 @@ class DataImporter:
         self._session.commit()
 
     def _create_extensions(self):
-        extensions = ('citext',)
+        extensions = ('citext', 'btree_gin')
         for extension in extensions:
             try:
                 logger.info("creating extension: {}".format(extension))
@@ -233,7 +233,7 @@ class DataImporter:
         taxonomy_fields = [
             'id', 'code',
             # order here must match `ontologies' below
-            'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id']
+            'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id', 'amplicon_id', 'traits']
         ontologies = OrderedDict([
             ('kingdom', OTUKingdom),
             ('phylum', OTUPhylum),
@@ -250,21 +250,33 @@ class DataImporter:
             code_re = re.compile(r'^[GATC]+')
             otu_header = '#OTU ID'
             amplicon_header = 'amplicon'
+            traits_header = 'traits'
             for amplicon_code, fname in self.amplicon_files('*.taxonomy.gz'):
                 logger.warning('reading taxonomy file: {}'.format(fname))
                 amplicon = None
                 with gzip.open(fname, 'rt') as fd:
                     reader = csv.reader(fd, dialect='excel-tab')
                     header = next(reader)
+                    amplicon_header_index = header.index(amplicon_header) if amplicon_header in header else -1 
+                    traits_header_index = header.index(traits_header) if traits_header in header else -1
+                    hasTraits = traits_header_index != -1
+                    if hasTraits:
+                        assert(header[traits_header_index] == traits_header)
                     assert(header[0] == otu_header)
-                    assert(header[-1] == amplicon_header)
-                    taxo_header = header[1:-1]
+                    assert(header[amplicon_header_index] == amplicon_header)
+                    taxo_header = header[1:amplicon_header_index]
                     for idx, row in enumerate(csv.reader(fd, dialect='excel-tab')):
                         code = row[0]
                         if not code_re.match(code) and not code.startswith('mxa_'):
                             raise Exception("invalid OTU code: {}".format(code))
+                        # Convert String value to PSQL Array Value Input format '{ val1 delim val2 delim ... }'
+                        traits = row[traits_header_index] if hasTraits else ""
+                        if traits:
+                            traits = traits.replace(";", ",")
+                            traits = "{"+",".join('"{}"'.format(i) for i in traits.split(','))+"}"
                         obj = {
-                            'amplicon': row[-1],
+                            'amplicon': row[amplicon_header_index],
+                            'traits': traits,
                             'otu': code,
                         }
                         if amplicon is None:
@@ -272,7 +284,7 @@ class DataImporter:
                         if amplicon != obj['amplicon']:
                             raise Exception(
                                 'more than one amplicon in folder: {} vs {}'.format(amplicon, obj['amplicon']))
-                        obj.update(zip(taxo_header, row[1:-1]))
+                        obj.update(zip(taxo_header, row[1:amplicon_header_index]))
                         yield obj
                 self.amplicon_code_names[amplicon_code.lower()] = amplicon
                 taxonomy_file_info[fname] = {
@@ -300,7 +312,8 @@ class DataImporter:
                     otu_row = [_id, row['otu']]
                     for field in ontologies:
                         val = row.get(field, '')
-                        otu_row.append(mappings[field][val])
+                        otu_row.append(mappings.get(field).get(val, ""))
+                    otu_row.append(row['traits'])
                     w.writerow(otu_row)
             logger.warning("loading taxonomy data from temporary CSV file")
             try:

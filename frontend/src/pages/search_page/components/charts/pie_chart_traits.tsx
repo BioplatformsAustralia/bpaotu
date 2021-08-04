@@ -4,7 +4,7 @@ import {plotly_chart_config} from './plotly_chart'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { startCase } from 'lodash'
-import { selectAmplicon } from '../../reducers/amplicon'
+import { selectTrait } from '../../reducers/trait'
 import { updateTaxonomyDropDowns } from '../../reducers/taxonomy'
 import { search } from '../../reducers/search'
 import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
@@ -22,16 +22,10 @@ class PieChartAmplicon extends React.Component<any> {
       for (const [id, sum] of Object.entries(graphData)) {
         text.push(id)
         values.push(sum)
+        labels.push(id)
       }
     }
 
-    for(let option of this.props.options){
-        if(this.props.selected.value === '' || String(this.props.selected.value) === String(option.id)) {
-            labels.push(option.value)
-            text.push(option.id)
-        }
-    }
-    
     let chart_data = [
       {
         values: values,
@@ -68,7 +62,7 @@ class PieChartAmplicon extends React.Component<any> {
             let textData = chart_data[0].text
             if (!textData.includes(env_val))
               env_val = ''
-            this.props.selectAmplicon(env_val)
+            this.props.selectTrait(env_val)
             this.props.updateTaxonomy()
             this.props.fetchContextualDataForGraph()
             this.props.fetchTaxonomyDataForGraph()
@@ -84,15 +78,15 @@ class PieChartAmplicon extends React.Component<any> {
 
 function mapStateToProps(state) {
   return {
-    options: state.referenceData.amplicons.values,
-    selected: state.searchPage.filters.selectedAmplicon
+    options: state.referenceData.traits.values,
+    selected: state.searchPage.filters.selectedTrait
   }
 }
 
 function mapDispatchToProps(dispatch: any) {
   return bindActionCreators(
     {
-      selectAmplicon,
+      selectTrait,
       updateTaxonomy: updateTaxonomyDropDowns(''),
       search,
       fetchContextualDataForGraph,

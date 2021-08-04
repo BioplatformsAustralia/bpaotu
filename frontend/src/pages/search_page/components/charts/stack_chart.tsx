@@ -21,7 +21,8 @@ class StackChart extends React.Component<any> {
     if(taxonomyGraphdata.am_environment) {
       let am_environments = taxonomyGraphdata.am_environment?['All']:[]
       for(const am_environment of Object.keys(taxonomyGraphdata.am_environment)) {
-        am_environments.push("All "+find(environment, (option) => option.id === parseInt(am_environment)).name)
+        if(environment)
+          am_environments.push("All "+find(environment, (option) => option.id === parseInt(am_environment)).name)
       }
       if(String(contextualFilters.length)!=="0") {
         for(const am_environment of Object.keys(taxonomyGraphdata.am_environment_selected)) {
