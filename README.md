@@ -5,7 +5,7 @@ BPA-OTU is a web-based portal into Operational Taxonomic Unit (OTU) data, develo
 ## Quick Setup
 
 * [Install docker and compose](https://docs.docker.com/compose/install/)
-* `git clone --recurse-submodules [https://github.com/BioplatformsAustralia/bpaotu.git](https://github.com/BioplatformsAustralia/bpaotu.git)`
+* git clone --recurse-submodules [https://github.com/BioplatformsAustralia/bpaotu.git](https://github.com/BioplatformsAustralia/bpaotu.git)
 * `docker-compose -f docker-compose-build.yml build base dev`
 
 ## Input data
@@ -15,7 +15,7 @@ erases all previously loaded data.
 
 Three categories of file are ingested:
 
-* contextual metadata (SQLiteDB or XLSX format; data import is provided for Marine Microbes and BASE metadata)
+* contextual metadata (extension: `.xlsx` for Excel file [default] or `.db` for SQLite DB)
 * taxonomy files (extension: `.taxonomy`)
 * OTU abundance tables (extension: `.txt`)
 
@@ -28,17 +28,16 @@ root@420c1d1e9fe4:~# /app/docker-entrypoint.sh django-admin otu_ingest /data/otu
 
 ### Contextual Metadata
 
-These files are managed by Bioplatforms Australia. The latest version of these files can be found at the
-[Bioplatforms Australia data portal](https://data.bioplatforms.com).
+This file describes sample specific metadata. The current schema of the contextual metadata can be found [here](https://github.com/AusMicrobiome/contextualdb_doc/)
 
 ### Taxonomy files
 
-A tab-delimited file with extension '.taxonomy'
+A tab-delimited file with extension `.taxonomy`
 
-The first row of this file is a header, and has the form:
+The first row of this file must contains header. Only header fields required/used by bpaotu are:
 
 ```tsv
-#OTU ID\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\tamplicon\ttraits
+#OTU ID\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\tamplicon
 ```
 
 Each column has the following format:
@@ -52,7 +51,8 @@ Each column has the following format:
 * genus: text string
 * species: text string
 * amplicon: text string (e.g. 16S, A16S, 18S, ITS, ...)
-* traits: text string
+
+NB: Taxonomic ranks must be forward filled with last known field assignment if empty (e.g. d__bacteria, d__bacteria_unclassified, d__bacteria_unclassified, d__bacteria_unclassified, d__bacteria_unclassified, d__bacteria_unclassified, d__bacteria_unclassified)
 
 ### Abundance files
 
@@ -107,10 +107,10 @@ docker-compose exec runserver bash
 ```
 NB: In example above, 
 * /data/2019-02: location of the data folder
-* 2021-08-02: today's data 
+* 2021-08-02: today's date 
 
 Additonal argruments:
-* --no-force-fetch: Add this to avoid fetch of contextual file from server and instead use the one available in local folder (default: fetch from server)
+* --no-force-fetch: Add this to avoid fetch of contextual metadata file from server and instead use the one available in local folder (default: fetch from server)
 * --use-sql-context: Add this to use contextual metadata file in format of SQLite DB instead of XLSX file (default: use XLSX file)
 
 ## Deployments
