@@ -5,14 +5,8 @@ BPA-OTU is a web-based portal into Operational Taxonomic Unit (OTU) data, develo
 ## Quick Setup
 
 * [Install docker and compose](https://docs.docker.com/compose/install/)
-* git clone [https://github.com/BioplatformsAustralia/bpaotu.git](https://github.com/BioplatformsAustralia/bpaotu.git)
-* `./develop.sh build base`
-* `./develop.sh build builder`
-* `./develop.sh build dev`
-* `./develop.sh build node`
-
-`develop.sh up` will spin up the stack. See `./develop.sh` for some utility methods, which typically are simple
-wrappers arround docker and docker-compose.
+* `git clone --recurse-submodules [https://github.com/BioplatformsAustralia/bpaotu.git](https://github.com/BioplatformsAustralia/bpaotu.git)`
+* `docker-compose -f docker-compose-build.yml build base dev`
 
 ## Input data
 
@@ -21,15 +15,15 @@ erases all previously loaded data.
 
 Three categories of file are ingested:
 
-* contextual metadata (XLSX format; data import is provided for Marine Microbes and BASE metadata)
-* taxonomy files (extension: `.tax`)
-* OTU abundance tables (extension: `.otu`)
+* contextual metadata (SQLiteDB or XLSX format; data import is provided for Marine Microbes and BASE metadata)
+* taxonomy files (extension: `.taxonomy`)
+* OTU abundance tables (extension: `.txt`)
 
 All files should be placed under a base directory, and then the ingest can be run as a Django management command:
 
 ```console
 $ docker-compose exec runserver bash
-root@420c1d1e9fe4:~# /app/docker-entrypoint.sh django-admin otu_ingest /data/otu/
+root@420c1d1e9fe4:~# /app/docker-entrypoint.sh django-admin otu_ingest /data/otu/ 2021-08-02
 ```
 
 ### Contextual Metadata
@@ -39,44 +33,48 @@ These files are managed by Bioplatforms Australia. The latest version of these f
 
 ### Taxonomy files
 
-A tab-delimited file with extension '.tax'
+A tab-delimited file with extension '.taxonomy'
 
 The first row of this file is a header, and has the form:
 
 ```tsv
-OTU ID\tkingdom\tphylum\tclass\torder\tfamily\tgenus
+#OTU ID\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\tamplicon\ttraits
 ```
 
 Each column has the following format:
 
-* OTU ID: a string describing the OTU (GATC string)
-* technology: text string (e.g. 16S, A16S, 18S, ITS, ...)
+* #OTU ID: a string describing the OTU (GATC string)
 * kingdom: text string
 * phylum: text string
 * class: text string
 * order: text string
 * family: text string
 * genus: text string
+* species: text string
+* amplicon: text string (e.g. 16S, A16S, 18S, ITS, ...)
+* traits: text string
 
 ### Abundance files
 
-A tab-delimited file with the extension `.otu`
+A tab-delimited file with the extension `.txt`
 
 The first row is a header, with the following format:
 
-* OTU ID: header for OTU ID column
-* Sample ID [repeated]: the identifier for the sample ID for which this column specifies abundance
+```tsv
+#OTU ID\tSample_only\tAbundance
+```
 
-Each following has the following format:
+Each column has the following format:
 
-* OTU ID: the OTU ID (text string, corresponding to the strings in the taxonomy file)
+* #OTU ID:  text string, corresponding to the strings in the taxonomy file
+* Sample_only [repeated]: the identifier for the sample ID for which this column specifies abundance
 * Abundance [repeated]: the abundance (floating point) for the column's sample ID
 
 ## Development
 
 Ensure a late version of both docker and docker-compose are available in your environment.
 
-bpaotu is available as a fully contained Dockerized stack. The dockerised stack are used for both production
+Bpaotu is available as a fully contained Dockerized stack. The dockerised stack are used for both production
 and development. Appropiate configuration files are available depending on usage.
 
 Note that for data ingestion to work you need passwords to the hosted data, these are available from BPA on request.
@@ -85,12 +83,13 @@ Set passwords in your environment, these will be passed to the container.
 The steps to follow are basically those, above, for:
 * Quick Setup
 * Input Data
+
 But in summary:
 
 * Build images, source environment file (from one of the developers), and bring up containers
 ```
-./develop.sh build base builder dev
-source  </path/to/your/bpa.env>
+docker-compose -f docker-compose-build.yml build base dev
+source  </path/to/your/.env_local>
 docker-compose up -d
 ```
 * Build frontend and launch browser window to portal
@@ -104,9 +103,15 @@ yarn start
 cd ./data/dev
 tar -xvzf </path/to/dataarchive.tar.gz> ./
 docker-compose exec runserver bash
-/app/docker-entrypoint.sh django-admin otu_ingest /data/2019-02 2019-08-12
+/app/docker-entrypoint.sh django-admin otu_ingest /data/2019-02 2021-08-02
 ```
-NB: In example above, today's data is: 2019-08-12
+NB: In example above, 
+* /data/2019-02: location of the data folder
+* 2021-08-02: today's data 
+
+Additonal argruments:
+* --no-force-fetch: Add this to avoid fetch of contextual file from server and instead use the one available in local folder (default: fetch from server)
+* --use-sql-context: Add this to use contextual metadata file in format of SQLite DB instead of XLSX file (default: use XLSX file)
 
 ## Deployments
 

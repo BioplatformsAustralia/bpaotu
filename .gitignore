@@ -26,3 +26,5 @@ bpaotu/bpaotu/static/bpaotu/js/*-bundle*.js
 yarn_cache/
 .DS_Store
 .idea/
+rds/
+temp/

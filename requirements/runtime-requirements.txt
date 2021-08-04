@@ -5,7 +5,6 @@ Werkzeug==0.16.1
 beautifulsoup4==4.9.0
 boto==2.49.0
 ccg-django-utils==0.4.2
-ckanapi==4.3
 psycopg2==2.8.5
 pytz==2019.3
 requests==2.23.0
@@ -15,7 +14,6 @@ uwsgitop==0.11
 xlrd==1.2.0
 xlwt==1.3.0
 xlsxwriter==1.2.8
-openpyxl==2.6.4
 SQLAlchemy==1.3.16
 sqlalchemy-citext==1.6.post1
 SQLAlchemy-Utils==0.37.0
@@ -30,11 +28,8 @@ celery==4.4.2
 Pillow==6.2.2
 python-resize-image==1.1.19
 django-webpack-loader==0.7.0
-git+https://github.com/BioplatformsAustralia/bpa-ingest.git@6.8.1
 git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
 httplib2==0.17.2
-boto3==1.12.39
-botocore==1.15.39
 google-api-python-client
 python-dateutil==2.8.1
 shapely==1.7.0

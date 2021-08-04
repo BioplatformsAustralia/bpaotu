@@ -2,11 +2,7 @@
 FROM bioplatformsaustralia/bpaotu-base
 MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
 
-ARG ARG_BUILD_VERSION
-
-ENV BUILD_VERSION $ARG_BUILD_VERSION
-
-RUN env | sort
+ARG BUILD_VERSION
 
 RUN mkdir -p /data \
     && /bin/chown bioplatforms:bioplatforms /data

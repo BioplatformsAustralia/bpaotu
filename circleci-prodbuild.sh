@@ -2,42 +2,27 @@
 
 set -e
 
-## For now combine old bioplatforms dev and prod build until have time to create simpler Docker setup
-#
-# Development build and tests
-#
-echo "pre-dev BUILD_VERSION is ${BUILD_VERSION}"
-# bioplatforms-composer runs as this UID, and needs to be able to
-# create output directories within it
-mkdir -p data/ build/
-sudo chown 1000:1000 data/ build/
-cp .env .env_local
+docker-compose -f docker-compose-build.yml build base
 
-./develop.sh build base
-./develop.sh build builder
-./develop.sh build dev
-./develop.sh run build lint
+## circleci remote-docker does not allow for use of volumes
+echo "building and archiving frontend..."
+docker create -v /build -v /frontend --name fend node:latest /bin/true
+docker cp frontend fend:/
+docker run --volumes-from fend --name fend-archive node:latest bash /frontend/prodbuild.sh
+mkdir ./build
+docker cp fend-archive:/build .
+docker rm fend && docker rm fend-archive
 
-#
-# Production (deployable) build and tests
-#
-echo "pre-prod BUILD_VERSION is ${BUILD_VERSION}"
-docker run --rm -v $(pwd)/build:/build -v $(pwd)/frontend:/frontend node:latest bash /frontend/prodbuild.sh
+docker-compose -f docker-compose-build.yml build builder
 
-./develop.sh run-builder checkout
-./develop.sh run-builder releasetarball
-sudo chown -R 1000 build
-#./develop.sh build prod
-#./develop.sh push prod
-echo "post-prod BUILD_VERSION is ${BUILD_VERSION}"
+## circleci remote-docker does not allow for use of volumes
+echo "Retrieving prod-build archive..."
+docker create --name prod-archive bioplatformsaustralia/bpaotu-builder /bin/true
+docker cp prod-archive:/data/${PROJECT_NAME}-${BUILD_VERSION}.tar.gz ./build/
+docker rm prod-archive
 
-#
-# Extra for circleCI running from tags not branches and following pattern in docker-bpa-ckan which now has no dependency on bioplatoforms-compose
-#
+eval docker-compose -f docker-compose-build.yml build prod
 
-docker build -t bioplatformsaustralia/${DOCKER_NAME}:latest .
-docker push bioplatformsaustralia/${DOCKER_NAME}
-if [ x"$GIT_TAG" != x"" ]; then
-  docker tag bioplatformsaustralia/${DOCKER_NAME}:latest bioplatformsaustralia/${DOCKER_NAME}:${GIT_TAG}
-  docker push bioplatformsaustralia/${DOCKER_NAME}:${GIT_TAG}
-fi
+docker push bioplatformsaustralia/${PROJECT_NAME}
+docker tag bioplatformsaustralia/${PROJECT_NAME}:latest bioplatformsaustralia/${PROJECT_NAME}:${BUILD_VERSION}
+docker push bioplatformsaustralia/${PROJECT_NAME}:${BUILD_VERSION}

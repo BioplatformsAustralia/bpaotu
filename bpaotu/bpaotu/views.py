@@ -279,13 +279,8 @@ def contextual_fields(request):
 @require_POST
 def contextual_graph_fields(request, contextual_filtering=True):
     additional_headers = json.loads(request.POST.get('columns', '[]'))
-    # all_headers = ['am_environment_id', 'vegetation_type_id', 'ph'] + additional_headers
     all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph', 'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id', 'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
-
-    # logger.debug(f"all_headers: {all_headers}")
-    # logger.debug(f"request.POST['otu_query']: {request.POST['otu_query']}")
     params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
-    # logger.debug(f"contextual_graph_fields- param: {params}")
     if errors:
         return JsonResponse({
             'errors': [str(t) for t in errors],
@@ -314,14 +309,7 @@ def contextual_graph_fields(request, contextual_filtering=True):
 @require_CKAN_auth
 @require_POST
 def taxonomy_graph_fields(request, contextual_filtering=True):
-    # additional_headers = json.loads(request.POST.get('columns', '[]'))
-    # all_headers = ['am_environment_id', 'vegetation_type_id', 'ph'] + additional_headers
-    # all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph', 'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id', 'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
-    # all_headers = []
-    # logger.debug(f"all_headers: {all_headers}")
-    # logger.debug(f"request.POST['otu_query']: {request.POST['otu_query']}")
     # Exclude environment field of contextual_filters
-
     am_environment_selected = None 
     otu_query = request.POST['otu_query']
     otu_query_dict = json.loads(otu_query)

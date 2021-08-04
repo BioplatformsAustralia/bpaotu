@@ -11,6 +11,7 @@ from collections import OrderedDict, defaultdict
 from glob import glob
 from hashlib import md5
 from itertools import zip_longest
+from ._version import __version__
 
 import subprocess
 import sqlalchemy
@@ -86,7 +87,7 @@ class DataImporter:
         ('store_cond', SampleStorageMethod),
     ])
 
-    def __init__(self, import_base, revision_date):
+    def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True):
         self.amplicon_code_names = {}  # mapping from dirname to amplicon ontology
         self._engine = make_engine()
         self._create_extensions()
@@ -94,6 +95,8 @@ class DataImporter:
         self._import_base = import_base
         self._methodology = 'v1'
         self._revision_date = revision_date
+        self._has_sql_context = has_sql_context
+        self._force_fetch = force_fetch
 
         # these are used exclusively for reporting back to CSIRO on the state of the ingest
         self.sample_metadata_incomplete = set()
@@ -313,9 +316,19 @@ class DataImporter:
                     otu_row.append(row['traits'])
                     w.writerow(otu_row)
             logger.warning("loading taxonomy data from temporary CSV file")
-            self._engine.execute(
-                text('''COPY otu.otu from :csv CSV header''').execution_options(autocommit=True),
-                csv=fname)
+            try:
+                with open(fname, 'r') as fd:
+                    raw_conn = self._engine.raw_connection()
+                    cur = raw_conn.cursor()
+                    cur.copy_expert("COPY otu.otu from stdin CSV HEADER", fd)
+                    raw_conn.commit()
+                    cur.close()
+            except:
+                logger.error("Problem loading taxonomy data using raw connection.")
+                traceback.print_exc()
+            finally:
+                raw_conn.commit()
+                cur.close()
         finally:
             os.unlink(fname)
         for fname, info in taxonomy_file_info.items():
@@ -336,7 +349,8 @@ class DataImporter:
     def contextual_rows(self, ingest_cls, name):
         # flatten contextual metadata into dicts
         metadata = defaultdict(dict)
-        with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name), has_sql_context=True) as dlmeta:
+        with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name), has_sql_context=self._has_sql_context, force_fetch=self._force_fetch) as dlmeta:
+        # with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name), has_sql_context=True, force_fetch=False) as dlmeta:
             for contextual_source in dlmeta.meta.contextual_metadata:
                 self.save_ontology_errors(
                     getattr(contextual_source, "environment_ontology_errors", None))
@@ -399,11 +413,11 @@ class DataImporter:
             logger.info("Unutilised fields:")
             for field in sorted(unused):
                 logger.info(field)
-        # set methodology to store version of git_revision and contextual DB in format (bpaotu_<git_revision>_<SQLite DB>)
+        # set methodology to store version of code and contextual DB in this format (<packagename>_<version>_<SQLite DB>)
+        db_file = ""
         if len(metadata) > 0:
-            git_revision = subprocess.check_output(["git", "describe", "--tags"], cwd=os.path.dirname(os.path.realpath(__file__))).strip().decode()
             db_file = metadata[0]["sample_database_file"]
-            self._methodology = f"bpaotu_{git_revision}_{db_file}"
+        self._methodology = f"{__package__}_{__version__}_{db_file}"
 
     def _otu_abundance_rows(self, fd, amplicon_code, otu_lookup):
         reader = csv.reader(fd, dialect='excel-tab')
@@ -464,12 +478,16 @@ class DataImporter:
                     w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
                 log_amplicon("loading OTU abundance data into database")
                 try:
-                    self._engine.execute(
-                        text('''COPY otu.sample_otu from :csv CSV header''').execution_options(autocommit=True),
-                        csv=fname)
+                    with open(fname, 'r') as fd:
+                        raw_conn = self._engine.raw_connection()
+                        cur = raw_conn.cursor()
+                        cur.copy_expert("COPY otu.sample_otu from stdin CSV HEADER", fd)
                 except:  # noqa
                     log_amplicon("unable to import {}".format(sampleotu_fname))
                     traceback.print_exc()
+                finally:
+                    raw_conn.commit()
+                    cur.close()
             finally:
                 os.unlink(fname)
 
