@@ -1,6 +1,20 @@
-# NB: the following dev file has NOT been refactored yet to incorporate new CI - if needed, refactor then add back to docker-compose-build.yml
-FROM bioplatformsaustralia/bpaotu-builder
+FROM bioplatformsaustralia/bpaotu-base
 MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
+
+# Project specific deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  build-essential \
+  git \
+  libpcre3-dev \
+  libpq-dev \
+  libssl-dev \
+  libyaml-dev \
+  libxml2-dev \
+  libxslt1-dev \
+  pkg-config \
+  openssh-client \
+  zlib1g-dev \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Runtime args, don't re-use build time args
 ENV PRODUCTION 0
@@ -26,13 +40,10 @@ COPY ./requirements/runtime-requirements.txt /app/bpaotu/
 RUN pip install --upgrade -r bpaotu/runtime-requirements.txt
 COPY ./requirements/biom-requirements.txt /app/bpaotu/
 RUN pip install --upgrade -r bpaotu/biom-requirements.txt
-# COPY ./bpa-ingest/requirements.txt /app/bpaotu/bpaingest-requirements.txt
-# RUN pip install --upgrade -r bpaotu/bpaingest-requirements.txt
 
 # Copy code and install the app
 COPY . /app
 RUN pip ${PIP_OPTS} install --upgrade -e bpaotu
-# RUN pip ${PIP_OPTS} install --upgrade -e bpa-ingest
 WORKDIR /app/bpa-ingest
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir poetry \

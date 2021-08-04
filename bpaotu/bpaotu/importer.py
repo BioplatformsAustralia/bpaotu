@@ -87,7 +87,7 @@ class DataImporter:
         ('store_cond', SampleStorageMethod),
     ])
 
-    def __init__(self, import_base, revision_date):
+    def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True):
         self.amplicon_code_names = {}  # mapping from dirname to amplicon ontology
         self._engine = make_engine()
         self._create_extensions()
@@ -95,6 +95,8 @@ class DataImporter:
         self._import_base = import_base
         self._methodology = 'v1'
         self._revision_date = revision_date
+        self._has_sql_context = has_sql_context
+        self._force_fetch = force_fetch
 
         # these are used exclusively for reporting back to CSIRO on the state of the ingest
         self.sample_metadata_incomplete = set()
@@ -334,7 +336,8 @@ class DataImporter:
     def contextual_rows(self, ingest_cls, name):
         # flatten contextual metadata into dicts
         metadata = defaultdict(dict)
-        with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name), has_sql_context=False, force_fetch=True) as dlmeta:
+        with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name), has_sql_context=self._has_sql_context, force_fetch=self._force_fetch) as dlmeta:
+        # with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name), has_sql_context=True, force_fetch=False) as dlmeta:
             for contextual_source in dlmeta.meta.contextual_metadata:
                 self.save_ontology_errors(
                     getattr(contextual_source, "environment_ontology_errors", None))
