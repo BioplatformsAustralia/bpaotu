@@ -37,7 +37,7 @@ A tab-delimited file with extension `.taxonomy`
 The first row of this file must contains header. Only header fields required/used by bpaotu are:
 
 ```tsv
-#OTU ID\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\tamplicon
+#OTU ID\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\tamplicon\ttraits
 ```
 
 Each column has the following format:
@@ -51,6 +51,7 @@ Each column has the following format:
 * genus: text string
 * species: text string
 * amplicon: text string (e.g. 16S, A16S, 18S, ITS, ...)
+* traits: text string (multiple traits are comma separated)
 
 NB: Taxonomic ranks must be forward filled with last known field assignment if empty (e.g. d__bacteria, d__bacteria_unclassified, d__bacteria_unclassified, d__bacteria_unclassified, d__bacteria_unclassified, d__bacteria_unclassified, d__bacteria_unclassified)
 
