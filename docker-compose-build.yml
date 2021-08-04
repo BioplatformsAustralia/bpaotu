@@ -25,3 +25,8 @@ services:
         BUILD_VERSION:
     image: bioplatformsaustralia/bpaotu
 
+  dev:
+    build:
+      context: ./
+      dockerfile: Dockerfile-dev
+    image: bioplatformsaustralia/bpaotu-dev
