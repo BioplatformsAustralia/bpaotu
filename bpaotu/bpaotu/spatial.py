@@ -47,14 +47,12 @@ def _spatial_query(params):
             if units:
                 title += ' [%s]' % units
             write_fns[column.name] = (title, fn)
-
-        with SampleQuery(params) as query:
-            samples = query.matching_samples_20k()
+        write_fns_items = sorted(write_fns.items())
 
         def samples_contextual_data(sample):
             return {
                 f: v
-                for f, v in ((title, fn(getattr(sample, fld))) for fld, (title, fn) in sorted(write_fns.items()))
+                for f, v in ((title, fn(getattr(sample, fld))) for fld, (title, fn) in write_fns_items)
                 if not (v is None or v.strip() == '')
             }
 
@@ -65,9 +63,14 @@ def _spatial_query(params):
 
         with SampleQuery(params) as query:
             sample_otus_all = []
+            sample_id_selected = []
             abundance_tbl = sample_otus_abundance_20k(query)
             for sample_otu in abundance_tbl:
                 sample_otus_all.append(sample_otu)
+                sample_id_selected.append(sample_otu[2])
+
+        with SampleQuery(params) as query:
+            samples = query.matching_selected_samples_20k(sample_id_selected)
 
         result = defaultdict(lambda: defaultdict(dict))
         for sample in samples:

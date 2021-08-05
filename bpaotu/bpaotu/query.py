@@ -481,6 +481,12 @@ class SampleQuery:
         # log_query(q)
         return self._q_all_cached('matching_samples_20k', q)
 
+    def matching_selected_samples_20k(self, subq):
+        q = self._session.query(SampleContext)
+        q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
+        # log_query(q)
+        return self._q_all_cached('matching_selected_samples_20k', q)
+
     def matching_otus(self, kingdom_id=None):
         q = self._session.query(OTU)
         subq = self._build_contextual_subquery()
