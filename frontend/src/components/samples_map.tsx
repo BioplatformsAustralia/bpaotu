@@ -28,14 +28,8 @@ import { search } from '../pages/search_page/reducers/search'
 import FullscreenControl from 'react-leaflet-fullscreen'
 import MarkerClusterGroup from 'react-leaflet-markercluster'
 import HeatmapLayer from 'react-leaflet-heatmap-layer'
-// import SamplesGraph from './samples_graph'
-// import { plotConfig } from '../plot'
-// import * as d3 from "d3";
 import { strongLine, strongHeader } from '../utils'
 import {aggregateSampleOtusBySite, aggregateSamplesByCell, aggregateSamplePointsBySite, calculateMaxes} from "../aggregation"
-// import {aggregateSampleContextBySite} from "../aggregation"
-// import {aggregateSampleOtusBySite, aggregateSamplesByCell, aggregateSamplePointsBySite, calculateMaxes} from "../aggregation copy"
-// import {responseData} from "../sampledata";
 
 /*
 Unfortunately, react-leaflet fails to load markers if the css isn't included in the html file, so
@@ -176,9 +170,6 @@ class SamplesMap extends React.Component<any> {
     if (nextProps.sample_otus.length > 0 && this.props.sample_otus !== nextProps.sample_otus) {
       this.siteAggregatedData = aggregateSampleOtusBySite(nextProps.sample_otus);
       this.samplePoints = aggregateSamplePointsBySite(this.siteAggregatedData);
-      // console.log("samplepoints length: ", this.samplePoints.length)
-      // console.log("samplepoints: ", this.samplePoints)
-      // console.log("samplepoints: ", nextProps.sample_otus)
       let cellAggregatedData = aggregateSamplesByCell(this.siteAggregatedData);
       this.featureCollectionData = this.makeFeatureCollection(cellAggregatedData)
       return true;
@@ -208,8 +199,6 @@ class SamplesMap extends React.Component<any> {
   }
 
   handleZoomstart = (map, maxZoom, defaultZoom, position) => {
-    // console.log(map && map.leafletElement);
-    // console.log(map.leafletElement.getZoom());
     const currentZoom = this.leafletMap?this.leafletMap.leafletElement.getZoom():4
     const v = 1 / Math.pow(2,Math.max(0, Math.min(maxZoom - currentZoom, 12)));
     return {maxZoom, currentZoom, defaultZoom, v, "intensity":v*1000, position}
@@ -223,7 +212,6 @@ class SamplesMap extends React.Component<any> {
       }
     }
     // Add rectangle for selected latitude/longitude filter
-    // var rectangle: [number, number][] = [[-68.91358710757541, 170.0654944469245], [9.621922751599145, 211.90709902792318]]
     var rectangle: [number, number][] = []
     const lat = find(this.props.filters.contextual.filters, latlng => latlng.name === this.lat_filter)
     const lng = find(this.props.filters.contextual.filters, latlng => latlng.name === this.lng_filter)
@@ -243,7 +231,6 @@ class SamplesMap extends React.Component<any> {
       let points = layer._latlngs;
       for(let index in points){
         for(let point of Object.values(points[index])){
-          // console.log("point", point, point["lat"], point["lng"])
           lat_value = lat_value < point["lat"] ? lat_value : point["lat"];
           lat_value2 = lat_value2 > point["lat"] ? lat_value2 : point["lat"];
           lng_value = lng_value < point["lng"] ? lng_value : point["lng"];
@@ -256,14 +243,12 @@ class SamplesMap extends React.Component<any> {
       
       const index_lng = this.findFilterValueIndex(this.props.filters.contextual.filters, this.lng_filter, lng_value, lng_value2)
       this.props.removeContextualFilter(index_lng)
-      // console.log("deleting draw element:", {lat_value, lat_value2, lng_value, lng_value2})
     });
   }
 
   createDrawElement = (layer) => {
     let lat_value, lat_value2, lng_value, lng_value2
     let points = layer._latlngs;
-    // console.log("points", points)
     for(let index in points){
       for(let point of Object.values(points[index])){
         lat_value = lat_value < point["lat"] ? lat_value : point["lat"];
@@ -272,7 +257,6 @@ class SamplesMap extends React.Component<any> {
         lng_value2 = lng_value2 > point["lng"] ? lng_value2 : point["lng"];
       }
     }
-    // console.log("creating draw element:", {lat_value, lat_value2, lng_value, lng_value2})
 
     const lat_index = this.findFilterIndex(this.props.filters.contextual.filters, this.lat_filter)
     this.props.selectContextualFilter(lat_index, this.lat_filter)
@@ -288,27 +272,20 @@ class SamplesMap extends React.Component<any> {
   }
 
   public render() {
+    const loadingstyle= {
+      display: 'flex',
+      height: '100%',
+      width: '100%',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'absolute',
+      background: 'rgba(0,0,0,0.5)',
+      zIndex: 99999,
+    } as React.CSSProperties;
     const position: [number, number] = [this.state.lat, this.state.lng]
-    // let samplePoints = []
-    // for (var x of this.props.markers){
-    //   var abundance = 0.0;
-    //   if (typeof(x['abundance']) !== "undefined" && x['abundance'])
-    //     abundance = x['abundance']; 
-    //   console.log(x['lat'], x['lng'], "abud:", abundance)
-    //   samplePoints.push([x['lat'], x['lng'], abundance]);
-    // }
-   
-    // let sampleOtus = responseData.sample_otu_data;
-    // let sampleContexts = responseData.sample_contextual_data;
-    // let siteAggregatedData = aggregateSampleOtusBySite(sampleOtus);
-    // let cellAggregatedData = aggregateSamplesByCell(siteAggregatedData, sampleContexts);
-    // let samplePoints = aggregateSamplePointsBySite(siteAggregatedData)
-
-    let heatMapLayer, abundanceLayer, richnessLayer, siteCountLayer, selectedRectangleBounds;
-    // let plotLayer;
+    let heatMapLayer, abundanceLayer, richnessLayer, siteCountLayer, selectedRectangleBounds, loadingSpinner;
     if (!this.props.isLoading) 
     {
-      // console.log("this.props.isLoading completed.....")
       if (this.samplePoints) 
       {
         heatMapLayer = <LayersControl.Overlay name="Heatmap: Abundance" checked>
@@ -334,9 +311,11 @@ class SamplesMap extends React.Component<any> {
         abundanceLayer = <LayersControl.Overlay name="Gridcell: Abundance"><GeoJSON data={this.featureCollectionData} style={(feature: any) => this.layerStyle(feature, "weightedAbundance")} onEachFeature={(feature: any, layer: any) => this.onEachFeature(feature, layer)} /></LayersControl.Overlay>;
         richnessLayer = <LayersControl.Overlay name="Gridcell: Richness"><GeoJSON data={this.featureCollectionData} style={(feature: any) => this.layerStyle(feature, "weightedRichness")}  onEachFeature={(feature: any, layer: any) => this.onEachFeature(feature, layer)} /></LayersControl.Overlay>;
         siteCountLayer = <LayersControl.Overlay name="Gridcell: Site Count" checked><GeoJSON data={this.featureCollectionData} style={(feature: any) => this.layerStyle(feature, "weightedSites")} onEachFeature={(feature: any, layer: any) => this.onEachFeature(feature, layer)} /></LayersControl.Overlay>;
-        // let sampleContextLookup = aggregateSampleContextBySite(this.props.markers);
-        // plotLayer = <SamplesGraph siteAggregatedData={this.siteAggregatedData} sampleContextLookup={sampleContextLookup} leafletMap={this.leafletMap} />;
       }
+      loadingSpinner = <></>
+    }
+    else {
+      loadingSpinner = <div style={loadingstyle} ><AnimateHelix /></div>
     }
 
     const rectangle = this.initDrawElement()
@@ -344,25 +323,10 @@ class SamplesMap extends React.Component<any> {
           selectedRectangleBounds = <Rectangle bounds={rectangle} />
         }
 
-    const loadingstyle= {
-      display: 'flex',
-      height: '100%',
-      justifyContent: 'center',
-      alignItems: 'center'
-    };
-
     return (
       <div style={{ height: '100%' }}>
-        {
-        this.props.isLoading
-        ? 
-        <div style={loadingstyle}>
-            <AnimateHelix />
-        </div>
-        :
-        <>
         <div className="text-center">
-          {this.props.isLoading ? 'Processing...' : `Showing ${this.props.sample_otus.length} samples in ${this.props.markers.length} sample locations`}
+          {this.props.isLoading ? `Processing...` : `Showing ${this.props.sample_otus.length} samples in ${this.props.markers.length} sample locations`}
         </div>
         <Map
           className="space-above"
@@ -397,25 +361,13 @@ class SamplesMap extends React.Component<any> {
                   this.props.fetchSamples()
                 }
               }}
-              // onEdited={e => {
-              //   e.layers.eachLayer(a => {
-              //     console.log(a.toGeoJSON())
-              //     this.props.updatePlot({
-              //         feature: a.toGeoJSON()
-              //     });
-              //   });
-              // }}
               edit={{ 
                 edit: false,
-                // remove: true,
-                // save: false,
-                // cancel: false
               }}
               draw={{
                 marker: false,
                 circlemarker: false,
                 circle: false,
-                // rectangle: false,
                 polygon: false,
                 polyline: false
               }}
@@ -451,78 +403,8 @@ class SamplesMap extends React.Component<any> {
           <GridCellLegendControl />
           <HeatMapLegendControl />
           <LatLngCoordinatesControl />
-          {/* {plotLayer} */}
-          {/* <LegendControl>
-            <div>
-              <svg width="50" height="16">
-                <rect width="50" height="16" style={{fill:"#000000", fillOpacity:1, fillRule:"evenodd", stroke:"#000000", strokeOpacity:0.15, strokeWidth:1, strokeLinecap:"round", strokeLinejoin:"round"}}></rect>
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="#ffffff">{'Heatmap'}</text>
-              </svg>
-              <svg width="500" height="16">
-              <defs>
-                <linearGradient id="linear" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="blue"/>
-                  <stop offset="40%" stopColor="cyan"/>
-                  <stop offset="60%" stopColor="lime"/>
-                  <stop offset="70%" stopColor="yellow"/>
-                  <stop offset="80%" stopColor="red"/>
-                </linearGradient>
-              </defs>
-              <rect x="0" y="0" width="500" height="16" fill="url(#linear)" />
-              </svg>
-            </div>
-          </LegendControl> */}
-          {/* <LegendControl>
-            <div>
-              <svg width="50" height="16">
-                <rect width="50" height="16" style={{fill:"#000000", fillOpacity:1, fillRule:"evenodd", stroke:"#000000", strokeOpacity:0.15, strokeWidth:1, strokeLinecap:"round", strokeLinejoin:"round"}}></rect>
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="#ffffff">{'Gridcell'}</text>
-              </svg>
-              <svg width="50" height="16">
-                <rect width="50" height="16" style={{fill:"#9ECAE1", fillOpacity:0.5, fillRule:"evenodd", stroke:"#000000", strokeOpacity:0.15, strokeWidth:1, strokeLinecap:"round", strokeLinejoin:"round"}}></rect>
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="#000000">{'<0'}</text>
-              </svg>
-              <svg width="50" height="16">
-                <rect width="50" height="16" style={{fill:"#9ECAE1", fillOpacity:0.5, fillRule:"evenodd", stroke:"#000000", strokeOpacity:0.15, strokeWidth:1, strokeLinecap:"round", strokeLinejoin:"round"}}></rect>
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="#000000">{'0-0.2'}</text>
-              </svg>
-              <svg width="50" height="16">
-                <rect width="50" height="16" style={{fill:"#FFEDA0", fillOpacity:0.5, fillRule:"evenodd", stroke:"#000000", strokeOpacity:0.15, strokeWidth:1, strokeLinecap:"round", strokeLinejoin:"round"}}></rect>
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="#000000">{'0.2-0.3'}</text>
-              </svg>
-              <svg width="50" height="16">
-                <rect width="50" height="16" style={{fill:"#FED976", fillOpacity:0.5, fillRule:"evenodd", stroke:"#000000", strokeOpacity:0.15, strokeWidth:1, strokeLinecap:"round", strokeLinejoin:"round"}}></rect>
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="#000000">{'0.3-0.4'}</text>
-              </svg>
-              <svg width="50" height="16">
-                <rect width="50" height="16" style={{fill:"#FEB24C", fillOpacity:0.5, fillRule:"evenodd", stroke:"#000000", strokeOpacity:0.15, strokeWidth:1, strokeLinecap:"round", strokeLinejoin:"round"}}></rect>
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="#000000">{'0.4-0.5'}</text>
-              </svg>
-              <svg width="50" height="16">
-                <rect width="50" height="16" style={{fill:"#FD8D3C", fillOpacity:0.5, fillRule:"evenodd", stroke:"#000000", strokeOpacity:0.15, strokeWidth:1, strokeLinecap:"round", strokeLinejoin:"round"}}></rect>
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="#000000">{'0.5-0.6'}</text>
-              </svg>
-              <svg width="50" height="16">
-                <rect width="50" height="16" style={{fill:"#FC4E2A", fillOpacity:0.5, fillRule:"evenodd", stroke:"#000000", strokeOpacity:0.15, strokeWidth:1, strokeLinecap:"round", strokeLinejoin:"round"}}></rect>
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="#000000">{'0.6-0.7'}</text>
-              </svg>
-              <svg width="50" height="16">
-                <rect width="50" height="16" style={{fill:"#E31A1C", fillOpacity:0.5, fillRule:"evenodd", stroke:"#000000", strokeOpacity:0.15, strokeWidth:1, strokeLinecap:"round", strokeLinejoin:"round"}}></rect>
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="#000000">{'0.7-0.8'}</text>
-              </svg>
-              <svg width="50" height="16">
-                <rect width="50" height="16" style={{fill:"#BD0026", fillOpacity:0.5, fillRule:"evenodd", stroke:"#000000", strokeOpacity:0.15, strokeWidth:1, strokeLinecap:"round", strokeLinejoin:"round"}}></rect>
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="#000000">{'0.8-0.9'}</text>
-              </svg>
-              <svg width="50" height="16">
-                <rect width="50" height="16" style={{fill:"#800026", fillOpacity:0.5, fillRule:"evenodd", stroke:"#000000", strokeOpacity:0.15, strokeWidth:1, strokeLinecap:"round", strokeLinejoin:"round"}}></rect>
-                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="11" fill="#000000">{'>0.9'}</text>
-              </svg>
-            </div>
-          </LegendControl> */}
+          {loadingSpinner}
         </Map>
-        </>
-        }
       </div>
     )
   }
@@ -543,11 +425,9 @@ class SamplesMap extends React.Component<any> {
   }
 
   public handleClick = (e) => {
-    const { lat, lng } = e.latlng;
-    const maxZoom = e.sourceTarget._layersMaxZoom
-    const minZoom = e.sourceTarget._layersMinZoom
-    // console.log(e)
-    console.log({lat, lng, minZoom, maxZoom, ...this.handleZoomstart(this.leafletMap, maxZoom, this.state.zoom, [this.state.lat, this.state.lng])});
+    // const { lat, lng } = e.latlng;
+    // const maxZoom = e.sourceTarget._layersMaxZoom
+    // const minZoom = e.sourceTarget._layersMinZoom
   }
 
   public onEachFeature(feature, layer) {
@@ -558,12 +438,8 @@ class SamplesMap extends React.Component<any> {
       maxHeight: 360
     });
     layer.on({
-      // mouseover: this.handleGridLayerMouseOver,
-      // mouseout: this.handleGridLayerMouseOut,
-      // select: this.highlightLayer,
       click: this.handleGridLayerClick
     });
-    // console.log(layer.feature);
   }
 
   /**
@@ -608,65 +484,6 @@ class SamplesMap extends React.Component<any> {
     popup.setContent(popupContent);
     // popup.bindPopup(popup);
   }
-
-  // public handleGridLayerMouseOver(e) {
-  //   // TODO: Should be in plot file.
-  //   let layer = e.target;
-  //   layer.feature.properties.sites.forEach(siteId => {
-  //     // console.log("#_" + siteId);
-  //     let circle = d3.selectAll("#_" + siteId);
-  //     circle
-  //       .transition()
-  //       .duration(250)
-  //       .attr("r", plotConfig.activeCircleRadius);
-  //   });
-  // }
-  
-  // /**
-  //  * highlights plot circles that are within a grid cell layer.
-  //  * @param   {layer event}  e  some layer event
-  //  * @return  {void}
-  //  */
-  // public handleGridLayerMouseOut(e) {
-  //   // TODO: Should be in plot file.
-  //   let layer = e.target;
-  //   layer.feature.properties.sites.forEach(siteId => {
-  //     let circle = d3.selectAll("#_" + siteId);
-  //     circle
-  //       .transition()
-  //       .duration(250)
-  //       .attr("r", plotConfig.inactiveCircleRadius);
-  //   });
-  // }
-
-  // /**
-  //  * centralised place to store value
-  //  */
-  // public getOutlineOpacity(): number {
-  //   return 0.15;
-  // }
-
-  // /**
-  //  * Resets layer outline weight and opacity to original values.
-  //  * Values are hardcoded due to geojson.reset() not working as planned.
-  //  * @param {*} layer
-  //  */
-  // public disableHighlightLayer(layer) {
-  //   layer.setStyle({
-  //     weight: 1,
-  //     opacity: this.getOutlineOpacity()
-  //   });
-  // }
-
-  // public highlightLayer(layer) {
-  //   layer.setStyle({
-  //     weight: 5,
-  //     opacity: 0.9
-  //   });
-  //   if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-  //     layer.bringToFront();
-  //   }
-  // }
 
   public layerStyle(feature, property) {
     return {

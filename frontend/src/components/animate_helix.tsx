@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import styled, { keyframes, css } from "styled-components";
 
-const size = 3
+const size = 2
 const time = 2.1
 const timedelay = -0.89
 const ease_circ = "cubic-bezier(0.42, 0, 0.58, 1)";
