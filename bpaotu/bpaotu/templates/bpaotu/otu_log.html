@@ -92,7 +92,7 @@
                 
                 {% for file in files %}
                 <tr>
-                    <td>{{ file.filename }}</td>
+                    <td style="word-wrap: break-word">{{ file.filename }}</td>
                     <td>{{ file.file_type }}</td>
                     <td>{{ file.file_size | intcomma }}</td>
                     <td>{{ file.rows_imported | intcomma }}</td>
