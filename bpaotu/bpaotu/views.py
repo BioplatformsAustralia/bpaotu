@@ -373,6 +373,19 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
         else:
             am_environment_results_selected[taxonomy_am_environment[0]] = [[taxonomy_am_environment[1], sum]]
 
+    am_environment_results_non_selected = {}
+    for taxonomy_am_environment in am_environment_results:
+        if am_environment_results_selected.get(taxonomy_am_environment):
+            tlist = []
+            for taxa in zip(am_environment_results.get(taxonomy_am_environment), am_environment_results_selected.get(taxonomy_am_environment)):
+                tlist.append([taxa[0][0], taxa[0][1]-taxa[1][1]])
+            if am_environment_results_non_selected.get(taxonomy_am_environment):
+                am_environment_results_non_selected[taxonomy_am_environment].append(tlist)
+            else:
+                am_environment_results_non_selected[taxonomy_am_environment] = tlist
+        else:
+            am_environment_results_non_selected[taxonomy_am_environment] = am_environment_results[taxonomy_am_environment]
+
     return JsonResponse({
         'graphdata': {
             "traits": traits_results,
@@ -380,7 +393,8 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
             "taxonomy": taxonomy_results,
             "am_environment_all": am_environment_results_all,
             "am_environment": am_environment_results,
-            "am_environment_selected": am_environment_results_selected
+            "am_environment_selected": am_environment_results_selected,
+            "am_environment_non_selected": am_environment_results_non_selected
         }
     })
 

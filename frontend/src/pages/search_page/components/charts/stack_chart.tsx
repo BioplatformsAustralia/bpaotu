@@ -28,6 +28,9 @@ class StackChart extends React.Component<any> {
         for(const am_environment of Object.keys(taxonomyGraphdata.am_environment_selected)) {
           am_environments.push("Selected "+find(environment, (option) => option.id === parseInt(am_environment)).name)
         }
+        for(const am_environment of Object.keys(taxonomyGraphdata.am_environment_non_selected)) {
+          am_environments.push("Non selected "+find(environment, (option) => option.id === parseInt(am_environment)).name)
+        }
       }
       for(const taxa_values of Object.values(taxonomyGraphdata.am_environment_all)) 
       {
@@ -50,6 +53,13 @@ class StackChart extends React.Component<any> {
           }
           for(const key of Object.keys(taxonomyGraphdata.am_environment_selected)) {
             taxonomyGraphdata.am_environment_selected[key].forEach(value => {
+              if(value[0] === taxa_id) {
+                taxonomy["y"].push(value[1])
+              }
+            })
+          }
+          for(const key of Object.keys(taxonomyGraphdata.am_environment_non_selected)) {
+            taxonomyGraphdata.am_environment_non_selected[key].forEach(value => {
               if(value[0] === taxa_id) {
                 taxonomy["y"].push(value[1])
               }
