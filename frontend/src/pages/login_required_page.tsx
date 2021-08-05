@@ -2,7 +2,8 @@ import * as React from 'react'
 import { Alert, Container } from 'reactstrap'
 
 export default props => {
-  const ckanURL = path => `${window.otu_search_config.ckan_base_url}/${path}`
+  // ckanURL changed to host location so that ckan and bpaotu are pointed to the same server address
+  const ckanURL = path => `${window.location.origin}/${path}`
 
   return (
     <Container fluid={true}>
