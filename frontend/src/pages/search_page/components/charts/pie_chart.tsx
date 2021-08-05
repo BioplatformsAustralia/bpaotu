@@ -18,21 +18,6 @@ import {
 
 
 class PieChart extends React.Component<any> {
-  // state = {
-  //   markerLineWidth: [],
-  // }
-
-  // public highlightSelected = (data, selected, lineWidth) => {
-  //   let markerLineWidth = []
-  //   for (var i = 0; i < data.length; i++) {
-  //     markerLineWidth[i] = data[i] == selected ? lineWidth : 0
-  //   };
-  //   return markerLineWidth
-  // }
-
-  // public componentDidMount() {
-  //   this.props.fetchContextualDataForGraph()
-  // }
 
   public findFilterIndex = (data, selected) => {
     let index = 0
@@ -68,9 +53,6 @@ class PieChart extends React.Component<any> {
 
     let chart_data = [
       {
-        // values: [5964, 256, 18, 299, 238, 18, 2, 302, 20, 330, 160, 18, 18, 231, 6, 589],
-        // labels: ['', 'Cropland', 'Dune', 'Forest', 'Grassland', 'Heathland', 'Mangrove', 'Marine - neritic (coastal off shore)', 'Marsh/bog', 'Moss and lichen', 'Other', 'Rehabilitation area', 'Savannah', 'Shrubland', 'Sparse open woodland', 'Woodland'],
-        // text: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
         labels: labels,
         values:values,
         text: text,
@@ -78,15 +60,12 @@ class PieChart extends React.Component<any> {
         type: 'pie',
         opacity: 0.8,
         automargin: true,
-        // margin:[140, 40, 50, 50, 0],
         insidetextorientation: "radial",
         textposition: 'inside',
-        // pull: [0.1, 0, 0, 0, 0],
         marker: {
           line: {
             width: 2,
             color: 'white',
-            // width: this.state.markerLineWidth,
           }
         },
       }]
@@ -97,37 +76,20 @@ class PieChart extends React.Component<any> {
         data={chart_data}
         layout={{ 
           autosize: true, 
-          // width: 640, height: 480, 
           title: {'text':title, 'font':{'size': 20}}, 
          hovermode: 'closest',  
-        //  paper_bgcolor: '#fafafa',
-        //  plot_bgcolor: '#fafafa',
-        //  margin: {l: 10, r:10, b: 10, t: 10}
         }}
         config={plotly_chart_config(title)}
-        // onClick={evt => this.props.selectEnvironment(evt.points[0].label)}
         onClick={e => {
           const { points } = e;
           let env_val = points[0].text
           let textData = chart_data[0].text
           if (!textData.includes(env_val))
             env_val = ''
-          // console.log(points[0])
-          // console.log("onClick", env_val, points[0].label)
-          // this.props.addContextualFilter()
-          // console.log(this.props.filters.contextual.filters)
-          // const filter = 'vegetation_type_id'
           let index = this.findFilterIndex(this.props.filters.contextual.filters, filter)
-          // console.log(filter, " index: ", index)
           this.props.selectContextualFilter(index, filter)
           this.props.changeContextualFilterOperator(index,'')
           this.props.changeContextualFilterValue(index, env_val)
-          // this.props.changeContextualFilterValue2(env_val)
-          // this.props.changeContextualFilterValues(env_val)
-          // this.setState({
-          //     markerLineWidth: this.highlightSelected(textData , env_val, 3)
-          // })
-          // this.props.search()
           this.props.fetchContextualDataForGraph()
           this.props.fetchTaxonomyDataForGraph()
           this.props.selectToScroll(this.props.filter)

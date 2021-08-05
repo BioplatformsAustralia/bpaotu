@@ -66,7 +66,6 @@ class SearchFilters extends React.Component<any> {
   }
 
   onSelectTrait = () => {
-    // console.log("selectTrait")
     this.props.selectTrait('')
     this.props.updateTaxonomy()
     this.props.fetchContextualDataForGraph()
@@ -75,7 +74,6 @@ class SearchFilters extends React.Component<any> {
   }
 
   onSelectAmplicon = () => {
-    // console.log("onSelectAmplicon")
     this.props.selectAmplicon('')
     this.props.updateTaxonomy()
     this.props.fetchContextualDataForGraph()
@@ -84,7 +82,6 @@ class SearchFilters extends React.Component<any> {
   }
 
   onSelectTaxonomy = (taxa) => {
-    // console.log("onSelectTaxonomy", taxa)
     switch(taxa) {
       case "kingdom":
         this.props.selectValueKingdom('')
@@ -121,7 +118,6 @@ class SearchFilters extends React.Component<any> {
   }
 
   onSelectEnvironment = () => {
-    // console.log("onSelectEnvironment")
     this.props.selectEnvironment('')
     this.props.fetchContextualDataForGraph()
     this.props.fetchTaxonomyDataForGraph()
@@ -129,7 +125,6 @@ class SearchFilters extends React.Component<any> {
   }
 
   onSelectFilter = (index, filter) => {
-    // console.log("onSelectFilter", index, filter)
     this.props.removeContextualFilter(index)
     this.props.fetchContextualDataForGraph()
     this.props.fetchTaxonomyDataForGraph()
@@ -156,7 +151,6 @@ class SearchFilters extends React.Component<any> {
           for (const [taxoType, taxoValue] of Object.entries(value)) {
             let selectedTaxo = taxoValue['selected']
             if (selectedTaxo && selectedTaxo['value']) {
-                // console.log(tkey, selected_tvalue['value']);
                 let searchFilter = <SearchFilterButton 
                 id={taxoType} 
                 onClick={() => this.onSelectTaxonomy(taxoType)} 

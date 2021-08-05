@@ -86,7 +86,6 @@ class StackChart extends React.Component<any> {
         data={this.loadChartData(this.props.environment, this.props.taxonomy, this.props.taxonomyGraphdata, this.props.contextualFilters)}
         layout={{
           autosize: true,
-          // width: 640, height: 480, 
           dragmode:'False', //['orbit', 'turntable', 'zoom', 'pan', False]
           title: {'text':title, 'font':{'size': 20}}, 
           hovermode: 'closest', 
@@ -96,13 +95,6 @@ class StackChart extends React.Component<any> {
           xaxis: {title: 'AM_Environment'},
       }}
         config={plotly_chart_config(title)}
-        // onClick={e => {
-        // //   const { points } = e;
-        // //   // console.log(points[0])
-        // //   // this.props.selectEnvironment(env_val)
-        // //   // this.props.search()
-        //   this.props.selectToScroll(this.props.filter)
-        // }}
       />
       <span id={this.props.filter}></span>
       </>
@@ -122,7 +114,6 @@ function mapDispatchToProps(dispatch: any) {
   return bindActionCreators(
     {
       selectEnvironment
-    //   search
     },
     dispatch
   )

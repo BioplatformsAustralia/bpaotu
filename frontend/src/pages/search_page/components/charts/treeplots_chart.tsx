@@ -14,7 +14,6 @@ import { createAction } from 'redux-actions'
 class TreePlotsChart extends React.Component<any> {
 
   public loadTaxonomyData = (parentLabel, taxonomy, taxa, taxonomyGraphData) => {
-    // console.log("taxa:::", taxa, "parentLabel:::", parentLabel, "taxonomy:::", taxonomy, "taxonomyGraphData:::", taxonomyGraphData)
     let selectedTaxonomy = '', labels = [], parents = [], ids = [], text = [], values = [], total = 0
 
     for(const val of Object.values(taxonomyGraphData)){
@@ -47,12 +46,10 @@ class TreePlotsChart extends React.Component<any> {
       }
     }
     const graphData = {"labels":labels, "parents": parents, "selectedTaxonomy":selectedTaxonomy, "text":text, "ids": ids, "values": values}
-    // console.log(graphData)
     return graphData
   }
 
   public onSelectTaxonomy = (taxa, value) => {
-    // console.log("onSelectTaxonomy", taxa, value, this.props.taxonomy)
     switch(taxa) {
       case "kingdom":
         value = find(this.props.taxonomy.kingdom.options, obj => String(obj.value) === value).id
@@ -95,7 +92,6 @@ class TreePlotsChart extends React.Component<any> {
   }
 
   shouldComponentUpdate(nextProps, nextState) {
-    // console.log('TreePlotsChart - shouldComponentUpdate lifecycle');
     if (this.props.contextualGraphdata !== nextProps.contextualGraphdata) {
       return true;
     }
@@ -107,7 +103,6 @@ class TreePlotsChart extends React.Component<any> {
 
   render() {
     const title = "Taxonomy Plot"
-    // if(!this.props.taxonomyIsLoading) {}
     const graphData = this.generateGraphData()
 
     var data = [{
@@ -131,10 +126,8 @@ class TreePlotsChart extends React.Component<any> {
         data={data}
         layout= {{ 
           autosize: true,
-          // width: 1020, height: 960, 
           title: {'text':title, 'font':{'size': 20}}, 
           hovermode: 'closest', 
-          // margin: {l: 0, r: 0, b: 0, t: 0}
         }}
         config={plotly_chart_config(title)}
         
@@ -142,9 +135,7 @@ class TreePlotsChart extends React.Component<any> {
           const { points } = e;
           if(points) {
             if(isUndefined(e.nextLevel) && points[0].label !== points[0].root && this.props.taxonomy[points[0].text].selected.value===""){
-              // console.log("onClick", points, points[0].label, points[0].pointNumber, points[0].data.labels.length, e.nextLevel)
               this.onSelectTaxonomy(points[0].text, points[0].label)
-              // this.props.search()
               this.props.selectToScroll(this.props.filter)
             }
             else
@@ -218,87 +209,8 @@ class TreePlotsChart extends React.Component<any> {
 
       
     } 
-    // console.log("labels", labels)
-    // console.log("parents", parents)
-    // console.log("ids", ids)
-    // console.log("text", text)
-    // console.log("values", values)
     return {"labels":labels, "parents": parents, "text":text, "ids": ids, "values": values}
   }
-
-
-  // componentDidMoun1t() {
-  //   console.log('Sunburst - componentDidMount lifecycle', this.props.taxonomyGraphdata);
-
-  //   //   // let labels=[], parents=[], ids=[], text=[], values=[] 
-  //     if(this.props.taxonomyGraphdata && this.props.taxonomyGraphdata.length>0) 
-  //     {
-  //       console.log("taxonomyGraphdata", this.props.taxonomyGraphdata)
-  //       const kingdomData = this.graphData("", this.props.taxonomy.kingdom, "kingdom", this.props.taxonomyGraphdata)
-  //       const phylumData = this.graphData("kingdom"+kingdomData.label, this.props.taxonomy.phylum, "phylum", this.props.taxonomyGraphdata)
-  //       const classData = this.graphData("phylum"+phylumData.label, this.props.taxonomy.class, "class", this.props.taxonomyGraphdata)
-  //       const orderData = this.graphData("class"+classData.label, this.props.taxonomy.order, "order", this.props.taxonomyGraphdata)
-  //       const familyData = this.graphData("order"+orderData.label, this.props.taxonomy.family, "family", this.props.taxonomyGraphdata)
-  //       const genusData = this.graphData("family"+familyData.label, this.props.taxonomy.genus, "genus", this.props.taxonomyGraphdata)
-  //       const speciesData = this.graphData("genus"+genusData.label, this.props.taxonomy.species, "species", this.props.taxonomyGraphdata)
-  
-  //       this.setState({
-  //         labels: [
-  //           ...Array.from(kingdomData.labels),
-  //           ...Array.from(phylumData.labels), 
-  //           ...Array.from(classData.labels),
-  //           ...Array.from(orderData.labels),
-  //           ...Array.from(familyData.labels),
-  //           ...Array.from(genusData.labels),
-  //           ...Array.from(speciesData.labels)
-  //         ],
-  //         parents: [
-  //           ...Array.from(kingdomData.parents),
-  //           ...Array.from(phylumData.parents),
-  //           ...Array.from(classData.parents),
-  //           ...Array.from(orderData.parents),
-  //           ...Array.from(familyData.parents),
-  //           ...Array.from(genusData.parents),
-  //           ...Array.from(speciesData.parents)
-  //         ],
-  //         ids: [
-  //           ...Array.from(kingdomData.ids), 
-  //           ...Array.from(phylumData.ids), 
-  //           ...Array.from(classData.ids), 
-  //           ...Array.from(orderData.ids),
-  //           ...Array.from(familyData.ids),
-  //           ...Array.from(genusData.ids),
-  //           ...Array.from(speciesData.ids)
-  //         ],
-  //         text: [
-  //           ...Array.from(kingdomData.text), 
-  //           ...Array.from(phylumData.text), 
-  //           ...Array.from(classData.text), 
-  //           ...Array.from(orderData.text),
-  //           ...Array.from(familyData.text),
-  //           ...Array.from(genusData.text),
-  //           ...Array.from(speciesData.text)
-  //         ],
-  //         values: [
-  //           ...Array.from(kingdomData.values), 
-  //           ...Array.from(phylumData.values), 
-  //           ...Array.from(classData.values), 
-  //           ...Array.from(orderData.values),
-  //           ...Array.from(familyData.values),
-  //           ...Array.from(genusData.values),
-  //           ...Array.from(speciesData.values)
-  //         ]
-  //       }
-  //       )
-  
-  //       console.log("labels", this.state.labels)
-  //       // console.log("parents", parents)
-  //       // console.log("ids", ids)
-  //       // console.log("text", text)
-  //       console.log("values", this.state.values)
-  //     } 
-  
-  //   }
 }
 
 function mapStateToProps(state) {
