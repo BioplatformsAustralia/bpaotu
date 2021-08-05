@@ -125,17 +125,6 @@ const contextualFiltersReducer = handleActions(
           return doesFilterMatchEnvironment(state.selectedEnvironment)(dataDefinition) ? f : EmptyContextualFilter
         }
       })
-      // filters: map(state.filters, f => {
-      //   if (f.name === '') {
-      //     return f
-      //   }
-      //   if (state.dataDefinitions) {
-      //     const dataDefinition = find(state.dataDefinitions.filters, dd => dd.name === f.name)
-      //     return doesFilterMatchEnvironment(state.selectedEnvironment)(dataDefinition) ? f : EmptyContextualFilter
-      //   }
-      //   else
-      //     return EmptyContextualFilter
-      // })
     }),
     [selectContextualFilter as any]: (state: any, action: any) => ({
       ...state,

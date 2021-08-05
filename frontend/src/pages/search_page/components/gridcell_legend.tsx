@@ -1,6 +1,5 @@
 import L from 'leaflet';
 import { withLeaflet, MapControl } from 'react-leaflet';
-// import GridCellConstants from './gridcell_constants';
 
 export class GridCellConstants {
   static outlineOpacity = 0.15;

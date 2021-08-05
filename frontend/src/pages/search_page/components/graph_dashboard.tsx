@@ -9,7 +9,6 @@ import PieChartAmplicon from './charts/pie_chart_amplicon'
 import PieChartTraits from './charts/pie_chart_traits'
 import HistogramChart from './charts/histogram_chart'
 import StackChart from './charts/stack_chart'
-// import TreePlotsChart from './charts/treeplots_chart'
 import SunBurstChart from './charts/sunburst_chart';
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
@@ -103,7 +102,6 @@ class GraphDashboard extends React.Component<any> {
                                         {(!this.props.taxonomyIsLoading) && (!this.props.contextualIsLoading) && (!this.props.taxonomy.kingdom.isDisabled) &&
                                             <>
                                                 <SunBurstChart selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy_id" taxonomyIsLoading={this.props.taxonomyIsLoading} contextualIsLoading={this.props.contextualIsLoading} taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
-                                                {/* <TreePlotsChart selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} /> */}
                                                 <StackChart selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="amplicon_id" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
                                             </>
                                         } 

@@ -1,7 +1,5 @@
 import L from 'leaflet';
 import { withLeaflet, MapControl } from 'react-leaflet';
-// import * as d3 from "d3";
-// https://stackoverflow.com/questions/49739119/legend-with-smooth-gradient-and-corresponding-labels
 class HeatMapLegendControl extends MapControl {
   outlineOpacity = 1;
   outlineColor = "transparent";
@@ -24,9 +22,6 @@ class HeatMapLegendControl extends MapControl {
         onAdd: map => {
           const div = L.DomUtil.create("div", "");
           let labels = [];
-          // let from;
-          // let to;
-          // let width;
 
           labels.push(
             '<svg width="50" height="16">'+
@@ -47,21 +42,6 @@ class HeatMapLegendControl extends MapControl {
             '<rect x="0" y="0" width="500" height="16" fill="url(#linear)" />'+
             '</svg>'
             );
-          // for (let i = 0; i < levels.length; i++) {
-          //   from = levels[i]
-          //   width = widths[i]*500
-          //   to = levels[i + 1]
-          //   labels.push(
-          //   '<svg width="'+width+'" height="16">'+
-          // //   '<rect width="'+width+'" height="16" style="fill:'+this.fillColor(from>0? from +0.01:-0.0)+'; fill-opacity:'+this.fillOpacity(from + 0.01)+'; fill-rule:evenodd; '+
-          // //   'stroke:'+this.outlineColor+'; stroke-opacity:'+this.outlineOpacity+'; stroke-width:1; stroke-linecap:round; stroke-linejoin:round">'+
-          // //   '</rect>'+
-          //   '<text x="100%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="11" fill="black">'+
-          //   (from) + 
-          //   '</text>'+
-          //   '</svg>'
-          //   );
-          // }
           div.innerHTML = labels.join("");
           div.style.margin = "0px";
           div.style.padding = "0px";

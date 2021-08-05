@@ -34,26 +34,5 @@ export const plotly_chart_config = file_name => ( {
         }
     }
     ],
-//   modeBarButtonsToAdd: [{
-//     name: 'Download Plot',
-//     icon: icon,
-//     click: function(gd) {
-//       Plotly.toImage(
-//         gd,{
-//           format:'svg',
-//           height:1024,
-//           width:1024,
-//           filename: file_name.replace(" ","_").toLowerCase(),
-//           scale: 1
-//         });
-//     }
-//   }],
-  // toImageButtonOptions: {
-  //   format: 'svg', // one of png, svg, jpeg, webp
-  //   filename: file_name.replace(" ","_").toLowerCase(),
-  //   height: 1024,
-  //   width: 1024,
-  //   scale: 1 // Multiply title/legend/axis/canvas sizes by this factor
-  // }
 }
 )
