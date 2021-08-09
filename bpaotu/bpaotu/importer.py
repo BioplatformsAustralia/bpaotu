@@ -525,11 +525,15 @@ class DataImporter:
                     w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
                 log_amplicon("loading OTU abundance 20k data into database")
                 try:
-                    self._engine.execute(
-                        text('''COPY otu.sample_otu_20k from :csv CSV header''').execution_options(autocommit=True),
-                        csv=fname)
+                    with open(fname, 'r') as fd:
+                        raw_conn = self._engine.raw_connection()
+                        cur = raw_conn.cursor()
+                        cur.copy_expert("COPY otu.sample_otu_20k from stdin CSV HEADER", fd)
                 except:  # noqa
                     log_amplicon("unable to import {}".format(sampleotu_fname))
                     traceback.print_exc()
+                finally:
+                    raw_conn.commit()
+                    cur.close()
             finally:
                 os.unlink(fname)
