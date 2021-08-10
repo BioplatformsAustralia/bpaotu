@@ -377,8 +377,10 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
     for taxonomy_am_environment in am_environment_results:
         if am_environment_results_selected.get(taxonomy_am_environment):
             tlist = []
-            for taxa in zip(am_environment_results.get(taxonomy_am_environment), am_environment_results_selected.get(taxonomy_am_environment)):
-                tlist.append([taxa[0][0], taxa[0][1]-taxa[1][1]])
+            for taxa in am_environment_results.get(taxonomy_am_environment):
+                for taxa_selected in am_environment_results_selected.get(taxonomy_am_environment):
+                    if taxa[0] == taxa_selected[0]:
+                        tlist.append([taxa[0], taxa[1]-taxa_selected[1]])
             if am_environment_results_non_selected.get(taxonomy_am_environment):
                 am_environment_results_non_selected[taxonomy_am_environment].append(tlist)
             else:
