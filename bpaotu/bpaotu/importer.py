@@ -424,7 +424,7 @@ class DataImporter:
         try:
             with open(self._import_base +'version.txt', 'r') as f:
                 d = dict(re.findall(r'^(.+)=(.*)$', f.read(), flags=re.M))
-                analysis_version = d.get("analyis_version")
+                analysis_version = d.get("analysis_version")
                 self._analysis_url = d.get("analysis_url")
         except FileNotFoundError:
             logger.error('Missing version.txt file. Analysis Version and URL will not be added.')       
