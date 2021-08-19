@@ -351,17 +351,17 @@ class GraphTabbed extends React.Component<any> {
                             </NavItem>
                             <NavItem>
                                 <NavLink
-                                    className={classnames({ active: this.state.activeTab === 'tabTaxonomyEnvironment' })}
-                                    onClick={() => { this.toggle('tabTaxonomyEnvironment'); }}
-                                >{'Taxonomy vs Environment'}
-                                </NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink
                                     className={classnames({ active: this.state.activeTab === 'tabContextual' })}
                                     onClick={() => { this.toggle('tabContextual'); }}
                                 >
                                     Contextual Filters
+                                </NavLink>
+                            </NavItem>
+                            <NavItem>
+                                <NavLink
+                                    className={classnames({ active: this.state.activeTab === 'tabTaxonomyEnvironment' })}
+                                    onClick={() => { this.toggle('tabTaxonomyEnvironment'); }}
+                                >{'Taxonomy vs Environment'}
                                 </NavLink>
                             </NavItem>
                         </Nav>
@@ -398,18 +398,6 @@ class GraphTabbed extends React.Component<any> {
                                     </>
                                 } 
                             </TabPane>
-                            <TabPane tabId="tabTaxonomyEnvironment">
-                                {((!this.props.taxonomyIsLoading) && (!this.props.contextualIsLoading) && (!this.props.taxonomy.kingdom.isDisabled))
-                                    ?
-                                    <>
-                                        <StackChart width={chartWidth} height={chartHeight} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy_am_environment_id" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
-                                    </>
-                                    :
-                                    <div style={loadingstyle}>
-                                        <AnimateHelix />
-                                    </div>
-                                } 
-                            </TabPane>
                             <TabPane tabId="tabContextual">
                                 <div style={{margin: '10px 0px'}}>
                                 {(!this.props.contextualIsLoading)
@@ -421,6 +409,18 @@ class GraphTabbed extends React.Component<any> {
                                     </div>
                                 } 
                                 </div>
+                            </TabPane>
+                            <TabPane tabId="tabTaxonomyEnvironment">
+                                {((!this.props.taxonomyIsLoading) && (!this.props.contextualIsLoading) && (!this.props.taxonomy.kingdom.isDisabled))
+                                    ?
+                                    <>
+                                        <StackChart width={chartWidth} height={chartHeight} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy_am_environment_id" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
+                                    </>
+                                    :
+                                    <div style={loadingstyle}>
+                                        <AnimateHelix />
+                                    </div>
+                                } 
                             </TabPane>
                         </TabContent>
                    </div>
