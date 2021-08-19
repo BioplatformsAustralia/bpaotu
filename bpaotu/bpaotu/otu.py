@@ -873,6 +873,7 @@ class ImportMetadata(SchemaMixin, Base):
     __tablename__ = 'import_metadata'
     id = Column(Integer, primary_key=True)
     methodology = Column(String)
+    analysis_url = Column(String)
     revision_date = Column(Date)
     imported_at = Column(Date)
     otu_count = Column(postgresql.BIGINT)

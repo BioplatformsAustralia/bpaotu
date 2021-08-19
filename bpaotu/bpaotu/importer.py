@@ -94,6 +94,7 @@ class DataImporter:
         self._session = sessionmaker(bind=self._engine)()
         self._import_base = import_base
         self._methodology = 'v1'
+        self._analysis_url = ''
         self._revision_date = revision_date
         self._has_sql_context = has_sql_context
         self._force_fetch = force_fetch
@@ -154,6 +155,7 @@ class DataImporter:
     def _write_metadata(self):
         self._session.add(ImportMetadata(
             methodology=self._methodology,
+            analysis_url=self._analysis_url,
             revision_date=datetime.datetime.strptime(self._revision_date, "%Y-%m-%d").date(),
             imported_at=datetime.date.today(),
             uuid=str(uuid.uuid4()),
@@ -415,9 +417,18 @@ class DataImporter:
                 logger.info(field)
         # set methodology to store version of code and contextual DB in this format (<packagename>_<version>_<SQLite DB>)
         db_file = ""
+        analysis_version = ""
         if len(metadata) > 0:
             db_file = metadata[0]["sample_database_file"]
-        self._methodology = f"{__package__}_{__version__}_{db_file}"
+        # Read analysis_url and analysis_version from version.txt file
+        try:
+            with open(self._import_base +'version.txt', 'r') as f:
+                d = dict(re.findall(r'^(.+)=(.*)$', f.read(), flags=re.M))
+                analysis_version = d.get("analyis_version")
+                self._analysis_url = d.get("analysis_url")
+        except FileNotFoundError:
+            logger.error('Missing version.txt file. Analysis Version and URL will not be added.')       
+        self._methodology = f"{__package__}_{__version__}_{db_file}_analysis_{analysis_version}"
 
     def _otu_abundance_rows(self, fd, amplicon_code, otu_lookup):
         reader = csv.reader(fd, dialect='excel-tab')

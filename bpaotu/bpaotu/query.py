@@ -135,6 +135,7 @@ class OTUQueryParams:
             return [
                 'Australian Microbiome Database Metadata:',
                 indent + 'Dataset methodology={}'.format(metadata.methodology),
+                indent + 'Dataset analysis url={}'.format(metadata.analysis_url),
                 indent + 'Dataset revision date={}'.format(metadata.revision_date),
             ]
 

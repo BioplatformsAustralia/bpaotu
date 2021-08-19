@@ -807,6 +807,7 @@ def otu_log_download(request):
             'ontology_errors': sorted(info.ontology_errors(), key=lambda x: x.ontology_name),
             'metadata': {
                 'Methodology': metadata.methodology,
+                'Analysis URL': metadata.analysis_url,
                 'Revision': str(metadata.revision_date),
                 'Imported': str(metadata.imported_at),
                 'Samples': metadata.samplecontext_count,
