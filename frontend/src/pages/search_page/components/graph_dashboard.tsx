@@ -14,7 +14,7 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { fetchContextualDataForGraph } from '../../../reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from '../../../reducers/taxonomy_data_graph'
-import {AmpliconFilterInfo, TaxonomyFilterInfo, TaxonomyNoAmpliconInfo} from './amplicon_taxonomy_filter_card'
+import {AmpliconFilterInfo, TaxonomyFilterInfo, TaxonomyNoAmpliconInfo, TraitFilterInfo} from './amplicon_taxonomy_filter_card'
 
 class GraphDashboard extends React.Component<any> {
 
@@ -114,6 +114,12 @@ class GraphDashboard extends React.Component<any> {
                                 <Card>
                                     <CardHeader tag="h3">
                                         Traits
+                                        <span id="traitsTipGraphTab">
+                                            <Octicon name="info" />
+                                        </span>
+                                        <UncontrolledTooltip target="traitsTipGraphTab" placement="auto">
+                                            {TraitFilterInfo}
+                                        </UncontrolledTooltip>
                                     </CardHeader>
                                     <CardBody>
                                         {(!this.props.taxonomyIsLoading) && (!this.props.contextualIsLoading) && (!this.props.taxonomy.kingdom.isDisabled) &&
@@ -134,7 +140,7 @@ class GraphDashboard extends React.Component<any> {
                                         {(this.props.selectedEnvironment.value === '' || selectedEnvironmentOption === 'Soil') && 
                                             <PieChart selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="vegetation_type_id" contextualGraphdata={this.props.contextualGraphdata} />
                                         }
-                                        {(selectedEnvironmentOption === 'Marine') && 
+                                        {(this.props.selectedEnvironment.value === '' || selectedEnvironmentOption === 'Marine') && 
                                             <PieChart selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="sample_type_id" contextualGraphdata={this.props.contextualGraphdata} />
                                         }
                                         {(this.props.selectedEnvironment.value === '' || selectedEnvironmentOption === 'Soil') && 

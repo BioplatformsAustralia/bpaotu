@@ -21,8 +21,11 @@ class StackChart extends React.Component<any> {
     if(taxonomyGraphdata.am_environment) {
       let am_environments = taxonomyGraphdata.am_environment?['All']:[]
       for(const am_environment of Object.keys(taxonomyGraphdata.am_environment)) {
-        if(environment)
-          am_environments.push("All "+find(environment, (option) => option.id === parseInt(am_environment)).name)
+        if(environment) {
+          const env_text = find(environment, (option) => option.id === parseInt(am_environment))
+          if(env_text)
+          am_environments.push("All "+env_text.name)
+        }
       }
       if(String(contextualFilters.length)!=="0") {
         for(const am_environment of Object.keys(taxonomyGraphdata.am_environment_selected)) {
@@ -96,13 +99,21 @@ class StackChart extends React.Component<any> {
         data={this.loadChartData(this.props.environment, this.props.taxonomy, this.props.taxonomyGraphdata, this.props.contextualFilters)}
         layout={{
           autosize: true,
+          width: this.props.width, height: this.props.height, 
           dragmode:'False', //['orbit', 'turntable', 'zoom', 'pan', False]
+          // edits:{'shapePosition':true},
           title: {'text':title, 'font':{'size': 20}}, 
           hovermode: 'closest', 
           barmode:'relative',
           barnorm: 'percent',
           yaxis: {title: '% Composition', /*tickformat:',e'*/}, 
-          xaxis: {title: 'AM_Environment'},
+          xaxis: {title: 'AM_Environment', 
+          type:"category", 
+          // categoryorder:"category ascending",
+          // categoryarray:["All", "All Marine", "All Soil"]
+          categoryorder:"array",
+          categoryarray:["All", "All Marine", "Non selected Marine", "Selected Marine", "Selected Soil", "Non selected Soil", "All Soil"]
+        },
       }}
         config={plotly_chart_config(title)}
       />

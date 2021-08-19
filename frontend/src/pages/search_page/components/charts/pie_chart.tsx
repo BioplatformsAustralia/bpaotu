@@ -75,7 +75,8 @@ class PieChart extends React.Component<any> {
       <Plot
         data={chart_data}
         layout={{ 
-          autosize: true, 
+          autosize: true,
+          width: this.props.width, height: this.props.height,
           title: {'text':title, 'font':{'size': 20}}, 
          hovermode: 'closest',  
         }}

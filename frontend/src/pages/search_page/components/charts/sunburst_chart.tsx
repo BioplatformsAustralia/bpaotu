@@ -142,6 +142,7 @@ class SunBurstChart extends React.Component<any> {
           data={data}
           layout= {{ 
             autosize: true,
+            width: this.props.width, height: this.props.height, 
             title: {'text':title, 'font':{'size': 20}}, 
             hovermode: 'closest', 
           }}

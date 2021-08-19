@@ -74,6 +74,7 @@ class HistogramChart extends React.Component<any> {
         data={chart_data}
         layout={{ 
           autosize: true,
+          width: this.props.width, height: this.props.height,
           dragmode:'select',
           title: {'text':title, 'font':{'size': 20}}, 
           hovermode: 'closest', 
