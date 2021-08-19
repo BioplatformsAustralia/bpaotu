@@ -7,7 +7,7 @@ import { bindActionCreators } from 'redux'
 import Octicon from '../../../components/octicon'
 import { selectEnvironment, selectEnvironmentOperator } from '../reducers/contextual'
 
-const EnvironmentInfo =
+export const EnvironmentInfo =
   'Data may be filtered on environment to restrict samples to either soil or marine environment sources.  Marine environment includes pelagic, coastal, sediment and host associated samples.  Within marine environment, samples may be further filtered by adding another filter and selecting the "Sample Type" filter.'
 
 class EnvironmentFilter extends React.Component<any> {
