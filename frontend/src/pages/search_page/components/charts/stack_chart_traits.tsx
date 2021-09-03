@@ -1,68 +1,58 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
 import {plotly_chart_config} from './../charts/plotly_chart'
-import { find } from 'lodash';
+import { find, filter } from 'lodash';
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { selectEnvironment } from '../../reducers/contextual'
 
-class StackChart extends React.Component<any> {
-
-  getSelectedTaxonomy(taxonomy) {
-    for(const [name, taxa] of Object.entries(taxonomy)) {
-      if(taxa['selected'].value === "") {
-        return name
-      }
-    }
-  }
+class StackChartTraits extends React.Component<any> {
 
   loadChartData(environment, selectedTaxonomy, taxonomyGraphdata, contextualFilters) {
     let chart_data = []
-    if(taxonomyGraphdata.am_environment) {
-      let am_environments = taxonomyGraphdata.am_environment?['All']:[]
-      for(const am_environment of Object.keys(taxonomyGraphdata.am_environment)) {
+    if(taxonomyGraphdata.traits_am_environment) {
+      let traits_am_environments = taxonomyGraphdata.traits_am_environment?['All']:[]
+      for(const traits_am_environment of Object.keys(taxonomyGraphdata.traits_am_environment)) {
         if(environment) {
-          const env_text = find(environment, (option) => option.id === parseInt(am_environment))
+          const env_text = find(environment, (option) => option.id === parseInt(traits_am_environment))
           if(env_text)
-          am_environments.push("All "+env_text.name)
+          traits_am_environments.push("All "+env_text.name)
         }
       }
       if(String(contextualFilters.length)!=="0") {
-        for(const am_environment of Object.keys(taxonomyGraphdata.am_environment_selected)) {
-          am_environments.push("Selected "+find(environment, (option) => option.id === parseInt(am_environment)).name)
+        for(const traits_am_environment of Object.keys(taxonomyGraphdata.traits_am_environment_selected)) {
+          traits_am_environments.push("Selected "+find(environment, (option) => option.id === parseInt(traits_am_environment)).name)
         }
-        for(const am_environment of Object.keys(taxonomyGraphdata.am_environment_non_selected)) {
-          am_environments.push("Non selected "+find(environment, (option) => option.id === parseInt(am_environment)).name)
+        for(const traits_am_environment of Object.keys(taxonomyGraphdata.traits_am_environment_non_selected)) {
+          traits_am_environments.push("Non selected "+find(environment, (option) => option.id === parseInt(traits_am_environment)).name)
         }
       }
-      for(const taxa_values of Object.values(taxonomyGraphdata.am_environment_all)) 
+      for(const taxa_values of Object.values(taxonomyGraphdata.traits_am_environment_all)) 
       {
         const taxa_id = taxa_values[0]
         const taxa_abundance = taxa_values[1]
         let taxonomy = {}
-        const selectedTaxa = this.getSelectedTaxonomy(selectedTaxonomy)
-        const taxa = selectedTaxa?find(selectedTaxonomy[selectedTaxa]['options'], (option) => option.id === parseInt(taxa_id)):undefined
-        if(taxa) {
-          taxonomy["name"] = taxa.value
-          taxonomy["x"] = am_environments
+        if(taxa_id) {
+          taxonomy["name"] = taxa_id
+          taxonomy["x"] = traits_am_environments
           taxonomy["y"] = [taxa_abundance]
 
-          for(const key of Object.keys(taxonomyGraphdata.am_environment)) {
-            taxonomyGraphdata.am_environment[key].forEach(value => {
+          for(const key of Object.keys(taxonomyGraphdata.traits_am_environment)) {
+            taxonomyGraphdata.traits_am_environment[key].forEach(value => {
               if(value[0] === taxa_id) {
                 taxonomy["y"].push(value[1])
               }
             })
           }
-          for(const key of Object.keys(taxonomyGraphdata.am_environment_selected)) {
-            taxonomyGraphdata.am_environment_selected[key].forEach(value => {
+          for(const key of Object.keys(taxonomyGraphdata.traits_am_environment_selected)) {
+            taxonomyGraphdata.traits_am_environment_selected[key].forEach(value => {
               if(value[0] === taxa_id) {
                 taxonomy["y"].push(value[1])
               }
             })
           }
-          for(const key of Object.keys(taxonomyGraphdata.am_environment_non_selected)) {
-            taxonomyGraphdata.am_environment_non_selected[key].forEach(value => {
+          for(const key of Object.keys(taxonomyGraphdata.traits_am_environment_non_selected)) {
+            taxonomyGraphdata.traits_am_environment_non_selected[key].forEach(value => {
               if(value[0] === taxa_id) {
                 taxonomy["y"].push(value[1])
               }
@@ -92,16 +82,18 @@ class StackChart extends React.Component<any> {
   }
 
   render() {
-    const title = 'Taxonomy vs AM Environment Plot'
+    const title = 'Traits vs AM Environment Plot'
+    const data = this.loadChartData(this.props.environment, this.props.taxonomy, this.props.taxonomyGraphdata, this.props.contextualFilters)
+    const default_category_order = ["All", "All Marine", "Non selected Marine", "Selected Marine", "Selected Soil", "Non selected Soil", "All Soil"]
+    const category_order = data.length>0 ? filter(default_category_order, item => data[0].x.includes(item)) : default_category_order
     return (
       <>
       <Plot
-        data={this.loadChartData(this.props.environment, this.props.taxonomy, this.props.taxonomyGraphdata, this.props.contextualFilters)}
+        data={data}
         layout={{
           autosize: true,
           width: this.props.width, height: this.props.height, 
           dragmode:'False', //['orbit', 'turntable', 'zoom', 'pan', False]
-          // edits:{'shapePosition':true},
           title: {'text':title, 'font':{'size': 20}}, 
           hovermode: 'closest', 
           barmode:'relative',
@@ -109,10 +101,8 @@ class StackChart extends React.Component<any> {
           yaxis: {title: '% Composition', /*tickformat:',e'*/}, 
           xaxis: {title: 'AM_Environment', 
           type:"category", 
-          // categoryorder:"category ascending",
-          // categoryarray:["All", "All Marine", "All Soil"]
           categoryorder:"array",
-          categoryarray:["All", "All Marine", "Non selected Marine", "Selected Marine", "Selected Soil", "Non selected Soil", "All Soil"]
+          categoryarray:{category_order}
         },
       }}
         config={plotly_chart_config(title)}
@@ -127,7 +117,8 @@ function mapStateToProps(state) {
   return {
     taxonomy: state.searchPage.filters.taxonomy,
     contextualFilters: state.searchPage.filters.contextual.filters,
-    environment: state.contextualDataDefinitions.environment
+    environment: state.contextualDataDefinitions.environment,
+    traits: state.contextualDataDefinitions
   }
 }
 
@@ -143,4 +134,4 @@ function mapDispatchToProps(dispatch: any) {
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(StackChart)
+)(StackChartTraits)

@@ -1,7 +1,7 @@
 import React from 'react'
 import Plot from 'react-plotly.js'
 import {plotly_chart_config} from './plotly_chart'
-import { find, isUndefined, sum } from 'lodash'
+import { find, isUndefined } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { selectEnvironment } from '../../reducers/contextual'
@@ -11,12 +11,16 @@ import { fetchContextualDataForGraph } from '../../../../reducers/contextual_dat
 import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 import { createAction } from 'redux-actions'
 
-class SunBurstChart extends React.Component<any> {
+class TreePlotsChartTaxonomy extends React.Component<any> {
 
   public loadTaxonomyData = (parentLabel, taxonomy, taxa, taxonomyGraphData) => {
-    let labels = [], parents = [], ids = [], text = [], values = [], selectedTaxonomy = taxonomy.selected.value
-    let total = sum(Object.values(taxonomyGraphData).map(abundance=>Number(abundance)))
+    let selectedTaxonomy = '', labels = [], parents = [], ids = [], text = [], values = [], total = 0
 
+    for(const val of Object.values(taxonomyGraphData)){
+      total += parseInt(val.toString())
+    }
+
+    selectedTaxonomy = taxonomy.selected.value
     if(selectedTaxonomy)
     {
       let lab = find(taxonomy.options, opt => String(opt.id) === String(selectedTaxonomy))
@@ -31,16 +35,14 @@ class SunBurstChart extends React.Component<any> {
     }
     else{
       for(const option of taxonomy.options){
-        let val = taxonomyGraphData[option.id]
+        let val = taxonomyGraphData[option.id]  // find(taxonomyGraphData, (taxonomy_id, sum) => String(taxonomy_id) === String(option.id))
         if(isUndefined(val))
           val = 0
-        else {
-          labels.push(option.value)
-          parents.push(parentLabel)
-          ids.push(taxa+option.value)
-          text.push(taxa)
-          values.push(val)
-        }
+        labels.push(option.value)
+        parents.push(parentLabel)
+        ids.push(taxa+option.value)
+        text.push(taxa)
+        values.push(val)
       }
     }
     const graphData = {"labels":labels, "parents": parents, "selectedTaxonomy":selectedTaxonomy, "text":text, "ids": ids, "values": values}
@@ -48,37 +50,43 @@ class SunBurstChart extends React.Component<any> {
   }
 
   public onSelectTaxonomy = (taxa, value) => {
-    const taxonomy = {
-      kingdom:  (value) => {
-        this.props.selectValueKingdom(find(this.props.taxonomy.kingdom.options, obj => String(obj.value) === String(value)).id)
+    switch(taxa) {
+      case "kingdom":
+        value = find(this.props.taxonomy.kingdom.options, obj => String(obj.value) === value).id
+        this.props.selectValueKingdom(value)
         this.props.onChangeKingdom(taxa)
-      },
-      phylum: (value) => {
-        this.props.selectValuePhylum(find(this.props.taxonomy.phylum.options, obj => String(obj.value) === String(value)).id)
+        break
+      case "phylum":
+        value = find(this.props.taxonomy.phylum.options, obj => String(obj.value) === value).id
+        this.props.selectValuePhylum(value)
         this.props.onChangePhylum(taxa)
-      },
-      class: (value) => {
-        this.props.selectValueClass(find(this.props.taxonomy.class.options, obj => String(obj.value) === String(value)).id)
+        break
+      case "class":
+        value = find(this.props.taxonomy.class.options, obj => String(obj.value) === value).id
+        this.props.selectValueClass(value)
         this.props.onChangeClass(taxa)
-      },
-      order: (value) => {
-        this.props.selectValueOrder(find(this.props.taxonomy.order.options, obj => String(obj.value) === String(value)).id)
+        break
+      case "order":
+        value = find(this.props.taxonomy.order.options, obj => String(obj.value) === value).id
+        this.props.selectValueOrder(value)
         this.props.onChangeOrder(taxa)
-      },
-      family: (value) => {
-        this.props.selectValueFamily(find(this.props.taxonomy.family.options, obj => String(obj.value) === String(value)).id)
+        break
+      case "family":
+        value = find(this.props.taxonomy.family.options, obj => String(obj.value) === value).id
+        this.props.selectValueFamily(value)
         this.props.onChangeFamily(taxa)
-      },
-      genus: (value) => {
-        this.props.selectValueGenus(find(this.props.taxonomy.genus.options, obj => String(obj.value) === String(value)).id)
+        break
+      case "genus":
+        value = find(this.props.taxonomy.genus.options, obj => String(obj.value) === value).id
+        this.props.selectValueGenus(value)
         this.props.onChangeGenus(taxa)
-      },
-      species: (value) => {
-        this.props.selectValueSpecies(find(this.props.taxonomy.species.options, obj => String(obj.value) === String(value)).id)
+        break
+      case "species":
+        value = find(this.props.taxonomy.species.options, obj => String(obj.value) === value).id
+        this.props.selectValueSpecies(value)
         this.props.onChangeSpecies(taxa)
-      }
+        break
     }
-    taxonomy[taxa](value)
     this.props.fetchContextualDataForGraph()
     this.props.fetchTaxonomyDataForGraph()
   }
@@ -90,80 +98,58 @@ class SunBurstChart extends React.Component<any> {
     if (this.props.taxonomyGraphdata !== nextProps.taxonomyGraphdata) {
       return true;
     }
-    if (this.props.taxonomy !== nextProps.taxonomy) {
-      return true;
-    }
     return false;
   }
 
   render() {
     const title = "Taxonomy Plot"
     const graphData = this.generateGraphData()
-    let data = []
-    if(graphData.ids.length>1) {
-      data = [{
-        type: "sunburst",
-        parents: graphData.parents,
-        ids:  graphData.ids,
-        text:  graphData.text,
-        values:  graphData.values,
-        branchvalues: "total",
-        texttemplate: ('%{label}<br>%{text}<br>%{value}<br>%{percentEntry:.2%}'),
-        hovertemplate: ('%{label}<br>%{text}<br>%{value}<br>%{percentEntry:.2%}<extra></extra>'),
-        labels: graphData.labels,
-        leaf: {opacity: 0.8},
-        marker: {line: {width: 2}},
-        textposition: 'inside',
-      }];
-    }
-    else {
-      data = [{
-        labels: graphData.labels,
-        values:graphData.values,
-        text: graphData.text,
-        textinfo: 'label+value+percent',
-        type: 'pie',
-        opacity: 0.8,
-        automargin: true,
-        insidetextorientation: "radial",
-        textposition: 'inside',
-        marker: {
-          line: {
-            width: 2,
-            color: 'white'
-          }
-        },
-      }];
-    }
+
+    var data = [{
+      type: "treemap",
+      labels: graphData.labels,
+      parents: graphData.parents,
+      ids:  graphData.ids,
+      text:  graphData.text,
+      values:  graphData.values,
+      branchvalues: "total",
+      texttemplate: ('%{label}<br>%{text}<br>%{value}<br>%{percentEntry:.2%}'),
+      hovertemplate: ('%{label}<br>%{text}<br>%{value}<br>%{percentEntry:.2%}<extra></extra>'),
+      leaf: {opacity: 0.8},
+      marker: {line: {width: 2}},
+      textposition: 'inside',
+    }];
 
     return (
       <>
-        <Plot
-          data={data}
-          layout= {{ 
-            autosize: true,
-            width: this.props.width, height: this.props.height, 
-            title: {'text':title, 'font':{'size': 20}}, 
-            hovermode: 'closest', 
-          }}
-          config={plotly_chart_config(title)}
-          onClick={e => {
-            const { points } = e;
-            if(points) {
-              if(isUndefined(e.nextLevel) && points[0].label !== points[0].root && this.props.taxonomy[points[0].text].selected.value===""){
-                this.onSelectTaxonomy(points[0].text, points[0].label)
-                this.props.selectToScroll(this.props.filter)
-              }
-              else
-                return false
+      <Plot
+        data={data}
+        layout= {{ 
+          autosize: true,
+          title: {'text':title, 'font':{'size': 20}}, 
+          hovermode: 'closest', 
+        }}
+        config={plotly_chart_config(title)}
+        
+        onClick={e => {
+          const { points } = e;
+          if(points) {
+            if(isUndefined(e.nextLevel) && points[0].label !== points[0].root && this.props.taxonomy[points[0].text].selected.value===""){
+              this.onSelectTaxonomy(points[0].text, points[0].label)
+              this.props.selectToScroll(this.props.filter)
+              this.props.selectTab('tab_'+this.props.filter)
             }
-          }}
-        />
-        <span id={this.props.filter}></span>
+            else
+              return false
+          }
+        }}
+      />
+      <span id={this.props.filter}></span>
       </>
     );
   }
 
+  
   public generateGraphData() {
     let labels=[], parents=[], ids=[], text=[], values=[] 
     if(!this.props.taxonomyIsLoading && this.props.taxonomyGraphdata.taxonomy) 
@@ -263,4 +249,4 @@ function mapDispatchToProps(dispatch: any) {
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(SunBurstChart)
+)(TreePlotsChartTaxonomy)

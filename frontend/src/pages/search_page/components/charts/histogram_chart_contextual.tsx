@@ -17,7 +17,7 @@ import {
   selectContextualFilter
 } from '../../reducers/contextual'
 
-class HistogramChart extends React.Component<any> {
+class HistogramChartContextual extends React.Component<any> {
   state = {
     markerLineWidth: [],
   }
@@ -100,6 +100,7 @@ class HistogramChart extends React.Component<any> {
               this.props.fetchContextualDataForGraph()
               this.props.fetchTaxonomyDataForGraph()
               this.props.selectToScroll(this.props.filter)
+              this.props.selectTab('tab_contextual')
             }
           }
         }}
@@ -137,4 +138,4 @@ function mapDispatchToProps(dispatch: any) {
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(HistogramChart)
+)(HistogramChartContextual)

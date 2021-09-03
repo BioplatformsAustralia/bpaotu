@@ -1,66 +1,81 @@
 import React from 'react';
+import { find } from 'lodash';
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { Button } from 'reactstrap'
+import { Button, Input,  UncontrolledTooltip } from 'reactstrap'
 import Octicon from '../../../components/octicon'
-import { selectEnvironment, removeContextualFilter } from '../reducers/contextual'
+import { selectEnvironment, removeContextualFilter, selectContextualFiltersMode } from '../reducers/contextual'
 import { selectAmplicon } from '../reducers/amplicon'
 import { selectTrait } from '../reducers/trait'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import { fetchContextualDataForGraph } from '../../../reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from '../../../reducers/taxonomy_data_graph'
-
 import { createAction } from 'redux-actions'
 
 const SearchFilterButton = props => {
-    return (
-  <Button style={{ marginRight: 10 }} outline={true} color={props.color} disabled={props.disabled} onClick={props.onClick}>
-    {props.text}
-    {props.octicon ? (
-      <span>
-         &nbsp;
-        <Octicon name={props.octicon} />
-      </span>
-    ) : (
-      ''
-    )}
-    
-  </Button>
-)}
 
+  const mytooltip= {
+    maxHeight: window.innerHeight*.50, 
+    maxWidth: window.innerWidth*.50, 
+    overflowY: 'auto' as 'auto',
+  }
+
+  return (
+      <Button size="sm" style={{ marginRight: 0 }} outline={true} color={props.color} disabled={props.disabled} >
+      {
+        props.text.length>75
+        ?
+        <>
+          {props.text.substring(0,75)}&nbsp;
+          <span id={"context_filter_"+props.index}>&nbsp;<Octicon name="kebab-horizontal" /></span>
+          {props.octicon ? (<span onClick={props.onClick}><Octicon name={props.octicon} /></span>) : ('')}
+          <UncontrolledTooltip style={mytooltip} trigger="click" target={"context_filter_"+props.index} placement="auto">
+            {props.text}
+          </UncontrolledTooltip>
+        </>
+        :
+        <>
+          {props.text}&nbsp;
+          {props.octicon ? (<span onClick={props.onClick}><Octicon name={props.octicon} /></span>) : ('')}
+        </>
+      }
+      </Button>
+  )
+}
 
 class SearchFilters extends React.Component<any> {
 
   getSelectedFilter = (filters, filter_id, filter_name) => {
     for (let i in filters) {
-        let filter = filters[i]
-        if (String(filter.id) === String(filter_id))
-          return filter[filter_name]
+      let filter = filters[i]
+      if (String(filter.id) === String(filter_id))
+        return filter[filter_name]
     }
     return filter_id
   }
 
   getSelectedFilterDisplayName = (contextualFilters, selectedFilter) => {
     for (let x in contextualFilters) {
-        let contextualFilter = contextualFilters[x]
-        if (contextualFilter['name'] === selectedFilter) {
-            return contextualFilter['display_name']
-        }
+      let contextualFilter = contextualFilters[x]
+      if (contextualFilter['name'] === selectedFilter) {
+          return contextualFilter['display_name']
+      }
     }
     return selectedFilter
   }
 
   getSelectedFilterValue = (contextualFilters, selectedFilter, selectedFilterValue) => {
     for (let x in contextualFilters) {
-        let contextualFilter = contextualFilters[x]
-        if (contextualFilter['name'] === selectedFilter) {
-            let contextualFilterValues = contextualFilter['values']
-            if(contextualFilterValues && contextualFilterValues[selectedFilterValue]) {
-                return contextualFilterValues[selectedFilterValue][1]
-            }
-            else
-                return selectedFilterValue
+      let contextualFilter = contextualFilters[x]
+      if (contextualFilter['name'] === selectedFilter) {
+        let contextualFilterValues = contextualFilter['values']
+        const selectedValue = find(contextualFilterValues, (option) => String(option[0]) === String(selectedFilterValue))
+        if(selectedValue) {
+            return selectedValue[1]
         }
+        else
+          return selectedFilterValue
+      }
     }
     return selectedFilterValue
   }
@@ -131,8 +146,19 @@ class SearchFilters extends React.Component<any> {
     this.props.selectToScroll(filter)
   }
 
+  onSelectFilterType = (mode) => {
+    this.props.selectContextualFiltersMode(mode)
+    if(this.props.selectToScroll)
+      this.props.selectToScroll('')
+    else {
+      this.props.fetchContextualDataForGraph()
+      this.props.fetchTaxonomyDataForGraph()
+    }
+  }
+
   render() {
     let searchFilters = []
+    console.log(this.props.filters)
     for (const [key, value] of Object.entries(this.props.filters)) {
       switch(key) {
         case "selectedAmplicon":
@@ -172,7 +198,7 @@ class SearchFilters extends React.Component<any> {
             searchFilters.push(searchFilter)
           }
           let selectedFilters = value['filters']
-          
+          console.log(selectedFilters)
           for (let selectedFilterIndex in selectedFilters) {
             let selectedFilter = selectedFilters[selectedFilterIndex]
             if (selectedFilter && selectedFilter['name']) {
@@ -181,6 +207,7 @@ class SearchFilters extends React.Component<any> {
               let value2 = selectedFilter['value2']
               let values = selectedFilter['values']
               let text = this.getSelectedFilterDisplayName(this.props.contextualFilters, name)
+              console.log(name, text, value, value2, values)
               if (values.length>0) {
                 text += " <"+(selectedFilter['operator']?"isn't":"is")+"> "+values.join(", ")
               }
@@ -199,9 +226,23 @@ class SearchFilters extends React.Component<any> {
           break
       }
     }
-
     return (
       <>
+      {this.props.selectedContextualFilters.length >= 2 && (
+          <div >
+            <Input 
+              type="select"
+              bsSize="sm"
+              value={this.props.contextualFiltersMode}
+              color="info" 
+              onChange={evt => this.onSelectFilterType(evt.target.value)}
+            >
+              <option value="and">All contextual filters</option>
+              <option value="or">Any contextual filter</option>
+            </Input>
+          </div>
+        )
+      }
       {searchFilters}
       </>
     );
@@ -215,6 +256,8 @@ function mapStateToProps(state) {
     filters: state.searchPage.filters,
     environment: state.contextualDataDefinitions.environment,
     contextualFilters: state.contextualDataDefinitions.filters,
+    contextualFiltersMode: state.searchPage.filters.contextual.filtersMode,
+    selectedContextualFilters: state.searchPage.filters.contextual.filters
   }
 }
 
@@ -240,6 +283,7 @@ function mapDispatchToProps(dispatch: any, props) {
       onChangeSpecies: updateTaxonomyDropDowns('species'),
       selectEnvironment,
       removeContextualFilter,
+      selectContextualFiltersMode,
       fetchContextualDataForGraph,
       fetchTaxonomyDataForGraph
     },

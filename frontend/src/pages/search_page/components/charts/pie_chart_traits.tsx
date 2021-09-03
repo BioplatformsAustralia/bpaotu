@@ -67,6 +67,7 @@ class PieChartAmplicon extends React.Component<any> {
             this.props.fetchContextualDataForGraph()
             this.props.fetchTaxonomyDataForGraph()
             this.props.selectToScroll(this.props.filter)
+            this.props.selectTab('tab_'+this.props.filter)
           }
         }}
       />

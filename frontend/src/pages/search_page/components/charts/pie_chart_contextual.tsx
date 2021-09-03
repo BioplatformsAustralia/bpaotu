@@ -17,7 +17,7 @@ import {
   import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 
 
-class PieChart extends React.Component<any> {
+class PieChartContextual extends React.Component<any> {
 
   public findFilterIndex = (data, selected) => {
     let index = 0
@@ -94,6 +94,7 @@ class PieChart extends React.Component<any> {
           this.props.fetchContextualDataForGraph()
           this.props.fetchTaxonomyDataForGraph()
           this.props.selectToScroll(this.props.filter)
+          this.props.selectTab('tab_contextual')
         }}
       />
       <span id={this.props.filter}></span>
@@ -129,4 +130,4 @@ function mapDispatchToProps(dispatch: any) {
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(PieChart)
+)(PieChartContextual)

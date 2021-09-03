@@ -4,13 +4,13 @@ import { bindActionCreators } from 'redux'
 import { Modal, ModalBody, ModalHeader, ModalFooter, ButtonGroup, Button, UncontrolledTooltip} from 'reactstrap'
 import SearchFilters from './search_filters'
 import GraphDashboard from './graph_dashboard';
-import GraphTabbed from './graph_tabbed';
 import { closeSamplesGraphModal } from '../reducers/samples_graph_modal'
 import Octicon from '../../../components/octicon'
 class SamplesGraphModal extends React.Component<any> {
 
   public state = {
     scrollToSelected: '',
+    tabSelected: 'tab_amplicon',
     showTabbedGraph: true
   }
 
@@ -19,9 +19,19 @@ class SamplesGraphModal extends React.Component<any> {
           this.setState({ scrollToSelected: selectedElement })
   }
 
+  public selectTab(selectedElement) {
+    if(selectedElement)
+        this.setState({ tabSelected: selectedElement })
+  }
+
   public selectGraph(showTabbed) {
-        this.setState({ showTabbedGraph: showTabbed })
-}
+    this.setState({ showTabbedGraph: showTabbed })
+  }
+
+  componentDidMount() {
+    this.selectToScroll('None')
+    this.selectTab('tab_amplicon')
+  }
 
   render() {
     return (
@@ -50,13 +60,13 @@ class SamplesGraphModal extends React.Component<any> {
         </div>
       </ModalHeader>
       <ModalBody>
-        {
-          (this.state.showTabbedGraph)
-          ? 
-          <GraphTabbed scrollToSelected={this.state.scrollToSelected} selectToScroll={(e) => {this.selectToScroll(e)}} />
-          :
-          <GraphDashboard scrollToSelected={this.state.scrollToSelected} selectToScroll={(e) => {this.selectToScroll(e)}} />
-        }
+        <GraphDashboard 
+          showTabbedGraph={this.state.showTabbedGraph} 
+          scrollToSelected={this.state.scrollToSelected} 
+          selectToScroll={(e) => {this.selectToScroll(e)}}  
+          tabSelected={this.state.tabSelected} 
+          selectTab={(e) => {this.selectTab(e)}} 
+        />
       </ModalBody>
       <ModalFooter>
         <SearchFilters selectToScroll={(e) => {this.selectToScroll(e)}} />

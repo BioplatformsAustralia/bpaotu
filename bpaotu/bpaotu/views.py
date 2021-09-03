@@ -258,7 +258,7 @@ def contextual_fields(request):
 
     with OntologyInfo() as info:
         fields_with_values = [
-            (field_name, info.get_values(ontology_classes[field_name]))
+            (field_name, info.get_values(ontology_classes[field_name], field_name))
             for field_name in fields_by_type['_ontology']]
 
     definitions = (
@@ -388,6 +388,44 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
         else:
             am_environment_results_non_selected[taxonomy_am_environment] = am_environment_results[taxonomy_am_environment]
 
+    # Traits calculations 
+    traits_df_results_all = df_results_all.explode('traits')
+    traits_am_environment_results_all = []
+    for traits_am_environment, sum in traits_df_results_all.groupby(['traits']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        traits_am_environment_results_all.append([traits_am_environment, sum])
+    
+    traits_am_environment_results = {}
+    if am_environment_selected and am_environment_selected.get('value', None):
+        traits_df_results_all = traits_df_results_all.query('am_environment == @am_environment_selected.get("value", None)')
+    for traits_am_environment, sum in traits_df_results_all.groupby(['am_environment', 'traits']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        if traits_am_environment_results.get(traits_am_environment[0]):
+            traits_am_environment_results[traits_am_environment[0]].append([traits_am_environment[1], sum])
+        else:
+            traits_am_environment_results[traits_am_environment[0]] = [[traits_am_environment[1], sum]]
+    
+    df_results_selected = df_results_selected.explode("traits")
+    traits_am_environment_results_selected = {}
+    for traits_am_environment, sum in df_results_selected.groupby(['am_environment', 'traits']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        if traits_am_environment_results_selected.get(traits_am_environment[0]):
+            traits_am_environment_results_selected[traits_am_environment[0]].append([traits_am_environment[1], sum])
+        else:
+            traits_am_environment_results_selected[traits_am_environment[0]] = [[traits_am_environment[1], sum]]
+
+    traits_am_environment_results_non_selected = {}
+    for traits_am_environment in traits_am_environment_results:
+        if traits_am_environment_results_selected.get(traits_am_environment):
+            tlist = []
+            for trait in traits_am_environment_results.get(traits_am_environment):
+                for trait_selected in traits_am_environment_results_selected.get(traits_am_environment):
+                    if trait[0] == trait_selected[0]:
+                        tlist.append([trait[0], trait[1]-trait_selected[1]])
+            if traits_am_environment_results_non_selected.get(traits_am_environment):
+                traits_am_environment_results_non_selected[traits_am_environment].append(tlist)
+            else:
+                traits_am_environment_results_non_selected[traits_am_environment] = tlist
+        else:
+            traits_am_environment_results_non_selected[traits_am_environment] = traits_am_environment_results[traits_am_environment]
+
     return JsonResponse({
         'graphdata': {
             "traits": traits_results,
@@ -396,7 +434,11 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
             "am_environment_all": am_environment_results_all,
             "am_environment": am_environment_results,
             "am_environment_selected": am_environment_results_selected,
-            "am_environment_non_selected": am_environment_results_non_selected
+            "am_environment_non_selected": am_environment_results_non_selected,
+            "traits_am_environment_all": traits_am_environment_results_all,
+            "traits_am_environment": traits_am_environment_results,
+            "traits_am_environment_selected": traits_am_environment_results_selected,
+            "traits_am_environment_non_selected": traits_am_environment_results_non_selected
         }
     })
 
