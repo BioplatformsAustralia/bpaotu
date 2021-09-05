@@ -418,17 +418,19 @@ class DataImporter:
         # set methodology to store version of code and contextual DB in this format (<packagename>_<version>_<SQLite DB>)
         db_file = ""
         analysis_version = ""
+        source_tar = ""
         if len(metadata) > 0:
             db_file = metadata[0]["sample_database_file"]
         # Read analysis_url and analysis_version from version.txt file
         try:
             with open(self._import_base +'version.txt', 'r') as f:
                 d = dict(re.findall(r'^(.+)=(.*)$', f.read(), flags=re.M))
+                source_tar = d.get("source_tar")
                 analysis_version = d.get("analysis_version")
                 self._analysis_url = d.get("analysis_url")
         except FileNotFoundError:
             logger.error('Missing version.txt file. Analysis Version and URL will not be added.')       
-        self._methodology = f"{__package__}_{__version__}_{db_file}_analysis_{analysis_version}"
+        self._methodology = f"{__package__}_{__version__}__analysis_{analysis_version}__{db_file}__{source_tar}"
 
     def _otu_abundance_rows(self, fd, amplicon_code, otu_lookup):
         reader = csv.reader(fd, dialect='excel-tab')
