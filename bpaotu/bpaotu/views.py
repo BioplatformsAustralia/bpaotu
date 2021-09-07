@@ -258,7 +258,7 @@ def contextual_fields(request):
 
     with OntologyInfo() as info:
         fields_with_values = [
-            (field_name, info.get_values(ontology_classes[field_name], field_name))
+            (field_name, info.get_values_filtered(ontology_classes[field_name], field_name))
             for field_name in fields_by_type['_ontology']]
 
     definitions = (
