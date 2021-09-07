@@ -209,7 +209,7 @@ class SearchFilters extends React.Component<any> {
                 text += " <"+(selectedFilter['operator']?"isn't":"is")+"> "+values.join(", ")
               }
               else if (value && value2) {
-                text += " <"+(selectedFilter['operator']?"not between":"between")+"> "+value+" - "+value2 
+                text += " <"+(selectedFilter['operator']?"not between":"between")+"> "+value+" and "+value2 
               }
               else if (value) {
                 text += " <"+(selectedFilter['operator']?"doesn't contain":"contains")+"> "+this.getSelectedFilterValue(this.props.contextualFilters, name, value)
