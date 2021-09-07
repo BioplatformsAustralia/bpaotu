@@ -158,7 +158,6 @@ class SearchFilters extends React.Component<any> {
 
   render() {
     let searchFilters = []
-    console.log(this.props.filters)
     for (const [key, value] of Object.entries(this.props.filters)) {
       switch(key) {
         case "selectedAmplicon":
@@ -198,7 +197,6 @@ class SearchFilters extends React.Component<any> {
             searchFilters.push(searchFilter)
           }
           let selectedFilters = value['filters']
-          console.log(selectedFilters)
           for (let selectedFilterIndex in selectedFilters) {
             let selectedFilter = selectedFilters[selectedFilterIndex]
             if (selectedFilter && selectedFilter['name']) {
@@ -207,7 +205,6 @@ class SearchFilters extends React.Component<any> {
               let value2 = selectedFilter['value2']
               let values = selectedFilter['values']
               let text = this.getSelectedFilterDisplayName(this.props.contextualFilters, name)
-              console.log(name, text, value, value2, values)
               if (values.length>0) {
                 text += " <"+(selectedFilter['operator']?"isn't":"is")+"> "+values.join(", ")
               }

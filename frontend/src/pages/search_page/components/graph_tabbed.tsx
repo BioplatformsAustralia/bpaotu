@@ -53,7 +53,6 @@ class ContextualTab extends React.Component<any>  {
         ):("")
     }
     render() {
-    // console.log("this.state.activeContextualTab", this.state.activeContextualTab)
       return (
         <>
             <Nav pills>
