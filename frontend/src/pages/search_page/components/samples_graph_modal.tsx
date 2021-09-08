@@ -38,7 +38,7 @@ class SamplesGraphModal extends React.Component<any> {
     <Modal isOpen={this.props.isOpen} scrollable={true} fade={true} data-tut="reactour__SamplesGraph" id="reactour__SamplesGraph">
       <ModalHeader toggle={this.props.closeSamplesGraphModal} data-tut="reactour__CloseSamplesGraphModal" id="reactour__CloseSamplesGraphModal">
         <div>
-          <span>{'Sample Graph Visualisation  '}</span>
+          <span>{'Interactive Graphical Search '}</span>
           <ButtonGroup size="sm" >
             <Button onClick={(e) => {this.selectGraph(true)}} active={this.state.showTabbedGraph}>
               <span id="tabbedGraphTab">

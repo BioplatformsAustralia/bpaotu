@@ -69,7 +69,7 @@ const steps = (props) =>
       style: stepsStyle,
     },
     {
-      selector: '[data-tut="reactour__SearchButton"]',
+      selector: '[data-tut="Sample search"]',
       content: () => {
         return (
           <div>
@@ -101,7 +101,7 @@ const steps = (props) =>
         style: stepsStyle,
     },
     {
-      selector: '[data-tut="Show results on Map"]',
+      selector: '[data-tut="Interactive map search"]',
       content: ({ goTo }: { goTo: (step: number) => void }) => {
         if(document.getElementById('reactour__SamplesMap')) {
           setTimeout(() => {
@@ -109,7 +109,7 @@ const steps = (props) =>
           }, 0)
         }
         else {
-          document.getElementById('Show results on Map').addEventListener('click', () => {
+          document.getElementById('Interactive map search').addEventListener('click', () => {
             setTimeout(() => {
               goTo(6)
             }, 10)
@@ -119,7 +119,7 @@ const steps = (props) =>
           <div>
             <span>
             <h4>View results map</h4><br/>
-            Click the 'Show results on Map' button<br/><br/>
+            Click the 'Interactive map search' button<br/><br/>
             This will load a map of the location of the selected samples<br/> 
           </span>
           </div>
@@ -138,7 +138,7 @@ const steps = (props) =>
         return (
           <div>
             <span>
-              <h4>View results map</h4><br/>
+              <h4>View map visualisation</h4><br/>
               The map shows the location of samples, the number of samples per location, community richness, and a heat map of sequence abundance.<br/><br/>
               You can toggle the features by selecting layers button on the right.<br/><br/>
               For more information on the map, <a rel="noopener noreferrer" target="_bpaotu" href={window.otu_search_config.ckan_base_url+"organization/pages/australian-microbiome/processed"}>go here</a>.<br/>
@@ -176,7 +176,7 @@ const steps = (props) =>
       style: stepsStyle,
     },
     {
-      selector: '[data-tut="Show results on Graph"]',
+      selector: '[data-tut="Interactive graph search"]',
       content: ({ goTo }: { goTo: (step: number) => void }) => {
         if(document.getElementById('reactour__SamplesGraph')) {
           setTimeout(() => {
@@ -184,7 +184,7 @@ const steps = (props) =>
           }, 0)
         }
         else {
-          document.getElementById('Show results on Graph').addEventListener('click', () => {
+          document.getElementById('Interactive graph search').addEventListener('click', () => {
               setTimeout(() => {
                 goTo(9)
               }, 10)
@@ -193,9 +193,9 @@ const steps = (props) =>
         return (
           <div>
             <span>
-            <h4>Show the results on graphs</h4><br/>
+            <h4>Show interactive graph visualisation</h4><br/>
             We can also explore the data visually.<br/><br/> 
-            Click the 'Show results on Graph' button.<br/> 
+            Click the 'Interactive graph search' button.<br/> 
           </span>
           </div>
         )
@@ -214,7 +214,7 @@ const steps = (props) =>
         return (
           <div>
             <span>
-              <h4>Show the results on graphs</h4><br/>
+              <h4>Show interactive graph visualisation</h4><br/>
               This will load all of your search parameters and results into some summary figures<br/><br/>
               Other contextual data associated with the samples can be explored here.  For example, look at the pH range of soils selected<br/><br/>
               For more information on graphs page, <a rel="noopener noreferrer" target="_bpaotu" href={window.otu_search_config.ckan_base_url+"organization/pages/australian-microbiome/processed"}>go here</a>.<br/>
@@ -223,7 +223,7 @@ const steps = (props) =>
         )
       },
       style: stepsStyle,
-      position: [60, 100],
+      position: [60, 180],
     },
     {
       selector: '[data-tut="reactour__CloseSamplesGraphModal"]',
@@ -251,21 +251,102 @@ const steps = (props) =>
       },
       style: stepsStyle,
     },
+    // {
+    //   selector: '[data-tut="reactour__ExportData"]',
+    //   content: ({ goTo }: { goTo: (step: number) => void }) => {
+    //     document.getElementById('reactour__ExportData').addEventListener('click', () => {
+    //       goTo(12)
+    //     })
+    //     return (
+    //       <div>
+    //         <span>
+    //           <h4>Export data</h4><br/>
+    //           Click 'Export Data' dropdown to select export options<br/><br/>
+    //         </span>
+    //       </div>
+    //     )
+    //   },
+    //   style: stepsStyle,
+    // },
+    // {
+    //   selector: '[data-tut="reactour__ExportDataOptions"]',
+    //   content: ({ goTo }: { goTo: (step: number) => void }) => {
+    //     // document.getElementById('reactour__ExportData').click();
+    //     document.getElementById('reactour__ExportDataOptions').addEventListener('trigger', () => {
+    //       goTo(13)
+    //     })
+    //     return (
+    //       <div>
+    //         <span>
+    //         <h4>Export the data as CSV</h4><br/>
+    //           The most common way for our users to export data for downstream analyses is as CSV<br/><br/>
+    //           Click 'Download OTU and Contextual Data (CSV)' button to export both the metadata and the ASV table<br/>
+    //           'Download Contextual Data only (CSV)' to export only contextual data.<br/><br/>
+    //           <h4>Export the data as BIOM</h4><br/>
+    //           It is also possible to export the data in a BIOM format (JSON) that is compatible with PHINCH (<a rel="noopener noreferrer" target="_phinch" href="http://phinch.org">http://phinch.org</a>)<br/><br/>
+    //           The BIOM formatted results can be exported by selecting the 'Download BIOM format (Phinch compatible)'<br/>
+    //           <h4>Export data to Galaxy for further analysis</h4><br/>
+    //           Data can be exported to Galaxy Australia for further analysis by clicking the 'Export data to Galaxy for further analysis' button<br/>
+    //           Once data is sent to galaxy it is available for analysis in users galaxy workspace<br/>
+    //           If users are not galaxy users, a user account is set up for you using your AM associated email details<br/>
+    //           See this link for further information <a rel="noopener noreferrer" target="_krona" href="/static/bpaotu/rdc/Galaxy Australia - Quick Start Guide.pdf">(Galaxy link)</a><br/>
+    //           <h4>Make a krona plot</h4><br/>
+    //           We can make a krona plot from the selected organisms by selecting the 'Export Data to Galaxy Australia for Krona Taxonomic Abundance Graph'<br/><br/>
+    //           After selecting this option the data is sent to Galaxy Australia, where a krona plot is made.<br/><br/>
+    //           Once the process is started a link to the process description help is displayed. See this link for further information <a rel="noopener noreferrer" target="_krona" href="/static/bpaotu/rdc/Galaxy%20Australia%20-%20Krona%20Visualisation%20Quick%20Start%20Guide.pdf">(Krona link)</a><br/>
+    
+    //         </span>
+    //       </div>
+    //     )
+    //   },
+    //   style: stepsStyle,
+    // },
     {
-      selector: '[data-tut="Make Krona Taxonomic Abundance Graph using Galaxy Australia"]',
+      selector: '[data-tut="Download OTU and Contextual Data (CSV)"]',
       content:() => {
         return (
           <div>
             <span>
-              <h4>Make a krona plot</h4><br/>
-              We can make a krona plot from the selected organisms by selecting the 'Make Krona Taxonomic Abundance Graph using Galaxy Australia'<br/><br/>
-              After selecting this option the data is sent to Galaxy Australia, where a krona plot is made.<br/><br/>
-              Once the process is started a link to the process description help is displayed. See this link for further information <a rel="noopener noreferrer" target="_krona" href="/static/bpaotu/rdc/Galaxy%20Australia%20-%20Krona%20Visualisation%20Quick%20Start%20Guide.pdf">(Krona link)</a><br/>
+              <h4>Export the data as CSV</h4><br/>
+              Data can be exported as CSV by clicking the 'Download OTU and Contextual Data (CSV)'<br/><br/>
+              The full export option will export both the metadata and the ASV table<br/>
             </span>
           </div>
         )
       },
-        style: stepsStyle,
+      style: stepsStyle,
+    },
+    {
+      selector: '[data-tut="Download Contextual Data only (CSV)"]',
+      content:() => {
+        return (
+          <div>
+            <span>
+              <h4>Export the data as CSV</h4><br/>
+              The most common way for our users to export data for downstream analyses is as CSV<br/><br/>
+              Data can be exported as CSV by clicking the 'Download Contextual Data only (CSV)'<br/><br/>
+              The Contextual Only option will provide only the sample metadata, not the ASV table<br/><br/>
+            </span>
+          </div>
+        )
+      },
+      style: stepsStyle,
+    },
+    
+    {
+      selector: '[data-tut="Download BIOM format (Phinch compatible)"]',
+      content:() => {
+        return (
+          <div>
+            <span>
+              <h4>Export the data as BIOM</h4><br/>
+              It is also possible to export the data in a BIOM format (JSON) that is compatible with PHINCH (<a rel="noopener noreferrer" target="_phinch" href="http://phinch.org">http://phinch.org</a>)<br/><br/>
+              The BIOM formatted results can be exported by selecting the 'Download BIOM format (Phinch compatible)'<br/>
+            </span>
+          </div>
+        )
+      },
+      style: stepsStyle,
     },
     {
       selector: '[data-tut="Export Data to Galaxy Australia for further analysis"]',
@@ -274,7 +355,7 @@ const steps = (props) =>
           <div>
             <span>
               <h4>Export data to Galaxy for further analysis</h4><br/>
-              Data can be exported to Galaxy Australia for further analysis by clicking the 'Export to "galaxy 'Australia' button<br/>
+              Data can be exported to Galaxy Australia for further analysis by clicking the 'Export data to Galaxy for further analysis' button<br/>
               Once data is sent to galaxy it is available for analysis in users galaxy workspace<br/>
               If users are not galaxy users, a user account is set up for you using your AM associated email details<br/>
               See this link for further information <a rel="noopener noreferrer" target="_krona" href="/static/bpaotu/rdc/Galaxy Australia - Quick Start Guide.pdf">(Galaxy link)</a><br/>
@@ -285,50 +366,20 @@ const steps = (props) =>
       style: stepsStyle,
     },
     {
-      selector: '[data-tut="Export Search Results - Only Contextual Data (CSV)"]',
+      selector: '[data-tut="Export Data to Galaxy Australia for Krona Taxonomic Abundance Graph"]',
       content:() => {
         return (
           <div>
             <span>
-              <h4>Export the data as CSV</h4><br/>
-              The most common way for our users to export data for downstream analyses is as CSV<br/><br/>
-              Data can be exported as CSV by clicking the 'Export Search Results - Only Contextual Data (CSV)'<br/><br/>
-              The Contextual Only option will provide only the sample metadata, not the ASV table<br/><br/>
+              <h4>Make a krona plot</h4><br/>
+              We can make a krona plot from the selected organisms by selecting the 'Export Data to Galaxy Australia for Krona Taxonomic Abundance Graph'<br/><br/>
+              After selecting this option the data is sent to Galaxy Australia, where a krona plot is made.<br/><br/>
+              Once the process is started a link to the process description help is displayed. See this link for further information <a rel="noopener noreferrer" target="_krona" href="/static/bpaotu/rdc/Galaxy%20Australia%20-%20Krona%20Visualisation%20Quick%20Start%20Guide.pdf">(Krona link)</a><br/>
             </span>
           </div>
         )
       },
-      style: stepsStyle,
-    },
-    {
-      selector: '[data-tut="Export Search Results (CSV)"]',
-      content:() => {
-        return (
-          <div>
-            <span>
-              <h4>Export the data as CSV</h4><br/>
-              Data can be exported as CSV by clicking the 'Export Search Results (CSV)'<br/><br/>
-              The full export option will export both the metadata and the ASV table<br/>
-            </span>
-          </div>
-        )
-      },
-      style: stepsStyle,
-    },
-    {
-      selector: '[data-tut="Export Search Results (Phinch compatible BIOM)"]',
-      content:() => {
-        return (
-          <div>
-            <span>
-              <h4>Export the data as BIOM</h4><br/>
-              It is also possible to export the data in a BIOM format (JSON) that is compatible with PHINCH (<a rel="noopener noreferrer" target="_phinch" href="http://phinch.org">http://phinch.org</a>)<br/><br/>
-              The BIOM formatted results can be exported by selecting the 'Export Search Results (Phinch compatible BIOM)<br/>
-            </span>
-          </div>
-        )
-      },
-      style: stepsStyle,
+        style: stepsStyle,
     },
     {
       selector: '[data-tut="reactour__Contact"]',
