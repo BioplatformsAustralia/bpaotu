@@ -4,7 +4,7 @@ import { Col, Nav, NavItem, NavLink, Row, TabContent, TabPane } from 'reactstrap
 
 import * as L from 'leaflet'
 import * as MiniMap from 'leaflet-minimap'
-import { Map, Marker, Popup, TileLayer, LayersControl, GeoJSON, FeatureGroup, Rectangle  } from 'react-leaflet'
+import { Map, Marker, Popup, TileLayer, LayersControl, GeoJSON, FeatureGroup, Rectangle, ScaleControl } from 'react-leaflet'
 import { EditControl } from "react-leaflet-draw"
 import HeatMapLegendControl from '../pages/search_page/components/heatmap_legend'
 import GridCellLegendControl, {GridCellConstants}  from '../pages/search_page/components/gridcell_legend'
@@ -403,6 +403,7 @@ class SamplesMap extends React.Component<any> {
           <GridCellLegendControl />
           <HeatMapLegendControl />
           <LatLngCoordinatesControl />
+          <ScaleControl position="bottomleft" />
           {loadingSpinner}
         </Map>
       </div>
@@ -454,16 +455,16 @@ class SamplesMap extends React.Component<any> {
       strongHeader("Richness per grid cell", layer.feature.properties.richness) +
       strongHeader("Abundance per grid cell", layer.feature.properties.abundance) +
       "<br />" +
-      strongHeader("Std Richness per grid cell <span style='fontSize:16px' title='Std Richness per grid cell = Richness per grid cell / Sites per grid cell'>&#128712;</span>", layer.feature.properties.stdCellRichness) +
-      strongHeader("Std Abundance per grid cell <span style='fontSize:16px' title='Std Abundance per grid cell = Abundance per grid cell / Sites per grid cell'>&#128712;</span>", layer.feature.properties.stdCellAbundance) +
+      strongHeader("Std Richness per grid cell <span style='fontSize:16px' title='Std Richness per grid cell = Richness per grid cell / Sites per grid cell'>&#9432;</span>", layer.feature.properties.stdCellRichness) +
+      strongHeader("Std Abundance per grid cell <span style='fontSize:16px' title='Std Abundance per grid cell = Abundance per grid cell / Sites per grid cell'>&#9432;</span>", layer.feature.properties.stdCellAbundance) +
       "<br />" +
       strongHeader("Max Sites per grid cell", layer.feature.properties.maxSites) +
       strongHeader("Max Std Richness per grid cell", layer.feature.properties.maxRichness) +
       strongHeader("Max Std Abundance per grid cell", layer.feature.properties.maxAbundance) +
       "<br />" +
-      strongHeader("Wtd Sites per grid cell <span style='fontSize:16px' title='Wtd Sites per grid cell = Sites per grid cell / Max Sites per grid cell'>&#128712;</span>", layer.feature.properties.weightedSites) +
-      strongHeader("Wtd Richness per grid cell <span style='fontSize:16px' title='Wtd Richness per grid cell = Std Richness per grid cell / Max Std Richness per grid cell'>&#128712;</span>", layer.feature.properties.weightedRichness) +
-      strongHeader("Wtd Abundance per grid cell <span style='fontSize:16px' title='Wtd Abundance per grid cell = Std Abundance per grid cell / Max Std Abundance per grid cell'>&#128712;</span>", layer.feature.properties.weightedAbundance) +
+      strongHeader("Wtd Sites per grid cell <span style='fontSize:16px' title='Wtd Sites per grid cell = Sites per grid cell / Max Sites per grid cell'>&#9432;</span>", layer.feature.properties.weightedSites) +
+      strongHeader("Wtd Richness per grid cell <span style='fontSize:16px' title='Wtd Richness per grid cell = Std Richness per grid cell / Max Std Richness per grid cell'>&#9432;</span>", layer.feature.properties.weightedRichness) +
+      strongHeader("Wtd Abundance per grid cell <span style='fontSize:16px' title='Wtd Abundance per grid cell = Std Abundance per grid cell / Max Std Abundance per grid cell'>&#9432;</span>", layer.feature.properties.weightedAbundance) +
       "<br />" +
       strongHeader(
         "Longitude",
