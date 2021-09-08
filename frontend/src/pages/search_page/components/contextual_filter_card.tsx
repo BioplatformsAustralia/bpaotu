@@ -1,7 +1,7 @@
 import { filter, find } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
-import { ButtonGroup, Button, Card, CardBody, CardFooter, CardHeader, Col, Form, FormGroup, Input, Row, Label, UncontrolledTooltip, Badge, Alert } from 'reactstrap'
+import { Button, Card, CardBody, CardFooter, CardHeader, Col, Form, FormGroup, Input, Row, Label, UncontrolledTooltip, Badge, Alert } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 
 import { bindActionCreators } from 'redux'
