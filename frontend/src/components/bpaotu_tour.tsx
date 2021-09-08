@@ -3,7 +3,7 @@ import Tour from 'reactour'
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux'
 import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock'
-import {Badge} from 'reactstrap'
+import {Badge, UncontrolledTooltip} from 'reactstrap'
 import Octicon from '../components/octicon'
 
 const stepsStyle = {
@@ -11,7 +11,7 @@ const stepsStyle = {
   color: 'rgb(255 255 255 / 90%)',
   padding: '50px 30px',
   boxShadow: 'rgb(0 0 0 / 30%) 0px 0.5em 3em',
-  width: '700px',
+  maxWidth: '500px',
 }
 
 const steps = (props) =>
@@ -61,7 +61,8 @@ const steps = (props) =>
               For our example, we will further refine the search to include:<br/><br/>
               Vegetation Type is Grassland<br/>
               Depth between 0 - 0.1<br/><br/>
-              For more details about metadata selection <a rel="noopener noreferrer" target="_bpaotu" href={props.definitions_url}>go here.</a>.<br/>
+              * For metadata field search click 'Download metadata description' button or <a rel="noopener noreferrer" target="_bpaotuSchema" href={props.definitions_url}>go here.</a><br/><br/>
+              * For methods manual click 'Download methods manual' button or <a rel="noopener noreferrer" target="_bpaotuMethod" href="https://www.australianmicrobiome.com/wp-content/uploads/2021/01/AM_Methods_for_metadata_fields_18012021_V1.2.3.pdf">go here.</a><br/>
           </span>
           </div>
         )
@@ -428,10 +429,14 @@ class BPAOTUTour extends React.Component<any> {
           onBeforeClose={this.enableBody}
           lastStepNextButton={'Close Tutorial'}
         />
-        <Badge onClick={() => {
+        <Badge id="tipTutorial" style={{cursor:'pointer', fontSize: '14px', marginTop:"-10px", padding: '10px 25px', color: '#041e48', backgroundColor: '#17c496' }} onClick={() => {
         this.setIsTourOpen(true)
         this.props.history.push('/')
-        }} color="dark" pill style={{cursor:'pointer'}}><Octicon name="book" />{' '}Tutorial </Badge>
+        }} pill ><Octicon name="book" />{'   '}Tutorial 
+          </Badge>
+        <UncontrolledTooltip target="tipTutorial" placement="auto">
+            {'This tutorial helps to use available features in the BPA-OTU data portal'}
+          </UncontrolledTooltip>
       </>
     )
   }
