@@ -18,6 +18,7 @@ import SearchResultsTable from './search_results_table'
 const HeaderButton = props => (
   <Button 
     id={props.text} 
+    size="sm"
     style={{ marginRight: 10 }} 
     outline={true} 
     color="primary" 
@@ -59,7 +60,7 @@ class SearchResultsCard extends React.Component<any, any> {
       <div>
         <Card>
           <CardHeader>
-            <div>
+            <div className="text-center">
               <HeaderButton octicon="desktop-download" text="Download OTU and Contextual Data (CSV)" onClick={this.exportCSV} />
               <HeaderButton octicon="desktop-download" text="Download Contextual Data only (CSV)" onClick={this.exportCSVOnlyContextual} />
               <HeaderButton octicon="desktop-download" text="Download BIOM format (Phinch compatible)" onClick={this.exportBIOM} />

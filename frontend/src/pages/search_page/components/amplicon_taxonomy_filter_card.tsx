@@ -63,7 +63,7 @@ export class AmpliconTaxonomyFilterCard extends React.Component<any> {
   public render() {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader tag="h5">
           Filter by Amplicon, Taxonomy and Traits
         </CardHeader>
         <CardBody className="filters">

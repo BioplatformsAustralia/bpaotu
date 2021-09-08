@@ -33,36 +33,34 @@ class ContextualFilterCard extends React.Component<any> {
   public render() {
     return (
       <Card>
-        <CardHeader>
-        <Row>
-              <Col>
-                  Contextual Filters  
-              </Col>
-              <Col className="text-right">
-                <ButtonGroup size="sm">
-                  <Button color="secondary" style={{cursor:'pointer'}} onClick={() => {
-                      window.open(this.props.definitions_url)
-                    }}>
-                    <Octicon name="link" />
-                    {' '}Download metadata description{' '}
-                    <Badge color="secondary" id="downloadContextualTip"><Octicon name="info" /></Badge>
-                  </Button>
-                  <Button color="secondary" style={{cursor:'pointer'}} onClick={() => {
-                      window.open('https://www.australianmicrobiome.com/wp-content/uploads/2021/01/AM_Methods_for_metadata_fields_18012021_V1.2.3.pdf')
-                    }}>
-                    <Octicon name="link" />
-                    {' '}Download methods manual{' '}
-                    <Badge color="secondary" id="downloadMethodlTip"><Octicon name="info" /></Badge>
-                  </Button>
-                </ButtonGroup>
-                <UncontrolledTooltip target="downloadContextualTip" placement="auto">
-                  {"Download Metadata for Contextual Data fields including units, field descriptions and controlled vocabularies"}
-                </UncontrolledTooltip>
-                <UncontrolledTooltip target="downloadMethodlTip" placement="auto">
-                  {"Download the manual containing scientific methods used in sample collection and processing"}
-                </UncontrolledTooltip>
-              </Col>
-            </Row>
+        <CardHeader tag="h5">
+          <Row>
+            <Col>
+                Contextual Filters
+            </Col>
+            <Col className="text-right" xs="auto">
+                <Button size="sm" color="secondary" style={{cursor:'pointer', margin: '-15px 0px', padding: '3px 10px'}} onClick={() => {
+                    window.open(this.props.definitions_url)
+                  }}>
+                  <Octicon name="link" />
+                  <span>{' '}Download metadata description{' '}</span>
+                  <Badge color="secondary" id="downloadContextualTip"><Octicon name="info" /></Badge>
+                </Button>
+                <Button size="sm" color="secondary" style={{cursor:'pointer', margin: '-15px 0px', padding: '3px 10px'}} onClick={() => {
+                    window.open('https://www.australianmicrobiome.com/wp-content/uploads/2021/01/AM_Methods_for_metadata_fields_18012021_V1.2.3.pdf')
+                  }}>
+                  <Octicon name="link" />
+                  <span>{' '}Download methods manual{' '}</span>
+                  <Badge color="secondary" id="downloadMethodlTip"><Octicon name="info" /></Badge>
+                </Button>
+              <UncontrolledTooltip target="downloadContextualTip" placement="auto">
+                {"Download Metadata for Contextual Data fields including units, field descriptions and controlled vocabularies"}
+              </UncontrolledTooltip>
+              <UncontrolledTooltip target="downloadMethodlTip" placement="auto">
+                {"Download the manual containing scientific methods used in sample collection and processing"}
+              </UncontrolledTooltip>
+            </Col>
+          </Row>
         </CardHeader>
         <CardBody className="filters">
           <EnvironmentFilter />
