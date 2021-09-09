@@ -12,7 +12,7 @@ class SamplesMapModal extends React.Component<any> {
   render() {
     return (
       <Modal isOpen={this.props.isOpen} data-tut="reactour__SamplesMap" id="reactour__SamplesMap">
-      <ModalHeader toggle={this.props.closeSamplesMapModal} data-tut="reactour__CloseSamplesMapModal" id="reactour__CloseSamplesMapModal">Sample Collection Sites</ModalHeader>
+      <ModalHeader toggle={this.props.closeSamplesMapModal} data-tut="reactour__CloseSamplesMapModal" id="reactour__CloseSamplesMapModal">Interactive Map Search</ModalHeader>
       <ModalBody>
         <SamplesMap fetchSamples={this.props.fetchSampleMapModalSamples} isLoading={this.props.isLoading} isOpen={this.props.isOpen}  markers={this.props.markers} sample_otus={this.props.sample_otus} />
       </ModalBody>

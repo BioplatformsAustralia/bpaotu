@@ -9,7 +9,8 @@ const icon = {
 
 export const plotly_chart_config = file_name => ( {
   editable: false, 
-//   displayModeBar: 'hover',
+  // responsive: true,
+  // displayModeBar: 'hover',
   scrollZoom: false, 
   displaylogo: false,  
   // modeBarButtonsToRemove: ['hoverClosestGl2d', 'toggleSpikelines', "pan2d", "select2d", "lasso2d"],

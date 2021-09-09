@@ -1,12 +1,12 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
-import {plotly_chart_config} from './../charts/plotly_chart'
-import { find } from 'lodash';
+import {plotly_chart_config} from './plotly_chart'
+import { find, filter } from 'lodash';
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { selectEnvironment } from '../../reducers/contextual'
 
-class StackChart extends React.Component<any> {
+class StackChartTaxonomy extends React.Component<any> {
 
   getSelectedTaxonomy(taxonomy) {
     for(const [name, taxa] of Object.entries(taxonomy)) {
@@ -21,12 +21,19 @@ class StackChart extends React.Component<any> {
     if(taxonomyGraphdata.am_environment) {
       let am_environments = taxonomyGraphdata.am_environment?['All']:[]
       for(const am_environment of Object.keys(taxonomyGraphdata.am_environment)) {
-        if(environment)
-          am_environments.push("All "+find(environment, (option) => option.id === parseInt(am_environment)).name)
+        if(environment) {
+          const env_text = find(environment, (option) => option.id === parseInt(am_environment))
+          if(env_text) {
+            am_environments.push("All "+env_text.name)
+          }
+        }
       }
       if(String(contextualFilters.length)!=="0") {
         for(const am_environment of Object.keys(taxonomyGraphdata.am_environment_selected)) {
           am_environments.push("Selected "+find(environment, (option) => option.id === parseInt(am_environment)).name)
+        }
+        for(const am_environment of Object.keys(taxonomyGraphdata.am_environment_non_selected)) {
+          am_environments.push("Non selected "+find(environment, (option) => option.id === parseInt(am_environment)).name)
         }
       }
       for(const taxa_values of Object.values(taxonomyGraphdata.am_environment_all)) 
@@ -50,6 +57,13 @@ class StackChart extends React.Component<any> {
           }
           for(const key of Object.keys(taxonomyGraphdata.am_environment_selected)) {
             taxonomyGraphdata.am_environment_selected[key].forEach(value => {
+              if(value[0] === taxa_id) {
+                taxonomy["y"].push(value[1])
+              }
+            })
+          }
+          for(const key of Object.keys(taxonomyGraphdata.am_environment_non_selected)) {
+            taxonomyGraphdata.am_environment_non_selected[key].forEach(value => {
               if(value[0] === taxa_id) {
                 taxonomy["y"].push(value[1])
               }
@@ -80,19 +94,27 @@ class StackChart extends React.Component<any> {
 
   render() {
     const title = 'Taxonomy vs AM Environment Plot'
+    const data = this.loadChartData(this.props.environment, this.props.taxonomy, this.props.taxonomyGraphdata, this.props.contextualFilters)
+    const default_category_order = ["All", "All Marine", "Non selected Marine", "Selected Marine", "Selected Soil", "Non selected Soil", "All Soil"]
+    const category_order = data.length>0 ? filter(default_category_order, item => data[0].x.includes(item)) : default_category_order
     return (
       <>
       <Plot
-        data={this.loadChartData(this.props.environment, this.props.taxonomy, this.props.taxonomyGraphdata, this.props.contextualFilters)}
+        data={data}
         layout={{
           autosize: true,
+          width: this.props.width, height: this.props.height, 
           dragmode:'False', //['orbit', 'turntable', 'zoom', 'pan', False]
           title: {'text':title, 'font':{'size': 20}}, 
           hovermode: 'closest', 
           barmode:'relative',
           barnorm: 'percent',
           yaxis: {title: '% Composition', /*tickformat:',e'*/}, 
-          xaxis: {title: 'AM_Environment'},
+          xaxis: {title: 'AM_Environment', 
+          type:"category", 
+          categoryorder:"array",
+          categoryarray:{category_order}
+        },
       }}
         config={plotly_chart_config(title)}
       />
@@ -122,4 +144,4 @@ function mapDispatchToProps(dispatch: any) {
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(StackChart)
+)(StackChartTaxonomy)

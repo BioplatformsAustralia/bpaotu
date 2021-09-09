@@ -59,6 +59,7 @@ class PieChartEnvironment extends React.Component<any> {
         data={chart_data}
         layout={{ 
           autosize: true,
+          width: this.props.width, height: this.props.height, 
           title: {'text':title, 'font':{'size': 20}}, 
           hovermode: 'closest' }}
         config={plotly_chart_config(title)}
@@ -73,6 +74,7 @@ class PieChartEnvironment extends React.Component<any> {
             this.props.fetchContextualDataForGraph()
             this.props.fetchTaxonomyDataForGraph()
             this.props.selectToScroll(this.props.filter)
+            this.props.selectTab('tab_'+this.props.filter)
           }
         }}
       />

@@ -288,6 +288,11 @@ class OntologyInfo:
         vals.sort(key=lambda v: v[1])
         return vals
 
+    def get_values_filtered(self, ontology_class, field_id):
+        vals = self._session.query(ontology_class.id, ontology_class.value).filter(ontology_class.id == getattr(SampleContext, field_id)).distinct().all()
+        vals.sort(key=lambda v: v[1])
+        return vals
+
     def id_to_value(self, ontology_class, _id):
         if _id is None:
             return None

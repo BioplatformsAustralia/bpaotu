@@ -1,7 +1,7 @@
 import { filter, find } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
-import { Button, Card, CardBody, CardFooter, CardHeader, Col, Form, FormGroup, Input, Row, Label, UncontrolledTooltip, Badge, Alert } from 'reactstrap'
+import { ButtonGroup, Button, Card, CardBody, CardFooter, CardHeader, Col, Form, FormGroup, Input, Row, Label, UncontrolledTooltip, Badge, Alert } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 
 import { bindActionCreators } from 'redux'
@@ -39,18 +39,27 @@ class ContextualFilterCard extends React.Component<any> {
                   Contextual Filters  
               </Col>
               <Col className="text-right">
-                <Badge pill color="secondary" style={{cursor:'pointer'}}
-                  onClick={() => {
-                    window.open(this.props.definitions_url)
-                  }}>
-                  <Octicon name="link" />{' '}Download Metadata Description{' '}
-                  <Badge color="secondary" id="downloadContextualTip">
-                    <Octicon name="info" />
-                  </Badge>
-                </Badge>
-                
+                <ButtonGroup size="sm">
+                  <Button color="secondary" style={{cursor:'pointer'}} onClick={() => {
+                      window.open(this.props.definitions_url)
+                    }}>
+                    <Octicon name="link" />
+                    {' '}Download metadata description{' '}
+                    <Badge color="secondary" id="downloadContextualTip"><Octicon name="info" /></Badge>
+                  </Button>
+                  <Button color="secondary" style={{cursor:'pointer'}} onClick={() => {
+                      window.open('https://www.australianmicrobiome.com/wp-content/uploads/2021/01/AM_Methods_for_metadata_fields_18012021_V1.2.3.pdf')
+                    }}>
+                    <Octicon name="link" />
+                    {' '}Download methods manual{' '}
+                    <Badge color="secondary" id="downloadMethodlTip"><Octicon name="info" /></Badge>
+                  </Button>
+                </ButtonGroup>
                 <UncontrolledTooltip target="downloadContextualTip" placement="auto">
-                  {"Download Metadata for Contextual Data fields including units, field descriptions"}
+                  {"Download Metadata for Contextual Data fields including units, field descriptions and controlled vocabularies"}
+                </UncontrolledTooltip>
+                <UncontrolledTooltip target="downloadMethodlTip" placement="auto">
+                  {"Download the manual containing scientific methods used in sample collection and processing"}
                 </UncontrolledTooltip>
               </Col>
             </Row>

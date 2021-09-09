@@ -51,7 +51,7 @@ class PieChartAmplicon extends React.Component<any> {
         config={plotly_chart_config(title)}
         layout={{ 
           autosize: true,
-          width: 700, height: 450, 
+          width: this.props.width, height: this.props.height, 
           title: {'text':title, 'font':{  'size': 20}, 'position':'middle center'}, 
           hovermode: 'closest'
         }}
@@ -67,6 +67,7 @@ class PieChartAmplicon extends React.Component<any> {
             this.props.fetchContextualDataForGraph()
             this.props.fetchTaxonomyDataForGraph()
             this.props.selectToScroll(this.props.filter)
+            this.props.selectTab('tab_'+this.props.filter)
           }
         }}
       />

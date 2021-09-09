@@ -205,12 +205,12 @@ class SamplesMap extends React.Component<any> {
   };
 
   initDrawElement = () => {
-    if(this.drawFeatureGroupRef){
-      const drawElement = this.drawFeatureGroupRef.leafletElement;
-      if (Object.keys(drawElement._layers).length > 1) {
-        this.deleteDrawElement(drawElement)
-      }
-    }
+    // if(this.drawFeatureGroupRef){
+    //   const drawElement = this.drawFeatureGroupRef.leafletElement;
+    //   if (Object.keys(drawElement._layers).length > 1) {
+    //     this.deleteDrawElement(drawElement)
+    //   }
+    // }
     // Add rectangle for selected latitude/longitude filter
     var rectangle: [number, number][] = []
     const lat = find(this.props.filters.contextual.filters, latlng => latlng.name === this.lat_filter)

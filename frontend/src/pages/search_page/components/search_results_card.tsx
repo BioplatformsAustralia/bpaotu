@@ -3,8 +3,7 @@ import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
-import { Alert, Button, Card, CardBody, CardHeader } from 'reactstrap'
-
+import { Alert, Button, Card, CardBody, CardHeader  } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 import { openSamplesMapModal } from '../reducers/samples_map_modal'
 import { openSamplesGraphModal } from '../reducers/samples_graph_modal'
@@ -61,8 +60,9 @@ class SearchResultsCard extends React.Component<any, any> {
         <Card>
           <CardHeader>
             <div>
-              <HeaderButton octicon="globe" text="Show results on Map" onClick={this.props.openSamplesMapModal} disabled={this.isAmpliconSelected()} />
-              <HeaderButton octicon="graph" text="Show results on Graph" onClick={this.props.openSamplesGraphModal} disabled={this.isAmpliconSelected()}/>
+              <HeaderButton octicon="desktop-download" text="Download OTU and Contextual Data (CSV)" onClick={this.exportCSV} />
+              <HeaderButton octicon="desktop-download" text="Download Contextual Data only (CSV)" onClick={this.exportCSVOnlyContextual} />
+              <HeaderButton octicon="desktop-download" text="Download BIOM format (Phinch compatible)" onClick={this.exportBIOM} />
               {window.otu_search_config.galaxy_integration && (
                 <HeaderButton
                   octicon="clippy"
@@ -74,14 +74,11 @@ class SearchResultsCard extends React.Component<any, any> {
               {window.otu_search_config.galaxy_integration && (
                 <HeaderButton
                   octicon="graph"
-                  text="Make Krona Taxonomic Abundance Graph using Galaxy Australia"
+                  text="Export Data to Galaxy Australia for Krona Taxonomic Abundance Graph"
                   disabled={this.isGalaxySubmissionDisabled() || this.isAmpliconSelected()}
                   onClick={this.props.workflowOnGalaxy}
                 />
               )}
-              <HeaderButton octicon="desktop-download" text="Export Search Results (CSV)" onClick={this.exportCSV} />
-              <HeaderButton octicon="desktop-download" text="Export Search Results - Only Contextual Data (CSV)" onClick={this.exportCSVOnlyContextual} />
-              <HeaderButton octicon="desktop-download" text="Export Search Results (Phinch compatible BIOM)" onClick={this.exportBIOM} />
             </div>
           </CardHeader>
           <CardBody>
