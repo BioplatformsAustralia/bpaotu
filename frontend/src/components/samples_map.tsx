@@ -4,7 +4,8 @@ import { Col, Nav, NavItem, NavLink, Row, TabContent, TabPane } from 'reactstrap
 
 import * as L from 'leaflet'
 import * as MiniMap from 'leaflet-minimap'
-import { Map, Marker, Popup, TileLayer, LayersControl, GeoJSON, FeatureGroup, Rectangle, ScaleControl } from 'react-leaflet'
+import { Map, Marker, Popup, TileLayer, LayersControl, GeoJSON, FeatureGroup, Rectangle, withLeaflet, ScaleControl } from 'react-leaflet'
+import PrintControlDefault from "react-leaflet-easyprint"
 import { EditControl } from "react-leaflet-draw"
 import HeatMapLegendControl from '../pages/search_page/components/heatmap_legend'
 import GridCellLegendControl, {GridCellConstants}  from '../pages/search_page/components/gridcell_legend'
@@ -272,6 +273,7 @@ class SamplesMap extends React.Component<any> {
   }
 
   public render() {
+    const PrintControl:any = withLeaflet(PrintControlDefault);
     const loadingstyle= {
       display: 'flex',
       height: '100%',
@@ -340,6 +342,13 @@ class SamplesMap extends React.Component<any> {
           onclick={this.handleClick}
         >
           <FullscreenControl position="topright" />
+          <PrintControl
+            position="topright"
+            // sizeModes={["Current", "A4Portrait", "A4Landscape"]}
+            hideControlContainer={false}
+            title="Export as PNG"
+            exportOnly
+          />
           <FeatureGroup ref={drawFeatureGroupRef => {
                 this.drawFeatureGroupRef = drawFeatureGroupRef
             }}>
