@@ -55,7 +55,7 @@ const steps = (props) =>
         return (
           <div>
             <span>
-              <h4>Select the appropriate metadata attributes</h4><br/>
+              <h4>Select the appropriate contextual metadata filters</h4><br/>
               We can now  select the sample environment, in our example case 'Soil'<br/><br/>
               Note that, no selection here (---) will include both terrestrial and marine samples to subsequent steps.<br/><br/>
               For our example, we will further refine the search to include:<br/><br/>
@@ -194,7 +194,7 @@ const steps = (props) =>
         return (
           <div>
             <span>
-            <h4>Show interactive graph visualisation</h4><br/>
+            <h4>Show interactive graphical search</h4><br/>
             We can also explore the data visually.<br/><br/> 
             Click the 'Interactive graph search' button.<br/> 
           </span>
@@ -215,7 +215,7 @@ const steps = (props) =>
         return (
           <div>
             <span>
-              <h4>Show interactive graph visualisation</h4><br/>
+              <h4>Show interactive graphical search</h4><br/>
               This will load all of your search parameters and results into some summary figures<br/><br/>
               Other contextual data associated with the samples can be explored here.  For example, look at the pH range of soils selected<br/><br/>
               For more information on graphs page, <a rel="noopener noreferrer" target="_bpaotu" href={window.otu_search_config.ckan_base_url+"organization/pages/australian-microbiome/processed"}>go here</a>.<br/>
@@ -252,56 +252,6 @@ const steps = (props) =>
       },
       style: stepsStyle,
     },
-    // {
-    //   selector: '[data-tut="reactour__ExportData"]',
-    //   content: ({ goTo }: { goTo: (step: number) => void }) => {
-    //     document.getElementById('reactour__ExportData').addEventListener('click', () => {
-    //       goTo(12)
-    //     })
-    //     return (
-    //       <div>
-    //         <span>
-    //           <h4>Export data</h4><br/>
-    //           Click 'Export Data' dropdown to select export options<br/><br/>
-    //         </span>
-    //       </div>
-    //     )
-    //   },
-    //   style: stepsStyle,
-    // },
-    // {
-    //   selector: '[data-tut="reactour__ExportDataOptions"]',
-    //   content: ({ goTo }: { goTo: (step: number) => void }) => {
-    //     // document.getElementById('reactour__ExportData').click();
-    //     document.getElementById('reactour__ExportDataOptions').addEventListener('trigger', () => {
-    //       goTo(13)
-    //     })
-    //     return (
-    //       <div>
-    //         <span>
-    //         <h4>Export the data as CSV</h4><br/>
-    //           The most common way for our users to export data for downstream analyses is as CSV<br/><br/>
-    //           Click 'Download OTU and Contextual Data (CSV)' button to export both the metadata and the ASV table<br/>
-    //           'Download Contextual Data only (CSV)' to export only contextual data.<br/><br/>
-    //           <h4>Export the data as BIOM</h4><br/>
-    //           It is also possible to export the data in a BIOM format (JSON) that is compatible with PHINCH (<a rel="noopener noreferrer" target="_phinch" href="http://phinch.org">http://phinch.org</a>)<br/><br/>
-    //           The BIOM formatted results can be exported by selecting the 'Download BIOM format (Phinch compatible)'<br/>
-    //           <h4>Export data to Galaxy for further analysis</h4><br/>
-    //           Data can be exported to Galaxy Australia for further analysis by clicking the 'Export data to Galaxy for further analysis' button<br/>
-    //           Once data is sent to galaxy it is available for analysis in users galaxy workspace<br/>
-    //           If users are not galaxy users, a user account is set up for you using your AM associated email details<br/>
-    //           See this link for further information <a rel="noopener noreferrer" target="_krona" href="/static/bpaotu/rdc/Galaxy Australia - Quick Start Guide.pdf">(Galaxy link)</a><br/>
-    //           <h4>Make a krona plot</h4><br/>
-    //           We can make a krona plot from the selected organisms by selecting the 'Export Data to Galaxy Australia for Krona Taxonomic Abundance Graph'<br/><br/>
-    //           After selecting this option the data is sent to Galaxy Australia, where a krona plot is made.<br/><br/>
-    //           Once the process is started a link to the process description help is displayed. See this link for further information <a rel="noopener noreferrer" target="_krona" href="/static/bpaotu/rdc/Galaxy%20Australia%20-%20Krona%20Visualisation%20Quick%20Start%20Guide.pdf">(Krona link)</a><br/>
-    
-    //         </span>
-    //       </div>
-    //     )
-    //   },
-    //   style: stepsStyle,
-    // },
     {
       selector: '[data-tut="Download OTU and Contextual Data (CSV)"]',
       content:() => {
@@ -340,7 +290,7 @@ const steps = (props) =>
         return (
           <div>
             <span>
-              <h4>Export the data as BIOM</h4><br/>
+              <h4>Export the data as BIOM format (Phinch compatible)</h4><br/>
               It is also possible to export the data in a BIOM format (JSON) that is compatible with PHINCH (<a rel="noopener noreferrer" target="_phinch" href="http://phinch.org">http://phinch.org</a>)<br/><br/>
               The BIOM formatted results can be exported by selecting the 'Download BIOM format (Phinch compatible)'<br/>
             </span>
@@ -427,7 +377,7 @@ class BPAOTUTour extends React.Component<any> {
           onRequestClose={() => this.setIsTourOpen(false)}
           onAfterOpen={this.disableBody}
           onBeforeClose={this.enableBody}
-          lastStepNextButton={'Close Tutorial'}
+          lastStepNextButton={'End Tutorial'}
         />
         <Badge id="tipTutorial" style={{cursor:'pointer', fontSize: '14px', marginTop:"-10px", padding: '10px 25px', color: '#041e48', backgroundColor: '#17c496' }} onClick={() => {
         this.setIsTourOpen(true)
