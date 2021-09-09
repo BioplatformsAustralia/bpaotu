@@ -136,4 +136,11 @@ Australian Microbiome OTU Database - tabular export
 ---------------------------------------------------
 
 {}
+
+---------------------------------------------------
+How to cite Australian Microbiome data:
+https://www.australianmicrobiome.com/protocols/acknowledgements/
+
+Australian Microbiome data use policy:
+https://www.australianmicrobiome.com/protocols/data-policy/
 """.format(params.describe()).encode('utf8')
