@@ -10,6 +10,7 @@ import { EditControl } from "react-leaflet-draw"
 import HeatMapLegendControl from '../pages/search_page/components/heatmap_legend'
 import GridCellLegendControl, {GridCellConstants}  from '../pages/search_page/components/gridcell_legend'
 import LatLngCoordinatesControl from '../pages/search_page/components/coordinates_control'
+import GridCellSizer from '../pages/search_page/components/gridcell_sizer'
 import AnimateHelix from './animate_helix'
 
 import { connect } from 'react-redux'
@@ -165,21 +166,36 @@ class SamplesMap extends React.Component<any> {
 
   public state = {
     ...MapInitialViewport,
+    gridcellSize: 2,
+    isLoading: true
+  }
+
+  public setGridcellSize(cellSize) {
+    this.setState({ isLoading: true, gridcellSize: parseInt(cellSize) })
   }
 
    shouldComponentUpdate(nextProps, nextState) {
     if (nextProps.sample_otus.length > 0 && this.props.sample_otus !== nextProps.sample_otus) {
       this.siteAggregatedData = aggregateSampleOtusBySite(nextProps.sample_otus);
       this.samplePoints = aggregateSamplePointsBySite(this.siteAggregatedData);
-      let cellAggregatedData = aggregateSamplesByCell(this.siteAggregatedData);
+      let cellAggregatedData = aggregateSamplesByCell(this.siteAggregatedData, nextState.gridcellSize);
       this.featureCollectionData = this.makeFeatureCollection(cellAggregatedData)
       return true;
     }
     if(this.props.markers !== nextProps.markers) {
       return true;
     }
-    return false;
+    if(this.state.gridcellSize !== nextState.gridcellSize) {
+      let cellAggregatedData = aggregateSamplesByCell(this.siteAggregatedData, nextState.gridcellSize);
+      this.featureCollectionData = this.makeFeatureCollection(cellAggregatedData)
+      return true;
+    }
+    return this.state.isLoading;
   }
+
+  componentDidUpdate(prevProps,prevState) {
+    this.setState({ isLoading: false })
+ }
 
   public findFilterIndex = (data, name) => {
     let index = 0
@@ -206,12 +222,6 @@ class SamplesMap extends React.Component<any> {
   };
 
   initDrawElement = () => {
-    // if(this.drawFeatureGroupRef){
-    //   const drawElement = this.drawFeatureGroupRef.leafletElement;
-    //   if (Object.keys(drawElement._layers).length > 1) {
-    //     this.deleteDrawElement(drawElement)
-    //   }
-    // }
     // Add rectangle for selected latitude/longitude filter
     var rectangle: [number, number][] = []
     const lat = find(this.props.filters.contextual.filters, latlng => latlng.name === this.lat_filter)
@@ -286,8 +296,10 @@ class SamplesMap extends React.Component<any> {
     } as React.CSSProperties;
     const position: [number, number] = [this.state.lat, this.state.lng]
     let heatMapLayer, abundanceLayer, richnessLayer, siteCountLayer, selectedRectangleBounds, loadingSpinner;
-    if (!this.props.isLoading) 
-    {
+    if (this.props.isLoading || this.state.isLoading) { 
+      loadingSpinner = <div style={loadingstyle} ><AnimateHelix /></div>
+    }
+    else {
       if (this.samplePoints) 
       {
         heatMapLayer = <LayersControl.Overlay name="Heatmap: Abundance" checked>
@@ -315,9 +327,6 @@ class SamplesMap extends React.Component<any> {
         siteCountLayer = <LayersControl.Overlay name="Gridcell: Site Count" checked><GeoJSON data={this.featureCollectionData} style={(feature: any) => this.layerStyle(feature, "weightedSites")} onEachFeature={(feature: any, layer: any) => this.onEachFeature(feature, layer)} /></LayersControl.Overlay>;
       }
       loadingSpinner = <></>
-    }
-    else {
-      loadingSpinner = <div style={loadingstyle} ><AnimateHelix /></div>
     }
 
     const rectangle = this.initDrawElement()
@@ -409,8 +418,13 @@ class SamplesMap extends React.Component<any> {
             {abundanceLayer}
             {richnessLayer}
           </LayersControl>
-          <GridCellLegendControl />
           <HeatMapLegendControl />
+          <GridCellLegendControl />
+          <GridCellSizer 
+            isLoading = {this.state.isLoading}
+            gridcellSize = {this.state.gridcellSize}
+            setGridcellSize={(val) => this.setGridcellSize(val)}
+          />
           <LatLngCoordinatesControl />
           <ScaleControl position="bottomleft" />
           {loadingSpinner}

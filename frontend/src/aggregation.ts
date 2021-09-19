@@ -83,10 +83,8 @@ class SiteAggregate {
   }
 }
 
-function aggregateSamplesByCell(siteAggs) {
+function aggregateSamplesByCell(siteAggs, detailLevel) {
   let cellAggs = {};
-  let detailLevel = 2;
-
   let [min, max] = calculateCellBounds(siteAggs)
 
   // Add buffer of detailLevel for bounds
