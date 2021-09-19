@@ -1,6 +1,6 @@
 import { first, join, keys, map, find } from 'lodash'
 import * as React from 'react'
-import { Col, Nav, NavItem, NavLink, Row, TabContent, TabPane } from 'reactstrap'
+import { Col, Nav, NavItem, NavLink, Row, TabContent, TabPane, UncontrolledTooltip } from 'reactstrap'
 
 import * as L from 'leaflet'
 import * as MiniMap from 'leaflet-minimap'
@@ -11,6 +11,7 @@ import HeatMapLegendControl from '../pages/search_page/components/heatmap_legend
 import GridCellLegendControl, {GridCellConstants}  from '../pages/search_page/components/gridcell_legend'
 import LatLngCoordinatesControl from '../pages/search_page/components/coordinates_control'
 import GridCellSizer from '../pages/search_page/components/gridcell_sizer'
+import Octicon from '../components/octicon'
 import AnimateHelix from './animate_helix'
 
 import { connect } from 'react-redux'
@@ -337,7 +338,18 @@ class SamplesMap extends React.Component<any> {
     return (
       <div style={{ height: '100%' }}>
         <div className="text-center">
-          {this.props.isLoading ? `Processing...` : `Showing ${this.props.sample_otus.length} samples in ${this.props.markers.length} sample locations`}
+          {this.props.isLoading 
+          ? 
+            `Processing...` 
+          : 
+            <>
+              Showing {this.props.sample_otus.length} samples in {this.props.markers.length} sample locations
+              {' '}<span id="tipShowSample"><Octicon name="info" /></span>
+              <UncontrolledTooltip target="tipShowSample" placement="auto">
+                {'Results displayed in map view are based on samples being randomly sub-sampled to 20K reads. Selecting samples in map view will retrieve full OTU tables (non-subsampled data) and may also include additional samples containing less than 20K reads.'}
+              </UncontrolledTooltip>
+            </>
+          }
         </div>
         <Map
           className="space-above"
