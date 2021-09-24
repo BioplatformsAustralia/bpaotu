@@ -1,5 +1,5 @@
 import React from 'react';
-import { find } from 'lodash';
+import { find, filter } from 'lodash';
 import { TabContent, TabPane, Nav, NavItem, NavLink, UncontrolledTooltip} from 'reactstrap'
 import Octicon from '../../../components/octicon'
 import AnimateHelix from '../../../components/animate_helix'
@@ -17,11 +17,10 @@ import classnames from 'classnames'
 
 
 class ContextualTab extends React.Component<any>  {
-
-    tablist = ["vegetation_type_id","sample_type_id","env_broad_scale_id","env_local_scale_id","ph","organic_carbon","ammonium_nitrogen_wt","nitrate_nitrogen","phosphorus_colwell","temp","chlorophyll_ctd","nitrate_nitrite","nitrite","salinity","silicate"]
     
+    tablist = filter(Object.keys(this.props.contextualGraphdata), val => val !== "am_environment_id") 
     state = {
-        activeContextualTab: this.tablist.includes(this.props.scrollToSelected)?"tab_"+this.props.scrollToSelected:(this.props.selectedEnvironmentOption === 'Marine'?'tab_sample_type_id':'tab_vegetation_type_id')
+        activeContextualTab: this.tablist.includes(this.props.scrollToSelected)?"tab_"+this.props.scrollToSelected:(this.props.selectedEnvironment && this.props.selectedEnvironment.value === 1?'tab_sample_type_id':'tab_vegetation_type_id')
     };
 
     public toggleContextualTab = tab => {
@@ -32,12 +31,22 @@ class ContextualTab extends React.Component<any>  {
         }
     }
 
+    public applyEnvironmentFilter(filterName) {
+        const selectedEnvironment = this.props.selectedEnvironment && this.props.selectedEnvironment.value?""+this.props.selectedEnvironment.value:""
+        const filter = find(this.props.optionscontextualFilter, def => def.name === filterName)
+        const filterEnvironent = filter && filter.environment?""+filter.environment:""
+        if (selectedEnvironment === "")
+            return true
+        else 
+            return filterEnvironent === "" || filterEnvironent === selectedEnvironment
+    }
+
     public createNavItem(filterName) {
         const filter = find(this.props.optionscontextualFilter, def => def.name === filterName)
         return filter?(
-
-            <NavItem>
+            <NavItem key={filterName}>
                 <NavLink
+                    key={filterName}
                     className={classnames({ active: this.state.activeContextualTab === 'tab_'+filterName })}
                     onClick={() => { this.toggleContextualTab('tab_'+filterName); }}
                 >
@@ -52,88 +61,33 @@ class ContextualTab extends React.Component<any>  {
             </NavItem>
         ):("")
     }
+
     render() {
       return (
         <>
             <Nav pills>
-                {this.props.selectedEnvironmentOption !== 'Marine' &&
                 <>
-                    {this.createNavItem('vegetation_type_id')}
-                    {this.createNavItem('env_broad_scale_id')}
-                    {this.createNavItem('env_local_scale_id')}
-                    {this.createNavItem('ph')}
-                    {this.createNavItem('organic_carbon')}
-                    {this.createNavItem('ammonium_nitrogen_wt')}
-                    {this.createNavItem('nitrate_nitrogen')}
-                    {this.createNavItem('phosphorus_colwell')}
+                    {
+                        this.tablist.map(tab => this.applyEnvironmentFilter(tab) && this.createNavItem(tab))
+                    }
                 </>
-                }
-                {this.props.selectedEnvironmentOption !== 'Soil' &&
-                <>
-                    {this.createNavItem('sample_type_id')}
-                    {this.createNavItem('temp')}
-                    {this.createNavItem('nitrate_nitrite')}
-                    {this.createNavItem('chlorophyll_ctd')}
-                    {this.createNavItem('salinity')}
-                    {this.createNavItem('silicate')}
-                
-                </>
-                }
             </Nav>
             <TabContent activeTab={this.state.activeContextualTab}>
-                {this.props.selectedEnvironmentOption !== 'Marine' &&
                 <>
-                <TabPane tabId="tab_vegetation_type_id">
-                    <PieChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="vegetation_type_id" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_env_broad_scale_id">
-                    <PieChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="env_broad_scale_id" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_env_local_scale_id">
-                    <PieChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="env_local_scale_id" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_ph">
-                    <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="ph" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_organic_carbon">
-                    <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="organic_carbon" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_ammonium_nitrogen_wt">
-                    <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="ammonium_nitrogen_wt" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_nitrate_nitrogen">
-                    <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="nitrate_nitrogen" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_phosphorus_colwell">
-                    <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="phosphorus_colwell" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
+                    {
+                        this.tablist.map(tab => (
+                        <TabPane key={"tab_"+tab} tabId={"tab_"+tab}>
+                            {
+                                find(this.props.optionscontextualFilter, dd => dd.name === tab && dd.type === "ontology")
+                                ?
+                                <PieChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter={tab} contextualGraphdata={this.props.contextualGraphdata} />
+                                :
+                                <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter={tab} contextualGraphdata={this.props.contextualGraphdata} />
+                            }
+                        </TabPane>
+                        ))
+                    }
                 </>
-                }
-                {this.props.selectedEnvironmentOption !== 'Soil' && 
-                <>
-                <TabPane tabId="tab_sample_type_id">
-                    <PieChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="sample_type_id" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_temp">
-                    <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="temp" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_nitrate_nitrite">
-                    <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="nitrate_nitrite" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_nitrite">
-                    <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="nitrite" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_chlorophyll_ctd">
-                    <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="chlorophyll_ctd" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_salinity">
-                    <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="salinity" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                <TabPane tabId="tab_silicate">
-                    <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="silicate" contextualGraphdata={this.props.contextualGraphdata} />
-                </TabPane>
-                </>
-                }
             </TabContent> 
         </>
       )
@@ -151,9 +105,6 @@ class GraphTabbed extends React.Component<any> {
         };
         const chartWidth = window.innerWidth*.90
         const chartHeight = window.innerHeight*.70
-        
-        let selectedEnvironmentOption = find(this.props.optionsEnvironment, (option) => String(option.id) === String(this.props.selectedEnvironment.value))
-        selectedEnvironmentOption = selectedEnvironmentOption?selectedEnvironmentOption.name:""
         return (
             <>
                 {this.props.contextualIsLoading || this.props.taxonomyIsLoading
@@ -176,7 +127,7 @@ class GraphTabbed extends React.Component<any> {
                                 >
                                     {'Amplicon '}
                                     <span id="ampliconTipGraphTab">
-                                            <Octicon name="info" align="top" />
+                                        <Octicon name="info" align="top" />
                                     </span>
                                     <UncontrolledTooltip target="ampliconTipGraphTab" placement="auto">
                                         {AmpliconFilterInfo}
@@ -190,7 +141,7 @@ class GraphTabbed extends React.Component<any> {
                                 >
                                     {'Taxonomy '}
                                     <span id="taxonomyTipGraphTab">
-                                            <Octicon name="info" align="top" />
+                                        <Octicon name="info" align="top" />
                                     </span>
                                     <UncontrolledTooltip target="taxonomyTipGraphTab" placement="auto">
                                         {TaxonomyFilterInfo}
@@ -204,7 +155,7 @@ class GraphTabbed extends React.Component<any> {
                                 >
                                     {'Traits '}
                                     <span id="traitsTipGraphTab">
-                                            <Octicon name="info" align="top" />
+                                        <Octicon name="info" align="top" />
                                     </span>
                                     <UncontrolledTooltip target="traitsTipGraphTab" placement="auto">
                                         {TraitFilterInfo}
@@ -218,7 +169,7 @@ class GraphTabbed extends React.Component<any> {
                                 >
                                     {'Environment '}
                                     <span id="environmentTipGraphTab">
-                                            <Octicon name="info" align="top" />
+                                        <Octicon name="info" align="top" />
                                     </span>
                                     <UncontrolledTooltip target="environmentTipGraphTab" placement="auto">
                                         {EnvironmentInfo}
@@ -230,21 +181,41 @@ class GraphTabbed extends React.Component<any> {
                                     className={classnames({ active: this.props.tabSelected === 'tab_contextual' })}
                                     onClick={() => { this.props.selectTab('tab_contextual') }}
                                 >
-                                    Contextual Filters
+                                    {'Contextual Filters '}
+                                    <span id="contextualFiltersTipGraphTab">
+                                        <Octicon name="info" align="top" />
+                                    </span>
+                                    <UncontrolledTooltip target="contextualFiltersTipGraphTab" placement="auto">
+                                        {'Contextual filters allow data to be filtered on site specific chemical and physical data'}
+                                    </UncontrolledTooltip>
                                 </NavLink>
                             </NavItem>
                             <NavItem>
                                 <NavLink
                                     className={classnames({ active: this.props.tabSelected === 'tab_taxonomy_am_environment_id' })}
                                     onClick={() => { this.props.selectTab('tab_taxonomy_am_environment_id') }}
-                                >{'Taxonomy vs Environment'}
+                                >
+                                    {'Taxonomy vs Environment '}
+                                    <span id="taxonomyEnvironmentTipGraphTab">
+                                        <Octicon name="info" align="top" />
+                                    </span>
+                                    <UncontrolledTooltip target="taxonomyEnvironmentTipGraphTab" placement="auto">
+                                        {'Relative abundance per Taxonomy and AM Environment '}
+                                    </UncontrolledTooltip>
                                 </NavLink>
                             </NavItem>
                             <NavItem>
                                 <NavLink
                                     className={classnames({ active: this.props.tabSelected === 'tab_traits_am_environment_id' })}
                                     onClick={() => { this.props.selectTab('tab_traits_am_environment_id') }}
-                                >{'Traits vs Environment'}
+                                >
+                                    {'Traits vs Environment'}
+                                    <span id="traitsEnvironmentTipGraphTab">
+                                        <Octicon name="info" align="top" />
+                                    </span>
+                                    <UncontrolledTooltip target="traitsEnvironmentTipGraphTab" placement="auto">
+                                        {'Relative abundance per Traits and AM Environment '}
+                                    </UncontrolledTooltip>
                                 </NavLink>
                             </NavItem>
                         </Nav>
@@ -285,7 +256,17 @@ class GraphTabbed extends React.Component<any> {
                                 <div style={{margin: '10px 0px'}}>
                                 {(!this.props.contextualIsLoading)
                                     ?
-                                    <ContextualTab chartWidth={chartWidth} chartHeight={chartHeight} selectTab={(e) => {this.props.selectTab(e)}} scrollToSelected={this.props.scrollToSelected} selectToScroll={(e) => {this.props.selectToScroll(e)}} contextualGraphdata={this.props.contextualGraphdata} selectedEnvironmentOption={selectedEnvironmentOption} optionscontextualFilter={this.props.optionscontextualFilter} />
+                                    <ContextualTab 
+                                        chartWidth={chartWidth} 
+                                        chartHeight={chartHeight} 
+                                        selectTab={(e) => {this.props.selectTab(e)}} 
+                                        scrollToSelected={this.props.scrollToSelected} 
+                                        selectToScroll={(e) => {this.props.selectToScroll(e)}} 
+                                        contextualGraphdata={this.props.contextualGraphdata} 
+                                        selectedEnvironment={this.props.selectedEnvironment} 
+                                        optionscontextualFilter={this.props.optionscontextualFilter} 
+                                        optionsEnvironment={this.props.optionsEnvironment} 
+                                    />
                                     :
                                     <div style={loadingstyle}>
                                         <AnimateHelix />

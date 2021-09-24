@@ -278,7 +278,7 @@ def contextual_fields(request):
 @require_CKAN_auth
 @require_POST
 def contextual_graph_fields(request, contextual_filtering=True):
-    additional_headers = json.loads(request.POST.get('columns', '[]'))
+    additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
     all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph', 'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id', 'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
     params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
     if errors:
@@ -462,8 +462,8 @@ def _parse_contextual_term(filter_spec):
             field_name, operator, parse_float(filter_spec['from']), parse_float(filter_spec['to']))
     elif typ == 'CITEXT':
         value = str(filter_spec['contains'])
-        if value == '':
-            raise ValueError("Value can't be empty")
+        # if value == '':
+        #     raise ValueError("Value can't be empty")
         return ContextualFilterTermString(field_name, operator, value)
     else:
         raise ValueError("invalid filter term type: %s", typ)
@@ -502,6 +502,19 @@ def param_to_filters(query_str, contextual_filtering=True):
     return (OTUQueryParams(
         contextual_filter=contextual_filter,
         taxonomy_filter=taxonomy_filter), errors)
+
+def selected_contextual_filters(query_str, contextual_filtering=True):
+
+    otu_query = json.loads(query_str)
+    context_spec = otu_query['contextual_filters']
+    contextual_filter = []
+
+    if contextual_filtering:
+        for filter_spec in context_spec['filters']:
+            field_name = filter_spec['field']
+            contextual_filter.append(field_name)
+
+    return contextual_filter
 
 
 @require_POST
