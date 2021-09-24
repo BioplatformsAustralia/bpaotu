@@ -84,6 +84,8 @@ class SiteAggregate {
 }
 
 function aggregateSamplesByCell(siteAggs, detailLevel) {
+  // console.log("detailLevel", detailLevel)
+  // console.time('aggregateSamplesByCell')
   let cellAggs = {};
   let [min, max] = calculateCellBounds(siteAggs)
 
@@ -141,6 +143,7 @@ function aggregateSamplesByCell(siteAggs, detailLevel) {
       }
     }
   }
+  // console.timeEnd('aggregateSamplesByCell')
   return cellAggs;
 }
 

@@ -172,7 +172,7 @@ class SamplesMap extends React.Component<any> {
   }
 
   public setGridcellSize(cellSize) {
-    this.setState({ isLoading: true, gridcellSize: parseInt(cellSize) })
+    this.setState({ isLoading: true, gridcellSize: parseFloat(cellSize) })
   }
 
    shouldComponentUpdate(nextProps, nextState) {
@@ -430,13 +430,13 @@ class SamplesMap extends React.Component<any> {
             {abundanceLayer}
             {richnessLayer}
           </LayersControl>
-          <HeatMapLegendControl />
-          <GridCellLegendControl />
           <GridCellSizer 
             isLoading = {this.state.isLoading}
             gridcellSize = {this.state.gridcellSize}
             setGridcellSize={(val) => this.setGridcellSize(val)}
           />
+          <GridCellLegendControl />
+          <HeatMapLegendControl />
           <LatLngCoordinatesControl />
           <ScaleControl position="bottomleft" />
           {loadingSpinner}
