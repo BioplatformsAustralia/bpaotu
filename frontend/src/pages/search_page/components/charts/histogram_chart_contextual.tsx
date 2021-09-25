@@ -47,11 +47,11 @@ class HistogramChartContextual extends React.Component<any> {
       title = dataDefinition.display_name + ' Plot'
       xaxisTitle = dataDefinition.display_name + (dataDefinition.units?' in ('+dataDefinition.units+')':'')
     }
-    let values = []
-    let text = []
+    let values=[], text=[], xaxisCategory=''
     if(graphData && graphData.length>1) {
       text = graphData[0]
       values = graphData[1]
+      xaxisCategory = graphData[0].length<2 ?'category':''
     }
 
     let chart_data = [
@@ -67,7 +67,6 @@ class HistogramChartContextual extends React.Component<any> {
         }}
     ]
 
-
     return (
       <>
       <Plot
@@ -78,7 +77,7 @@ class HistogramChartContextual extends React.Component<any> {
           dragmode:'select',
           title: {'text':title, 'font':{'size': 20}}, 
           hovermode: 'closest', 
-          yaxis: {title: 'Frequency'}, xaxis: {title: xaxisTitle },
+          yaxis: {title: 'Frequency'}, xaxis: {title: xaxisTitle, type: xaxisCategory },
        }}
         config={plotly_chart_config(title)}
         onSelected={e => {

@@ -297,7 +297,7 @@ def contextual_graph_fields(request, contextual_filtering=True):
 
         for i in range(len(all_headers)):
             ll = []
-            cleaned_data = [x for x in tdata[i] if (x)]
+            cleaned_data = [x for x in tdata[i] if (x != None)]
             for test in np.unique(cleaned_data, return_counts=True):
                 ll.append(test.tolist())
             graph_results[all_headers[i]] = ll

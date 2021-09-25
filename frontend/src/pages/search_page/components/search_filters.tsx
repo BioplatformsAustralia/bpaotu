@@ -1,5 +1,5 @@
 import React from 'react';
-import { find } from 'lodash';
+import { find, isNull } from 'lodash';
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { Button, Input,  UncontrolledTooltip } from 'reactstrap'
@@ -208,10 +208,10 @@ class SearchFilters extends React.Component<any> {
               if (values.length>0) {
                 text += " <"+(selectedFilter['operator']?"isn't":"is")+"> "+values.join(", ")
               }
-              else if (value && value2) {
+              else if (!isNull(value) && !isNull(value2)) {
                 text += " <"+(selectedFilter['operator']?"not between":"between")+"> "+value+" and "+value2 
               }
-              else if (value) {
+              else if (!isNull(value)) {
                 text += " <"+(selectedFilter['operator']?"doesn't contain":"contains")+"> "+this.getSelectedFilterValue(this.props.contextualFilters, name, value)
               }
               let searchFilter = <SearchFilterButton index={selectedFilterIndex}
