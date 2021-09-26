@@ -13,6 +13,7 @@ import StackChartTraits from './charts/stack_chart_traits'
 import SunBurstChartTaxonomy from './charts/sunburst_chart_taxonomy';
 import {AmpliconFilterInfo, TaxonomyFilterInfo, TaxonomyNoAmpliconInfo, TraitFilterInfo} from './amplicon_taxonomy_filter_card'
 import {EnvironmentInfo} from './environment_filter'
+import {ContextualFilterInfo} from './contextual_filter_card'
 
 
 class GraphListed extends React.Component<any> {
@@ -150,7 +151,7 @@ class GraphListed extends React.Component<any> {
                                             <Octicon name="info" />
                                         </span>
                                         <UncontrolledTooltip target="contextualFiltersTipGraphTab" placement="auto">
-                                            {'Contextual filters allow data to be filtered on site specific chemical and physical data'}
+                                            {ContextualFilterInfo}
                                         </UncontrolledTooltip>
                                     </CardHeader>
                                     <CardBody>

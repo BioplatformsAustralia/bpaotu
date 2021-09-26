@@ -8,7 +8,7 @@ import Octicon from '../../../components/octicon'
 import { selectEnvironment, selectEnvironmentOperator } from '../reducers/contextual'
 
 export const EnvironmentInfo =
-  'Data may be filtered on environment to restrict samples to either soil or marine environment sources.  Marine environment includes pelagic, coastal, sediment and host associated samples.  Within marine environment, samples may be further filtered by adding another filter and selecting the "Sample Type" filter.'
+  'Data may be filtered on environment to restrict samples to either soil or marine environment sources. Marine environment includes pelagic, coastal, sediment and host associated samples which can be further selected by applying "Sample Type" filter under Contextual Filters.'
 
 class EnvironmentFilter extends React.Component<any> {
   public render() {

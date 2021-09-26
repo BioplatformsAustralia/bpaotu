@@ -13,6 +13,7 @@ import StackChartTraits from './charts/stack_chart_traits'
 import SunBurstChartTaxonomy from './charts/sunburst_chart_taxonomy';
 import {AmpliconFilterInfo, TaxonomyFilterInfo, TaxonomyNoAmpliconInfo, TraitFilterInfo} from './amplicon_taxonomy_filter_card'
 import {EnvironmentInfo} from './environment_filter'
+import {ContextualFilterInfo} from './contextual_filter_card'
 import classnames from 'classnames'
 
 
@@ -186,7 +187,7 @@ class GraphTabbed extends React.Component<any> {
                                         <Octicon name="info" align="top" />
                                     </span>
                                     <UncontrolledTooltip target="contextualFiltersTipGraphTab" placement="auto">
-                                        {'Contextual filters allow data to be filtered on site specific chemical and physical data'}
+                                        {ContextualFilterInfo}
                                     </UncontrolledTooltip>
                                 </NavLink>
                             </NavItem>
@@ -200,7 +201,7 @@ class GraphTabbed extends React.Component<any> {
                                         <Octicon name="info" align="top" />
                                     </span>
                                     <UncontrolledTooltip target="taxonomyEnvironmentTipGraphTab" placement="auto">
-                                        {'Relative abundance per Taxonomy and AM Environment '}
+                                        {'Relative abundance of taxonomy for AM environment '}
                                     </UncontrolledTooltip>
                                 </NavLink>
                             </NavItem>
@@ -209,12 +210,12 @@ class GraphTabbed extends React.Component<any> {
                                     className={classnames({ active: this.props.tabSelected === 'tab_traits_am_environment_id' })}
                                     onClick={() => { this.props.selectTab('tab_traits_am_environment_id') }}
                                 >
-                                    {'Traits vs Environment'}
+                                    {'Traits vs Environment '}
                                     <span id="traitsEnvironmentTipGraphTab">
                                         <Octicon name="info" align="top" />
                                     </span>
                                     <UncontrolledTooltip target="traitsEnvironmentTipGraphTab" placement="auto">
-                                        {'Relative abundance per Traits and AM Environment '}
+                                        {'Relative abundance of traits for AM environment '}
                                     </UncontrolledTooltip>
                                 </NavLink>
                             </NavItem>

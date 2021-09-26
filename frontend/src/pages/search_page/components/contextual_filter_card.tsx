@@ -24,6 +24,10 @@ import { fetchContextualDataDefinitions } from '../../../reducers/contextual_dat
 import ContextualFilter from '../../../components/contextual_filter'
 import EnvironmentFilter from './environment_filter'
 
+export const ContextualFilterInfo =
+  'Contextual filters allow data to be filtered on site specific chemical and physical data. '
+
+
 class ContextualFilterCard extends React.Component<any> {
   public componentDidMount() {
     if(this.props.fetchContextualDataDefinitions())
@@ -66,12 +70,18 @@ class ContextualFilterCard extends React.Component<any> {
           <EnvironmentFilter />
 
           <hr />
-          <h5 className="text-center">Contextual Filters</h5>
-
+          <h5 className="text-center">Contextual Filters{' '}
+          <span id="contextualFilterTip">
+            <Octicon name="info" />
+          </span>
+          <UncontrolledTooltip target="contextualFilterTip" placement="auto">
+            {ContextualFilterInfo}
+          </UncontrolledTooltip>
+          </h5>
           <Row>
             <Col>
               <p className="text-center">
-                Contextual filters allow data to be filtered on site specific chemical and physical data. More than one filter may be used and combined with "all/any" functions.
+                More than one filter may be used and combined with "all/any" functions.
               </p>
             </Col>
           </Row>

@@ -61,21 +61,22 @@ class PieChartAmplicon extends React.Component<any> {
           title: {'text':title, 'font':{  'size': 20}, 'position':'middle center'}, 
           hovermode: 'closest'
         }}
-        onClick={e => {
-          const { points } = e;
-          if(points) {
-            let env_val = points[0].text
-            let textData = chart_data[0].text
-            if (!textData.includes(env_val))
-              env_val = ''
-            this.props.selectAmplicon(env_val)
-            this.props.updateTaxonomy()
-            this.props.fetchContextualDataForGraph()
-            this.props.fetchTaxonomyDataForGraph()
-            this.props.selectToScroll(this.props.filter)
-            this.props.selectTab('tab_'+this.props.filter)
-          }
-        }}
+        // onClick={e => {
+        //   const { points } = e;
+        //   if(points) {
+        //     let env_val = points[0].text
+        //     let textData = chart_data[0].text
+        //     if (!textData.includes(env_val))
+        //       env_val = ''
+        //     console.log(env_val)
+        //     this.props.selectAmplicon(env_val)
+        //     this.props.updateTaxonomy()
+        //     this.props.fetchContextualDataForGraph()
+        //     this.props.fetchTaxonomyDataForGraph()
+        //     this.props.selectToScroll(this.props.filter)
+        //     this.props.selectTab('tab_'+this.props.filter)
+        //   }
+        // }}
       />
       <span id={this.props.filter}></span>
       </>
