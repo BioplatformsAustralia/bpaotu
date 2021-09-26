@@ -77,7 +77,7 @@ class HistogramChartContextual extends React.Component<any> {
           dragmode:'select',
           title: {'text':title, 'font':{'size': 20}}, 
           hovermode: 'closest', 
-          yaxis: {title: 'Frequency'}, xaxis: {title: xaxisTitle, type: xaxisCategory },
+          yaxis: {title: 'Frequency', 'exponentformat': 'e'}, xaxis: {title: xaxisTitle, type: xaxisCategory, 'exponentformat': 'e'},
        }}
         config={plotly_chart_config(title)}
         onSelected={e => {
