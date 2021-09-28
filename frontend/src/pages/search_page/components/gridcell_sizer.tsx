@@ -36,7 +36,7 @@ const Track = (props, state) => <StyledTrack {...props} index={state.index} />;
 
 const StyledMark = styled.span`
     top: 7px;
-    margin: 0px 0px 0px 10px;
+    margin: 0px 0px 0px 40px;
     background: #fff;
 `;
 
@@ -67,7 +67,7 @@ class GridCellSizer extends MapControl<any> {
                         <StyledSlider
                             defaultValue={this.props.gridcellSize}
                             min={0.25}
-                            max={25} 
+                            max={10} 
                             step={0.25}
                             renderTrack={Track}
                             renderThumb={Thumb}
