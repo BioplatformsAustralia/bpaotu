@@ -84,8 +84,6 @@ class SiteAggregate {
 }
 
 function aggregateSamplesByCell(siteAggs, detailLevel) {
-  // console.log("detailLevel", detailLevel)
-  // console.time('aggregateSamplesByCell')
   let cellAggs = {};
   let [min, max] = calculateCellBounds(siteAggs)
 
@@ -105,6 +103,11 @@ function aggregateSamplesByCell(siteAggs, detailLevel) {
   const xCellCnt = Math.floor(xLength/detailLevel)
   const yCellCnt = Math.floor(yLength/detailLevel)
 
+  let siteValues = []
+  for (let site of siteAggs) {
+    siteValues.push([site.longitude, site.latitude])
+  }
+
   // Create polygon if site exists
   var polyFeatures: { [index: string]: any } = {}
   for(let x=0; x<xCellCnt; x++) {
@@ -114,8 +117,8 @@ function aggregateSamplesByCell(siteAggs, detailLevel) {
       const x2 = x1 + detailLevel
       const y2 = y1 + detailLevel
       let poly = turf.bboxPolygon([x1, y1, x2, y2]);
-      for (let site of siteAggs) {
-        if(turf.booleanPointInPolygon([site.longitude, site.latitude], poly))
+      for (let site of siteValues) {
+        if(turf.booleanPointInPolygon(site, poly))
         {
           polyFeatures[x+"_"+y] = poly
           break
@@ -124,8 +127,9 @@ function aggregateSamplesByCell(siteAggs, detailLevel) {
     }
   }
 
-  for (let site of siteAggs) {
-    for (const [featureIndex, poly] of Object.entries(polyFeatures)) {
+  for (const [featureIndex, poly] of Object.entries(polyFeatures)) {
+    let removeList = []
+    for (let site of siteAggs) {
       if(turf.booleanPointInPolygon([site.longitude, site.latitude], poly))
       {
         if ((cellAggs[featureIndex] === undefined)) {
@@ -141,9 +145,11 @@ function aggregateSamplesByCell(siteAggs, detailLevel) {
         cell.richness += parseInt(site.richness);
         cell.sites.push(site.siteID);
       }
+      else
+        removeList.push(site)
+      siteAggs = removeList
     }
   }
-  // console.timeEnd('aggregateSamplesByCell')
   return cellAggs;
 }
 
