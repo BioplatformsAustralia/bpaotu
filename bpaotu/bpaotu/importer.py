@@ -175,8 +175,12 @@ class DataImporter:
                     logger.critical("couldn't create extension: {} ({})".format(extension, e))
 
     def _analyze(self):
-        logger.info("Completing ingest: analyze")
-        self._engine.execute('ANALYZE;')
+        logger.info("Completing ingest: vacuum analyze")
+        earlier_isolation_level = self._session.connection().connection.isolation_level
+        self._session.connection().connection.set_isolation_level(0)
+        self._session.execute("VACUUM (VERBOSE, ANALYZE);")
+        self._session.connection().connection.set_isolation_level(earlier_isolation_level)
+        logger.info("Completed ingest: vacuum analyze")
 
     def _build_ontology(self, db_class, vals):
         for val in sorted(vals):
