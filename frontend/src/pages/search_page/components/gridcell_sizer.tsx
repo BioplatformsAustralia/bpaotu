@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import L from 'leaflet'
-import { Container, Row, Col } from 'reactstrap'
+import { Container, Row, Col, UncontrolledTooltip } from 'reactstrap'
 import { withLeaflet, MapControl } from 'react-leaflet'
 import ReactSlider from "react-slider"
 import styled from 'styled-components';
@@ -59,9 +59,15 @@ class GridCellSizer extends MapControl<any> {
         
         const content = (
             <Container fluid={true}>
-                <Row>
+                <Row id="GridCellResizeTip">
                     <Col xs="auto">
-                        <StyledLabel>Gridcell Size</StyledLabel>
+                        <StyledLabel >Gridcell Size</StyledLabel>
+                        <UncontrolledTooltip target="GridCellResizeTip" placement="auto">
+                            Grid size refers to degrees lat X degrees lon (i.e., a size of one will produce a grid of 1 degree x 1 degree).  
+                            Small grid sizes ({'<1'}) will take some time to resolve at the global scale (up to 3 min) , and are likely not required at this scale.
+                            Small grid sizes will resolve much more quickly when a region of interest is chosen before selecting the grid size.  
+                            A region of interest may be selected using the region selection tool ('Draw a rectangle') on the top right end of the map page.
+                        </UncontrolledTooltip>
                     </Col>
                     <Col >
                         <StyledSlider
