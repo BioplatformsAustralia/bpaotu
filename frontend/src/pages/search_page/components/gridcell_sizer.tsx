@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import ReactDOM from 'react-dom'
 import L from 'leaflet'
 import { Container, Row, Col, UncontrolledTooltip } from 'reactstrap'
@@ -7,12 +7,12 @@ import ReactSlider from "react-slider"
 import styled from 'styled-components';
 
 const StyledSlider = styled(ReactSlider)`
-    width: 465px;
+    width: 480px;
     height: 16px;
 `;
 
 const StyledThumb = styled.div`
-    margin: 0px 0px 0px -15px;
+    margin: 0px 0px 0px 0px;
     height: 20px;
     line-height: 20px;
     font-size: 10px;
@@ -28,7 +28,7 @@ const Thumb = (props, state) => <StyledThumb {...props}>{state.valueNow}</Styled
 const StyledTrack = styled.div`
     top: 3px;
     bottom: 0px;
-    margin: 0px 0px 0px -15px;
+    margin: 0px 0px 0px 0px;
     background: ${props => props.index === 2 ? '#f00' : props.index === 1 ? '#041e48' : '#17c496'};
 `;
 
@@ -36,14 +36,14 @@ const Track = (props, state) => <StyledTrack {...props} index={state.index} />;
 
 const StyledMark = styled.span`
     top: 7px;
-    margin: 0px 0px 0px 40px;
+    margin: 0px 0px 0px 10px;
     background: #fff;
 `;
 
 const Mark = (props) => <StyledMark {...props}  />;
 
 const StyledLabel = styled.div`
-    margin: 0px -15px;
+    margin: 0px -30px 0px -15px;
     height: 20px;
     padding: 0px 5px;
     line-height: 20px;
@@ -55,7 +55,7 @@ const StyledLabel = styled.div`
 
 class GridCellSizer extends MapControl<any> {
 
-    createLeafletElement(opts) {
+    createLeafletElement(props) {
         
         const content = (
             <Container fluid={true}>
@@ -71,19 +71,19 @@ class GridCellSizer extends MapControl<any> {
                     </Col>
                     <Col >
                         <StyledSlider
-                            defaultValue={this.props.gridcellSize}
+                            defaultValue={props.gridcellSize}
                             min={0.25}
                             max={10} 
                             step={0.25}
                             renderTrack={Track}
                             renderThumb={Thumb}
                             renderMark={Mark}
-                            marks
-                            onAfterChange={(val) => {this.props.setGridcellSize(val)}}
+                            marks={[0.25, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
+                            onAfterChange={(val) => {props.setGridcellSize(val)}}
                         />
                     </Col>
                 </Row>
-                </Container>
+            </Container>
         );
         const GridCellSizer:any = L.Control.extend({
             onAdd: map => {

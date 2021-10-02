@@ -164,10 +164,11 @@ class SamplesMap extends React.Component<any> {
   public siteAggregatedData
   readonly lat_filter = "latitude"
   readonly lng_filter = "longitude"
+  readonly default_gridcellSize = 2
 
   public state = {
     ...MapInitialViewport,
-    gridcellSize: 2,
+    gridcellSize: this.default_gridcellSize,
     isLoading: false,
   }
 
@@ -318,7 +319,7 @@ class SamplesMap extends React.Component<any> {
       zIndex: 99999,
     } as React.CSSProperties;
     const position: [number, number] = [this.state.lat, this.state.lng]
-    let heatMapLayer, abundanceLayer, richnessLayer, siteCountLayer, selectedRectangleBounds, loadingSpinner;
+    let heatMapLayer, abundanceLayer, richnessLayer, siteCountLayer, selectedRectangleBounds, loadingSpinner, mapControls;
     if (this.props.isLoading || this.state.isLoading) {
       loadingSpinner = <div style={loadingstyle} ><AnimateHelix /></div>
     }
@@ -347,6 +348,13 @@ class SamplesMap extends React.Component<any> {
         abundanceLayer = <LayersControl.Overlay name="Gridcell: Abundance"><GeoJSON data={this.featureCollectionData} style={(feature: any) => this.layerStyle(feature, "weightedAbundance")} onEachFeature={(feature: any, layer: any) => this.onEachFeature(feature, layer)} /></LayersControl.Overlay>;
         richnessLayer = <LayersControl.Overlay name="Gridcell: Richness"><GeoJSON data={this.featureCollectionData} style={(feature: any) => this.layerStyle(feature, "weightedRichness")} onEachFeature={(feature: any, layer: any) => this.onEachFeature(feature, layer)} /></LayersControl.Overlay>;
         siteCountLayer = <LayersControl.Overlay name="Gridcell: Site Count" checked><GeoJSON data={this.featureCollectionData} style={(feature: any) => this.layerStyle(feature, "weightedSites")} onEachFeature={(feature: any, layer: any) => this.onEachFeature(feature, layer)} /></LayersControl.Overlay>;
+        mapControls = <>
+          <GridCellSizer gridcellSize={this.state.gridcellSize} setGridcellSize={(val) => this.setGridcellSize(val)} />
+          <GridCellLegendControl />
+          <HeatMapLegendControl />
+          <LatLngCoordinatesControl />
+          <ScaleControl position="bottomleft" />
+        </>
       }
       loadingSpinner = <></>
     }
@@ -402,6 +410,7 @@ class SamplesMap extends React.Component<any> {
             <EditControl
               position='topright'
               onDeleted={e => {
+                this.setGridcellSize(this.default_gridcellSize)
                 this.deleteDrawElement(e.layers)
                 this.props.fetchSamples()
               }}
@@ -456,16 +465,9 @@ class SamplesMap extends React.Component<any> {
             {abundanceLayer}
             {richnessLayer}
           </LayersControl>
-          <GridCellSizer
-            isLoading={this.state.isLoading}
-            gridcellSize={this.state.gridcellSize}
-            setGridcellSize={(val) => this.setGridcellSize(val)}
-          />
-          <GridCellLegendControl />
-          <HeatMapLegendControl />
-          <LatLngCoordinatesControl />
-          <ScaleControl position="bottomleft" />
           {loadingSpinner}
+          {mapControls}
+          <span id="GridCellResizeTip" />
         </Map>
       </div>
     )
