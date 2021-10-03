@@ -51,7 +51,7 @@ class HistogramChartContextual extends React.Component<any> {
     if(graphData && graphData.length>1) {
       text = graphData[0]
       values = graphData[1]
-      xaxisCategory = graphData[0].length<2 ?'category':''
+      xaxisCategory = graphData[0].length<5 ?'category':''
     }
 
     let chart_data = [
