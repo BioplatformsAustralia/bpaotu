@@ -1,5 +1,5 @@
 import React from 'react';
-import { find } from 'lodash';
+import { find, filter } from 'lodash';
 import { Container, Card, CardHeader, CardBody, Row, Col, UncontrolledTooltip} from 'reactstrap'
 import Octicon from '../../../components/octicon'
 import AnimateHelix from '../../../components/animate_helix'
@@ -12,8 +12,22 @@ import StackChartTaxonomy from './charts/stack_chart_taxonomy'
 import StackChartTraits from './charts/stack_chart_traits'
 import SunBurstChartTaxonomy from './charts/sunburst_chart_taxonomy';
 import {AmpliconFilterInfo, TaxonomyFilterInfo, TaxonomyNoAmpliconInfo, TraitFilterInfo} from './amplicon_taxonomy_filter_card'
+import {EnvironmentInfo} from './environment_filter'
+import {ContextualFilterInfo} from './contextual_filter_card'
+
 
 class GraphListed extends React.Component<any> {
+
+    graphlist = filter(Object.keys(this.props.contextualGraphdata), val => val !== "am_environment_id") 
+    public applyEnvironmentFilter(filterName) {
+        const selectedEnvironment = this.props.selectedEnvironment && this.props.selectedEnvironment.value?""+this.props.selectedEnvironment.value:""
+        const filter = find(this.props.optionscontextualFilter, def => def.name === filterName)
+        const filterEnvironent = filter && filter.environment?""+filter.environment:""
+        if (selectedEnvironment === "")
+            return true
+        else 
+            return filterEnvironent === "" || filterEnvironent === selectedEnvironment
+    }
 
     componentDidMount() {
         const el = document.getElementById(this.props.scrollToSelected)
@@ -30,8 +44,6 @@ class GraphListed extends React.Component<any> {
             alignItems: 'center'
         };
         
-        let selectedEnvironmentOption = find(this.props.optionsEnvironment, (option) => String(option.id) === String(this.props.selectedEnvironment.value))
-        selectedEnvironmentOption = selectedEnvironmentOption?selectedEnvironmentOption.name:selectedEnvironmentOption
         return (
             <>
                 {this.props.contextualIsLoading || this.props.taxonomyIsLoading
@@ -111,39 +123,50 @@ class GraphListed extends React.Component<any> {
                         <Row style={{marginBottom: '10px'}}>
                             <Col>
                                 <Card>
-                                    <CardHeader tag="h3">Contextual Filters</CardHeader>
+                                    <CardHeader tag="h3">
+                                        Environment
+                                        <span id="environmentTipGraphTab">
+                                            <Octicon name="info" />
+                                        </span>
+                                        <UncontrolledTooltip target="environmentTipGraphTab" placement="auto">
+                                            {EnvironmentInfo}
+                                        </UncontrolledTooltip>
+                                    </CardHeader>
                                     <CardBody>
-                                        <PieChartEnvironment selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="am_environment_id" contextualGraphdata={this.props.contextualGraphdata} />
-                                        {(this.props.selectedEnvironment.value === '' || selectedEnvironmentOption === 'Soil') && 
-                                            <PieChartContextual selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="vegetation_type_id" contextualGraphdata={this.props.contextualGraphdata} />
-                                        }
-                                        {(this.props.selectedEnvironment.value === '' || selectedEnvironmentOption === 'Marine') && 
-                                            <PieChartContextual selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="sample_type_id" contextualGraphdata={this.props.contextualGraphdata} />
-                                        }
-                                        {(this.props.selectedEnvironment.value === '' || selectedEnvironmentOption === 'Soil') && 
-                                            <>
-                                                <PieChartContextual selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="env_broad_scale_id" contextualGraphdata={this.props.contextualGraphdata} />
-                                                <PieChartContextual selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="env_local_scale_id" contextualGraphdata={this.props.contextualGraphdata} />
-                                                <HistogramChartContextual selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="ph" contextualGraphdata={this.props.contextualGraphdata} />
-                                                <HistogramChartContextual selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="organic_carbon" contextualGraphdata={this.props.contextualGraphdata} />
-                                                <HistogramChartContextual selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="ammonium_nitrogen_wt" contextualGraphdata={this.props.contextualGraphdata} />
-                                                <HistogramChartContextual selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="nitrate_nitrogen" contextualGraphdata={this.props.contextualGraphdata} />
-                                                <HistogramChartContextual selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="phosphorus_colwell" contextualGraphdata={this.props.contextualGraphdata} />
-                                                {(this.props.selectedEnvironment.value === '') && 
-                                                        <PieChartContextual selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="sample_type_id" contextualGraphdata={this.props.contextualGraphdata} />
-                                                }
-                                            </>
-                                        }
+                                    {(!this.props.taxonomyIsLoading) && (!this.props.contextualIsLoading) && (!this.props.taxonomy.kingdom.isDisabled) &&
+                                        <>
+                                            <PieChartEnvironment selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="am_environment_id" contextualGraphdata={this.props.contextualGraphdata} />
+                                        </>
+                                    } 
+                                    </CardBody>
+                                </Card>
+                            </Col>
+                        </Row>
+                        <Row style={{marginBottom: '10px'}}>
+                            <Col>
+                                <Card>
+                                    <CardHeader tag="h3">
+                                        Contextual Filters
+                                        <span id="contextualFiltersTipGraphTab">
+                                            <Octicon name="info" />
+                                        </span>
+                                        <UncontrolledTooltip target="contextualFiltersTipGraphTab" placement="auto">
+                                            {ContextualFilterInfo}
+                                        </UncontrolledTooltip>
+                                    </CardHeader>
+                                    <CardBody>
                                         {
-                                        (this.props.selectedEnvironment.value === '' || selectedEnvironmentOption === 'Marine') && 
-                                            <>
-                                                <HistogramChartContextual selectTab={(e) => {this.props.selectTab(e)}}  selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="temp" contextualGraphdata={this.props.contextualGraphdata} />
-                                                <HistogramChartContextual selectTab={(e) => {this.props.selectTab(e)}}  selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="chlorophyll_ctd" contextualGraphdata={this.props.contextualGraphdata} />
-                                                <HistogramChartContextual selectTab={(e) => {this.props.selectTab(e)}}  selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="nitrate_nitrite" contextualGraphdata={this.props.contextualGraphdata} />
-                                                <HistogramChartContextual selectTab={(e) => {this.props.selectTab(e)}}  selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="nitrite" contextualGraphdata={this.props.contextualGraphdata} />
-                                                <HistogramChartContextual selectTab={(e) => {this.props.selectTab(e)}}  selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="salinity" contextualGraphdata={this.props.contextualGraphdata} />
-                                                <HistogramChartContextual selectTab={(e) => {this.props.selectTab(e)}}  selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="silicate" contextualGraphdata={this.props.contextualGraphdata} />
-                                            </>
+                                            this.graphlist.map(graphName =>  
+                                                this.applyEnvironmentFilter(graphName)
+                                                ?
+                                                    find(this.props.optionscontextualFilter, dd => dd.name === graphName && dd.type === "ontology")
+                                                    ?
+                                                    <PieChartContextual key={"pie"+graphName} width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter={graphName} contextualGraphdata={this.props.contextualGraphdata} />
+                                                    :
+                                                    <HistogramChartContextual key={"hist"+graphName} width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter={graphName} contextualGraphdata={this.props.contextualGraphdata} />
+                                                :
+                                                ""
+                                            )
                                         }
                                     </CardBody>
                                 </Card>

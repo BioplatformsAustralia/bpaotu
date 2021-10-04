@@ -43,8 +43,6 @@ class HeatMapLegendControl extends MapControl {
             '</svg>'
             );
           div.innerHTML = labels.join("");
-          div.style.margin = "0px";
-          div.style.padding = "0px";
           return div;
         }
       });

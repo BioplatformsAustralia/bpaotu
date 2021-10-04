@@ -1,10 +1,12 @@
 import React from 'react';
-import { find } from 'lodash';
+import { find, isNull } from 'lodash';
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { Button, Input,  UncontrolledTooltip } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 import { selectEnvironment, removeContextualFilter, selectContextualFiltersMode } from '../reducers/contextual'
+import { clearAllTaxonomyFilters, fetchKingdoms } from '../reducers/taxonomy'
+import { fetchTraits } from '../../../reducers/reference_data/traits'
 import { selectAmplicon } from '../reducers/amplicon'
 import { selectTrait } from '../reducers/trait'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
@@ -89,7 +91,11 @@ class SearchFilters extends React.Component<any> {
   }
 
   onSelectAmplicon = () => {
-    this.props.selectAmplicon('')
+    const defaultAmplicon = find(this.props.amplicons, amplicon => amplicon.value === window.otu_search_config.default_amplicon)
+    this.props.clearAllTaxonomyFilters()
+    this.props.selectAmplicon(defaultAmplicon?defaultAmplicon.id:"")
+    this.props.fetchTraits()
+    this.props.selectTrait('')
     this.props.updateTaxonomy()
     this.props.fetchContextualDataForGraph()
     this.props.fetchTaxonomyDataForGraph()
@@ -208,10 +214,10 @@ class SearchFilters extends React.Component<any> {
               if (values.length>0) {
                 text += " <"+(selectedFilter['operator']?"isn't":"is")+"> "+values.join(", ")
               }
-              else if (value && value2) {
+              else if (value2 && value) {
                 text += " <"+(selectedFilter['operator']?"not between":"between")+"> "+value+" and "+value2 
               }
-              else if (value) {
+              else if (!isNull(value)) {
                 text += " <"+(selectedFilter['operator']?"doesn't contain":"contains")+"> "+this.getSelectedFilterValue(this.props.contextualFilters, name, value)
               }
               let searchFilter = <SearchFilterButton index={selectedFilterIndex}
@@ -263,6 +269,9 @@ function mapDispatchToProps(dispatch: any, props) {
     {
       selectAmplicon,
       selectTrait,
+      fetchTraits,
+      fetchKingdoms,
+      clearAllTaxonomyFilters,
       updateTaxonomy: updateTaxonomyDropDowns(''),
       selectValueKingdom: createAction('SELECT_KINGDOM'),
       onChangeKingdom: updateTaxonomyDropDowns('kingdom'),

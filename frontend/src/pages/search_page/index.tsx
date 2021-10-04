@@ -48,13 +48,13 @@ export const SearchPage = props => (
         </Col>
       ) : (
         <>
-          <Col sm={{ size: 2, offset: 3  }} >
+          <Col sm={{ size:2, offset: 3  }} >
             <SearchButton octicon="search" text="Sample search" onClick={props.search} disabled={props.isDisabled}/>
           </Col>
           <Col sm={{ size: 2}} >
             <SearchButton octicon="globe" text="Interactive map search" onClick={props.openSamplesMapModal} disabled={props.isAmpliconSelected} />
           </Col>
-          <Col sm={{ size: 2 }} >
+          <Col sm={{ size:2}} >
             <SearchButton octicon="graph" text="Interactive graph search" onClick={props.openSamplesGraphModal} disabled={props.isAmpliconSelected} />
           </Col>
         </>
@@ -94,6 +94,3 @@ export default connect(
   mapStateToProps,
   mapDispatchToProps
 )(SearchPage)
-
-
-

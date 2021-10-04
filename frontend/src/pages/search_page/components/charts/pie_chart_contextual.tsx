@@ -46,7 +46,7 @@ class PieChartContextual extends React.Component<any> {
       title = dataDefinition.display_name + ' Plot'
       for (const value of Object.values(dataDefinition.values)) {
         if(text.includes(value[0])) {
-          labels.push(value[1])
+          labels.push((value[0]===0 && value[1]==="")?"Null":value[1])
         }
       }
     }

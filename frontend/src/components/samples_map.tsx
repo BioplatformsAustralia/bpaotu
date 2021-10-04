@@ -1,14 +1,17 @@
 import { first, join, keys, map, find } from 'lodash'
 import * as React from 'react'
-import { Col, Nav, NavItem, NavLink, Row, TabContent, TabPane } from 'reactstrap'
+import { Col, Nav, NavItem, NavLink, Row, TabContent, TabPane, UncontrolledTooltip, Alert } from 'reactstrap'
 
 import * as L from 'leaflet'
 import * as MiniMap from 'leaflet-minimap'
-import { Map, Marker, Popup, TileLayer, LayersControl, GeoJSON, FeatureGroup, Rectangle  } from 'react-leaflet'
+import { Map, Marker, Popup, TileLayer, LayersControl, GeoJSON, FeatureGroup, Rectangle, withLeaflet, ScaleControl } from 'react-leaflet'
+import PrintControlDefault from "react-leaflet-easyprint"
 import { EditControl } from "react-leaflet-draw"
 import HeatMapLegendControl from '../pages/search_page/components/heatmap_legend'
-import GridCellLegendControl, {GridCellConstants}  from '../pages/search_page/components/gridcell_legend'
+import GridCellLegendControl, { GridCellConstants } from '../pages/search_page/components/gridcell_legend'
 import LatLngCoordinatesControl from '../pages/search_page/components/coordinates_control'
+import GridCellSizer from '../pages/search_page/components/gridcell_sizer'
+import Octicon from '../components/octicon'
 import AnimateHelix from './animate_helix'
 
 import { connect } from 'react-redux'
@@ -29,7 +32,7 @@ import FullscreenControl from 'react-leaflet-fullscreen'
 import MarkerClusterGroup from 'react-leaflet-markercluster'
 import HeatmapLayer from 'react-leaflet-heatmap-layer'
 import { strongLine, strongHeader } from '../utils'
-import {aggregateSampleOtusBySite, aggregateSamplesByCell, aggregateSamplePointsBySite, calculateMaxes} from "../aggregation"
+import { aggregateSampleOtusBySite, aggregateSamplesByCell, aggregateSamplePointsBySite, calculateMaxes } from "../aggregation"
 
 /*
 Unfortunately, react-leaflet fails to load markers if the css isn't included in the html file, so
@@ -60,31 +63,31 @@ const ArcGIS = {
 const tileLayer = {
   url: '//cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
   attribution:
-      '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
-    subdomains: "abcd",
-    maxZoom: 17,
-    minZoom: 10.75
+    '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+  subdomains: "abcd",
+  maxZoom: 17,
+  minZoom: 10.75
 }
 
 // tslint:disable-next-line:max-classes-per-file
 class BPAImages extends React.Component<any, any> {
-    public render() {
-        const tnUrl = (packageId, resourceId) => join(
-          [window.otu_search_config.base_url, 'private/site-image-thumbnail', packageId, resourceId], '/')
-        const rsUrl = (packageId, resourceId) => join(
-          [window.otu_search_config.ckan_base_url, 'dataset', packageId, 'resource', resourceId], '/')
-        return (
-            <div>
-              {map(this.props.siteImages || [], ({package_id, resource_id}, index) => (
-                <Row key={index}>
-                  <a href={rsUrl(package_id, resource_id)} target="_other">
-                    <img alt="Australian Microbiome" src={tnUrl(package_id, resource_id)} />
-                  </a>
-                </Row>
-              ))}
-            </div>
-        )
-    }
+  public render() {
+    const tnUrl = (packageId, resourceId) => join(
+      [window.otu_search_config.base_url, 'private/site-image-thumbnail', packageId, resourceId], '/')
+    const rsUrl = (packageId, resourceId) => join(
+      [window.otu_search_config.ckan_base_url, 'dataset', packageId, 'resource', resourceId], '/')
+    return (
+      <div>
+        {map(this.props.siteImages || [], ({ package_id, resource_id }, index) => (
+          <Row key={index}>
+            <a href={rsUrl(package_id, resource_id)} target="_other">
+              <img alt="Australian Microbiome" src={tnUrl(package_id, resource_id)} />
+            </a>
+          </Row>
+        ))}
+      </div>
+    )
+  }
 }
 
 
@@ -159,22 +162,49 @@ class SamplesMap extends React.Component<any> {
   public featureCollectionData
   public samplePoints
   public siteAggregatedData
-  readonly lat_filter="latitude"
-  readonly lng_filter="longitude"
+  readonly lat_filter = "latitude"
+  readonly lng_filter = "longitude"
+  readonly default_gridcellSize = 2
 
   public state = {
     ...MapInitialViewport,
+    gridcellSize: this.default_gridcellSize,
+    isLoading: false,
   }
 
-   shouldComponentUpdate(nextProps, nextState) {
+  public setGridcellSize(cellSize) {
+    this.setState({
+      isLoading: true,
+    })
+    setTimeout(
+      () => {
+        this.setState({
+          gridcellSize: cellSize,
+          isLoading: false
+        })
+      },
+      1
+    );
+  }
+  
+  shouldComponentUpdate(nextProps, nextState) {
+    
     if (nextProps.sample_otus.length > 0 && this.props.sample_otus !== nextProps.sample_otus) {
       this.siteAggregatedData = aggregateSampleOtusBySite(nextProps.sample_otus);
       this.samplePoints = aggregateSamplePointsBySite(this.siteAggregatedData);
-      let cellAggregatedData = aggregateSamplesByCell(this.siteAggregatedData);
+      let cellAggregatedData = aggregateSamplesByCell(this.siteAggregatedData, nextState.gridcellSize);
       this.featureCollectionData = this.makeFeatureCollection(cellAggregatedData)
       return true;
     }
-    if(this.props.markers !== nextProps.markers) {
+    if (this.state.gridcellSize !== nextState.gridcellSize) {
+      let cellAggregatedData = aggregateSamplesByCell(this.siteAggregatedData, nextState.gridcellSize);
+      this.featureCollectionData = this.makeFeatureCollection(cellAggregatedData)
+      return true;
+    }
+    if (this.state.isLoading !== nextState.isLoading) {
+      return true;
+    }
+    if (this.props.markers !== nextProps.markers) {
       return true;
     }
     return false;
@@ -191,7 +221,7 @@ class SamplesMap extends React.Component<any> {
   public findFilterValueIndex = (data, name, value, value2) => {
     let index = -1
     for (var i = 0; i < data.length; i++) {
-      if(data[i].name === name && data[i].value === value && data[i].value2 === value2) {
+      if (data[i].name === name && data[i].value === value && data[i].value2 === value2) {
         return i
       }
     };
@@ -199,23 +229,29 @@ class SamplesMap extends React.Component<any> {
   }
 
   handleZoomstart = (map, maxZoom, defaultZoom, position) => {
-    const currentZoom = this.leafletMap?this.leafletMap.leafletElement.getZoom():4
-    const v = 1 / Math.pow(2,Math.max(0, Math.min(maxZoom - currentZoom, 12)));
-    return {maxZoom, currentZoom, defaultZoom, v, "intensity":v*1000, position}
+    const currentZoom = this.leafletMap ? this.leafletMap.leafletElement.getZoom() : 4
+    const v = 1 / Math.pow(2, Math.max(0, Math.min(maxZoom - currentZoom, 12)));
+    return { maxZoom, currentZoom, defaultZoom, v, "intensity": v * 1000, position }
   };
 
   initDrawElement = () => {
-    // if(this.drawFeatureGroupRef){
-    //   const drawElement = this.drawFeatureGroupRef.leafletElement;
-    //   if (Object.keys(drawElement._layers).length > 1) {
-    //     this.deleteDrawElement(drawElement)
-    //   }
-    // }
+    if(this.drawFeatureGroupRef){
+      const drawElement = this.drawFeatureGroupRef.leafletElement
+      const drawnItems = drawElement._layers
+      if (Object.keys(drawnItems).length > 1) {
+        Object.keys(drawnItems).forEach((layerid, index) => {
+          if (index > 0) return;
+          const layer = drawnItems[layerid];
+          drawElement.removeLayer(layer);
+        });
+      }
+    }
+
     // Add rectangle for selected latitude/longitude filter
     var rectangle: [number, number][] = []
     const lat = find(this.props.filters.contextual.filters, latlng => latlng.name === this.lat_filter)
     const lng = find(this.props.filters.contextual.filters, latlng => latlng.name === this.lng_filter)
-    if(lat && lng){
+    if (lat && lng) {
       rectangle = [[lat.value, lng.value], [lat.value2, lng.value2]]
     }
     return rectangle
@@ -229,8 +265,8 @@ class SamplesMap extends React.Component<any> {
       drawElement.removeLayer(layer);
       let lat_value, lat_value2, lng_value, lng_value2
       let points = layer._latlngs;
-      for(let index in points){
-        for(let point of Object.values(points[index])){
+      for (let index in points) {
+        for (let point of Object.values(points[index])) {
           lat_value = lat_value < point["lat"] ? lat_value : point["lat"];
           lat_value2 = lat_value2 > point["lat"] ? lat_value2 : point["lat"];
           lng_value = lng_value < point["lng"] ? lng_value : point["lng"];
@@ -240,7 +276,6 @@ class SamplesMap extends React.Component<any> {
 
       const index_lat = this.findFilterValueIndex(this.props.filters.contextual.filters, this.lat_filter, lat_value, lat_value2)
       this.props.removeContextualFilter(index_lat)
-      
       const index_lng = this.findFilterValueIndex(this.props.filters.contextual.filters, this.lng_filter, lng_value, lng_value2)
       this.props.removeContextualFilter(index_lng)
     });
@@ -249,8 +284,8 @@ class SamplesMap extends React.Component<any> {
   createDrawElement = (layer) => {
     let lat_value, lat_value2, lng_value, lng_value2
     let points = layer._latlngs;
-    for(let index in points){
-      for(let point of Object.values(points[index])){
+    for (let index in points) {
+      for (let point of Object.values(points[index])) {
         lat_value = lat_value < point["lat"] ? lat_value : point["lat"];
         lat_value2 = lat_value2 > point["lat"] ? lat_value2 : point["lat"];
         lng_value = lng_value < point["lng"] ? lng_value : point["lng"];
@@ -260,19 +295,20 @@ class SamplesMap extends React.Component<any> {
 
     const lat_index = this.findFilterIndex(this.props.filters.contextual.filters, this.lat_filter)
     this.props.selectContextualFilter(lat_index, this.lat_filter)
-    this.props.changeContextualFilterOperator(lat_index,'')
+    this.props.changeContextualFilterOperator(lat_index, '')
     this.props.changeContextualFilterValue(lat_index, lat_value)
     this.props.changeContextualFilterValue2(lat_index, lat_value2)
 
     const lng_index = this.findFilterIndex(this.props.filters.contextual.filters, this.lng_filter)
     this.props.selectContextualFilter(lng_index, this.lng_filter)
-    this.props.changeContextualFilterOperator(lng_index,'')
+    this.props.changeContextualFilterOperator(lng_index, '')
     this.props.changeContextualFilterValue(lng_index, lng_value)
     this.props.changeContextualFilterValue2(lng_index, lng_value2)
   }
 
   public render() {
-    const loadingstyle= {
+    const PrintControl: any = withLeaflet(PrintControlDefault);
+    const loadingstyle = {
       display: 'flex',
       height: '100%',
       width: '100%',
@@ -283,53 +319,73 @@ class SamplesMap extends React.Component<any> {
       zIndex: 99999,
     } as React.CSSProperties;
     const position: [number, number] = [this.state.lat, this.state.lng]
-    let heatMapLayer, abundanceLayer, richnessLayer, siteCountLayer, selectedRectangleBounds, loadingSpinner;
-    if (!this.props.isLoading) 
-    {
-      if (this.samplePoints) 
-      {
+    let heatMapLayer, abundanceLayer, richnessLayer, siteCountLayer, selectedRectangleBounds, loadingSpinner, mapControls;
+    if (this.props.isLoading || this.state.isLoading) {
+      loadingSpinner = <div style={loadingstyle} ><AnimateHelix /></div>
+    }
+    else {
+      if (this.samplePoints) {
         heatMapLayer = <LayersControl.Overlay name="Heatmap: Abundance" checked>
-        <HeatmapLayer
-          fitBoundsOnLoad
-          fitBoundsOnUpdate
-          points={this.samplePoints}
-          longitudeExtractor={m => m[1]}
-          latitudeExtractor={m => m[0]}
-          intensityExtractor={m => m[2]}
-          // max={3}
-          radius={30}
-          // maxZoom={18}
-          gradient={{
-            0.4: 'blue',
-            0.6: 'cyan',
-            0.7: 'lime',
-            0.8: 'yellow',
-            1.0: 'red'
-        }}
-        />
+          <HeatmapLayer
+            fitBoundsOnLoad
+            fitBoundsOnUpdate
+            points={this.samplePoints}
+            longitudeExtractor={m => m[1]}
+            latitudeExtractor={m => m[0]}
+            intensityExtractor={m => m[2]}
+            // max={3}
+            radius={30}
+            // maxZoom={18}
+            gradient={{
+              0.4: 'blue',
+              0.6: 'cyan',
+              0.7: 'lime',
+              0.8: 'yellow',
+              1.0: 'red'
+            }}
+          />
         </LayersControl.Overlay>;
         abundanceLayer = <LayersControl.Overlay name="Gridcell: Abundance"><GeoJSON data={this.featureCollectionData} style={(feature: any) => this.layerStyle(feature, "weightedAbundance")} onEachFeature={(feature: any, layer: any) => this.onEachFeature(feature, layer)} /></LayersControl.Overlay>;
-        richnessLayer = <LayersControl.Overlay name="Gridcell: Richness"><GeoJSON data={this.featureCollectionData} style={(feature: any) => this.layerStyle(feature, "weightedRichness")}  onEachFeature={(feature: any, layer: any) => this.onEachFeature(feature, layer)} /></LayersControl.Overlay>;
+        richnessLayer = <LayersControl.Overlay name="Gridcell: Richness"><GeoJSON data={this.featureCollectionData} style={(feature: any) => this.layerStyle(feature, "weightedRichness")} onEachFeature={(feature: any, layer: any) => this.onEachFeature(feature, layer)} /></LayersControl.Overlay>;
         siteCountLayer = <LayersControl.Overlay name="Gridcell: Site Count" checked><GeoJSON data={this.featureCollectionData} style={(feature: any) => this.layerStyle(feature, "weightedSites")} onEachFeature={(feature: any, layer: any) => this.onEachFeature(feature, layer)} /></LayersControl.Overlay>;
+        mapControls = <>
+          <GridCellSizer gridcellSize={this.state.gridcellSize} setGridcellSize={(val) => this.setGridcellSize(val)} />
+          <GridCellLegendControl />
+          <HeatMapLegendControl />
+          <LatLngCoordinatesControl />
+          <ScaleControl position="bottomleft" />
+        </>
       }
       loadingSpinner = <></>
     }
-    else {
-      loadingSpinner = <div style={loadingstyle} ><AnimateHelix /></div>
-    }
 
     const rectangle = this.initDrawElement()
-    if(rectangle.length>0){
-          selectedRectangleBounds = <Rectangle bounds={rectangle} />
-        }
+    if (rectangle.length > 0) {
+      selectedRectangleBounds = <Rectangle bounds={rectangle} />
+    }
 
     return (
       <div style={{ height: '100%' }}>
-        <div className="text-center">
-          {this.props.isLoading ? `Processing...` : `Showing ${this.props.sample_otus.length} samples in ${this.props.markers.length} sample locations`}
+        <div className="text-center" style={{ margin: '-5px 0px' }}>
+          {(this.props.isLoading || this.state.isLoading)
+            ?
+            <Alert color="info">
+              Processing... 
+              {
+              this.state.isLoading && ` Gridcell calculation may take a while depending on the number of sample locations. Once completed, map will automatically refresh.`
+            }
+            </Alert>
+            :
+            <Alert color="success">
+              Showing {this.props.sample_otus.length} samples in {this.props.markers.length} sample locations
+              {' '}<span id="tipShowSample"><Octicon name="info" /></span>
+              <UncontrolledTooltip target="tipShowSample" placement="auto">
+                {'Results displayed in map view are based on samples being randomly sub-sampled to 20K reads. Selecting samples in map view will retrieve full OTU tables (non-subsampled data) and may also include additional samples containing less than 20K reads.'}
+              </UncontrolledTooltip>
+            </Alert>
+          }
         </div>
         <Map
-          className="space-above"
           center={position}
           zoom={this.state.zoom}
           ref={m => {
@@ -340,12 +396,21 @@ class SamplesMap extends React.Component<any> {
           onclick={this.handleClick}
         >
           <FullscreenControl position="topright" />
+          <PrintControl
+            position="topright"
+            sizeModes={["Current", "A4Portrait", "A4Landscape"]}
+            defaultSizeTitles={{Current: 'Current Size', A4Landscape: 'A4 Landscape', A4Portrait: 'A4 Portrait'}}
+            hideControlContainer={false}
+            title="Export as PNG"
+            exportOnly
+          />
           <FeatureGroup ref={drawFeatureGroupRef => {
-                this.drawFeatureGroupRef = drawFeatureGroupRef
-            }}>
+            this.drawFeatureGroupRef = drawFeatureGroupRef
+          }}>
             <EditControl
               position='topright'
               onDeleted={e => {
+                this.setGridcellSize(this.default_gridcellSize)
                 this.deleteDrawElement(e.layers)
                 this.props.fetchSamples()
               }}
@@ -361,7 +426,7 @@ class SamplesMap extends React.Component<any> {
                   this.props.fetchSamples()
                 }
               }}
-              edit={{ 
+              edit={{
                 edit: false,
               }}
               draw={{
@@ -375,35 +440,34 @@ class SamplesMap extends React.Component<any> {
             {selectedRectangleBounds}
           </FeatureGroup>
           <LayersControl>
-              <LayersControl.BaseLayer name="Base" checked>
-                <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
-              </LayersControl.BaseLayer>
-              <LayersControl.BaseLayer name="OSM">
-                <TileLayer url={tileLayer.url} attribution={tileLayer.attribution} />
-              </LayersControl.BaseLayer>
-              <LayersControl.Overlay name="Sites" checked>
-                <MarkerClusterGroup>
-                  {this.props.markers.map((marker, index) => (
-                    <Marker key={`marker-${index}`} position={marker}>
-                        <Popup minWidth={640} maxHeight={480}>
-                        <div>
-                            <BPAImages siteImages={marker.site_images} />
-                            <BPASamples bpadata={marker.bpadata} />
-                        </div>
-                      </Popup>
-                    </Marker>
-                  ))}
-                </MarkerClusterGroup>
+            <LayersControl.BaseLayer name="Base" checked>
+              <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="OSM">
+              <TileLayer url={tileLayer.url} attribution={tileLayer.attribution} />
+            </LayersControl.BaseLayer>
+            <LayersControl.Overlay name="Sites" checked>
+              <MarkerClusterGroup>
+                {this.props.markers.map((marker, index) => (
+                  <Marker key={`marker-${index}`} position={marker}>
+                    <Popup minWidth={640} maxHeight={480}>
+                      <div>
+                        <BPAImages siteImages={marker.site_images} />
+                        <BPASamples bpadata={marker.bpadata} />
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MarkerClusterGroup>
             </LayersControl.Overlay>
             {heatMapLayer}
             {siteCountLayer}
             {abundanceLayer}
             {richnessLayer}
           </LayersControl>
-          <GridCellLegendControl />
-          <HeatMapLegendControl />
-          <LatLngCoordinatesControl />
           {loadingSpinner}
+          {mapControls}
+          <span id="GridCellResizeTip" />
         </Map>
       </div>
     )
@@ -454,16 +518,16 @@ class SamplesMap extends React.Component<any> {
       strongHeader("Richness per grid cell", layer.feature.properties.richness) +
       strongHeader("Abundance per grid cell", layer.feature.properties.abundance) +
       "<br />" +
-      strongHeader("Std Richness per grid cell <span style='fontSize:16px' title='Std Richness per grid cell = Richness per grid cell / Sites per grid cell'>&#128712;</span>", layer.feature.properties.stdCellRichness) +
-      strongHeader("Std Abundance per grid cell <span style='fontSize:16px' title='Std Abundance per grid cell = Abundance per grid cell / Sites per grid cell'>&#128712;</span>", layer.feature.properties.stdCellAbundance) +
+      strongHeader("Std Richness per grid cell <span style='fontSize:16px' title='Std Richness per grid cell = Richness per grid cell / Sites per grid cell'>&#9432;</span>", layer.feature.properties.stdCellRichness) +
+      strongHeader("Std Abundance per grid cell <span style='fontSize:16px' title='Std Abundance per grid cell = Abundance per grid cell / Sites per grid cell'>&#9432;</span>", layer.feature.properties.stdCellAbundance) +
       "<br />" +
       strongHeader("Max Sites per grid cell", layer.feature.properties.maxSites) +
       strongHeader("Max Std Richness per grid cell", layer.feature.properties.maxRichness) +
       strongHeader("Max Std Abundance per grid cell", layer.feature.properties.maxAbundance) +
       "<br />" +
-      strongHeader("Wtd Sites per grid cell <span style='fontSize:16px' title='Wtd Sites per grid cell = Sites per grid cell / Max Sites per grid cell'>&#128712;</span>", layer.feature.properties.weightedSites) +
-      strongHeader("Wtd Richness per grid cell <span style='fontSize:16px' title='Wtd Richness per grid cell = Std Richness per grid cell / Max Std Richness per grid cell'>&#128712;</span>", layer.feature.properties.weightedRichness) +
-      strongHeader("Wtd Abundance per grid cell <span style='fontSize:16px' title='Wtd Abundance per grid cell = Std Abundance per grid cell / Max Std Abundance per grid cell'>&#128712;</span>", layer.feature.properties.weightedAbundance) +
+      strongHeader("Wtd Sites per grid cell <span style='fontSize:16px' title='Wtd Sites per grid cell = Sites per grid cell / Max Sites per grid cell'>&#9432;</span>", layer.feature.properties.weightedSites) +
+      strongHeader("Wtd Richness per grid cell <span style='fontSize:16px' title='Wtd Richness per grid cell = Std Richness per grid cell / Max Std Richness per grid cell'>&#9432;</span>", layer.feature.properties.weightedRichness) +
+      strongHeader("Wtd Abundance per grid cell <span style='fontSize:16px' title='Wtd Abundance per grid cell = Std Abundance per grid cell / Max Std Abundance per grid cell'>&#9432;</span>", layer.feature.properties.weightedAbundance) +
       "<br />" +
       strongHeader(
         "Longitude",
@@ -503,7 +567,7 @@ class SamplesMap extends React.Component<any> {
     };
     for (let key in cellAggs) {
       let cell = cellAggs[key];
-      
+
       let stdCellRichness = cell.richness / cell.sites.length;
       let stdCellAbundance = cell.abundance / cell.sites.length;
       let countCellSites = cell.sites.length;
@@ -511,7 +575,7 @@ class SamplesMap extends React.Component<any> {
       let weightedRichness = stdCellRichness / maxes.richness;
       let weightedAbundance = stdCellAbundance / maxes.abundance;
       let weightedSites = countCellSites / maxes.sites;
-      
+
       featureCollection.features.push({
         type: "Feature",
         properties: {
@@ -549,18 +613,18 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
   return bindActionCreators(
-      {
-        addContextualFilter,
-        selectContextualFilter,
-        removeContextualFilter,
-        changeContextualFilterOperator,
-        changeContextualFilterValue,
-        changeContextualFilterValue2,
-        changeContextualFilterValues,
-        search,
-        fetchContextualDataForGraph,
-      },
-      dispatch
+    {
+      addContextualFilter,
+      selectContextualFilter,
+      removeContextualFilter,
+      changeContextualFilterOperator,
+      changeContextualFilterValue,
+      changeContextualFilterValue2,
+      changeContextualFilterValues,
+      search,
+      fetchContextualDataForGraph,
+    },
+    dispatch
   )
 }
 
