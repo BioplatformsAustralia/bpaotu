@@ -121,7 +121,7 @@ class GraphTabbed extends React.Component<any> {
                                     {'      '}
                                 </NavLink>
                             </NavItem>
-                            <NavItem>
+                            <NavItem data-tut="reactour__graph_amplicon">
                                 <NavLink
                                     className={classnames({ active: this.props.tabSelected === 'tab_amplicon' })}
                                     onClick={() => { this.props.selectTab('tab_amplicon') }}
@@ -135,8 +135,9 @@ class GraphTabbed extends React.Component<any> {
                                     </UncontrolledTooltip>
                                 </NavLink>
                             </NavItem>
-                            <NavItem>
-                                <NavLink
+                            <NavItem data-tut="reactour__graph_taxonomy" >
+                                <NavLink 
+                                    id="reactour__graph_taxonomy"
                                     className={classnames({ active: this.props.tabSelected === 'tab_taxonomy' })}
                                     onClick={() => { this.props.selectTab('tab_taxonomy') }}
                                 >
@@ -149,8 +150,9 @@ class GraphTabbed extends React.Component<any> {
                                     </UncontrolledTooltip>
                                 </NavLink>
                             </NavItem>
-                            <NavItem>
-                                <NavLink
+                            <NavItem data-tut="reactour__graph_traits">
+                                <NavLink  
+                                    id="reactour__graph_traits"
                                     className={classnames({ active: this.props.tabSelected === 'tab_traits' })}
                                     onClick={() => { this.props.selectTab('tab_traits') }}
                                 >
@@ -163,8 +165,9 @@ class GraphTabbed extends React.Component<any> {
                                     </UncontrolledTooltip>
                                 </NavLink>
                             </NavItem>
-                            <NavItem>
+                            <NavItem data-tut="reactour__graph_environment">
                                 <NavLink
+                                    id="reactour__graph_environment"
                                     className={classnames({ active: this.props.tabSelected === 'tab_am_environment_id' })}
                                     onClick={() => { this.props.selectTab('tab_am_environment_id') }}
                                 >
@@ -177,8 +180,9 @@ class GraphTabbed extends React.Component<any> {
                                     </UncontrolledTooltip>
                                 </NavLink>
                             </NavItem>
-                            <NavItem>
+                            <NavItem data-tut="reactour__graph_contextual">
                                 <NavLink
+                                    id="reactour__graph_contextual"
                                     className={classnames({ active: this.props.tabSelected === 'tab_contextual' })}
                                     onClick={() => { this.props.selectTab('tab_contextual') }}
                                 >
@@ -191,8 +195,9 @@ class GraphTabbed extends React.Component<any> {
                                     </UncontrolledTooltip>
                                 </NavLink>
                             </NavItem>
-                            <NavItem>
+                            <NavItem data-tut="reactour__graph_taxonomy_am_environment">
                                 <NavLink
+                                    id="reactour__graph_taxonomy_am_environment"
                                     className={classnames({ active: this.props.tabSelected === 'tab_taxonomy_am_environment_id' })}
                                     onClick={() => { this.props.selectTab('tab_taxonomy_am_environment_id') }}
                                 >
@@ -205,8 +210,9 @@ class GraphTabbed extends React.Component<any> {
                                     </UncontrolledTooltip>
                                 </NavLink>
                             </NavItem>
-                            <NavItem>
+                            <NavItem data-tut="reactour__graph_traits_am_environment">
                                 <NavLink
+                                    id="reactour__graph_traits_am_environment"
                                     className={classnames({ active: this.props.tabSelected === 'tab_traits_am_environment_id' })}
                                     onClick={() => { this.props.selectTab('tab_traits_am_environment_id') }}
                                 >
@@ -224,7 +230,7 @@ class GraphTabbed extends React.Component<any> {
                             <TabPane tabId="tab_amplicon">
                                 <PieChartAmplicon width={chartWidth} height={chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="amplicon" taxonomyGraphdata={this.props.taxonomyGraphdata.amplicon} />
                             </TabPane>
-                            <TabPane tabId="tab_taxonomy">
+                            <TabPane tabId="tab_taxonomy" data-tut="reactour__graph_taxonomy_page">
                                 {(!this.props.selectedAmplicon || this.props.selectedAmplicon.value === '') &&
                                     <p className="lead">{TaxonomyNoAmpliconInfo}</p>
                                 }

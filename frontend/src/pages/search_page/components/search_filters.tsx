@@ -229,7 +229,7 @@ class SearchFilters extends React.Component<any> {
     return (
       <>
       {this.props.selectedContextualFilters.length >= 2 && (
-          <div >
+          <div data-tut="reactour__graph_any_all" >
             <Input 
               type="select"
               bsSize="sm"
