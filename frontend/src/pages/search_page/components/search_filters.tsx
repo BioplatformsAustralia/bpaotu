@@ -154,12 +154,9 @@ class SearchFilters extends React.Component<any> {
 
   onSelectFilterType = (mode) => {
     this.props.selectContextualFiltersMode(mode)
-    if(this.props.selectToScroll)
-      this.props.selectToScroll('')
-    else {
-      this.props.fetchContextualDataForGraph()
-      this.props.fetchTaxonomyDataForGraph()
-    }
+    this.props.selectToScroll('')
+    this.props.fetchContextualDataForGraph()
+    this.props.fetchTaxonomyDataForGraph()
   }
 
   render() {
