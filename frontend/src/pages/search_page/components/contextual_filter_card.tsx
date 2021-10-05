@@ -51,7 +51,7 @@ class ContextualFilterCard extends React.Component<any> {
                   <Badge color="secondary" id="downloadContextualTip"><Octicon name="info" /></Badge>
                 </Button>
                 <Button size="sm" color="secondary" style={{cursor:'pointer', margin: '-15px 0px', padding: '3px 10px'}} onClick={() => {
-                    window.open('https://www.australianmicrobiome.com/wp-content/uploads/2021/01/AM_Methods_for_metadata_fields_18012021_V1.2.3.pdf')
+                    window.open('https://github.com/AusMicrobiome/scientific_manual/raw/v1.2.3/docs/AM_Scientific_Manual.docx')
                   }}>
                   <Octicon name="link" />
                   <span>{' '}Download methods manual{' '}</span>
