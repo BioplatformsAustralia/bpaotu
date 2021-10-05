@@ -408,24 +408,15 @@ class BPAOTUGraphTour extends React.Component<any> {
     })
   }
 
-  resetTour = () => {
-    let {tourStore} = this.props;
-    return tourStore.currentStep === steps(this.props).length ? 0 : undefined
-  }
-
   render() {
-    // console.log("this.state.tourStep", this.state.tourStep, this.props.currentStep)
     return (
       <>
         <Tour
-        //   startAt={this.state.tourStep}
-        //   startAt={this.resetTour()}
           steps={steps(this.props)}
           prevButton={'<< Prev'} 
           nextButton={'Next >>'} 
           disableFocusLock={true}
           badgeContent={(curr, tot) => `${curr} of ${tot}`}
-        //   getCurrentStep={curr => this.setState({ tourStep: curr })}
           accentColor={'#007bff'}
           rounded={5}
           isOpen={this.state.isTourOpen}
