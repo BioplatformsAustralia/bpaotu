@@ -2,6 +2,9 @@
 
 set -e
 
+echo "GIT BRANCH is: '${GIT_BRANCH}'"
+echo "BUILD VERSION is: '${BUILD_VERSION}'"
+
 docker-compose -f docker-compose-build.yml build base
 
 ## circleci remote-docker does not allow for use of volumes
