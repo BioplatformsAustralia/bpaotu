@@ -1,9 +1,9 @@
-import { find, filter, isNull, negate, toNumber } from 'lodash'
+import { find, isNull, filter, negate, toNumber } from 'lodash'
 import reduceReducers from 'reduce-reducers'
 
 import { combineActions, createActions, handleAction, handleActions } from 'redux-actions'
 
-import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils'
+import { changeElementAtIndex, removeElementAtIndex, removeElementWithValue } from '../../../reducers/utils'
 import { searchPageInitialState } from './types'
 
 export const { selectEnvironment, selectEnvironmentOperator, selectContextualFiltersMode } = createActions(
@@ -47,6 +47,13 @@ const EmptyContextualFilter = {
   values: []
 }
 
+const WarningContextualFilter = {
+  name: 'sample_integrity_warnings_id',
+  operator: 'is',
+  value: '0',
+  value2: '',
+  values: []
+}
 export const {
   selectContextualFilter,
   changeContextualFilterOperator,
@@ -54,6 +61,8 @@ export const {
   changeContextualFilterValue2,
   changeContextualFilterValues,
 
+  addWarningContextualFilter,
+  removeWarningContextualFilter,
   addContextualFilter,
   removeContextualFilter,
   clearContextualFilters
@@ -65,6 +74,8 @@ export const {
     CHANGE_CONTEXTUAL_FILTER_VALUE2: (index, value) => ({ index, value }),
     CHANGE_CONTEXTUAL_FILTER_VALUES: (index, values) => ({ index, values })
   },
+  'ADD_WARNING_CONTEXTUAL_FILTER',
+  'REMOVE_WARNING_CONTEXTUAL_FILTER',
   'ADD_CONTEXTUAL_FILTER',
   'REMOVE_CONTEXTUAL_FILTER',
   'CLEAR_CONTEXTUAL_FILTERS'
@@ -74,13 +85,22 @@ export const doesFilterMatchEnvironment = environment => filter => {
   if (environment.value === '') {
     return true
   }
-  const eq = fltr => toNumber(fltr.environment) === toNumber(environment.value)
+  const eq = fltr => fltr.environment === toNumber(environment.value)
   const op = environment.operator === 'is' ? eq : negate(eq)
   return isNull(filter.environment) || op(filter)
 }
 
 const contextualFiltersReducer = handleActions(
   {
+    [addWarningContextualFilter as any]: (state: any, action) => ({
+      ...state,
+      filters: [...state.filters, WarningContextualFilter]
+    }),
+    [removeWarningContextualFilter as any]: (state: any, action) => ({
+      ...state,
+      filters: removeElementWithValue(state.filters, WarningContextualFilter)
+
+    }),
     [addContextualFilter as any]: (state: any, action) => ({
       ...state,
       filters: [...state.filters, EmptyContextualFilter]

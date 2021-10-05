@@ -70,7 +70,6 @@ class SelectColumnsCard extends React.Component<any> {
 }
 
 function mapStateToProps(state) {
-  console.log(state.contextualDataDefinitions.values)
   return {
     columns: state.contextualPage.selectColumns.columns,
     dataDefinitions: state.contextualDataDefinitions.values,

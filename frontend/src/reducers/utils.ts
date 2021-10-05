@@ -16,6 +16,23 @@ export function simpleDispatch(dispatch, action) {
   }
 }
 
+export function removeElementWithValue(arr, value) {
+  if (value === undefined)
+      return;
+
+  for (var i in arr) {
+      if (arr[i]["name"] === value.name && 
+      arr[i]["operator"] === value.operator &&
+      arr[i]["value"] === value.value &&
+      arr[i]["value2"] === value.value2 &&
+      arr[i]["values"] === value.values 
+      ) {
+        arr.splice(i, 1);
+      }
+  }
+  return arr
+};
+
 export function changeElementAtIndex(arr, idx, fn) {
   const changedElement = fn(arr[idx])
   if (arr[idx] === changedElement) {

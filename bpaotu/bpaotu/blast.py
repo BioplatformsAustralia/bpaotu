@@ -129,4 +129,11 @@ Query command line:
 {}
 
 {}
+
+---------------------------------------------------
+How to cite Australian Microbiome data:
+https://www.australianmicrobiome.com/protocols/acknowledgements/
+
+Australian Microbiome data use policy:
+https://www.australianmicrobiome.com/protocols/data-policy/
 """.format(self._search_string, ' '.join(self._blast_command()), params.describe()).encode('utf8')

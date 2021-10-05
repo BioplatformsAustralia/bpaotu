@@ -5,7 +5,7 @@ import { bindActionCreators } from 'redux'
 import { fetchContextualDataDefinitions } from '../reducers/contextual_data_definitions'
 import { fetchAmplicons } from '../reducers/reference_data/amplicons'
 
-import { Form, FormGroup, Col, Container, Row, Input, Label, Button } from 'reactstrap'
+import { Form, FormGroup, FormFeedback, Col, Container, Row, Input, Label, Button } from 'reactstrap'
 import { nondenoisedDataRequest } from '../api'
 
 class NonDenoisedPage extends React.Component<any> {
@@ -39,7 +39,7 @@ class NonDenoisedPage extends React.Component<any> {
     }
 
     validate(state) {
-        return state['selectedAmplicon'] !== '' && state['selectedSamples'] && state['selectedSamples'].length > 0;
+        return state['selectedAmplicon'] !== '' && state['selectedSamples'] && state['selectedSamples'].length > 0 && !(state['matchSequence'].length > 0 && state['taxonomyString'].length > 0);
     }
 
     disabled() {
@@ -61,6 +61,17 @@ class NonDenoisedPage extends React.Component<any> {
             const value = evt.target.options[evt.target.selectedIndex].value;
             this.setState({ selectedAmplicon: value })
         };
+        const onMatchSequenceChange = evt => {
+            const value = evt.target.value;
+            this.setState({ matchSequence: value })
+        };
+        const onTaxonomyStringChange = evt => {
+            const value = evt.target.value;
+            this.setState({ taxonomyString: value })
+        };
+        const validateMatchSequenceTaxonomy = () => {
+            return !(this.state['matchSequence'].length > 0 && this.state['taxonomyString'].length > 0);
+        }
 
         if (this.state['submitted'] === true) {
             return <Container>
@@ -115,17 +126,21 @@ class NonDenoisedPage extends React.Component<any> {
                         name="matchSequence"
                         type="textarea"
                         value={this.state['matchSequence']}
-                        onChange={e => this.setState({ matchSequence: e.target.value })}
+                        onChange={onMatchSequenceChange}
+                        invalid={!validateMatchSequenceTaxonomy()}
                     />
+                    <FormFeedback>Either add a sequence OR a taxonomy to search for, but not both!</FormFeedback>
                 </FormGroup>
                 <FormGroup>
-                    <Label for="taxonomyString">Match sequence (SILVA132 taxonomy, only at level of interest [e.g. a family name]):</Label>
+                    <Label for="taxonomyString">Match taxonomy (Use the following taxonomy: 16S and 18S: SILVA132, ITS: UNITE SH v8.. Use only at level of interest [e.g. a family name]):</Label>
                     <Input
                         name="taxonomyString"
                         type="textarea"
                         value={this.state['taxonomyString']}
-                        onChange={e => this.setState({ taxonomyString: e.target.value })}
+                        onChange={onTaxonomyStringChange}
+                        invalid={!validateMatchSequenceTaxonomy()}
                     />
+                    <FormFeedback>Either add a sequence OR a taxonomy to search for, but not both!</FormFeedback>
                 </FormGroup>
             </Form>
             <Button disabled={!this.disabled()} onClick={this.submit} type="submit" color="primary">Submit request</Button>

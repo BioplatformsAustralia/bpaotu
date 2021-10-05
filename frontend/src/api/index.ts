@@ -24,17 +24,56 @@ export function getAmplicons() {
   return axios.get(window.otu_search_config.amplicon_endpoint)
 }
 
+export function getTraits(selectedAmplicon = { value: '5', operator: 'is' }) {
+  return axios.get(window.otu_search_config.trait_endpoint, {
+    params: {
+      amplicon: JSON.stringify(selectedAmplicon),
+    }
+  })
+}
+
 export function getContextualDataDefinitions() {
   return axios.get(window.otu_search_config.contextual_endpoint)
 }
 
-export function getTaxonomy(selectedAmplicon = { value: '' }, selectedTaxonomies) {
+export function getContextualDataForGraph(filters, options) {
+  const formData = new FormData()
+  formData.append('columns', JSON.stringify(_get(options, 'columns', [])))
+  formData.append('otu_query', JSON.stringify(filters))
+
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.contextual_graph_endpoint,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+export function getTaxonomyDataForGraph(filters, options) {
+  const formData = new FormData()
+  formData.append('columns', JSON.stringify(_get(options, 'columns', [])))
+  formData.append('otu_query', JSON.stringify(filters))
+
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.taxonomy_graph_endpoint,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+export function getTaxonomy(selectedAmplicon = { value: '' }, selectedTaxonomies, selectedTrait) {
   const taxonomies = completeArray(selectedTaxonomies, 7, { value: '' })
 
   return axios.get(window.otu_search_config.taxonomy_endpoint, {
     params: {
       amplicon: JSON.stringify(selectedAmplicon),
-      selected: JSON.stringify(taxonomies)
+      selected: JSON.stringify(taxonomies),
+      trait: JSON.stringify(selectedTrait)
     }
   })
 }

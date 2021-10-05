@@ -1,10 +1,13 @@
 import { filter, find } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
-import { Button, Card, CardBody, CardFooter, CardHeader, Col, Form, Input, Row, UncontrolledTooltip, Badge } from 'reactstrap'
+import { Button, Card, CardBody, CardFooter, CardHeader, Col, Form, FormGroup, Input, Row, Label, UncontrolledTooltip, Badge, Alert } from 'reactstrap'
 import Octicon from '../../../components/octicon'
+
 import { bindActionCreators } from 'redux'
 import {
+  addWarningContextualFilter,
+  removeWarningContextualFilter,
   addContextualFilter,
   changeContextualFilterOperator,
   changeContextualFilterValue,
@@ -21,71 +24,107 @@ import { fetchContextualDataDefinitions } from '../../../reducers/contextual_dat
 import ContextualFilter from '../../../components/contextual_filter'
 import EnvironmentFilter from './environment_filter'
 
+export const ContextualFilterInfo =
+  'Contextual filters allow data to be filtered on site specific chemical and physical data. '
+
+
 class ContextualFilterCard extends React.Component<any> {
   public componentDidMount() {
-    this.props.fetchContextualDataDefinitions()
+    if(this.props.fetchContextualDataDefinitions())
+      this.props.addWarningContextualFilter()
   }
 
   public render() {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader tag="h5">
           <Row>
-              <Col>
-                  Contextual Filters  
-              </Col>
-              <Col className="text-right">
-                <Badge pill color="secondary" style={{cursor:'pointer'}}
-                  onClick={() => {
+            <Col>
+                Contextual Filters
+            </Col>
+            <Col className="text-right" xs="auto">
+                <Button size="sm" color="secondary" style={{cursor:'pointer', margin: '-15px 0px', padding: '3px 10px'}} onClick={() => {
                     window.open(this.props.definitions_url)
                   }}>
-                  <Octicon name="link" />{' '}Download Metadata Description{' '}
-                  <Badge color="secondary" id="downloadContextualTip">
-                    <Octicon name="info" />
-                  </Badge>
-                </Badge>
-                
-                <UncontrolledTooltip target="downloadContextualTip" placement="auto">
-                  {"Download Metadata for Contextual Data fields including units, field descriptions"}
-                </UncontrolledTooltip>
-              </Col>
-            </Row>
+                  <Octicon name="link" />
+                  <span>{' '}Download metadata description{' '}</span>
+                  <Badge color="secondary" id="downloadContextualTip"><Octicon name="info" /></Badge>
+                </Button>
+                <Button size="sm" color="secondary" style={{cursor:'pointer', margin: '-15px 0px', padding: '3px 10px'}} onClick={() => {
+                    window.open('https://www.australianmicrobiome.com/wp-content/uploads/2021/01/AM_Methods_for_metadata_fields_18012021_V1.2.3.pdf')
+                  }}>
+                  <Octicon name="link" />
+                  <span>{' '}Download methods manual{' '}</span>
+                  <Badge color="secondary" id="downloadMethodlTip"><Octicon name="info" /></Badge>
+                </Button>
+              <UncontrolledTooltip target="downloadContextualTip" placement="auto">
+                {"Download Metadata for Contextual Data fields including units, field descriptions and controlled vocabularies"}
+              </UncontrolledTooltip>
+              <UncontrolledTooltip target="downloadMethodlTip" placement="auto">
+                {"Download the manual containing scientific methods used in sample collection and processing"}
+              </UncontrolledTooltip>
+            </Col>
+          </Row>
         </CardHeader>
         <CardBody className="filters">
           <EnvironmentFilter />
 
           <hr />
-          <h5 className="text-center">Contextual Filters</h5>
-
+          <h5 className="text-center">Contextual Filters{' '}
+          <span id="contextualFilterTip">
+            <Octicon name="info" />
+          </span>
+          <UncontrolledTooltip target="contextualFilterTip" placement="auto">
+            {ContextualFilterInfo}
+          </UncontrolledTooltip>
+          </h5>
           <Row>
             <Col>
               <p className="text-center">
-                Contextual filters allow data to be filtered on site specific chemical and physical data. More than one filter may be used and combined with "all/any" functions.
+                More than one filter may be used and combined with "all/any" functions.
               </p>
+            </Col>
+          </Row>
+
+          <Row>
+            <Col sm={12}>
+              <Alert color="secondary">
+                <FormGroup check>
+                  <Label sm={12} check color="primary">
+                    <Input
+                        type="checkbox"
+                        checked={this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?false:true}
+                        onChange={evt => evt.target.checked? this.props.removeWarningContextualFilter():this.props.addWarningContextualFilter() }
+                      />
+                      
+                        {this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?"Check to show all data including samples with integrity warnings.":"Uncheck to remove samples with integrity warnings."}
+                  </Label>
+                </FormGroup>
+                </Alert>
             </Col>
           </Row>
 
           {this.props.contextualFilters.length >= 2 && (
             <Row>
               <Col sm={12}>
-                <Form inline={true}>
-                  Samples must match &nbsp;
-                  <Input
-                    type="select"
-                    bsSize="sm"
-                    value={this.props.contextualFiltersMode}
-                    onChange={evt => this.props.selectContextualFiltersMode(evt.target.value)}
-                  >
-                    <option value="and">all</option>
-                    <option value="or">any</option>
-                  </Input>
-                  &nbsp; of the following contextual filters.
-                </Form>
+                <Alert color="secondary">
+                  <Form inline={true}>
+                    Samples must match &nbsp;
+                    <Input
+                      type="select"
+                      bsSize="sm"
+                      value={this.props.contextualFiltersMode}
+                      onChange={evt => this.props.selectContextualFiltersMode(evt.target.value)}
+                    >
+                      <option value="and">all</option>
+                      <option value="or">any</option>
+                    </Input>
+                    &nbsp; of the following contextual filters.
+                  </Form>
+                </Alert>
               </Col>
             </Row>
           )}
-
-          <Row className="space-above" />
 
           {this.props.contextualFilters.map((fltr, index) => (
             <ContextualFilter
@@ -101,6 +140,7 @@ class ContextualFilterCard extends React.Component<any> {
               changeValue={this.props.changeContextualFilterValue}
               changeValue2={this.props.changeContextualFilterValue2}
               changeValues={this.props.changeContextualFilterValues}
+              definitions={this.props.definitions}
             />
           ))}
         </CardBody>
@@ -130,7 +170,8 @@ function mapStateToProps(state) {
       state.searchPage.filters.contextual.selectedEnvironment
     ),
     optionsLoading: state.contextualDataDefinitions.isLoading,
-    definitions_url: state.contextualDataDefinitions.definitions_url
+    definitions_url: state.contextualDataDefinitions.definitions_url,
+    definitions: state.contextualDataDefinitions.values
   }
 }
 
@@ -139,6 +180,8 @@ function mapDispatchToProps(dispatch: any) {
     {
       fetchContextualDataDefinitions,
       selectContextualFiltersMode,
+      addWarningContextualFilter,
+      removeWarningContextualFilter,
       addContextualFilter,
       removeContextualFilter,
       selectContextualFilter,

@@ -1,4 +1,5 @@
 import csv
+import numpy as np
 import pandas as pd
 import hmac
 import io
@@ -10,6 +11,8 @@ import time
 from collections import OrderedDict, defaultdict
 from functools import wraps
 from operator import itemgetter
+from io import BytesIO
+from xhtml2pdf import pisa
 from requests.models import HTTPError
 
 from bpaingest.projects.amdb.contextual import \
@@ -36,6 +39,7 @@ from .query import (ContextualFilter, ContextualFilterTermDate,
                     ContextualFilterTermFloat, ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
                     MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
+                    OTUSampleOTUQuery,
                     TaxonomyFilter, TaxonomyOptions, get_sample_ids,
                     SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
 from .site_images import fetch_image, get_site_image_lookup_table
@@ -81,12 +85,23 @@ def get_operator_and_int_value(v):
         ('value', int_if_not_already_none(v['value'])),
     ))
 
+def get_operator_and_string_value(v):
+    if v is None or v == '':
+        return None
+    if v.get('value', '') == '':
+        return None
+    return OrderedDict((
+        ('operator', v.get('operator', '=')),
+        ('value', v['value']),
+    ))
 
+
+clean_trait_filter = get_operator_and_string_value
 clean_amplicon_filter = get_operator_and_int_value
 clean_environment_filter = get_operator_and_int_value
 
 
-def make_clean_taxonomy_filter(amplicon_filter, state_vector):
+def make_clean_taxonomy_filter(amplicon_filter, state_vector, trait_filter):
     """
     take an amplicon filter and a taxonomy filter
     # (a list of phylum, kingdom, ...) and clean it
@@ -97,7 +112,8 @@ def make_clean_taxonomy_filter(amplicon_filter, state_vector):
         clean_amplicon_filter(amplicon_filter),
         list(map(
             get_operator_and_int_value,
-            state_vector)))
+            state_vector)),
+        clean_trait_filter(trait_filter))
 
 
 def normalise_blast_search_string(s):
@@ -115,8 +131,11 @@ def normalise_blast_search_string(s):
 def api_config(request):
     config = {
         'amplicon_endpoint': reverse('amplicon_options'),
+        'trait_endpoint': reverse('trait_options'),
         'taxonomy_endpoint': reverse('taxonomy_options'),
         'contextual_endpoint': reverse('contextual_fields'),
+        'contextual_graph_endpoint': reverse('contextual_graph_fields'),
+        'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),
         'search_endpoint': reverse('otu_search'),
         'export_endpoint': reverse('otu_export'),
         'export_biom_endpoint': reverse('otu_biom_export'),
@@ -138,6 +157,7 @@ def api_config(request):
             settings.CKAN_CHECK_PERMISSIONS_URL if settings.PRODUCTION
             else reverse('dev_only_ckan_check_permissions')),
         'galaxy_integration': settings.GALAXY_INTEGRATION,
+        'default_amplicon': settings.DEFAULT_AMPLICON,
     }
     return JsonResponse(config)
 
@@ -154,6 +174,19 @@ def amplicon_options(request):
         'possibilities': vals
     })
 
+@require_CKAN_auth
+@require_GET
+def trait_options(request):
+    """
+    private API: return the possible traits
+    """
+    with OTUSampleOTUQuery(OTUQueryParams(None,None)) as query:
+        amplicon_filter = clean_amplicon_filter(json.loads(request.GET['amplicon']))
+        vals = [[x[0], x[0]] for x in query.import_traits(amplicon_filter)]
+    return JsonResponse({
+        'possibilities': vals
+    })
+
 
 @require_CKAN_auth
 @require_GET
@@ -161,10 +194,12 @@ def taxonomy_options(request):
     """
     private API: given taxonomy constraints, return the possible options
     """
+    
     with TaxonomyOptions() as options:
         taxonomy_filter = make_clean_taxonomy_filter(
             json.loads(request.GET['amplicon']),
-            json.loads(request.GET['selected']))
+            json.loads(request.GET['selected']),
+            json.loads(request.GET['trait']))
         possibilities = options.possibilities(taxonomy_filter)
     return JsonResponse({
         'possibilities': possibilities
@@ -178,12 +213,21 @@ def contextual_fields(request):
     private API: return the available fields, and their types, so that
     the contextual filtering UI can be built
     """
-    fields_by_type = defaultdict(list)
-
-    classifications = DataImporter.classify_fields(make_environment_lookup(), get_contextual_schema_definition())
+    field_definitions, classifications, ontology_classes, fields_by_type = {}, {}, {}, defaultdict(list)
     field_units = AustralianMicrobiomeSampleContextual.units_for_fields()
+    contextual_schema_definition = get_contextual_schema_definition().get("definition", {})
+    for key, field in contextual_schema_definition.get("Field", {}).items():
+        if field in DataImporter.amd_ontologies:
+            field += '_id'
+        elif field == 'sample_id':
+            field = 'id'
+        field_definitions[field] = contextual_schema_definition.get("Field_Definition", {}).get(key)
+        am_environment = contextual_schema_definition.get("AM_enviro", {}).get(key).lstrip().rstrip()
+        am_environment_lookup = dict((t[1], t[0]) for t in make_environment_lookup().items())
+        am_environment_id = am_environment_lookup.get(am_environment, "")
+        if am_environment_id:
+            classifications[field] = am_environment_id
 
-    ontology_classes = {}
 
     # TODO Note TS: I don't understand why do we group columns together by their type.
     # Why can't we just got through them once and map them to the definitions?
@@ -201,20 +245,20 @@ def contextual_fields(request):
         fields_by_type[ty].append(column.name)
 
     def make_defn(typ, name, **kwargs):
-        environment = classifications.get(name)
         r = kwargs.copy()
         r.update({
             'type': typ,
             'name': name,
-            'environment': environment,
+            'environment': classifications.get(name),
             'display_name': SampleContext.display_name(name),
-            'units': field_units.get(name)
+            'units': field_units.get(name),
+            'definition': field_definitions.get(name),
         })
         return r
 
     with OntologyInfo() as info:
         fields_with_values = [
-            (field_name, info.get_values(ontology_classes[field_name]))
+            (field_name, info.get_values_filtered(ontology_classes[field_name], field_name))
             for field_name in fields_by_type['_ontology']]
 
     definitions = (
@@ -231,6 +275,172 @@ def contextual_fields(request):
         'definitions_url': get_contextual_schema_definition().get("download_url")
     })
 
+@require_CKAN_auth
+@require_POST
+def contextual_graph_fields(request, contextual_filtering=True):
+    additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+    all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph', 'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id', 'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
+    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+    if errors:
+        return JsonResponse({
+            'errors': [str(t) for t in errors],
+            'graphdata': {}
+        })
+    graph_results = {}
+
+    with SampleQuery(params) as query:
+        results = query.matching_sample_graph_data(all_headers)
+
+    if results:
+        data = np.array(results)
+        tdata = data.T
+
+        for i in range(len(all_headers)):
+            ll = []
+            cleaned_data = [x for x in tdata[i] if (x != None)]
+            for test in np.unique(cleaned_data, return_counts=True):
+                ll.append(test.tolist())
+            graph_results[all_headers[i]] = ll
+
+    return JsonResponse({
+        'graphdata': graph_results
+    })
+
+@require_CKAN_auth
+@require_POST
+def taxonomy_graph_fields(request, contextual_filtering=True):
+    # Exclude environment field of contextual_filters
+    am_environment_selected = None 
+    otu_query = request.POST['otu_query']
+    otu_query_dict = json.loads(otu_query)
+    if(otu_query_dict.get('contextual_filters') and otu_query_dict.get('contextual_filters').get('environment')):
+        am_environment_selected = otu_query_dict['contextual_filters']['environment']
+        otu_query_dict['contextual_filters']['environment'] = None
+        otu_query = json.dumps(otu_query_dict)
+
+    params_all, errors_all = param_to_filters(otu_query, contextual_filtering=False)
+    if errors_all:
+        return JsonResponse({
+            'errors': [str(t) for t in errors_all],
+            'graphdata': {}
+        })
+
+    with OTUSampleOTUQuery(params_all) as query:
+        results_all = query.matching_taxonomy_graph_data()
+
+    params_selected, errors_selected = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+    if errors_selected:
+        return JsonResponse({
+            'errors': [str(t) for t in errors_selected],
+            'graphdata': {}
+        })
+
+    with OTUSampleOTUQuery(params_selected) as query:
+        results_selected = query.matching_taxonomy_graph_data()
+
+    df_results_all = pd.DataFrame(results_all, columns=['amplicon', 'taxonomy', 'am_environment', 'traits', 'sum'])
+    df_results_selected = pd.DataFrame(results_selected, columns=['amplicon', 'taxonomy', 'am_environment', 'traits', 'sum'])
+    taxonomy_results = dict(df_results_selected.groupby('taxonomy').agg({'sum': ['sum']}).itertuples(index=True, name=None))
+    amplicon_results = dict(df_results_selected.groupby('amplicon').agg({'sum': ['sum']}).itertuples(index=True, name=None))
+
+    df_traits = df_results_selected.explode('traits')
+    trait_filter = otu_query_dict['trait_filter']
+    traits_filter_value = trait_filter.get('value')
+    if traits_filter_value != "":
+        traits_filter_operator = '==' if (trait_filter.get('operator') == 'is') else '!='
+        traits_filter_query = f"traits {traits_filter_operator} \"{traits_filter_value}\""
+        df_traits = df_traits.query(f'{traits_filter_query}')
+    df_traits_group = df_traits.groupby('traits')
+    traits_results = dict(df_traits_group.agg({'sum': ['sum']}).itertuples(index=True, name=None))
+
+    am_environment_results_all = []
+    for taxonomy_am_environment, sum in df_results_all.groupby(['taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        am_environment_results_all.append([taxonomy_am_environment, sum])
+    
+    am_environment_results = {}
+    if am_environment_selected and am_environment_selected.get('value', None):
+        df_results_all = df_results_all.query('am_environment == @am_environment_selected.get("value", None)')
+    for taxonomy_am_environment, sum in df_results_all.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        if am_environment_results.get(taxonomy_am_environment[0]):
+            am_environment_results[taxonomy_am_environment[0]].append([taxonomy_am_environment[1], sum])
+        else:
+            am_environment_results[taxonomy_am_environment[0]] = [[taxonomy_am_environment[1], sum]]
+    
+    am_environment_results_selected = {}
+    for taxonomy_am_environment, sum in df_results_selected.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        if am_environment_results_selected.get(taxonomy_am_environment[0]):
+            am_environment_results_selected[taxonomy_am_environment[0]].append([taxonomy_am_environment[1], sum])
+        else:
+            am_environment_results_selected[taxonomy_am_environment[0]] = [[taxonomy_am_environment[1], sum]]
+
+    am_environment_results_non_selected = {}
+    for taxonomy_am_environment in am_environment_results:
+        if am_environment_results_selected.get(taxonomy_am_environment):
+            tlist = []
+            for taxa in am_environment_results.get(taxonomy_am_environment):
+                for taxa_selected in am_environment_results_selected.get(taxonomy_am_environment):
+                    if taxa[0] == taxa_selected[0]:
+                        tlist.append([taxa[0], taxa[1]-taxa_selected[1]])
+            if am_environment_results_non_selected.get(taxonomy_am_environment):
+                am_environment_results_non_selected[taxonomy_am_environment].append(tlist)
+            else:
+                am_environment_results_non_selected[taxonomy_am_environment] = tlist
+        else:
+            am_environment_results_non_selected[taxonomy_am_environment] = am_environment_results[taxonomy_am_environment]
+
+    # Traits calculations 
+    traits_df_results_all = df_results_all.explode('traits')
+    traits_am_environment_results_all = []
+    for traits_am_environment, sum in traits_df_results_all.groupby(['traits']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        traits_am_environment_results_all.append([traits_am_environment, sum])
+    
+    traits_am_environment_results = {}
+    if am_environment_selected and am_environment_selected.get('value', None):
+        traits_df_results_all = traits_df_results_all.query('am_environment == @am_environment_selected.get("value", None)')
+    for traits_am_environment, sum in traits_df_results_all.groupby(['am_environment', 'traits']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        if traits_am_environment_results.get(traits_am_environment[0]):
+            traits_am_environment_results[traits_am_environment[0]].append([traits_am_environment[1], sum])
+        else:
+            traits_am_environment_results[traits_am_environment[0]] = [[traits_am_environment[1], sum]]
+    
+    df_results_selected = df_results_selected.explode("traits")
+    traits_am_environment_results_selected = {}
+    for traits_am_environment, sum in df_results_selected.groupby(['am_environment', 'traits']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
+        if traits_am_environment_results_selected.get(traits_am_environment[0]):
+            traits_am_environment_results_selected[traits_am_environment[0]].append([traits_am_environment[1], sum])
+        else:
+            traits_am_environment_results_selected[traits_am_environment[0]] = [[traits_am_environment[1], sum]]
+
+    traits_am_environment_results_non_selected = {}
+    for traits_am_environment in traits_am_environment_results:
+        if traits_am_environment_results_selected.get(traits_am_environment):
+            tlist = []
+            for trait in traits_am_environment_results.get(traits_am_environment):
+                for trait_selected in traits_am_environment_results_selected.get(traits_am_environment):
+                    if trait[0] == trait_selected[0]:
+                        tlist.append([trait[0], trait[1]-trait_selected[1]])
+            if traits_am_environment_results_non_selected.get(traits_am_environment):
+                traits_am_environment_results_non_selected[traits_am_environment].append(tlist)
+            else:
+                traits_am_environment_results_non_selected[traits_am_environment] = tlist
+        else:
+            traits_am_environment_results_non_selected[traits_am_environment] = traits_am_environment_results[traits_am_environment]
+
+    return JsonResponse({
+        'graphdata': {
+            "traits": traits_results,
+            "amplicon": amplicon_results,
+            "taxonomy": taxonomy_results,
+            "am_environment_all": am_environment_results_all,
+            "am_environment": am_environment_results,
+            "am_environment_selected": am_environment_results_selected,
+            "am_environment_non_selected": am_environment_results_non_selected,
+            "traits_am_environment_all": traits_am_environment_results_all,
+            "traits_am_environment": traits_am_environment_results,
+            "traits_am_environment_selected": traits_am_environment_results_selected,
+            "traits_am_environment_non_selected": traits_am_environment_results_non_selected
+        }
+    })
 
 def _parse_contextual_term(filter_spec):
     field_name = filter_spec['field']
@@ -252,8 +462,8 @@ def _parse_contextual_term(filter_spec):
             field_name, operator, parse_float(filter_spec['from']), parse_float(filter_spec['to']))
     elif typ == 'CITEXT':
         value = str(filter_spec['contains'])
-        if value == '':
-            raise ValueError("Value can't be empty")
+        # if value == '':
+        #     raise ValueError("Value can't be empty")
         return ContextualFilterTermString(field_name, operator, value)
     else:
         raise ValueError("invalid filter term type: %s", typ)
@@ -268,7 +478,8 @@ def param_to_filters(query_str, contextual_filtering=True):
     otu_query = json.loads(query_str)
     taxonomy_filter = make_clean_taxonomy_filter(
         otu_query['amplicon_filter'],
-        otu_query['taxonomy_filters'])
+        otu_query['taxonomy_filters'],
+        otu_query['trait_filter'])
 
     context_spec = otu_query['contextual_filters']
     contextual_filter = ContextualFilter(context_spec['mode'], context_spec['environment'])
@@ -291,6 +502,19 @@ def param_to_filters(query_str, contextual_filtering=True):
     return (OTUQueryParams(
         contextual_filter=contextual_filter,
         taxonomy_filter=taxonomy_filter), errors)
+
+def selected_contextual_filters(query_str, contextual_filtering=True):
+
+    otu_query = json.loads(query_str)
+    context_spec = otu_query['contextual_filters']
+    contextual_filter = []
+
+    if contextual_filtering:
+        for filter_spec in context_spec['filters']:
+            field_name = filter_spec['field']
+            contextual_filter.append(field_name)
+
+    return contextual_filter
 
 
 @require_POST
@@ -380,15 +604,16 @@ def otu_search_sample_sites(request):
         return JsonResponse({
             'errors': [str(e) for e in errors],
             'data': [],
+            'sample_otus': []
         })
-    data = spatial_query(params)
+    data, sample_otus = spatial_query(params)
 
     site_image_lookup_table = get_site_image_lookup_table()
 
     for d in data:
         key = (str(d['latitude']), str(d['longitude']))
         d['site_images'] = site_image_lookup_table.get(key)
-    return JsonResponse({'data': data})
+    return JsonResponse({'data': data, 'sample_otus': sample_otus})
 
 
 # technically we should be using GET, but the specification
@@ -611,9 +836,64 @@ def otu_log(request):
             'files': sorted(info.file_logs(), key=lambda x: x.filename),
             'ontology_errors': sorted(info.ontology_errors(), key=lambda x: x.ontology_name),
             'metadata': import_meta,
+            'pdf': request.GET.get('pdf')
         }
         context.update(missing)
-    return HttpResponse(template.render(context, request))
+    html = template.render(context, request)
+    if request.GET.get("pdf"):
+        result = BytesIO()
+        pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            filename = "out_log_%s.pdf" %(str(import_meta.revision_date))
+            content = "inline; filename=%s" %(filename)
+            download = request.GET.get("download")
+            if download:
+                content = "attachment; filename=%s" %(filename)
+            response['Content-Disposition'] = content
+    else:
+        response = HttpResponse(html)
+    return response
+
+@require_GET
+def otu_log_download(request):
+    missing = {}
+    with MetadataInfo() as info:
+        for obj in info.excluded_samples():
+            missing[obj.reason] = sorted(obj.samples)
+        metadata = info.import_metadata()
+        file_logs = []
+        for file in sorted(info.file_logs(), key=lambda x: x.filename):
+            file_log = {
+                'File name': file.filename,
+                'File type': file.file_type,
+                'File size': file.file_size,
+                'Rows imported': file.rows_imported,
+                'Rows skipped': file.rows_skipped
+            }
+            file_logs.append(file_log)
+        context = {
+            'ckan_base_url': settings.CKAN_SERVER['base_url'],
+            'files': file_logs,
+            'ontology_errors': sorted(info.ontology_errors(), key=lambda x: x.ontology_name),
+            'metadata': {
+                'Methodology': metadata.methodology,
+                'Analysis URL': metadata.analysis_url,
+                'Revision': str(metadata.revision_date),
+                'Imported': str(metadata.imported_at),
+                'Samples': metadata.samplecontext_count,
+                'OTUs': metadata.otu_count,
+                'Abundance entries': metadata.sampleotu_count
+            }
+        }
+        context.update(missing)
+
+    data = json.dumps(context, indent=4)
+
+    response = HttpResponse(data, content_type='application/json')
+    filename = f"{metadata.revision_date}-csv.json"
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+    return response
 
 @require_GET
 def contextual_schema_definition(request):
@@ -630,7 +910,6 @@ def contextual_schema_definition_query():
         logger.error(f"Link {download_url} doesn't exists. {e}")
         download_url = ""
         df_definition = pd.DataFrame()
-
     return {
         'download_url': download_url,
         'definition': df_definition.to_dict(),
@@ -640,8 +919,8 @@ def get_contextual_schema_definition(cache_duration=CACHE_7DAYS, force_cache=Fal
     cache = caches['contextual_schema_definition_results']
     key = make_cache_key('contextual_schema_definition_query')
     result = None
-    if not force_cache:
-        result = cache.get(key)
+    # if not force_cache:
+    #     result = cache.get(key)
     if result is None:
         result = contextual_schema_definition_query()
         cache.set(key, result, cache_duration)

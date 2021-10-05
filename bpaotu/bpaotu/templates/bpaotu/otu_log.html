@@ -23,11 +23,20 @@
     td, th {
         vertical-align: top;
     }
+
+    table {
+        width: 100%;
+        max-width: 100%;
+        table-layout:fixed;
+        margin-bottom: 5px;
+
+    }
     
     table, th, td {
-        padding: 12px;
-        border: 1px solid;
-        border-collapse: collapse;
+        padding: 5px;
+        border: 1 solid;
+        border-width: 1px;
+        border-style: solid;
     }
 </style>
 
@@ -35,13 +44,25 @@
     <div class="row">
         <div class="col-md-12">
             <h1>Bioplatforms OTU Database - Ingest log</h1>
+            <hr />
+            
+            {% if not pdf %}
+            <h5 style="text-align:right">&#8595; Download as <a href="download">JSON</a> | <a href="?pdf=true&download=true" target="_blank">PDF</a></h5>
+            {% endif %}
 
-            <h2>Database</h2>
+            <br />
+            <h2>Database </h2>
+
+            
 
             <table>
                 <tr>
-                    <td>Methodology:</td>
+                    <td width="20%">Methodology:</td>
                     <td>{{ metadata.methodology }}</td>
+                </tr>
+                <tr>
+                    <td>Analysis url:</td>
+                    <td>{{ metadata.analysis_url }}</td>
                 </tr>
                 <tr>
                     <td>Revision:</td>
@@ -61,12 +82,12 @@
                 </tr>
 
             </table>
-
+            <br />
             <h2>Files ingested</h2>
 
             <table>
                 <thead>
-                    <th>File name</th>
+                    <th width="60%">File name</th>
                     <th>File type</th>
                     <th>File size</th>
                     <th>Rows imported</th>
@@ -75,7 +96,7 @@
                 
                 {% for file in files %}
                 <tr>
-                    <td>{{ file.filename }}</td>
+                    <td style="word-wrap: break-word">{{ file.filename }}</td>
                     <td>{{ file.file_type }}</td>
                     <td>{{ file.file_size | intcomma }}</td>
                     <td>{{ file.rows_imported | intcomma }}</td>
@@ -83,7 +104,7 @@
                 </tr>
                 {% endfor %}
             </table>
-            
+            <br />
             <h2>Ontology errors</h2>
             
             <table>
@@ -110,6 +131,7 @@
 
                 {% endfor %}
             </table>
+            <br />
             <h2>Samples excluded: non-Bioplatforms Sample ID ({{ sample_non_integer | length }})</h2>
             
             <table>
@@ -123,6 +145,7 @@
                 </td></tr>
             </table>
 
+            <br />
             <h2>Samples excluded: metadata exists, but does not meet minimum standards ({{ sample_metadata_incomplete | length }})</h2>
             
             <table>
@@ -139,7 +162,8 @@
                     {% endfor %}
                 </td></tr>
             </table>
-
+            
+            <br />
             <h2>Samples excluded: no metadata ({{ sample_not_in_metadata | length }})</h2>
             
             <table>

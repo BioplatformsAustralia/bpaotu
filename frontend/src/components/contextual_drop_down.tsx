@@ -1,8 +1,8 @@
 import { concat, map } from 'lodash'
 import * as React from 'react'
-import { Button, Col, Input, Row } from 'reactstrap'
+import { Button, Col, Row } from 'reactstrap'
 import Octicon from './octicon'
-
+import Select from 'react-select';
 export class ContextualDropDown extends React.Component<any> {
   protected dropDownSize = 11
 
@@ -21,13 +21,14 @@ export class ContextualDropDown extends React.Component<any> {
           </Button>
         </Col>
         <Col sm={this.dropDownSize} className="no-padding-right">
-          <Input
-            type="select"
-            value={this.props.filter.name}
-            onChange={evt => this.props.select(this.props.index, evt.target.value)}
-          >
-            {this.renderOptions()}
-          </Input>
+          <Select
+            placeholder="Select filter"
+            isSearchable={true}
+            isLoading={this.props.optionsLoading}
+            options={this.renderOptions()}
+            value={map(this.props.options, this.renderOption).filter(option => option.value === this.props.filter.name)}
+            onChange={evt => this.props.select(this.props.index, evt.value)}
+          />
         </Col>
         {this.renderOperatorAndValue()}
       </Row>
@@ -35,19 +36,7 @@ export class ContextualDropDown extends React.Component<any> {
   }
 
   public renderOptions() {
-    if (this.props.optionsLoading) {
-      return (
-        <option key="loading" value="">
-          Loading...
-        </option>
-      )
-    }
     return concat(
-      [
-        <option key="" value="">
-          ---
-        </option>
-      ],
       map(this.props.options, this.renderOption)
     )
   }
@@ -58,9 +47,7 @@ export class ContextualDropDown extends React.Component<any> {
       displayName += ` [${option.units}]`
     }
     return (
-      <option key={option.name} value={option.name}>
-        {displayName}
-      </option>
+      { value: option.name, label: displayName }
     )
   }
 

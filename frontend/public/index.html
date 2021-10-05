@@ -37,8 +37,11 @@
   <script>
     window.otu_search_config = {
       'amplicon_endpoint': "%PUBLIC_URL%/private/api/v1/amplicon-options",
+      'trait_endpoint': "%PUBLIC_URL%/private/api/v1/trait-options",
       'taxonomy_endpoint': "%PUBLIC_URL%/private/api/v1/taxonomy-options",
       'contextual_endpoint': "%PUBLIC_URL%/private/api/v1/contextual-fields",
+      'contextual_graph_endpoint': "%PUBLIC_URL%/private/api/v1/contextual-graph-fields",
+      'taxonomy_graph_endpoint': "%PUBLIC_URL%/private/api/v1/taxonomy-graph-fields",
       'search_endpoint': "%PUBLIC_URL%/private/api/v1/search",
       'export_endpoint': "%PUBLIC_URL%/private/api/v1/export",
       'export_biom_endpoint': "%PUBLIC_URL%/private/api/v1/export_biom",
@@ -57,14 +60,15 @@
       'galaxy_base_url': "https://galaxy-aust-dev.genome.edu.au",
       'ckan_base_url': "https://data.bioplatforms.com/",
       'galaxy_integration': false,
-      'ckan_check_permissions': "%PUBLIC_URL%/private/api/v1/user/check_permissions"
+      'ckan_check_permissions': "%PUBLIC_URL%/private/api/v1/user/check_permissions",
+      'default_amplicon': "27f519r_bacteria"
     };
   </script>
   <footer class="site-footer space-above">
     <div class="site-footer-links container-fluid">
       <a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a>
       <a href="https://github.com/BioplatformsAustralia/bpaotu">Source Code</a>
-      <a href="mailto:help@bioplatforms.com">Contact</a>
+      <a href="mailto:help@bioplatforms.com?cc=andrew.bissett@csiro.au" data-tut="reactour__Contact">Contact</a>
     </div>
     <div class="site-footer-logo container-fluid">
       <span><a href="https://www.bioplatforms.com"><img class="footer-logos"

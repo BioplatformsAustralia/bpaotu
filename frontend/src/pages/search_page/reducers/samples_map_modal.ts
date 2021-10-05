@@ -40,17 +40,20 @@ export default handleActions(
     [samplesMapModalFetchSamplesStarted as any]: (state, action) => ({
       ...state,
       isLoading: true,
-      markers: []
+      markers: [],
+      sample_otus: []
     }),
     [samplesMapModalFetchSamplesEnded as any]: (state, action: any) => ({
       ...state,
       isLoading: false,
       markers: map(action.payload.data.data, sample => ({
         bpadata: sample.bpa_data,
+        abundance: sample.sample_otus_abundance,
         lat: sample.latitude,
         lng: sample.longitude,
         site_images: sample.site_images
-      }))
+      })),
+      sample_otus: action.payload.data.sample_otus
     })
   },
   searchPageInitialState.samplesMapModal

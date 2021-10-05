@@ -3,19 +3,30 @@ import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
-import { Alert, Button, Card, CardBody, CardHeader } from 'reactstrap'
-
+import { Alert, Button, Card, CardBody, CardHeader  } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 import { openSamplesMapModal } from '../reducers/samples_map_modal'
+import { openSamplesGraphModal } from '../reducers/samples_graph_modal'
 import { describeSearch } from '../reducers/search'
 import { clearGalaxyAlert, submitToGalaxy, workflowOnGalaxy } from '../reducers/submit_to_galaxy'
 import { clearTips, showPhinchTip } from '../reducers/tips'
 import { GalaxySubmission } from '../reducers/types'
 import SamplesMapModal from './samples_map_modal'
+import SamplesGraphModal from './samples_graph_modal'
 import SearchResultsTable from './search_results_table'
 
 const HeaderButton = props => (
-  <Button style={{ marginRight: 10 }} outline={true} color="primary" disabled={props.disabled} onClick={props.onClick}>
+  <Button 
+    id={props.text} 
+    size="sm"
+    style={{ marginRight: 10 }} 
+    outline={true} 
+    color="primary" 
+    disabled={props.disabled} 
+    onClick={props.onClick} 
+    data-tut={props.text} 
+    title={props.disabled?'Select Amplicon to '+props.text:''}
+  >
     {props.octicon ? (
       <span>
         <Octicon name={props.octicon} />
@@ -49,27 +60,26 @@ class SearchResultsCard extends React.Component<any, any> {
       <div>
         <Card>
           <CardHeader>
-            <div>
-              <HeaderButton octicon="globe" text="Show results on Map" onClick={this.props.openSamplesMapModal} />
+            <div className="text-center">
+              <HeaderButton octicon="desktop-download" text="Download OTU and Contextual Data (CSV)" onClick={this.exportCSV} />
+              <HeaderButton octicon="desktop-download" text="Download Contextual Data only (CSV)" onClick={this.exportCSVOnlyContextual} />
+              <HeaderButton octicon="desktop-download" text="Download BIOM format (Phinch compatible)" onClick={this.exportBIOM} />
               {window.otu_search_config.galaxy_integration && (
                 <HeaderButton
                   octicon="clippy"
                   text="Export Data to Galaxy Australia for further analysis"
-                  disabled={this.isGalaxySubmissionDisabled()}
+                  disabled={this.isGalaxySubmissionDisabled() || this.isAmpliconSelected()}
                   onClick={this.props.submitToGalaxy}
                 />
               )}
               {window.otu_search_config.galaxy_integration && (
                 <HeaderButton
                   octicon="graph"
-                  text="Make Krona Taxonomic Abundance Graph using Galaxy Australia"
-                  disabled={this.isGalaxySubmissionDisabled()}
+                  text="Export Data to Galaxy Australia for Krona Taxonomic Abundance Graph"
+                  disabled={this.isGalaxySubmissionDisabled() || this.isAmpliconSelected()}
                   onClick={this.props.workflowOnGalaxy}
                 />
               )}
-              <HeaderButton octicon="desktop-download" text="Export Search Results (CSV)" onClick={this.exportCSV} />
-              <HeaderButton octicon="desktop-download" text="Export Search Results - Only Contextual Data (CSV)" onClick={this.exportCSVOnlyContextual} />
-              <HeaderButton octicon="desktop-download" text="Export Search Results (Phinch compatible BIOM)" onClick={this.exportBIOM} />
             </div>
           </CardHeader>
           <CardBody>
@@ -100,7 +110,9 @@ class SearchResultsCard extends React.Component<any, any> {
             <SearchResultsTable />
           </CardBody>
         </Card>
+        
         <SamplesMapModal />
+        <SamplesGraphModal />
       </div>
     )
   }
@@ -111,6 +123,10 @@ class SearchResultsCard extends React.Component<any, any> {
     }
     const lastSubmission: GalaxySubmission = last(this.props.galaxy.submissions)
     return lastSubmission && !lastSubmission.finished
+  }
+
+  public isAmpliconSelected() {
+    return this.props.filters.selectedAmplicon.value===""?true:false
   }
 
   public export(baseURL, onlyContextual=false) {
@@ -151,6 +167,7 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
       openSamplesMapModal,
+      openSamplesGraphModal,
       submitToGalaxy,
       workflowOnGalaxy,
       clearGalaxyAlert,

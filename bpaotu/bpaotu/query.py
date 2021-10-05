@@ -2,9 +2,12 @@ import datetime
 from functools import partial
 from itertools import chain
 import logging
+import inspect
 
 import sqlalchemy
+from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker, aliased
+from sqlalchemy.dialects import postgresql
 
 from django.core.cache import caches
 from hashlib import sha256
@@ -22,6 +25,9 @@ from .otu import (
     OTUSpecies,
     SampleContext,
     SampleOTU,
+    OTUSampleOTU,
+    OTUSampleOTU20K,
+    SampleOTU20K,
     ImportMetadata,
     ImportedFile,
     ExcludedSamples,
@@ -72,11 +78,13 @@ class OTUQueryParams:
         # a short title, maximum length `max_chars`
         pfx = 'Australian Microbiome: '
         parts = []
-        amplicon_descr, taxonomy_descr = self.taxonomy_filter.describe()
+        amplicon_descr, taxonomy_descr, trait_descr = self.taxonomy_filter.describe()
         if amplicon_descr is not None:
             parts.append(amplicon_descr)
         if taxonomy_descr:
             parts.append(taxonomy_descr[-1])
+        if trait_descr is not None:
+            parts.append(trait_descr)
         parts += self.contextual_filter.describe()
         return pfx + '; '.join(parts)
 
@@ -84,7 +92,7 @@ class OTUQueryParams:
         "a short title, maximum length `max_chars`"
 
         parts = []
-        amplicon_descr, taxonomy_descr = self.taxonomy_filter.describe()
+        amplicon_descr, taxonomy_descr, trait_descr = self.taxonomy_filter.describe()
         indent = '  '
 
         def add_section(lines):
@@ -106,6 +114,14 @@ class OTUQueryParams:
                 p.append(indent + '(no taxonomy filter applied)')
             return p
 
+        def trait_section():
+            p = ['Traits filter:']
+            if trait_descr is not None:
+                p.append(indent + trait_descr)
+            else:
+                p.append(indent + '(no trait filter applied)')
+            return p
+
         def contextual_section():
             p = ['Contextual filter:']
             for entry in self.contextual_filter.describe():
@@ -119,11 +135,13 @@ class OTUQueryParams:
             return [
                 'Australian Microbiome Database Metadata:',
                 indent + 'Dataset methodology={}'.format(metadata.methodology),
+                indent + 'Dataset analysis url={}'.format(metadata.analysis_url),
                 indent + 'Dataset revision date={}'.format(metadata.revision_date),
             ]
 
         add_section(amplicon_section())
         add_section(taxonomy_section())
+        add_section(trait_section())
         add_section(contextual_section())
         add_section(metadata_section())
 
@@ -219,6 +237,7 @@ class TaxonomyOptions:
             q = apply_amplicon_filter(q, taxonomy_filter.amplicon_filter)
             for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, state):
                 q = apply_otu_filter(otu_attr, q, taxonomy)
+            q = apply_trait_filter(q, taxonomy_filter.trait_filter)
             q = q.join(target_class)
             possibilities = q.all()
 
@@ -270,6 +289,11 @@ class OntologyInfo:
         vals.sort(key=lambda v: v[1])
         return vals
 
+    def get_values_filtered(self, ontology_class, field_id):
+        vals = self._session.query(ontology_class.id, ontology_class.value).filter(ontology_class.id == getattr(SampleContext, field_id)).distinct().all()
+        vals.sort(key=lambda v: v[1])
+        return vals
+
     def id_to_value(self, ontology_class, _id):
         if _id is None:
             return None
@@ -281,6 +305,80 @@ class OntologyInfo:
         return self._session.query(ontology_class.id).filter(ontology_class.value == value).one()[0]
 
 
+class OTUSampleOTUQuery:
+    """
+    find samples IDs which match the given taxonomical and
+    contextual filters
+    """
+
+    def __init__(self, params):
+        self._session = Session()
+        # amplicon filter is a master filter over the taxonomy; it's not
+        # a strict part of the hierarchy, but affects taxonomy options
+        # available
+        self._taxonomy_filter = params.taxonomy_filter
+        self._contextual_filter = params.contextual_filter
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exec_type, exc_value, traceback):
+        self._session.close()
+
+    def _q_all_cached(self, topic, q, mutate_result=None):
+        cache = caches['search_results']
+
+        stmt = q.with_labels().statement
+        compiled = stmt.compile()
+        params = compiled.params
+
+        key = make_cache_key(
+            'OTUSampleOTUQuery._q_all_cached',
+            topic,
+            str(compiled),
+            params)
+
+        result = cache.get(key)
+        if not result:
+            result = q.all()
+            if mutate_result:
+                result = mutate_result(result)
+            cache.set(key, result, CACHE_7DAYS)
+        return result
+
+    def matching_taxonomy_graph_data(self, all=False):
+        taxolistall = {}
+        groupByAttr = getattr(OTUSampleOTU, "species_id")
+        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
+            if taxonomy is None or taxonomy.get('value') is None:
+                groupByAttr = getattr(OTUSampleOTU, otu_attr)
+                break
+            taxolistall[otu_attr] = taxonomy
+
+        if groupByAttr:
+            ampliconAttr = getattr(OTUSampleOTU, 'amplicon_id')
+            traitsAttr = getattr(OTUSampleOTU, 'traits')
+            amEnvironmentAttr = getattr(SampleContext, 'am_environment_id')
+            q = self._session.query(
+                ampliconAttr, groupByAttr, amEnvironmentAttr, traitsAttr, func.sum(OTUSampleOTU.count)
+                ).group_by(groupByAttr).group_by(ampliconAttr).group_by(amEnvironmentAttr).group_by(traitsAttr)
+            q = apply_op_and_val_filter(ampliconAttr, q, self._taxonomy_filter.amplicon_filter)
+            q = apply_op_and_array_filter(traitsAttr, q, self._taxonomy_filter.trait_filter)
+            for otu_attr, taxonomy in taxolistall.items():
+                q = apply_op_and_val_filter(getattr(OTUSampleOTU, otu_attr), q, taxonomy)
+            q = q.filter(SampleContext.id == OTUSampleOTU.sample_id)
+            q = self._contextual_filter.apply(q)
+            # log_query(q)
+        return self._q_all_cached('matching_taxonomy_graph_data', q)
+
+    def import_traits(self, amplicon_filter):
+        q = self._session.query(func.unnest(OTUSampleOTU.traits)).distinct().group_by(OTUSampleOTU.traits)
+        q = apply_op_and_val_filter(OTUSampleOTU.amplicon_id, q, amplicon_filter)
+        # log_query(q)
+        vals = self._q_all_cached('import_traits', q)
+        vals.sort(key=lambda v: v[0])
+        return vals
+        
 class SampleQuery:
     """
     find samples IDs which match the given taxonomical and
@@ -322,6 +420,21 @@ class SampleQuery:
             cache.set(key, result, CACHE_7DAYS)
         return result
 
+    def matching_sample_graph_data(self, headers=None):
+        query_headers = []
+        if headers:
+            for h in headers:
+                if not h:
+                    continue
+                col = getattr(SampleContext, h)
+                query_headers.append(col)
+
+        q = self._session.query(*query_headers)
+        subq = self._build_taxonomy_subquery()
+        q = self._assemble_sample_query(q, subq)
+        # log_query(q)
+        return self._q_all_cached('matching_sample_graph', q)
+
     def matching_sample_headers(self, required_headers=None, sorting=()):
         query_headers = [SampleContext.id, SampleContext.am_environment_id]
         joins = []  # Keep track of any foreign ontology classes which may be needed to be joined to.
@@ -357,14 +470,28 @@ class SampleQuery:
                 q = q.order_by(query_headers[int(sort_col)].desc())
             else:
                 q = q.order_by(query_headers[int(sort_col)])
-
+        # log_query(q)
         return self._q_all_cached('matching_sample_headers', q)
 
     def matching_samples(self):
         q = self._session.query(SampleContext)
         subq = self._build_taxonomy_subquery()
         q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
+        # log_query(q)
         return self._q_all_cached('matching_samples', q)
+
+    def matching_samples_20k(self):
+        q = self._session.query(SampleContext)
+        subq = self._build_taxonomy_subquery_20k()
+        q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
+        # log_query(q)
+        return self._q_all_cached('matching_samples_20k', q)
+
+    def matching_selected_samples_20k(self, subq):
+        q = self._session.query(SampleContext)
+        q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
+        # log_query(q)
+        return self._q_all_cached('matching_selected_samples_20k', q)
 
     def matching_otus(self, kingdom_id=None):
         q = self._session.query(OTU)
@@ -397,6 +524,45 @@ class SampleQuery:
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
         # it can be iterated over
+        # log_query(q)
+        return q
+
+    def matching_sample_otus_abundance(self, *args, kingdom_id=None):
+        q = self._session.query(*args, func.sum(SampleOTU.count)) \
+            .filter(OTU.id == SampleOTU.otu_id) \
+            .filter(SampleContext.id == SampleOTU.sample_id) \
+            .group_by(SampleContext.latitude, SampleContext.longitude)
+        q = self._taxonomy_filter.apply(q)
+        q = self._contextual_filter.apply(q)
+        if kingdom_id is not None:
+            q = q.filter(OTU.kingdom_id == kingdom_id)
+        return q
+
+    def matching_sample_otus_groupby_lat_lng_id(self, *args, kingdom_id=None):
+        q = self._session.query(*args, func.sum(OTUSampleOTU.richness), func.sum(OTUSampleOTU.count)) \
+            .filter(SampleContext.id == OTUSampleOTU.sample_id) \
+            .group_by(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
+        q = apply_op_and_val_filter(getattr(OTUSampleOTU, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
+        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
+            q = apply_op_and_val_filter(getattr(OTUSampleOTU, otu_attr), q, taxonomy)
+        q = self._contextual_filter.apply(q)
+        if kingdom_id is not None:
+            q = q.filter(OTU.kingdom_id == kingdom_id)
+        # log_query(q)
+        return q
+
+    def matching_sample_otus_groupby_lat_lng_id_20k(self, *args, kingdom_id=None):
+        q = self._session.query(*args, func.sum(OTUSampleOTU20K.richness), func.sum(OTUSampleOTU20K.count)) \
+            .filter(SampleContext.id == OTUSampleOTU20K.sample_id) \
+            .group_by(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
+        q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
+        q = apply_op_and_array_filter(getattr(OTUSampleOTU20K, 'traits'), q, self._taxonomy_filter.trait_filter)
+        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
+            q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, otu_attr), q, taxonomy)
+        q = self._contextual_filter.apply(q)
+        if kingdom_id is not None:
+            q = q.filter(OTU.kingdom_id == kingdom_id)
+        # log_query(q)
         return q
 
     def _build_taxonomy_subquery(self):
@@ -406,11 +572,30 @@ class SampleQuery:
         """
         if self._taxonomy_filter.is_empty():
             return None
-        q = (self._session.query(SampleOTU.sample_id)
-                          .distinct()
-                          .join(OTU)
-                          .filter(OTU.id == SampleOTU.otu_id))
-        return self._taxonomy_filter.apply(q)
+        # Use of materialized view
+        q = self._session.query(OTUSampleOTU.sample_id).group_by(OTUSampleOTU.sample_id)
+        q = apply_op_and_val_filter(getattr(OTUSampleOTU, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
+        q = apply_op_and_array_filter(getattr(OTUSampleOTU, 'traits'), q, self._taxonomy_filter.trait_filter)
+        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
+            q = apply_op_and_val_filter(getattr(OTUSampleOTU, otu_attr), q, taxonomy)
+        # log_query(q)
+        return q
+
+    def _build_taxonomy_subquery_20k(self):
+        """
+        return the Sample IDs (as ints) which have a non-zero OTU count for OTUs
+        matching the taxonomy filter
+        """
+        if self._taxonomy_filter.is_empty():
+            return None
+        # Use of materialized view
+        q = self._session.query(OTUSampleOTU20K.sample_id).group_by(OTUSampleOTU20K.sample_id)
+        q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
+        q = apply_op_and_array_filter(getattr(OTUSampleOTU20K, 'traits'), q, self._taxonomy_filter.trait_filter)
+        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
+            q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, otu_attr), q, taxonomy)
+        # log_query(q)
+        return q
 
     def _build_contextual_subquery(self):
         """
@@ -421,9 +606,9 @@ class SampleQuery:
         if self._contextual_filter.is_empty():
             return None
         q = (self._session.query(SampleOTU.otu_id)
-                          .distinct()
                           .join(SampleContext)
-                          .filter(SampleContext.id == SampleOTU.sample_id))
+                          .filter(SampleContext.id == SampleOTU.sample_id)
+                          .group_by(SampleOTU.otu_id))
         return self._contextual_filter.apply(q)
 
     def _assemble_sample_query(self, sample_query, taxonomy_subquery):
@@ -456,6 +641,7 @@ class SampleQuery:
         q = self._taxonomy_filter.apply(q)
         if kingdom_id is not None:
             q = q.filter(OTU.kingdom_id == kingdom_id)
+        # log_query(q)
         return q
 
 class SampleSchemaDefinition:
@@ -472,38 +658,40 @@ class SampleSchemaDefinition:
         self._session.close()
 
     def get_schema_definition_url(self):
-        # TODO: replace hardcoded url with database_schema_definitions_url field value from db 
-        # return 'https://raw.githubusercontent.com/AusMicrobiome/contextualdb_doc/2.0.2/db_schema_definitions/db_schema_definitions.xlsx'
         return self._session.query(SampleContext.database_schema_definitions_url).distinct().one()
 
 class TaxonomyFilter:
-    def __init__(self, amplicon_filter, state_vector):
+    def __init__(self, amplicon_filter, state_vector, trait_filter):
         self.amplicon_filter = amplicon_filter
         self.state_vector = state_vector
+        self.trait_filter = trait_filter
 
     def describe(self):
         with OntologyInfo() as info:
             amplicon_description = describe_op_and_val(info, 'amplicon_id', OTUAmplicon, self.amplicon_filter)
+            trait_description = describe_op_and_val_only('trait', self.trait_filter)
             taxonomy_descriptions = []
             for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self.state_vector):
                 descr = describe_op_and_val(info, otu_attr, ontology_class, taxonomy)
                 if descr:
                     taxonomy_descriptions.append(descr)
-            return amplicon_description, taxonomy_descriptions
+            return amplicon_description, taxonomy_descriptions, trait_description
 
     def is_empty(self):
-        return not self.amplicon_filter and self.state_vector[0] is None
+        return not self.amplicon_filter and self.state_vector[0] is None and not self.trait_filter 
 
     def apply(self, q):
         q = apply_amplicon_filter(q, self.amplicon_filter)
+        q = apply_trait_filter(q, self.trait_filter)
         for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self.state_vector):
             q = apply_otu_filter(otu_attr, q, taxonomy)
         return q
 
     def __repr__(self):
-        return '<TaxonomyFilter(%s,state_vec[%s])>' % (
+        return '<TaxonomyFilter(%s,state_vec[%s],%s)>' % (
             self.amplicon_filter,
-            self.state_vector)
+            self.state_vector,
+            self.trait_filter)
 
 
 class ContextualFilter:
@@ -707,6 +895,12 @@ def describe_op_and_val(ontology_info, attr, cls, q):
     return ''.join(([attr[:-3], OP_DESCR[q.get('operator')], repr(ontology_info.id_to_value(cls, q.get('value')))]))
 
 
+def describe_op_and_val_only(attr, q):
+    if q is None:
+        return None
+    return ''.join(([attr, OP_DESCR[q.get('operator')], repr(q.get('value'))]))
+
+
 def apply_op_and_val_filter(attr, q, op_and_val):
     if op_and_val is None or op_and_val.get('value') is None:
         return q
@@ -717,16 +911,33 @@ def apply_op_and_val_filter(attr, q, op_and_val):
         q = q.filter(attr == value)
     return q
 
+def apply_op_and_array_filter(attr, q, op_and_array):
+    if op_and_array is None or op_and_array.get('value') is None:
+        return q
+    value = op_and_array.get('value')
+    if op_and_array.get('operator', 'is') == 'isnot':
+        q = q.filter(attr.any(value))
+    else:
+        q = q.filter(attr.any(value))
+    return q
+
 
 def apply_otu_filter(otu_attr, q, op_and_val):
     return apply_op_and_val_filter(getattr(OTU, otu_attr), q, op_and_val)
 
 
+def apply_otu_array_filter(otu_attr, q, op_and_array):
+    return apply_op_and_array_filter(getattr(OTU, otu_attr), q, op_and_array)
+
+
 apply_amplicon_filter = partial(apply_otu_filter, 'amplicon_id')
+apply_trait_filter = partial(apply_otu_array_filter, 'traits')
 apply_environment_filter = partial(apply_op_and_val_filter, SampleContext.am_environment_id)
 
 
 def log_query(q):
-    from sqlalchemy.dialects import postgresql
-    s = q.statement.compile(dialect=postgresql.dialect())
-    logger.debug('Query: \n%s', s)
+    try:
+        s = q.statement.compile(dialect=postgresql.dialect(), compile_kwargs={'literal_binds': True})
+    except NotImplementedError:
+        s = q.statement.compile(dialect=postgresql.dialect())
+    logger.debug(f"Query [{inspect.currentframe().f_back.f_code.co_name}]: \n{s}")

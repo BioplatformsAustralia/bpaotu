@@ -12,7 +12,7 @@ const MapPage = props => {
 
     return (
         <div style={{ height: mapContainerHeight }}>
-            <SamplesMap fetchSamples={fetchSamples} isLoading={props.isLoading} markers={props.markers} />
+            <SamplesMap fetchSamples={fetchSamples} isLoading={props.isLoading} markers={props.markers} sample_otus={props.sample_otus} />
         </div>
     );
 };
@@ -21,6 +21,7 @@ function mapStateToProps(state) {
     return {
         isLoading: state.mapPage.isLoading,
         markers: state.mapPage.samples,
+        sample_otus: state.mapPage.sample_otus,
     };
 }
 

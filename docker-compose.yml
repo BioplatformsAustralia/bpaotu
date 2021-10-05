@@ -6,6 +6,14 @@ services:
       environment:
         - POSTGRES_USER=webapp
         - POSTGRES_PASSWORD=webapp
+      command: 
+        - "postgres"
+        - "-c"
+        - "wal_level=minimal"
+        - "-c"
+        - "max_wal_size=10GB"
+        - "-c"
+        - "max_wal_senders=0"
       ports:
         - "5432:5432"
       volumes:

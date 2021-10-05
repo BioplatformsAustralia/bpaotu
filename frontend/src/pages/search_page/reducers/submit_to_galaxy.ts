@@ -105,7 +105,8 @@ function resetPasswordAlert() {
   return GALAXY_ALERT_USER_CREATED
 }
 
-const GALAXY_ALERT_IN_PROGRESS = alert('Submission to Galaxy in Progress ...')
+const GALAXY_ALERT_IN_PROGRESS = alert('Submission to Galaxy in Progress... Depending on your selection, this may take up to several minutes. Please leave the window open during the transfer as it will contain a direct link to your data in Galaxy Australia when completed.')
+const GALAXY_ALERT_IN_PROGRESS_EMAIL = alert('Submission to Galaxy in Progress... You can close this window. You’ll be sent an email when the job is finished with a link to the plot.')
 const GALAXY_ALERT_ERROR = alert('An error occured while submiting to Galaxy.', 'danger')
 
 function gettingStartedAlert(showWorkflowGuide) {
@@ -134,7 +135,7 @@ export default handleActions(
           finished: false,
           succeeded: false
         }
-        const alerts = [GALAXY_ALERT_IN_PROGRESS, gettingStartedAlert(action.payload.isWorkflowSubmission)]
+        const alerts = [action.payload.isWorkflowSubmission?GALAXY_ALERT_IN_PROGRESS_EMAIL:GALAXY_ALERT_IN_PROGRESS, gettingStartedAlert(action.payload.isWorkflowSubmission)]
         if (lastSubmission.userCreated) {
           alerts.push(resetPasswordAlert())
         }
