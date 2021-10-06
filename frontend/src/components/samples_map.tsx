@@ -370,10 +370,11 @@ class SamplesMap extends React.Component<any> {
           {(this.props.isLoading || this.state.isLoading)
             ?
             <Alert color="info">
-              Processing... 
+              Processing...
               {
-              this.state.isLoading && ` Gridcell calculation may take a while depending on the number of sample locations. Once completed, map will automatically refresh.`
-            }
+              this.state.isLoading && ` Gridcell calculation may take a while depending on the number of sample locations. `
+              }
+              {` Please wait. Once completed, map will automatically refresh.`}
             </Alert>
             :
             <Alert color="success">
