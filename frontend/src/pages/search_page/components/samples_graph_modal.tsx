@@ -11,10 +11,16 @@ import BPAOTUGraphTour from '../../../components/bpaotu_graph_tour'
 class SamplesGraphModal extends React.Component<any> {
 
   public state = {
+    tourStep: 0,
     scrollToSelected: '',
     tabSelected: 'tab_amplicon',
     showTabbedGraph: true
   }
+
+  public setTourStep(step) {
+    if(step)
+        this.setState({ tourStep: step })
+}
 
   public selectToScroll(selectedElement) {
       if(selectedElement)
@@ -60,11 +66,11 @@ class SamplesGraphModal extends React.Component<any> {
             </Button>
             </ButtonGroup>
             <ButtonGroup size="sm" >
-              <BPAOTUGraphTour />
+              <BPAOTUGraphTour tourStep={this.state.tourStep} setTourStep={(val) => { this.setTourStep(val) }}  />
           </ButtonGroup>
         </div>
       </ModalHeader>
-      <ModalBody>
+      <ModalBody data-tut="reactour__graph_view" id="reactour__graph_view">
         <GraphDashboard 
           showTabbedGraph={this.state.showTabbedGraph} 
           scrollToSelected={this.state.scrollToSelected} 
@@ -73,7 +79,7 @@ class SamplesGraphModal extends React.Component<any> {
           selectTab={(e) => {this.selectTab(e)}} 
         />
       </ModalBody>
-      <ModalFooter data-tut="reactour__graph_filter">
+      <ModalFooter data-tut="reactour__graph_filter" id="reactour__graph_filter">
         <SearchFilters selectToScroll={(e) => {this.selectToScroll(e)}} />
       </ModalFooter>
     </Modal>

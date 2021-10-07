@@ -49,7 +49,7 @@ class GraphDashboard extends React.Component<any> {
                         <AnimateHelix />
                     </div>
                     :
-                    <div data-tut="reactour__graph_view" id="reactour__graph_view">
+                    <div>
                         {
                             (this.props.showTabbedGraph)
                             ?

@@ -1,7 +1,6 @@
 import React from 'react'
 import Tour from 'reactour'
 import { withRouter } from 'react-router-dom';
-import { connect } from 'react-redux'
 import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock'
 import {Button, UncontrolledTooltip} from 'reactstrap'
 import Octicon from '../components/octicon'
@@ -25,32 +24,34 @@ const backLinkStyle = {
     margin: "1em auto"
 }
 
+const activateSelectedElement = (elementName) => {
+    if(document.getElementById(elementName) && !document.getElementById(elementName).classList.contains("active")) {
+        document.getElementById(elementName).click();
+    }
+}
+
 const steps = (props) =>
 {
   return [
     {
       content: () => {
         return (
-          <div>
-            <span>
-            <h4>Interactive Graph Tutorial</h4><br/>
-            Interactive Graphing tool can be used to visually interrogate the AM dataset. <br/><br/>  
-            In this tutorial we will: 
-            <ul>
-                <li>Highlight the main features of the interactive graphing tool.</li>
-                <li>Show how filters can be applied using the interactive graphical interface. </li>
-                <li>Show how the interactive user interface can be used in conjunction with the other search options available on the portal. </li>
-            </ul>
-            <br/> 
-          </span>
-          </div>
+            <div>
+                <h4>Interactive Graph Tutorial</h4><br/>
+                <p>Interactive Graphing tool can be used to visually interrogate the AM dataset. </p> 
+                In this tutorial we will: 
+                <ul>
+                    <li>Highlight the main features of the interactive graphing tool.</li>
+                    <li>Show how filters can be applied using the interactive graphical interface. </li>
+                    <li>Show how the interactive user interface can be used in conjunction with the other search options available on the portal. </li>
+                </ul>
+            </div>
         )
       },
       style: stepsStyle,
     },
     {
       selector: '[data-tut="reactour__graph_menu"]',
-    //   highlightedSelectors: ['[data-tut="reactour__graph_filter"]', '[data-tut="reactour__graph_view"]' ],
       content: ({ goTo }: { goTo: (step: number) => void }) => {
         document.getElementById('tabbedGraphTab').addEventListener('click', () => {
             goTo(2)
@@ -59,15 +60,14 @@ const steps = (props) =>
             goTo(2)
         })
         return (
-          <div>
-            <span>
-            <h4>Graph View Selection</h4><br/>
-              The interactive graphing page can be viewed in either tabbed or list layout. 
-              <br/><br/>
-              The default view is tabbed view, but you can swap between views by clicking between the 2 buttons. <br/><br/>
-              Click either 'Tabbed View' or 'Listed View' button to see respective view.<br/><br/>
-            </span>
-          </div>
+            <div>
+                <h4>Graph View Selection</h4><br/>
+                <p>The interactive graphing page can be viewed in either tabbed or list layout. </p>
+                <p>The default view is tabbed view, but you can swap between views by clicking between the 2 buttons. </p>
+                <ul>
+                    <li>Click either 'Tabbed View' or 'Listed View' button to see respective view.</li>
+                </ul>
+            </div>
         )
       },
       style: stepsStyle,
@@ -79,40 +79,42 @@ const steps = (props) =>
                 <div>
                     <span>
                         <h4>Graph View Selection</h4>
+                        <p>In tabbed view, different graphs can be viewed by clicking between the various tabs.</p>
+                        <p>In listed view, use the side scroll bar to view different graphs.</p>
                         <ul>
-                            <li>In tabbed view, different graphs can be viewed by clicking between the various tabs.</li>
-                            <li>In listed view, use the side scroll bar to view different graphs.</li>
+                            <li>Click "Prev" button to go back and switch the view.</li>
                         </ul>
                     </span>
-                    <button style={backLinkStyle} onClick={() => goTo(1)} >Go back to change the view</button>
                 </div>
             )
         },
         style: stepsStyle,
+        position: [60, 175],
     },
     {
         selector: '[data-tut="reactour__graph_filter"]',
+        highlightedSelectors: ['[data-tut="reactour__graph_view"]'],
         content: () => {
             return (
             <div>
                 <span>
                 <h4>Filter Selection</h4><br/>
                     A list of applied filters can be seen at the bottom of the page.
-                    <ol>  
+                    <ul>  
                         <li>Filters can be applied by selecting/clicking on desired area of a graph.</li>
+                        <li>All the applied filters are shown at the bottom of the graph page.</li>
                         <li>Filters can be deselected by clicking on the cross at the far right of the filter box.</li>
-                    </ol>
+                    </ul>
             </span>
             </div>
             )
         },
         action: (node) => {
-            const selectedElement = document.getElementById("reactour__graph_menu_tabbed");
-            if(!selectedElement.classList.contains("active")) {
-                selectedElement.click();
-            }
+            activateSelectedElement("reactour__graph_menu_tabbed")
+            activateSelectedElement("reactour__graph_taxonomy")
         },
         style: stepsStyle,
+        position: [60, 175],
     },
     {
         selector: '[data-tut="reactour__graph_view"]',
@@ -136,25 +138,29 @@ const steps = (props) =>
     },
     {
         selector: '[data-tut="reactour__graph_view"]',
+        highlightedSelectors: ['[data-tut="reactour__graph_filter"]'],
         content: () => {
             return (
             <div>
-                <span>
-                    <h4>Tutorial Example - Feature Test</h4><br/>
-                    <p>
-                        We will use the same example used in the tutorial on the main page to test the features of the interactive graphing tool. 
-                    </p>
-                    <p>
-                        The default amplicon for the graphical interface is <b>bacterial 16S (27f/519r)</b>. <br/>
-                        If you wish to change amplicon, select the desired amplicon from the drop-down menu on the main page before opening the graphing tool.<br/>
-                        Close the graphical interface and select the amplicon 2f519R_archaea then reopen the interactive graph search 
-                    </p>
-                    You will see: 
-                    <ul>
-                        <li>The Amplicon plot for with the total number of ASVs for the Archaea.</li>
-                        <li>The Amplicon filter at the bottom of the pop-up window.</li>
-                    </ul>
-                </span>
+                <h4>Amplicon Selection</h4><br/>
+                <p>
+                    We will use the same example used in the tutorial on the main page to test the features of the interactive graphing tool. 
+                </p>
+                <p>
+                    The default amplicon for the graphical interface is <b>bacterial 16S (27f/519r)</b>. 
+                </p>
+                <p>
+                    If you wish to change amplicon, select the desired amplicon from the drop-down menu on the main page before opening the graphing tool.
+                </p>
+                <ul>
+                    <li>Close the graphical interface and select the amplicon 2f519R_archaea then reopen the interactive graph search. </li>
+                </ul>
+                You will see: 
+                <ul>
+                    <li>The Amplicon plot for with the total number of ASVs for the Archaea.</li>
+                    <li>The Amplicon filter at the bottom of the pop-up window.</li>
+                </ul>
+                
             </div>
             )
         },
@@ -162,36 +168,43 @@ const steps = (props) =>
         position: [60, 175],
     },
     {
-        selector: '[data-tut="reactour__graph_taxonomy"]',
-        content: ({ goTo }: { goTo: (step: number) => void }) => {
-            document.getElementById('reactour__graph_taxonomy').addEventListener('click', () => {
-                goTo(7)
-            })
+        selector: '[data-tut="reactour__graph_filter"]',
+        highlightedSelectors: ['[data-tut="reactour__graph_view"]'],
+        content: () => {
             return (
               <div>
-                <h4>Taxonomy Selection</h4><br/>
-                For this example, we'll find all ASV's classified as phylum Verrucomicrobia, from grassland soils with depth between Depth between 0 - 0.1m, so we will use the default amplicon of bacterial 16S. <br/>
-                We will use the default tabbed view for this tutorial, but if you like you can perform the same functions in list view. <br/><br/>
-                Reset the amplicon filter, this can be done by clicking the cross on the amplicon filter or by closing the popup and selecting the amplicon on the main page. <br/>
-                Click on the 'Taxonomy' tab to view the current taxonomy selection<br/>
+                <h4>Reset Amplicon Selection</h4><br/>
+                <p>
+                    We will use the default tabbed view for this tutorial, but if you like you can perform the same functions in list view. 
+                </p>
+                For this example, we'll find all ASV's 
+                <ul>
+                    <li>classified as phylum Verrucomicrobia,</li>
+                    <li>from grassland soils</li> 
+                    <li>with depth between  0 - 0.1m,</li>
+                    <li>so we will use the default amplicon of bacterial 16S.</li>
+                </ul>
+                Reset the amplicon filter, 
+                <ul>
+                    <li>this can be done by clicking the cross on the amplicon filter or by closing the popup and selecting the amplicon on the main page.</li>
+                </ul>
               </div>
             )
         },
         style: stepsStyle,
+        position: [60, 175],
     },
     {
         selector: '[data-tut="reactour__graph_view"]',
+        highlightedSelectors: ['[data-tut="reactour__graph_filter"]'],
         content: () => {
             return (
             <div>
                 <h4>Taxonomy Selection</h4><br/>
                 <p>
-                For this example, we'll find all ASV's classified as phylum Verrucomicrobia, from grassland soils with depth between Depth between 0 - 0.1m, so we will use the default amplicon of bacterial 16S. <br/>
-                We will use the default tabbed view for this tutorial, but if you like you can perform the same functions in list view. <br/><br/>
-                Reset the amplicon filter, this can be done by clicking the cross on the amplicon filter or by closing the popup and selecting the amplicon on the main page. <br/>
+                    Click on the section of the pie graph corresponding to the desired taxonomy. You will notice the graph will reset to the next level of taxonomy with each click.
                 </p>
-                <p>Click on the section of the pie graph corresponding to the desired taxonomy. You will notice the graph will reset to the next level of taxonomy with each click.</p><br/>
-                To select the Verrucomicrobia: 
+                To select the Verrucomicrobia
                 <ul>
                     <li>Click on the 'd_Bacteria' portion of the pie.</li>
                     <li>Click on the 'p__Verrucomicrobia' portion of the pie.</li>
@@ -200,10 +213,7 @@ const steps = (props) =>
             )
         },
         action: (node) => {
-            const selectedElement = document.getElementById("reactour__graph_taxonomy");
-            if(!selectedElement.classList.contains("active")) {
-                selectedElement.click();
-            }
+            activateSelectedElement("reactour__graph_taxonomy")
         },
         style: stepsStyle,
         position: [60, 175],
@@ -219,10 +229,7 @@ const steps = (props) =>
             )
         },
         action: (node) => {
-            const selectedElement = document.getElementById("reactour__graph_environment");
-            if(!selectedElement.classList.contains("active")) {
-                selectedElement.click();
-            }
+            activateSelectedElement("reactour__graph_environment")
         },
         style: stepsStyle,
         position: [60, 250],
@@ -241,10 +248,7 @@ const steps = (props) =>
             )
         },
         action: (node) => {
-            const selectedElement = document.getElementById("reactour__graph_contextual");
-            if(!selectedElement.classList.contains("active")) {
-                selectedElement.click();
-            }
+            activateSelectedElement("reactour__graph_contextual")
         },
         style: stepsStyle,
         position: [60, 250],
@@ -273,6 +277,7 @@ const steps = (props) =>
     },
     {
         selector: '[data-tut="reactour__graph_view"]',
+        highlightedSelectors: ['[data-tut="reactour__graph_filter"]'],
         content: () => {
             return (
             <div>
@@ -326,7 +331,7 @@ const steps = (props) =>
                     <li>By hovering the cursor over the values on the graph we can see their values </li>
                     <li>You can use your mouse to draw a rectangle over values that you are interested to filter for a range of interest 
                         <ul>
-                            <li>Try using your mouse to select for values ranging from 4.5 to 6.2 (notice the filter has been added to the list at the bottom of the page). </li>
+                            <li>Try using your mouse to select for values ranging from 5 to 6.2 <br/> <i>(Notice the filter has been added to the list at the bottom of the page)</i>. </li>
                             <li>If finer filtering is required, you can close the window popup window and change the values in the dropdown menu of the main page</li>
                         </ul>
                     </li>
@@ -351,10 +356,7 @@ const steps = (props) =>
             )
         },
         action: (node) => {
-            const selectedElement = document.getElementById("reactour__graph_traits");
-            if(!selectedElement.classList.contains("active")) {
-                selectedElement.click();
-            }
+            activateSelectedElement("reactour__graph_traits")
         },
         style: stepsStyle,
         position: [60, 250],
@@ -373,10 +375,7 @@ const steps = (props) =>
             )
         },
         action: (node) => {
-            const selectedElement = document.getElementById("reactour__graph_taxonomy_am_environment");
-            if(!selectedElement.classList.contains("active")) {
-                selectedElement.click();
-            }
+            activateSelectedElement("reactour__graph_taxonomy_am_environment")
         },
         style: stepsStyle,
         position: [60, 250],
@@ -398,7 +397,6 @@ const steps = (props) =>
 class BPAOTUGraphTour extends React.Component<any> {
   state = {
     isTourOpen: false,
-    tourStep: 0
   }
   disableBody = target => disableBodyScroll(target)
   enableBody = target => enableBodyScroll(target)
@@ -407,20 +405,27 @@ class BPAOTUGraphTour extends React.Component<any> {
       isTourOpen: action,
     })
   }
+  setTourStep(step) {
+    if(step !== this.props.tourStep) {
+        this.props.setTourStep(step)
+    }
+  }
 
   render() {
     return (
       <>
         <Tour
+          startAt={this.props.tourStep}
           steps={steps(this.props)}
           prevButton={'<< Prev'} 
           nextButton={'Next >>'} 
           disableFocusLock={true}
           badgeContent={(curr, tot) => `${curr} of ${tot}`}
+          getCurrentStep={(curr) => this.setTourStep(curr)}
           accentColor={'#007bff'}
           rounded={5}
           isOpen={this.state.isTourOpen}
-          onRequestClose={() => this.setIsTourOpen(false)}
+          onRequestClose={(curr) => this.setIsTourOpen(false)}
           onAfterOpen={this.disableBody}
           onBeforeClose={this.enableBody}
           lastStepNextButton={'End Tutorial'}
@@ -438,13 +443,4 @@ class BPAOTUGraphTour extends React.Component<any> {
   }
 }
 
-function mapStateToProps(state) {
-  return {
-    definitions_url: state.contextualDataDefinitions.definitions_url
-  }
-}
-
-export default connect(
-  mapStateToProps,
-  null
-) (withRouter(BPAOTUGraphTour));
+export default withRouter(BPAOTUGraphTour)
