@@ -125,7 +125,7 @@ const steps = (props) =>
                     <h4>Download + Info Button</h4><br/>
                     <p>
                         All graphs are available for download by selecting the download button at the top right hand corner of the graphing window <br/>
-                        <i>(Note: Some browsers may require you to hover the cursor over the button to make it visible).</i>
+                        <i>(Note: Some browsers may require you to hover the cursor over the graph to make the download button visible).</i>
                     </p>
                     Hover over the <Octicon name="info" /> Info buttons to view a definition of the function<br/><br/>
                     <p>At any time, the graphical interactive pop-up window can be closed and reopened without the search being lost. </p>
@@ -164,6 +164,9 @@ const steps = (props) =>
             </div>
             )
         },
+        action: (node) => {
+            activateSelectedElement("reactour__graph_amplicon")
+        },
         style: stepsStyle,
         position: [60, 175],
     },
@@ -175,7 +178,7 @@ const steps = (props) =>
               <div>
                 <h4>Reset Amplicon Selection</h4><br/>
                 <p>
-                    We will use the default tabbed view for this tutorial, but if you like you can perform the same functions in list view. 
+                    We will use the default tabbed view for this tutorial. 
                 </p>
                 For this example, we'll find all ASV's 
                 <ul>
@@ -190,6 +193,9 @@ const steps = (props) =>
                 </ul>
               </div>
             )
+        },
+        action: (node) => {
+            activateSelectedElement("reactour__graph_amplicon")
         },
         style: stepsStyle,
         position: [60, 175],
@@ -289,7 +295,7 @@ const steps = (props) =>
                 <p>To select the required depth</p>
                 <ul>
                     <li>Close the interactive graphical interface popup window and use the dropdown filter on the main page to select depth between 0 and 0.1 m </li>
-                    <li>Reopen the interactive graph search popup (Notice the depth filter has been added to the list of filters at the bottom of the page)</li>
+                    <li>Reopen the interactive graph search popup (<i>Notice the depth filter has been added to the list of filters at the bottom of the page</i>)</li>
                 </ul>
             </div>
             )
@@ -304,7 +310,7 @@ const steps = (props) =>
             <div>
                 <h4>Contextual Filter Selection</h4>
                 <p>
-                The ability to choose if contextual filters fit 'any' or 'all' conditions is enabled if the default filters are narrowed or if additional contextual filters are enabled. 
+                The ability to choose if contextual filters fit 'any' or 'all' conditions is enabled if the default filters are narrowed or if two or more contextual filters are enabled. 
                 </p>
             </div>
             )
@@ -314,6 +320,7 @@ const steps = (props) =>
     },
     {
         selector: '[data-tut="reactour__graph_view"]',
+        highlightedSelectors: ['[data-tut="reactour__graph_filter"]'],
         content: () => {
             return (
             <div>
@@ -330,10 +337,8 @@ const steps = (props) =>
                 <ul>
                     <li>By hovering the cursor over the values on the graph we can see their values </li>
                     <li>You can use your mouse to draw a rectangle over values that you are interested to filter for a range of interest 
-                        <ul>
-                            <li>Try using your mouse to select for values ranging from 5 to 6.2 <br/> <i>(Notice the filter has been added to the list at the bottom of the page)</i>. </li>
-                            <li>If finer filtering is required, you can close the window popup window and change the values in the dropdown menu of the main page</li>
-                        </ul>
+                        <li>Try using your mouse to select for values ranging from 5 to 6.2 <i>(Notice the filter has been added to the list at the bottom of the page)</i>. </li>
+                        <li>If finer filtering is required, you can close the window popup window and change the values in the dropdown menu of the main page</li>
                     </li>
                 </ul>
             </div>

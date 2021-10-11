@@ -124,6 +124,7 @@ class GraphTabbed extends React.Component<any> {
                             <NavItem>
                                 <NavLink
                                     data-tut="reactour__graph_amplicon"
+                                    id="reactour__graph_amplicon"
                                     className={classnames({ active: this.props.tabSelected === 'tab_amplicon' })}
                                     onClick={() => { this.props.selectTab('tab_amplicon') }}
                                 >
