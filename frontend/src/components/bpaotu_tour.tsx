@@ -55,14 +55,20 @@ const steps = (props) =>
         return (
           <div>
             <span>
-              <h4>Select the appropriate contextual metadata filters</h4><br/>
-              We can now  select the sample environment, in our example case 'Soil'<br/><br/>
-              Note that, no selection here (---) will include both terrestrial and marine samples to subsequent steps.<br/><br/>
-              For our example, we will further refine the search to include:<br/><br/>
-              Vegetation Type is Grassland<br/>
-              Depth between 0 - 0.1<br/><br/>
-              * For metadata field search click 'Download metadata description' button or <a rel="noopener noreferrer" target="_bpaotuSchema" href={props.definitions_url}>go here.</a><br/><br/>
-              * For methods manual click 'Download methods manual' button or <a rel="noopener noreferrer" target="_bpaotuMethod" href="https://www.australianmicrobiome.com/wp-content/uploads/2021/01/AM_Methods_for_metadata_fields_18012021_V1.2.3.pdf">go here.</a><br/>
+              <h4>Select the appropriate contextual metadata filters</h4>
+              <p>We can now  select the sample environment, in our example case 'Soil'</p>
+              <p><i>Note that, no selection here (---) will include both terrestrial and marine samples to subsequent steps.</i></p>
+              For our example, we will further refine the search to include:
+              <ul>
+                <li>Vegetation Type is Grassland</li>
+                <li>Depth between 0 - 0.1</li>
+              </ul>
+              <p><i>Note: Matching filters will be suggested after typing few characters on the dropdown list</i></p>
+              <ul>
+                <li>For metadata field search click 'Download metadata description' button or <a rel="noopener noreferrer" target="_bpaotuSchema" href={props.definitions_url}>go here.</a></li>
+                <li>For methods manual click 'Download methods manual' button or <a rel="noopener noreferrer" target="_bpaotuMethod" href="https://www.australianmicrobiome.com/wp-content/uploads/2021/01/AM_Methods_for_metadata_fields_18012021_V1.2.3.pdf">go here.</a></li>
+              </ul>
+              
           </span>
           </div>
         )
@@ -215,10 +221,10 @@ const steps = (props) =>
         return (
           <div>
             <span>
-              <h4>Show interactive graphical search</h4><br/>
-              This will load all of your search parameters and results into some summary figures<br/><br/>
-              Other contextual data associated with the samples can be explored here.  For example, look at the pH range of soils selected<br/><br/>
-              For more information on graphs page, <a rel="noopener noreferrer" target="_bpaotu" href={window.otu_search_config.ckan_base_url+"organization/pages/australian-microbiome/processed"}>go here</a>.<br/>
+              <h4>Show interactive graphical search</h4>
+              <p>This will load all of your search parameters and results into some summary figures.</p>
+              <p>Other contextual data associated with the samples can be explored here.  For example, look at the pH range of soils selected.</p>
+              <p>Follow "Tutorial" link on the top of the interactive graph visualisation page for more information.</p>
             </span>
           </div>
         )

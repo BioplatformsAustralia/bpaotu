@@ -2,7 +2,7 @@ import React from 'react'
 import Tour from 'reactour'
 import { withRouter } from 'react-router-dom';
 import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock'
-import {Button, UncontrolledTooltip} from 'reactstrap'
+import {Badge, UncontrolledTooltip} from 'reactstrap'
 import Octicon from '../components/octicon'
 
 const stepsStyle = {
@@ -43,7 +43,7 @@ const steps = (props) =>
                 <ul>
                     <li>Highlight the main features of the interactive graphing tool.</li>
                     <li>Show how filters can be applied using the interactive graphical interface. </li>
-                    <li>Show how the interactive user interface can be used in conjunction with the other search options available on the portal. </li>
+                    <li>Show how the interactive user interface can be used in conjunction with the other search options available on the portal.</li>
                 </ul>
             </div>
         )
@@ -124,11 +124,11 @@ const steps = (props) =>
                 <span>
                     <h4>Download + Info Button</h4><br/>
                     <p>
-                        All graphs are available for download by selecting the download button at the top right hand corner of the graphing window <br/>
+                        All graphs are available for download by selecting the download button at the top right hand corner of the graphing window. <br/>
                         <i>(Note: Some browsers may require you to hover the cursor over the graph to make the download button visible).</i>
                     </p>
-                    Hover over the <Octicon name="info" /> Info buttons to view a definition of the function<br/><br/>
-                    <p>At any time, the graphical interactive pop-up window can be closed and reopened without the search being lost. </p>
+                    Hover over the <Octicon name="info" /> Info buttons to view a definition of the function.<br/><br/>
+                    <p>At any time, the graphical interactive pop-up window can be closed and reopened without the search being lost.</p>
                 </span>
             </div>
             )
@@ -215,6 +215,7 @@ const steps = (props) =>
                     <li>Click on the 'd_Bacteria' portion of the pie.</li>
                     <li>Click on the 'p__Verrucomicrobia' portion of the pie.</li>
                 </ul>
+                <p>Now, we'll move to the environment page to select the graphs showing environmental breakdown </p>
             </div>
             )
         },
@@ -247,8 +248,8 @@ const steps = (props) =>
             <div>
                 <h4>Contextual Filter Selection</h4>
                 <ul>
-                    <li>Click on the 'Vegetation' tab if not selected </li>
-                    <li>Find and click 'Grassland' on the 'Vegetation Type Plot' pie chart</li>
+                    <li>Click on the 'Vegetation' tab if not selected.</li>
+                    <li>Find and click 'Grassland' on the 'Vegetation Type Plot' pie chart.</li>
                 </ul>
             </div>
             )
@@ -272,8 +273,9 @@ const steps = (props) =>
                 </ul>
                 <p>Lets look at the proportion of samples with agricultural usage. <br/><i>Note this does not apply data filters.</i></p>
                 <ul>
-                    <li>Click on the 'Env Local Scale' tab if not selected </li>
-                    <li>Deselect each category from the legend that does not relate to some form of agriculture (Keep 4.2.3, 2.10, 4.24)</li>
+                    <li>Click on the 'Env Broad Scale' tab if not selected.</li>
+                    <li>Deselect each category from the legend that does not relate to some form of agriculture (Keep 2, 3, 5).</li>
+                    <li>Note that samples that do not have data for a given categorical field show as “Null”, in our example 12 samples (5.13%) have no information regarding their broad land-use category.  At present missing values are not represented for numerical fields (e.g., pH), unless the values are confirmed “missing”, in which case they are given the flag -9999.</li>
                 </ul>
             </div>
             )
@@ -294,8 +296,8 @@ const steps = (props) =>
                 </p>
                 <p>To select the required depth</p>
                 <ul>
-                    <li>Close the interactive graphical interface popup window and use the dropdown filter on the main page to select depth between 0 and 0.1 m </li>
-                    <li>Reopen the interactive graph search popup (<i>Notice the depth filter has been added to the list of filters at the bottom of the page</i>)</li>
+                    <li>Close the interactive graphical interface popup window and use the dropdown filter on the main page to select depth between 0 and 0.1 m (<i>Notice any selections made from the graphical viewer have been populated in the the text based filters</i>).</li>
+                    <li>Reopen the interactive graph search popup (<i>Notice the depth filter has been added to the list of filters at the bottom of the page</i>).</li>
                 </ul>
             </div>
             )
@@ -331,15 +333,10 @@ const steps = (props) =>
                 <p>For example if we were interested in samples over a specific pH range we can: </p>
                 <ul>
                     <li>Click on the “Contextual Filters” tab and select the Ph tab.</li>
-                    <li>Here we will see a bar graph of all the values returned from samples fitting our search criteria.</li>
-                </ul>
-                <p>We can use the graph to filter for values we are interested in </p>
-                <ul>
-                    <li>By hovering the cursor over the values on the graph we can see their values </li>
-                    <li>You can use your mouse to draw a rectangle over values that you are interested to filter for a range of interest 
-                        <li>Try using your mouse to select for values ranging from 5 to 6.2 <i>(Notice the filter has been added to the list at the bottom of the page)</i>. </li>
-                        <li>If finer filtering is required, you can close the window popup window and change the values in the dropdown menu of the main page</li>
-                    </li>
+                    <li>By hovering the cursor over the values on the graph we can see their values.</li>
+                    <li>You can use your mouse to draw a rectangle over values that you are interested to filter for a range of interest.</li>
+                    <li>Try using your mouse to select for values ranging from 5 to 6.2 <i>(Notice the filter has been added to the list at the bottom of the page)</i>. </li>
+                    <li>If finer filtering is required, you can close the window popup window and change the values in the dropdown menu of the main page.</li>
                 </ul>
             </div>
             )
@@ -435,11 +432,11 @@ class BPAOTUGraphTour extends React.Component<any> {
           onBeforeClose={this.enableBody}
           lastStepNextButton={'End Tutorial'}
         />
-        <Button id="tutorialTab" onClick={() => {
+        <Badge id="tutorialTab" style={{cursor:'pointer', fontSize: '14px', margin:"10px", padding: '10px 25px', color: '#041e48', backgroundColor: '#17c496' }} onClick={() => {
         this.setIsTourOpen(true)
         this.props.history.push('/')
-        }}  > <Octicon name="book" />{'   '}Tutorial
-        </Button>
+        }} pill > <Octicon name="book" />{'   '}Tutorial
+        </Badge>
         <UncontrolledTooltip target="tutorialTab" placement="auto">
             {'This tutorial helps to use interactive graph feature in the BPA-OTU data portal'}
         </UncontrolledTooltip>
