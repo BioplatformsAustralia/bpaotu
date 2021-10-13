@@ -41,6 +41,7 @@ export default handleActions(
         values: action.payload.data.definitions,
         sample_ids: sample_id.values,
         definitions_url: action.payload.data.definitions_url,
+        scientific_manual_url: action.payload.data.scientific_manual_url,
       }
     }
   },

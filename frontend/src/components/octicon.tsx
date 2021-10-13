@@ -9,6 +9,7 @@ const style = {
 export default props => {
   const Sizes = {
     small: 12,
+    medium: 16,
     large: 32,
     larger: 48
   }
