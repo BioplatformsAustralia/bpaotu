@@ -6,13 +6,21 @@ import SearchFilters from './search_filters'
 import GraphDashboard from './graph_dashboard';
 import { closeSamplesGraphModal } from '../reducers/samples_graph_modal'
 import Octicon from '../../../components/octicon'
+import BPAOTUGraphTour from '../../../components/bpaotu_graph_tour'
+
 class SamplesGraphModal extends React.Component<any> {
 
   public state = {
+    tourStep: 0,
     scrollToSelected: '',
     tabSelected: 'tab_amplicon',
     showTabbedGraph: true
   }
+
+  public setTourStep(step) {
+    if(step)
+        this.setState({ tourStep: step })
+}
 
   public selectToScroll(selectedElement) {
       if(selectedElement)
@@ -39,27 +47,30 @@ class SamplesGraphModal extends React.Component<any> {
       <ModalHeader toggle={this.props.closeSamplesGraphModal} data-tut="reactour__CloseSamplesGraphModal" id="reactour__CloseSamplesGraphModal">
         <div>
           <span>{'Interactive Graphical Search '}</span>
-          <ButtonGroup size="sm" >
-            <Button onClick={(e) => {this.selectGraph(true)}} active={this.state.showTabbedGraph}>
+          <ButtonGroup size="sm" data-tut="reactour__graph_menu">
+            <Button size="sm" id="reactour__graph_menu_tabbed" onClick={(e) => {this.selectGraph(true)}} active={this.state.showTabbedGraph}>
               <span id="tabbedGraphTab">
-                <Octicon name="browser" />
+                <Octicon name="browser" /> Tabbed View
               </span>
               <UncontrolledTooltip target="tabbedGraphTab" placement="auto">
                   Show graph visualisation in tabbed view
               </UncontrolledTooltip>
             </Button>
-            <Button onClick={(e) => {this.selectGraph(false)}} active={!this.state.showTabbedGraph}>
+            <Button size="sm" id="reactour__graph_menu_listed" onClick={(e) => {this.selectGraph(false)}} active={!this.state.showTabbedGraph}>
               <span id="listGraphTab">
-                <Octicon name="server" />
+                <Octicon name="server" /> List View
               </span>
               <UncontrolledTooltip target="listGraphTab" placement="auto">
                   Show graph visulisation in list view
               </UncontrolledTooltip>
             </Button>
+            </ButtonGroup>
+            <ButtonGroup size="sm" >
+              <BPAOTUGraphTour tourStep={this.state.tourStep} setTourStep={(val) => { this.setTourStep(val) }}  />
           </ButtonGroup>
         </div>
       </ModalHeader>
-      <ModalBody>
+      <ModalBody data-tut="reactour__graph_view" id="reactour__graph_view">
         <GraphDashboard 
           showTabbedGraph={this.state.showTabbedGraph} 
           scrollToSelected={this.state.scrollToSelected} 
@@ -68,7 +79,7 @@ class SamplesGraphModal extends React.Component<any> {
           selectTab={(e) => {this.selectTab(e)}} 
         />
       </ModalBody>
-      <ModalFooter>
+      <ModalFooter data-tut="reactour__graph_filter" id="reactour__graph_filter">
         <SearchFilters selectToScroll={(e) => {this.selectToScroll(e)}} />
       </ModalFooter>
     </Modal>

@@ -366,14 +366,15 @@ class SamplesMap extends React.Component<any> {
 
     return (
       <div style={{ height: '100%' }}>
-        <div className="text-center" style={{ margin: '-5px 0px' }}>
+        <div className="text-center" style={{ margin: '-12px 0px' }}>
           {(this.props.isLoading || this.state.isLoading)
             ?
             <Alert color="info">
-              Processing... 
+              Processing...
               {
-              this.state.isLoading && ` Gridcell calculation may take a while depending on the number of sample locations. Once completed, map will automatically refresh.`
-            }
+              this.state.isLoading && ` Gridcell calculation may take a while depending on the number of sample locations. `
+              }
+              {` Please wait. Once completed, map will automatically refresh.`}
             </Alert>
             :
             <Alert color="success">
@@ -467,7 +468,6 @@ class SamplesMap extends React.Component<any> {
           </LayersControl>
           {loadingSpinner}
           {mapControls}
-          <span id="GridCellResizeTip" />
         </Map>
       </div>
     )

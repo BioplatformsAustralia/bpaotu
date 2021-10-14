@@ -49,10 +49,10 @@ class GraphDashboard extends React.Component<any> {
                         <AnimateHelix />
                     </div>
                     :
-                    <>
+                    <div>
                         {
                             (this.props.showTabbedGraph)
-                            ? 
+                            ?
                             <GraphTabbed 
                                 selectedEnvironment={this.props.selectedEnvironment}
                                 selectedAmplicon={this.props.selectedAmplicon}
@@ -70,6 +70,7 @@ class GraphDashboard extends React.Component<any> {
                                 selectTab={(e) => {this.props.selectTab(e)}}
                                 scrollToSelected={this.props.scrollToSelected} 
                                 selectToScroll={(e) => {this.props.selectToScroll(e)}} 
+                                
                             />
                             :
                             <GraphListed 
@@ -89,9 +90,10 @@ class GraphDashboard extends React.Component<any> {
                                 selectToScroll={(e) => {this.props.selectToScroll(e)}}
                                 tabSelected={this.props.tabSelected} 
                                 selectTab={(e) => {this.props.selectTab(e)}}
+                                data-tut="reactour__graph_listed"
                             />
                         }
-                    </>
+                    </div>
                 }
             </>          
         )

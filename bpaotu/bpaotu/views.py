@@ -14,6 +14,8 @@ from operator import itemgetter
 from io import BytesIO
 from xhtml2pdf import pisa
 from requests.models import HTTPError
+import requests as requests
+
 
 from bpaingest.projects.amdb.contextual import \
     AustralianMicrobiomeSampleContextual
@@ -272,7 +274,8 @@ def contextual_fields(request):
 
     return JsonResponse({
         'definitions': definitions,
-        'definitions_url': get_contextual_schema_definition().get("download_url")
+        'definitions_url': get_contextual_schema_definition().get("download_url"),
+        'scientific_manual_url': get_scientific_manual_url()
     })
 
 @require_CKAN_auth
@@ -919,12 +922,20 @@ def get_contextual_schema_definition(cache_duration=CACHE_7DAYS, force_cache=Fal
     cache = caches['contextual_schema_definition_results']
     key = make_cache_key('contextual_schema_definition_query')
     result = None
-    # if not force_cache:
-    #     result = cache.get(key)
+    if not force_cache:
+        result = cache.get(key)
     if result is None:
         result = contextual_schema_definition_query()
         cache.set(key, result, cache_duration)
     return result
+
+def get_scientific_manual_url():
+    repo_name = "scientific_manual"
+    request_url = f"https://api.github.com/repos/AusMicrobiome/{repo_name}/releases/latest"
+    response = requests.get(request_url).json()
+    defs_version = response['tag_name']
+    defs_url = f"https://github.com/AusMicrobiome/{repo_name}/raw/{defs_version}/docs/AM_Scientific_Manual.docx"
+    return defs_url
 
 @require_CKAN_auth
 @require_GET

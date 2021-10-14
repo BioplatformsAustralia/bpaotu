@@ -51,7 +51,7 @@ class ContextualFilterCard extends React.Component<any> {
                   <Badge color="secondary" id="downloadContextualTip"><Octicon name="info" /></Badge>
                 </Button>
                 <Button size="sm" color="secondary" style={{cursor:'pointer', margin: '-15px 0px', padding: '3px 10px'}} onClick={() => {
-                    window.open('https://github.com/AusMicrobiome/scientific_manual/raw/v1.2.3/docs/AM_Scientific_Manual.docx')
+                    window.open(this.props.scientific_manual_url)
                   }}>
                   <Octicon name="link" />
                   <span>{' '}Download methods manual{' '}</span>
@@ -171,6 +171,7 @@ function mapStateToProps(state) {
     ),
     optionsLoading: state.contextualDataDefinitions.isLoading,
     definitions_url: state.contextualDataDefinitions.definitions_url,
+    scientific_manual_url: state.contextualDataDefinitions.scientific_manual_url,
     definitions: state.contextualDataDefinitions.values
   }
 }
