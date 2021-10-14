@@ -27,7 +27,7 @@
     "leaflet-draw": "^1.0.3",
     "leaflet-minimap": "3.6.1",
     "leaflet.markercluster": "^1.4.1",
-    "lodash": "4.17.15",
+    "lodash": "4.17.21",
     "octicons": "8.5.0",
     "plotly.js": "^1.58.4",
     "popper.js": "1.15.0",
