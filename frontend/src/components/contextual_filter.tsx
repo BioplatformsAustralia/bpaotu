@@ -1,4 +1,4 @@
-import { filter as _filter, get as _get, isArray, find } from 'lodash'
+import { filter as _filter, get as _get, isArray, find, includes } from 'lodash'
 import * as React from 'react'
 import { Col, Input, Row, UncontrolledTooltip } from 'reactstrap'
 import Octicon from './octicon'
@@ -94,7 +94,13 @@ function BetweenOperatorAndValue({ filter, dataDefinition, changeOperator, chang
 }
 
 function DropDownOperatorAndValue({ filter, dataDefinition, changeOperator, changeValue, changeValues }) {
-  const renderOptions = dataDefinition.values.map(value => {
+  let values = []
+  if(!includes(dataDefinition.values, def => (def[0] === 0 && def[1] === ''))) {
+    values.push(['0', ''])
+  }
+  values = values.concat(dataDefinition.values)
+
+  const renderOptions = values.map(value => {
     // The values are list of tuples [id, text] in general.
     // But for Sample ID the values are a list of the sample ids.
     const toIdAndText = v => {
