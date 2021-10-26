@@ -67,7 +67,7 @@ class BlastWrapper:
 
     def _blast_command(self):
         return [
-            'blastn', '-db', 'search.fasta', '-query', 'everything.fasta', '-out', 'results.out',
+            'blastn', '-num_threads', '32', '-db', 'search.fasta', '-query', 'everything.fasta', '-out', 'results.out',
             '-outfmt', '6 qseqid {}'.format(' '.join(self.BLAST_COLUMNS)), '-perc_identity', self.PERC_IDENTITY]
 
     def _execute_blast(self):
