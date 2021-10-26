@@ -51,7 +51,7 @@ class BlastWrapper:
     def _make_database(self):
         # write user-provided search string into FASTA file
         with open(self._in('search.fasta'), 'w') as fd:
-            fd.write('> user provided search string\n{}\n'.format(self._search_string))
+            fd.write('>user_provided_search_string\n{}\n'.format(self._search_string))
         # generate a blast database
         self._run(
             ['makeblastdb', '-in', 'search.fasta', '-dbtype', 'nucl', '-parse_seqids'])
@@ -63,11 +63,11 @@ class BlastWrapper:
             with SampleQuery(self._params) as query:
                 q = query.matching_otus()
                 for idx, otu in enumerate(q.yield_per(50)):
-                    fasta_fd.write('> id_{}\n{}\n\n'.format(otu.id, otu.code))
+                    fasta_fd.write('>id_{}\n{}\n'.format(otu.id, otu.code))
 
     def _blast_command(self):
         return [
-            'blastn', '-db', 'search.fasta', '-query', 'everything.fasta', '-out', 'results.out',
+            'blastn', '-num_threads', '32', '-db', 'search.fasta', '-query', 'everything.fasta', '-out', 'results.out',
             '-outfmt', '6 qseqid {}'.format(' '.join(self.BLAST_COLUMNS)), '-perc_identity', self.PERC_IDENTITY]
 
     def _execute_blast(self):
