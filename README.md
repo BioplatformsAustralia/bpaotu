@@ -2,6 +2,21 @@
 
 BPA-OTU is a web-based portal into Operational Taxonomic Unit (OTU) data, developed to access data from the Australian Microbiome.
 
+
+## System overview
+
+* The backend is implemented in [Django](https://www.djangoproject.com/), using
+  mostly [SQLAlchemy](https://www.sqlalchemy.org/) for database access.
+* The frontend is implemented in [React](https://reactjs.org/) and
+  [Leaflet](https://leafletjs.com/). It has its own webserver, separate from
+  Django, which serves the React assets and also proxies requests from the user
+  interface through to Django.
+* For development, Django runs in a Docker container, while the frontend
+  webserver is started from a shell prompt outside of the container.
+* For production, both Django and the frontend webserver run in a Docker container
+* Deployment into production from github is performed by [CircleCI](https://circleci.com/)
+
+
 ## Quick Setup
 
 * [Install docker and compose](https://docs.docker.com/compose/install/)
@@ -76,7 +91,7 @@ Each column has the following format:
 Ensure a late version of both docker and docker-compose are available in your environment.
 
 Bpaotu is available as a fully contained Dockerized stack. The dockerised stack are used for both production
-and development. Appropiate configuration files are available depending on usage.
+and development. Appropriate configuration files are available depending on usage.
 
 Note that for data ingestion to work you need passwords to the hosted data, these are available from BPA on request.
 Set passwords in your environment, these will be passed to the container.
