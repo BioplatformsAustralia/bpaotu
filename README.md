@@ -5,8 +5,8 @@ BPA-OTU is a web-based portal into Operational Taxonomic Unit (OTU) data, develo
 
 ## System overview
 
-* The backend is implemented in [Django](https://www.djangoproject.com/), using
-  mostly [SQLAlchemy](https://www.sqlalchemy.org/) for database access.
+* The backend is implemented in [Django](https://www.djangoproject.com/), but uses
+  [SQLAlchemy](https://www.sqlalchemy.org/) for most database operations.
 * The frontend is implemented in [React](https://reactjs.org/) and
   [Leaflet](https://leafletjs.com/). It has its own webserver, separate from
   Django, which serves the React assets and also proxies requests from the user
