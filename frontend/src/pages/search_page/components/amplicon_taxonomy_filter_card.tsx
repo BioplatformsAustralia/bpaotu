@@ -26,7 +26,7 @@ import {
 } from './taxonomy_filters'
 
 export const AmpliconFilterInfo =
-  'Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, Eukaryotes (v4 and v9) and Fungi.  To filter data from a single amplicon select that amplicon here.  To search all amplicons for a taxa select "all".  Note the "all" search will return non-target sequences as well as target, for example searching "Amplicon = all" + "Kingdom = Bacteria" will return all sequences classified as bacteria in all assays.'
+  'Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, Eukaryotes (v4 and v9) and Fungi. To filter data from a single amplicon select that amplicon here. Note that selecting an amplicon with no further taxonomy selection will return all sequences resulting from that assay, including non-target. Selecting, for example, "Kingdom = Bacteria" will remove non-target sequences.'
 export const TaxonomyFilterInfo =
   'Taxonomy is assigned with bayesian classifier using SILVA [v138] for rRNA genes and UNITE_SH [v8] for ITS regions.'
   export const TraitFilterInfo =
