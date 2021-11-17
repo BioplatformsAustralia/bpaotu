@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "homepage": "https://data.bioplatforms.com/bpa/otu",
+  "engines": {
+    "node": "^v16.13.0"
+  },
   "dependencies": {
     "@turf/turf": "6.3.0",
     "@types/axios": "0.14.0",
