@@ -9,9 +9,9 @@ docker-compose -f docker-compose-build.yml build base
 
 ## circleci remote-docker does not allow for use of volumes
 echo "building and archiving frontend..."
-docker create -v /build -v /frontend --name fend node:latest /bin/true
+docker create -v /build -v /frontend --name fend node:16 /bin/true
 docker cp frontend fend:/
-docker run --volumes-from fend --name fend-archive node:latest bash /frontend/prodbuild.sh
+docker run --volumes-from fend --name fend-archive node:16 bash /frontend/prodbuild.sh
 mkdir ./build
 docker cp fend-archive:/build .
 docker rm fend && docker rm fend-archive
