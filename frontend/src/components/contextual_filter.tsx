@@ -1,4 +1,4 @@
-import { filter as _filter, get as _get, isArray, find, includes } from 'lodash'
+import { filter as _filter, get as _get, isArray, find} from 'lodash'
 import * as React from 'react'
 import { Col, Input, Row, UncontrolledTooltip } from 'reactstrap'
 import Octicon from './octicon'
@@ -15,6 +15,22 @@ const TypeToOperatorAndValue = {
 
 export default class ContextualFilter extends ContextualDropDown {
   protected dropDownSize = 3
+
+  public selectRef: any
+
+  constructor(props) {
+    super(props);
+    this.selectRef = React.createRef()
+  }
+
+  public componentDidMount() {
+    if (this.selectRef.current) {
+      // Without this, submitting the initial value always sends "" instead of
+      // the numeric index of the initial value. See EmptyContextualFilter
+      // (contextual.ts)
+      this.props.changeValue(this.props.index, this.selectRef.current.props.value)
+    }
+  }
 
   protected renderOperatorAndValue() {
     const type = _get(this.props, 'dataDefinition.type')
@@ -40,6 +56,7 @@ export default class ContextualFilter extends ContextualDropDown {
               changeValue={value => this.props.changeValue(this.props.index, value)}
               changeValue2={value => this.props.changeValue2(this.props.index, value)}
               changeValues={value => this.props.changeValues(this.props.index, value)}
+              selectRef={this.selectRef}
             />
             </Col>
           </>
@@ -93,27 +110,12 @@ function BetweenOperatorAndValue({ filter, dataDefinition, changeOperator, chang
   )
 }
 
-function DropDownOperatorAndValue({ filter, dataDefinition, changeOperator, changeValue, changeValues }) {
-  let values = []
-  if(!includes(dataDefinition.values, def => (def[0] === 0 && def[1] === ''))) {
-    values.push(['0', ''])
-  }
-  values = values.concat(dataDefinition.values)
-
-  const renderOptions = values.map(value => {
+function DropDownOperatorAndValue({ filter, dataDefinition, changeOperator, changeValue, changeValues, selectRef }) {
+  const renderOptions = dataDefinition.values.map(value => {
     // The values are list of tuples [id, text] in general.
     // But for Sample ID the values are a list of the sample ids.
     const toIdAndText = v => {
-      if (!isArray(v)) {
-        // When single value (instead of [id, text]) make that both the id and the text
-        return [v, v]
-      }
-      const [idx, txt] = v
-      if (idx === 0 && txt === '') {
-        // Make the "no selection" value the empty string for consistency with other contextual filter types
-        return ['', '']
-      }
-      return [idx, txt]
+      return (isArray(v)? (v[1] === ""? [v[0], "(null)"] : v) : [v, v])
     }
 
     const [id, text] = toIdAndText(value)
@@ -135,6 +137,20 @@ function DropDownOperatorAndValue({ filter, dataDefinition, changeOperator, chan
     }
   }
 
+  const select_value = () => {
+    if (isMultiSelect) {
+      return filter.values
+    }
+    if (filter.value !== "") {
+      return filter.value
+    }
+    if (dataDefinition.values.length) {
+      const first_value = dataDefinition.values[0]
+      return isArray(first_value)? first_value[0]: first_value
+    }
+    return ""
+  }
+
   return (
     <Row>
       <Col sm={4} className="no-padding-right">
@@ -147,8 +163,9 @@ function DropDownOperatorAndValue({ filter, dataDefinition, changeOperator, chan
         <Input
           type="select"
           multiple={isMultiSelect}
-          value={isMultiSelect ? filter.values : filter.value}
+          value={select_value()}
           onChange={onChange}
+          ref={selectRef}
         >
           {renderOptions}
         </Input>
