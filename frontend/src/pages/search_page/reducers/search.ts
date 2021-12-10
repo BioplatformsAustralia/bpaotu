@@ -56,11 +56,13 @@ function marshallContextual(state, contextualDataDefinitions) {
 export const describeSearch = (stateFilters, contextualDataDefinitions) => {
   const selectedAmplicon = stateFilters.selectedAmplicon
   const selectedTrait = stateFilters.selectedTrait
+  const selectedTaxonomySource = stateFilters.selectedTaxonomySource
   const selectedTaxonomies = map(taxonomies, taxonomy => stateFilters.taxonomy[taxonomy].selected)
 
   return {
     amplicon_filter: selectedAmplicon,
     trait_filter: selectedTrait,
+    taxonomy_source_filter: selectedTaxonomySource,
     taxonomy_filters: selectedTaxonomies,
     contextual_filters: marshallContextual(stateFilters.contextual, contextualDataDefinitions)
   }

@@ -49,6 +49,7 @@ export interface PageState {
       species: SelectableLoadableValues
     }
     selectedTrait: OperatorAndValue
+    selectedTaxonomySource: any
     contextual: any // TODO
   }
   samplesMapModal: {
@@ -88,6 +89,7 @@ export interface SampleMarker {
   lng: number
 }
 
+export const EmptyValue: any = { value: '' }
 export const EmptyOperatorAndValue: OperatorAndValue = { value: '', operator: 'is' }
 export const EmptyLoadableValues: LoadableValues = { isLoading: null, options: [] }
 export const EmptySelectableLoadableValues: SelectableLoadableValues = {
@@ -110,6 +112,7 @@ export const searchPageInitialState: PageState = {
       species: EmptySelectableLoadableValues
     },
     selectedTrait: EmptyOperatorAndValue,
+    selectedTaxonomySource: EmptyValue,
     contextual: {
       selectedEnvironment: EmptyOperatorAndValue,
       filtersMode: 'and',

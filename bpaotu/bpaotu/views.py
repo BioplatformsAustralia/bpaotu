@@ -135,6 +135,7 @@ def api_config(request):
         'amplicon_endpoint': reverse('amplicon_options'),
         'trait_endpoint': reverse('trait_options'),
         'taxonomy_endpoint': reverse('taxonomy_options'),
+        'taxonomy_source_endpoint': reverse('taxonomy_source_options'),
         'contextual_endpoint': reverse('contextual_fields'),
         'contextual_graph_endpoint': reverse('contextual_graph_fields'),
         'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),
@@ -184,6 +185,8 @@ def trait_options(request):
     """
     with OTUSampleOTUQuery(OTUQueryParams(None,None)) as query:
         amplicon_filter = clean_amplicon_filter(json.loads(request.GET['amplicon']))
+        taxonomy_source = json.loads(request.GET['taxonomy_source'])
+        # TODO use taxonomy_source
         vals = [[x[0], x[0]] for x in query.import_traits(amplicon_filter)]
     return JsonResponse({
         'possibilities': vals
@@ -207,6 +210,16 @@ def taxonomy_options(request):
         'possibilities': possibilities
     })
 
+@require_CKAN_auth
+@require_GET
+def taxonomy_source_options(request):
+    # TODO. STUB.
+    # Requires new database tables and refactoring to support multiple taxonomies
+    return JsonResponse({
+        'possibilities': [
+            [1,
+             'Bayesian classifier (SILVA [v138] for rRNA genes and UNITE_SH [v8] for ITS regions)']]
+    })
 
 @require_CKAN_auth
 @require_GET
@@ -313,6 +326,7 @@ def contextual_graph_fields(request, contextual_filtering=True):
 @require_POST
 def taxonomy_graph_fields(request, contextual_filtering=True):
     # Exclude environment field of contextual_filters
+    # TODO handle taxonomy_source
     am_environment_selected = None 
     otu_query = request.POST['otu_query']
     otu_query_dict = json.loads(otu_query)
@@ -476,7 +490,7 @@ def param_to_filters(query_str, contextual_filtering=True):
     taxonomy_filter = make_clean_taxonomy_filter(
         otu_query['amplicon_filter'],
         otu_query['taxonomy_filters'],
-        otu_query['trait_filter'])
+        otu_query['trait_filter']) # TODO use taxonomy_source
 
     context_spec = otu_query['contextual_filters']
     contextual_filter = ContextualFilter(context_spec['mode'], context_spec['environment'])

@@ -31,6 +31,7 @@ const makeTaxonomyFetcher = config => () => (dispatch, getState) => {
   const selectedAmplicon = state.searchPage.filters.selectedAmplicon
   const selectedTaxonomies = map(config.taxonomies, taxonomy => state.searchPage.filters.taxonomy[taxonomy].selected)
   const selectedTrait = state.searchPage.filters.selectedTrait
+  const selectedTaxonomySource = state.searchPage.filters.selectedTaxonomySource
 
   if (selectedAmplicon.value === '' || (selectedTaxonomies.length > 0 && last(selectedTaxonomies).value === '')) {
     dispatch(clearTaxonomyFilter(config.type)())
@@ -38,7 +39,7 @@ const makeTaxonomyFetcher = config => () => (dispatch, getState) => {
   }
 
   dispatch(fetchTaxonomyOptionsStarted(config.type)())
-  return getTaxonomy(selectedAmplicon, selectedTaxonomies, selectedTrait)
+  return getTaxonomy(selectedAmplicon, selectedTaxonomies, selectedTrait, selectedTaxonomySource)
     .then(data => {
       dispatch(fetchTaxonomyOptionsEnded(config.type)(data))
     })

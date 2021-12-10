@@ -2,6 +2,9 @@ import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
+import {fetchTaxonomySources } from '../../../reducers/reference_data/taxonomy_sources'
+import { selectTaxonomySource } from '../reducers/taxonomy_source'
+
 import { fetchAmplicons} from '../../../reducers/reference_data/amplicons'
 import { selectAmplicon } from '../reducers/amplicon'
 import { selectTrait } from '../reducers/trait'
@@ -14,6 +17,7 @@ import { clearAllTaxonomyFilters, fetchKingdoms } from '../reducers/taxonomy'
 import { find } from 'lodash'
 import Octicon from '../../../components/octicon'
 import TraitFilter from './trait_filter'
+import TaxonomySelector from './taxonomy_selector'
 import AmpliconFilter from './amplicon_filter'
 import {
   ClassFilter,
@@ -28,10 +32,10 @@ import {
 export const AmpliconFilterInfo =
   'Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, Eukaryotes (v4 and v9) and Fungi. To filter data from a single amplicon select that amplicon here. Note that selecting an amplicon with no further taxonomy selection will return all sequences resulting from that assay, including non-target. Selecting, for example, "Kingdom = Bacteria" will remove non-target sequences.'
 export const TaxonomyFilterInfo =
-  'Taxonomy is assigned with bayesian classifier using SILVA [v138] for rRNA genes and UNITE_SH [v8] for ITS regions.'
+  'TAxonomy is assigned according to the currently selected taxonomy source'
   export const TraitFilterInfo =
   'Traits are assigned using FAPROTAX [v1.2.4] based on SILVA [v132] taxonomy for Bacteria and Archaea 16S. Traits are assigned based on Guild field from FUNGuild [v1.2] using UNITE_SH [v8] taxonomy for ITS regions.'
-export const TaxonomyNoAmpliconInfo = 
+export const TaxonomyNoAmpliconInfo =
   'Select Amplicon to filter taxonomy'
 
 export class AmpliconTaxonomyFilterCard extends React.Component<any> {
@@ -40,24 +44,40 @@ export class AmpliconTaxonomyFilterCard extends React.Component<any> {
     this.clearFilters = this.clearFilters.bind(this)
   }
 
-  initAmplicon() {
+  initAmpliconAndTaxonomySource() {
     const defaultAmplicon = find(this.props.amplicons.values, amplicon => amplicon.value === window.otu_search_config.default_amplicon)
-    if(!this.props.selectedAmplicon.value && defaultAmplicon) {
+    const defaultTaxonomySource = this.props.taxonomySources.values[0]
+    const haveAmplicon = this.props.selectedAmplicon.value
+    const haveTaxonomySource = this.props.selectedTaxonomySource.value
+    const selectInitialAmplicon = (!haveAmplicon && defaultAmplicon)
+    const selectInitialTaxonomySource = (!haveTaxonomySource && defaultTaxonomySource)
+
+    if (selectInitialAmplicon) {
       this.props.selectAmplicon(defaultAmplicon.id)
+    }
+
+    if (selectInitialTaxonomySource) {
+      this.props.selectTaxonomySource(defaultTaxonomySource.id)
+    }
+
+    // Delay fetching traits and kingdoms until we have both amplicons and taxonomy sources
+    if ((selectInitialTaxonomySource && haveAmplicon)
+      || (selectInitialAmplicon && haveTaxonomySource)
+      || (selectInitialTaxonomySource && selectInitialAmplicon)) {
       this.props.fetchTraits()
       this.props.selectTrait('')
       this.props.fetchKingdoms()
     }
   }
-  
+
   componentDidMount() {
     this.props.fetchAmplicons()
-    this.props.fetchTraits()
-    this.props.fetchKingdoms()
+    this.props.fetchTaxonomySources()
+    this.props.selectTaxonomySource('')
   }
-  
+
   componentDidUpdate() {
-    this.initAmplicon()
+    this.initAmpliconAndTaxonomySource()
   }
 
   public render() {
@@ -84,6 +104,7 @@ export class AmpliconTaxonomyFilterCard extends React.Component<any> {
             </Col>
           </Row>
 
+          <TaxonomySelector />
           <KingdomFilter />
           <PhylumFilter />
           <ClassFilter />
@@ -106,7 +127,7 @@ export class AmpliconTaxonomyFilterCard extends React.Component<any> {
 
   public clearFilters() {
     this.props.clearAllTaxonomyFilters()
-    this.initAmplicon()
+    this.initAmpliconAndTaxonomySource()
   }
 }
 
@@ -114,7 +135,9 @@ function mapStateToProps(state) {
   return {
     amplicons: state.referenceData.amplicons,
     traits: state.referenceData.traits,
-    selectedAmplicon: state.searchPage.filters.selectedAmplicon 
+    selectedAmplicon: state.searchPage.filters.selectedAmplicon,
+    taxonomySources: state.referenceData.taxonomySources,
+    selectedTaxonomySource: state.searchPage.filters.selectedTaxonomySource
   }
 }
 
@@ -123,9 +146,11 @@ function mapDispatchToProps(dispatch: any) {
     {
       fetchAmplicons,
       fetchKingdoms,
+      fetchTaxonomySources,
       fetchTraits,
       selectAmplicon,
       selectTrait,
+      selectTaxonomySource,
       clearAllTaxonomyFilters
     },
     dispatch

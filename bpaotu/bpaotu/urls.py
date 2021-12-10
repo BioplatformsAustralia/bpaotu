@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'^private/api/v1/amplicon-options$', views.amplicon_options, name="amplicon_options"),
     url(r'^private/api/v1/trait-options$', views.trait_options, name="trait_options"),
     url(r'^private/api/v1/taxonomy-options$', views.taxonomy_options, name="taxonomy_options"),
+    url(r'^private/api/v1/taxonomy-source-options$', views.taxonomy_source_options, name="taxonomy_source_options"),
     url(r'^private/api/v1/contextual-fields$', views.contextual_fields, name="contextual_fields"),
     url(r'^private/api/v1/contextual-graph-fields$', views.contextual_graph_fields, name="contextual_graph_fields"),
     url(r'^private/api/v1/taxonomy-graph-fields$', views.taxonomy_graph_fields, name="taxonomy_graph_fields"),

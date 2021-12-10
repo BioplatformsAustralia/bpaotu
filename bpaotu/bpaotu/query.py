@@ -662,6 +662,7 @@ class SampleSchemaDefinition:
         return self._session.query(SampleContext.database_schema_definitions_url).distinct().one()
 
 class TaxonomyFilter:
+    # TODO need to handle selected_taxonomy_source
     def __init__(self, amplicon_filter, state_vector, trait_filter):
         self.amplicon_filter = amplicon_filter
         self.state_vector = state_vector

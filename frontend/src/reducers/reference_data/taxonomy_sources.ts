@@ -1,24 +1,23 @@
 import { map } from 'lodash'
 import { createActions, handleAction } from 'redux-actions'
-import { getTraits } from '../../api'
-import { selectTrait } from '../../pages/search_page/reducers/trait'
+import { getTaxonomySources } from '../../api'
+import { selectTaxonomySource } from '../../pages/search_page/reducers/taxonomy_source'
 
-export const { fetchTraitsStarted, fetchTraitsEnded } = createActions(
-  'FETCH_TRAITS_STARTED',
-  'FETCH_TRAITS_ENDED'
+export const { fetchTaxonomySourcesStarted, fetchTaxonomySourcesEnded } = createActions(
+  'FETCH_TAXONOMY_SOURCES_STARTED',
+  'FETCH_TAXONOMY_SOURCES_ENDED'
 )
 
-export const fetchTraits = (dispatch: any, getState) => {
+export const fetchTaxonomySources = (dispatch: any, getState) => {
   return (dispatch: any, getState) => {
-    dispatch(selectTrait(''))
-    dispatch(fetchTraitsStarted())
-    const state = getState()
-    return getTraits(state.searchPage.filters.selectedAmplicon, state.searchPage.filters.selectedTaxonomySource)
+    dispatch(selectTaxonomySource(''))
+    dispatch(fetchTaxonomySourcesStarted())
+    return getTaxonomySources()
       .then(data => {
-        dispatch(fetchTraitsEnded(data))
+        dispatch(fetchTaxonomySourcesEnded(data))
       })
       .catch(err => {
-        dispatch(fetchTraitsEnded(err))
+        dispatch(fetchTaxonomySourcesEnded(err))
       })
   }
 }
@@ -30,7 +29,7 @@ const initialState = {
 }
 
 export default handleAction(
-  fetchTraitsEnded,
+  fetchTaxonomySourcesEnded,
   {
     next: (state, action: any) => ({
       isLoading: false,
@@ -39,7 +38,7 @@ export default handleAction(
     }),
     throw: (state, action: any) => {
       // tslint:disable-next-line:no-console
-      console.error('Error while loading traits: ', action.payload)
+      console.error('Error while loading taxonomy sources: ', action.payload)
       return {
         isLoading: false,
         error: true,
