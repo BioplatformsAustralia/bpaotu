@@ -7,10 +7,10 @@ jobs:
     docker:
       - image: 'cimg/base:stable'
     steps:
+      - checkout
       - docker/install-docker-tools:
 #         https://github.com/CircleCI-Public/docker-orb/issues/94
           docker-compose-version: 1.29.2
-      - checkout
       - setup_remote_docker:
 #         https://support:circleci:com/hc/en-us/articles/360050934711-Docker-build-fails-with-EPERM-operation-not-permitted-copyfile-when-using-node-14-9-0-or-later-:
           version: 20.10.7
