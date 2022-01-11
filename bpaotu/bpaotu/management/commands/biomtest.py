@@ -60,6 +60,7 @@ class Command(BaseCommand):
         params = OTUQueryParams(
             contextual_filter=contextual_filter,
             taxonomy_filter=TaxonomyFilter(
+                self.make_is(1), # FIXME! magic number taxonomy source
                 None, [
                     self.onto_is(OTUKingdom, 'Bacteria'),
                     self.onto_is(OTUPhylum, 'Bacteroidetes'),

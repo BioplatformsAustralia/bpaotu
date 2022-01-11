@@ -29,6 +29,7 @@ class Command(BaseCommand):
         params = OTUQueryParams(
             contextual_filter=ContextualFilter('and', self.onto_is(Environment, 'Soil')),
             taxonomy_filter=TaxonomyFilter(
+                self.make_is(1), # # FIXME! magic number taxonomy source
                 None, [
                     self.onto_is(OTUKingdom, 'Bacteria'),
                     self.onto_is(OTUPhylum, 'Bacteroidetes'),

@@ -9,7 +9,7 @@ import os
 import re
 import time
 from collections import OrderedDict, defaultdict
-from functools import wraps
+from functools import wraps, partial
 from operator import itemgetter
 from io import BytesIO
 from xhtml2pdf import pisa
@@ -36,7 +36,7 @@ from .ckan_auth import require_CKAN_auth
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .importer import DataImporter
 from .models import NonDenoisedDataRequest
-from .otu import Environment, OTUAmplicon, SampleContext
+from .otu import Environment, OTUAmplicon, SampleContext, TaxonomySource
 from .query import (ContextualFilter, ContextualFilterTermDate,
                     ContextualFilterTermFloat, ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
@@ -83,7 +83,7 @@ def get_operator_and_int_value(v):
     if v.get('value', '') == '':
         return None
     return OrderedDict((
-        ('operator', v.get('operator', '=')),
+        ('operator', v.get('operator', 'is')),
         ('value', int_if_not_already_none(v['value'])),
     ))
 
@@ -93,7 +93,7 @@ def get_operator_and_string_value(v):
     if v.get('value', '') == '':
         return None
     return OrderedDict((
-        ('operator', v.get('operator', '=')),
+        ('operator', v.get('operator', 'is')),
         ('value', v['value']),
     ))
 
@@ -103,14 +103,14 @@ clean_amplicon_filter = get_operator_and_int_value
 clean_environment_filter = get_operator_and_int_value
 
 
-def make_clean_taxonomy_filter(amplicon_filter, state_vector, trait_filter):
+def make_clean_taxonomy_filter(taxonomy_source, amplicon_filter, state_vector, trait_filter):
     """
     take an amplicon filter and a taxonomy filter
     # (a list of phylum, kingdom, ...) and clean it
     """
 
-    assert(len(state_vector) == len(TaxonomyOptions.hierarchy))
     return TaxonomyFilter(
+        get_operator_and_int_value(taxonomy_source),
         clean_amplicon_filter(amplicon_filter),
         list(map(
             get_operator_and_int_value,
@@ -167,15 +167,21 @@ def api_config(request):
 
 @require_CKAN_auth
 @require_GET
-def amplicon_options(request):
+def get_ontology_options(request, ontology_class):
     """
-    private API: return the possible amplicons
+    private API: return the possible ontology values for ontology_class
     """
     with OntologyInfo() as options:
-        vals = options.get_values(OTUAmplicon)
+        vals = options.get_values(ontology_class)
     return JsonResponse({
         'possibilities': vals
     })
+
+
+amplicon_options = partial(get_ontology_options, ontology_class=OTUAmplicon)
+
+taxonomy_source_options = partial(get_ontology_options, ontology_class=TaxonomySource)
+
 
 @require_CKAN_auth
 @require_GET
@@ -183,10 +189,16 @@ def trait_options(request):
     """
     private API: return the possible traits
     """
-    with OTUSampleOTUQuery(OTUQueryParams(None,None)) as query:
+    taxonomy_source = json.loads(request.GET['taxonomy_source'])
+    with OTUSampleOTUQuery(OTUQueryParams(
+            None,
+            TaxonomyFilter(
+                get_operator_and_int_value(taxonomy_source),
+                None,
+                [None, None, None, None, None, None, None],
+                None
+            ))) as query:
         amplicon_filter = clean_amplicon_filter(json.loads(request.GET['amplicon']))
-        taxonomy_source = json.loads(request.GET['taxonomy_source'])
-        # TODO use taxonomy_source
         vals = [[x[0], x[0]] for x in query.import_traits(amplicon_filter)]
     return JsonResponse({
         'possibilities': vals
@@ -199,9 +211,10 @@ def taxonomy_options(request):
     """
     private API: given taxonomy constraints, return the possible options
     """
-    
+
     with TaxonomyOptions() as options:
         taxonomy_filter = make_clean_taxonomy_filter(
+            json.loads(request.GET['taxonomy_source']),
             json.loads(request.GET['amplicon']),
             json.loads(request.GET['selected']),
             json.loads(request.GET['trait']))
@@ -210,16 +223,6 @@ def taxonomy_options(request):
         'possibilities': possibilities
     })
 
-@require_CKAN_auth
-@require_GET
-def taxonomy_source_options(request):
-    # TODO. STUB.
-    # Requires new database tables and refactoring to support multiple taxonomies
-    return JsonResponse({
-        'possibilities': [
-            [1,
-             'Bayesian classifier (SILVA [v138] for rRNA genes and UNITE_SH [v8] for ITS regions)']]
-    })
 
 @require_CKAN_auth
 @require_GET
@@ -326,8 +329,7 @@ def contextual_graph_fields(request, contextual_filtering=True):
 @require_POST
 def taxonomy_graph_fields(request, contextual_filtering=True):
     # Exclude environment field of contextual_filters
-    # TODO handle taxonomy_source
-    am_environment_selected = None 
+    am_environment_selected = None
     otu_query = request.POST['otu_query']
     otu_query_dict = json.loads(otu_query)
     if(otu_query_dict.get('contextual_filters') and otu_query_dict.get('contextual_filters').get('environment')):
@@ -367,7 +369,7 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
     am_environment_results_all = []
     for taxonomy_am_environment, sum in df_results_all.groupby(['taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
         am_environment_results_all.append([taxonomy_am_environment, sum])
-    
+
     am_environment_results = {}
     if am_environment_selected and am_environment_selected.get('value', None):
         df_results_all = df_results_all.query('am_environment == @am_environment_selected.get("value", None)')
@@ -376,7 +378,7 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
             am_environment_results[taxonomy_am_environment[0]].append([taxonomy_am_environment[1], sum])
         else:
             am_environment_results[taxonomy_am_environment[0]] = [[taxonomy_am_environment[1], sum]]
-    
+
     am_environment_results_selected = {}
     for taxonomy_am_environment, sum in df_results_selected.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
         if am_environment_results_selected.get(taxonomy_am_environment[0]):
@@ -399,12 +401,12 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
         else:
             am_environment_results_non_selected[taxonomy_am_environment] = am_environment_results[taxonomy_am_environment]
 
-    # Traits calculations 
+    # Traits calculations
     traits_df_results_all = df_results_all.explode('traits')
     traits_am_environment_results_all = []
     for traits_am_environment, sum in traits_df_results_all.groupby(['traits']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
         traits_am_environment_results_all.append([traits_am_environment, sum])
-    
+
     traits_am_environment_results = {}
     if am_environment_selected and am_environment_selected.get('value', None):
         traits_df_results_all = traits_df_results_all.query('am_environment == @am_environment_selected.get("value", None)')
@@ -413,7 +415,7 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
             traits_am_environment_results[traits_am_environment[0]].append([traits_am_environment[1], sum])
         else:
             traits_am_environment_results[traits_am_environment[0]] = [[traits_am_environment[1], sum]]
-    
+
     df_results_selected = df_results_selected.explode("traits")
     traits_am_environment_results_selected = {}
     for traits_am_environment, sum in df_results_selected.groupby(['am_environment', 'traits']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
@@ -488,9 +490,10 @@ def param_to_filters(query_str, contextual_filtering=True):
 
     otu_query = json.loads(query_str)
     taxonomy_filter = make_clean_taxonomy_filter(
+        otu_query['taxonomy_source_filter'],
         otu_query['amplicon_filter'],
         otu_query['taxonomy_filters'],
-        otu_query['trait_filter']) # TODO use taxonomy_source
+        otu_query['trait_filter'])
 
     context_spec = otu_query['contextual_filters']
     contextual_filter = ContextualFilter(context_spec['mode'], context_spec['environment'])

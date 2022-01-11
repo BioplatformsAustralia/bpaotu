@@ -11,7 +11,7 @@ from .query import (
     SampleQuery,
     OntologyInfo)
 from .util import val_or_empty, make_timestamp, empty_to_none
-from .otu import SampleContext
+from .otu import SampleContext, Taxonomy
 
 logger = logging.getLogger('rainbow')
 
@@ -76,20 +76,20 @@ def biom_header(comment):
 
 
 def otu_rows(query, otu_to_row):
-    q = query.matching_otus()
+    q = query.matching_otus().join(Taxonomy).add_entity(Taxonomy)
     taxonomy_fields = ('kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species')
 
-    for idx, otu in enumerate(q.yield_per(50)):
-        def get_value(attr):
+    for idx, row in enumerate(q.yield_per(50)):
+        def get_value(obj, attr):
             if attr == 'class':
                 attr = 'klass'
-            return val_or_empty(getattr(otu, attr))
+            return val_or_empty(getattr(obj, attr))
 
-        otu_to_row[otu.id] = idx
-        taxonomy_array = [get_value(f) for f in taxonomy_fields]
+        otu_to_row[row.OTU.id] = idx
+        taxonomy_array = [get_value(row.Taxonomy, f) for f in taxonomy_fields]
         yield '{"id": "%s","metadata": {%s,%s}}' % (
-            otu.code,
-            k_v('amplicon', get_value('amplicon')),
+            row.OTU.code,
+            k_v('amplicon', get_value(row.OTU, 'amplicon')),
             k_v('taxonomy', taxonomy_array))
 
 
