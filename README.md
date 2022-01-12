@@ -52,7 +52,7 @@ operation, or it can be provided as either
     /data/amd-metadata/amd-samplecontextual/*.db # sqlite database
     /data/amd-metadata/amd-samplecontextual/*.xlsx # Excel spreadsheet
 
-See "Additonal argruments" below. `/data` is a mount point in a Docker
+See "Additional arguments" below. `/data` is a mount point in a Docker
 container. See `./docker-compose.yml`
 
 Abundance and taxonomy files must be placed under a base directory, structured
@@ -71,7 +71,7 @@ generate a given taxonomy. They can be arbitrary strings.
 cd ~/bpaotu # or wherever docker-compose.yml lives
 docker-compose exec runserver bash
 
-## Either ngest using local sqlite db file for contextual metadata...
+## Either ingest using local sqlite db file for contextual metadata...
 root@05abc9e1ecb2:~# /app/docker-entrypoint.sh django-admin otu_ingest $dir $yyyy_mm_dd --use-sql-context --no-force-fetch
 
 ## or download contextual metadata and use that:
@@ -82,7 +82,7 @@ root@420c1d1e9fe4:~# /app/docker-entrypoint.sh django-admin otu_ingest $dir $yyy
 
 `$yyyy_mm_dd` is the ingest date .e.g. 2022-01-01
 
-Additonal argruments:
+Additional arguments:
 * --no-force-fetch: Add this to avoid fetch of contextual metadata file from server and instead use the one available in local folder (default: fetch from server)
 * --use-sql-context: Add this to use contextual metadata file in format of SQLite DB instead of XLSX file (default: use XLSX file)
 
@@ -166,7 +166,7 @@ cd ./data/dev
 tar -xvzf </path/to/dataarchive.tar.gz> ./
 cd ~/bpaotu # or wherever docker-compose.yml lives
 docker-compose exec runserver bash
-### Also see  "Additonal argruments" above
+### Also see  "Additional arguments" above
 /app/docker-entrypoint.sh django-admin otu_ingest /data/2019-02 2021-08-02
 ```
 NB: In example above,
