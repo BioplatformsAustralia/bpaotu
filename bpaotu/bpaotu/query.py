@@ -8,6 +8,7 @@ import sqlalchemy
 from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.sql import operators
 
 from django.core.cache import caches
 from hashlib import sha256
@@ -916,7 +917,7 @@ def apply_op_and_array_filter(attr, q, op_and_array):
         return q
     value = op_and_array.get('value')
     if op_and_array.get('operator', 'is') == 'isnot':
-        q = q.filter(attr.any(value))
+        q = q.filter(attr.all(value, operator=operators.ne))
     else:
         q = q.filter(attr.any(value))
     return q

@@ -347,12 +347,6 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
     amplicon_results = dict(df_results_selected.groupby('amplicon').agg({'sum': ['sum']}).itertuples(index=True, name=None))
 
     df_traits = df_results_selected.explode('traits')
-    trait_filter = otu_query_dict['trait_filter']
-    traits_filter_value = trait_filter.get('value')
-    if traits_filter_value != "":
-        traits_filter_operator = '==' if (trait_filter.get('operator') == 'is') else '!='
-        traits_filter_query = f"traits {traits_filter_operator} \"{traits_filter_value}\""
-        df_traits = df_traits.query(f'{traits_filter_query}')
     df_traits_group = df_traits.groupby('traits')
     traits_results = dict(df_traits_group.agg({'sum': ['sum']}).itertuples(index=True, name=None))
 
