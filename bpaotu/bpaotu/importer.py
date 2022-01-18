@@ -295,36 +295,40 @@ class DataImporter:
                 with gzip.open(fname, 'rt') as fd:
                     reader = csv.reader(fd, dialect='excel-tab')
                     header = next(reader)
-                    amplicon_header_index = header.index(amplicon_header) if amplicon_header in header else -1
+                    try:
+                        amplicon_header_index = header.index(amplicon_header)
+                    except ValueError:
+                        raise ImportException("No amplicon column header in {}".format(fname))
                     traits_header_index = header.index(traits_header) if traits_header in header else -1
                     hasTraits = traits_header_index != -1
-                    if hasTraits:
-                        assert(header[traits_header_index] == traits_header)
-                    assert(header[0] == otu_header)
-                    assert(header[amplicon_header_index] == amplicon_header)
+                    if header[0] != otu_header:
+                        raise ImportException("First column must be OTU in {}".formate(fname))
+                    # Assume all the taxonomy fields are before the amplicon field
                     taxo_header = header[1:amplicon_header_index]
                     for idx, row in enumerate(csv.reader(fd, dialect='excel-tab')):
                         code = row[0]
                         if not code_re.match(code) and not code.startswith('mxa_'):
-                            raise ImportException("invalid OTU code: {}".format(code))
-                        # Convert String value to PSQL Array Value Input format '{ val1 delim val2 delim ... }'
-                        traits = row[traits_header_index] if hasTraits else ""
+                            raise ImportException('Invalid OTU code "{}" in {}'.format(code, fname))
+                        traits = (row[traits_header_index].replace(";", ",").strip()
+                                  if hasTraits else "")
                         if traits:
-                            traits = traits.replace(";", ",")
+                            if re.search(r'["{}\\]', traits):
+                                raise ImportException('Invalid character in traits "{}" in {}'.format(traits, fname))
+                            # Convert String value to PSQL Array Value Input format '{ val1 delim val2 delim ... }'
                             traits = "{"+",".join('"{}"'.format(i) for i in traits.split(','))+"}"
-                        obj = {
+                        obj = dict((zip(taxo_header, row[1:amplicon_header_index])))
+                        obj.update({
                             'taxonomy_source': taxonomy_source,
                             'amplicon': row[amplicon_header_index],
                             'traits': traits,
                             'otu': code,
-                        }
+                        })
                         if amplicon is None:
                             amplicon = obj['amplicon']
                         if amplicon != obj['amplicon']:
                             raise ImportException(
                                 'More than one amplicon in {}: {} vs {}'.format(
                                     fname, amplicon, obj['amplicon']))
-                        obj.update(zip(taxo_header, row[1:amplicon_header_index]))
                         yield obj
                 k = amplicon_code.lower()
                 v = self.amplicon_code_names.get(k)
