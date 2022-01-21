@@ -226,13 +226,6 @@ class TaxonomyOptions:
         # no completion: we have a complete hierarchy
         if target_attr is None:
             return {}
-        # performance: hard-code kingdom (it's the slowest query, and the most common)
-        # e.g. taxonomy cache warming
-        elif not taxonomy_filter.amplicon_filter and target_class is OTUKingdom:
-            possibilities = apply_taxonomy_filter(
-                'taxonomy_source_id',
-                 self._session.query(target_class.id, target_class.value),
-                taxonomy_filter.taxonomy_source_filter).all()
         else:
             # clear invalidated part of the state
             state = taxonomy_filter.state_vector[:target_idx] + [None] * (
@@ -382,10 +375,7 @@ class OTUSampleOTUQuery:
 
     def import_traits(self, amplicon_filter):
         q = self._session.query(func.unnest(OTUSampleOTU.traits)).distinct().group_by(OTUSampleOTU.traits)
-        q = apply_op_and_val_filter(
-            OTUSampleOTU.taxonomy_source_id,
-            apply_op_and_val_filter(OTUSampleOTU.amplicon_id, q, amplicon_filter),
-            self._taxonomy_filter.taxonomy_source_filter)
+        q = apply_op_and_val_filter(OTUSampleOTU.amplicon_id, q, amplicon_filter)
         # log_query(q)
         vals = self._q_all_cached('import_traits', q)
         vals.sort(key=lambda v: v[0])
@@ -648,10 +638,9 @@ class SampleSchemaDefinition:
         return self._session.query(SampleContext.database_schema_definitions_url).distinct().one()
 
 class TaxonomyFilter:
-    def __init__(self, taxonomy_source_filter, amplicon_filter, state_vector, trait_filter):
+    def __init__(self, amplicon_filter, state_vector, trait_filter):
         self.amplicon_filter = amplicon_filter
-        self.taxonomy_source_filter = taxonomy_source_filter
-        self.state_vector = [self.taxonomy_source_filter] + state_vector
+        self.state_vector =  state_vector
         self.trait_filter = trait_filter
         assert(len(self.state_vector) == len(TaxonomyOptions.hierarchy))
 

@@ -13,7 +13,7 @@ export const fetchTraits = (dispatch: any, getState) => {
     dispatch(selectTrait(''))
     dispatch(fetchTraitsStarted())
     const state = getState()
-    return getTraits(state.searchPage.filters.selectedAmplicon, state.searchPage.filters.selectedTaxonomySource)
+    return getTraits(state.searchPage.filters.selectedAmplicon)
       .then(data => {
         dispatch(fetchTraitsEnded(data))
       })

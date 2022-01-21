@@ -1,25 +1,28 @@
-import { map, get as _get } from 'lodash'
+import { map } from 'lodash'
 import * as React from 'react'
-import { Col, FormGroup, Label } from 'reactstrap'
+import { Col, FormGroup, Label, UncontrolledTooltip } from 'reactstrap'
+import Octicon from '../../../components/octicon'
+
 import Select from 'react-select';
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
-import { selectTaxonomySource } from '../reducers/taxonomy_source'
-import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
-import { fetchTraits } from '../../../reducers/reference_data/traits'
 
-
-class _TaxonomySelector extends React.Component<any, any> {
+export default class DropDownSelector extends React.Component<any> {
 
     constructor(props) {
-      super(props)
-      this.onValueChange = this.onValueChange.bind(this)
+        super(props)
+        this.onValueChange = this.onValueChange.bind(this)
+        props.selectOperator("is")
+    }
+
+    componentDidUpdate() {
+        if (this.props.selected.value === '' && this.props.options.length) {
+            this.props.selectValue(this.props.options[0].id)
+            this.props.onChange()
+        }
     }
 
     public onValueChange(evt) {
         const id = evt.value
         this.props.selectValue(id)
-        this.props.updateTraits()
         this.props.onChange()
     }
 
@@ -39,49 +42,28 @@ class _TaxonomySelector extends React.Component<any, any> {
     }
 
     public render() {
-      return (
-        <FormGroup row={true}>
-          <Label sm={3}>{this.props.label}</Label>
-          <Col sm={9}>
-          <Select
-              isSearchable={true}
-              isLoading={this.props.optionsLoading}
-              isDisabled={this.props.isDisabled || this.props.optionsLoadingError}
-              value={map(this.props.options, this.renderOption).filter(option => option.value === this.props.selected.value)}
-              options={this.renderOptions()}
-              onChange={this.onValueChange}
-              />
-          </Col>
-        </FormGroup>
-      )
+        return (
+            <FormGroup row={true}>
+                <Label sm={3}>{this.props.label + " "}
+                    <span id={this.props.label + "Tip"}>
+                        <Octicon name="info" />
+                    </span>
+                    <UncontrolledTooltip target={this.props.label + "Tip"} placement="auto">
+                        {this.props.info}
+                    </UncontrolledTooltip>
+                </Label>
+                <Col sm={9}>
+                    <Select
+                        isSearchable={true}
+                        isLoading={this.props.optionsLoading}
+                        isDisabled={this.props.isDisabled || this.props.optionsLoadingError}
+                        value={map(this.props.options, this.renderOption).filter(option => option.value === this.props.selected.value)}
+                        options={this.renderOptions()}
+                        onChange={this.onValueChange}
+                        placeholder={this.props.placeholder}
+                    />
+                </Col>
+            </FormGroup>
+        )
     }
   }
-
-function mapStateToProps(state) {
-    return {
-        label: 'Taxonomy source',
-        options: state.referenceData.taxonomySources.values,
-        optionsLoadingError: state.referenceData.taxonomySources.error,
-        isDisabled: _get(state, 'referenceData.taxonomySources.values', []).length === 0,
-        optionsLoading: state.referenceData.taxonomySources.isLoading,
-        selected: state.searchPage.filters.selectedTaxonomySource
-    }
-}
-
-function mapDispatchToProps(dispatch) {
-    return bindActionCreators(
-        {
-            selectValue: selectTaxonomySource,
-            onChange: updateTaxonomyDropDowns(''),
-            updateTraits: fetchTraits
-        },
-        dispatch
-    )
-}
-
-const TaxonomySelector = connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(_TaxonomySelector)
-
-export default TaxonomySelector

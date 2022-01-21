@@ -5,9 +5,9 @@ import { bindActionCreators } from 'redux'
 import { Button, Input,  UncontrolledTooltip } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 import { selectEnvironment, removeContextualFilter, selectContextualFiltersMode } from '../reducers/contextual'
-import { clearAllTaxonomyFilters, fetchKingdoms } from '../reducers/taxonomy'
+import { clearAllTaxonomyFilters, fetchTaxonomySources } from '../reducers/taxonomy'
 import { fetchTraits } from '../../../reducers/reference_data/traits'
-import { selectAmplicon } from '../reducers/amplicon'
+import { selectAmplicon, getDefaultAmplicon } from '../reducers/amplicon'
 import { selectTrait } from '../reducers/trait'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import { fetchContextualDataForGraph } from '../../../reducers/contextual_data_graph'
@@ -17,8 +17,8 @@ import { createAction } from 'redux-actions'
 const SearchFilterButton = props => {
 
   const mytooltip= {
-    maxHeight: window.innerHeight*.50, 
-    maxWidth: window.innerWidth*.50, 
+    maxHeight: window.innerHeight*.50,
+    maxWidth: window.innerWidth*.50,
     overflowY: 'auto' as 'auto',
   }
 
@@ -91,7 +91,7 @@ class SearchFilters extends React.Component<any> {
   }
 
   onSelectAmplicon = () => {
-    const defaultAmplicon = find(this.props.amplicons, amplicon => amplicon.value === window.otu_search_config.default_amplicon)
+    const defaultAmplicon =  getDefaultAmplicon(this.props.amplicons)
     this.props.clearAllTaxonomyFilters()
     this.props.selectAmplicon(defaultAmplicon?defaultAmplicon.id:"")
     this.props.fetchTraits()
@@ -179,10 +179,10 @@ class SearchFilters extends React.Component<any> {
           for (const [taxoType, taxoValue] of Object.entries(value)) {
             let selectedTaxo = taxoValue['selected']
             if (selectedTaxo && selectedTaxo['value']) {
-                let searchFilter = <SearchFilterButton 
-                id={taxoType} 
-                onClick={() => this.onSelectTaxonomy(taxoType)} 
-                color="secondary" key={taxoType} octicon="x" 
+                let searchFilter = <SearchFilterButton
+                id={taxoType}
+                onClick={() => this.onSelectTaxonomy(taxoType)}
+                color="secondary" key={taxoType} octicon="x"
                 text={taxoType+" <"+selectedTaxo['operator']+"> "+this.getSelectedFilter(taxoValue['options'], selectedTaxo['value'], 'value')} />
                 searchFilters.push(searchFilter)
             }
@@ -191,11 +191,11 @@ class SearchFilters extends React.Component<any> {
         case "contextual":
           let selectedEnvironmentValue = value['selectedEnvironment']
           if (selectedEnvironmentValue && selectedEnvironmentValue['value']) {
-            let searchFilter = <SearchFilterButton 
+            let searchFilter = <SearchFilterButton
             onClick={() => this.onSelectEnvironment()}
-            color="info" 
-            key={'selectedEnvironment'} 
-            octicon="x" 
+            color="info"
+            key={'selectedEnvironment'}
+            octicon="x"
             text={"AM Environment <"+selectedEnvironmentValue['operator'] + "> "+this.getSelectedFilter(this.props.environment, selectedEnvironmentValue['value'], 'name')} />
             searchFilters.push(searchFilter)
           }
@@ -212,13 +212,13 @@ class SearchFilters extends React.Component<any> {
                 text += " <"+(selectedFilter['operator']?"isn't":"is")+"> "+values.join(", ")
               }
               else if (value2 && value) {
-                text += " <"+(selectedFilter['operator']?"not between":"between")+"> "+value+" and "+value2 
+                text += " <"+(selectedFilter['operator']?"not between":"between")+"> "+value+" and "+value2
               }
               else if (!isNull(value)) {
                 text += " <"+(selectedFilter['operator']?"doesn't contain":"contains")+"> "+this.getSelectedFilterValue(this.props.contextualFilters, name, value)
               }
               let searchFilter = <SearchFilterButton index={selectedFilterIndex}
-              onClick={() => this.onSelectFilter(selectedFilterIndex, name)}  
+              onClick={() => this.onSelectFilter(selectedFilterIndex, name)}
               color="success" key={`${selectedFilterIndex}-${key}`} octicon="x" text={text} />
               searchFilters.push(searchFilter)
             }
@@ -230,11 +230,11 @@ class SearchFilters extends React.Component<any> {
       <>
       {this.props.selectedContextualFilters.length >= 2 && (
           <div data-tut="reactour__graph_any_all" >
-            <Input 
+            <Input
               type="select"
               bsSize="sm"
               value={this.props.contextualFiltersMode}
-              color="info" 
+              color="info"
               onChange={evt => this.onSelectFilterType(evt.target.value)}
             >
               <option value="and">All contextual filters</option>
@@ -267,7 +267,7 @@ function mapDispatchToProps(dispatch: any, props) {
       selectAmplicon,
       selectTrait,
       fetchTraits,
-      fetchKingdoms,
+      fetchTaxonomySources,
       clearAllTaxonomyFilters,
       updateTaxonomy: updateTaxonomyDropDowns(''),
       selectValueKingdom: createAction('SELECT_KINGDOM'),

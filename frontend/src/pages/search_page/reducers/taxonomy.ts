@@ -31,7 +31,6 @@ const makeTaxonomyFetcher = config => () => (dispatch, getState) => {
   const selectedAmplicon = state.searchPage.filters.selectedAmplicon
   const selectedTaxonomies = map(config.taxonomies, taxonomy => state.searchPage.filters.taxonomy[taxonomy].selected)
   const selectedTrait = state.searchPage.filters.selectedTrait
-  const selectedTaxonomySource = state.searchPage.filters.selectedTaxonomySource
 
   if (selectedAmplicon.value === '' || (selectedTaxonomies.length > 0 && last(selectedTaxonomies).value === '')) {
     dispatch(clearTaxonomyFilter(config.type)())
@@ -39,7 +38,7 @@ const makeTaxonomyFetcher = config => () => (dispatch, getState) => {
   }
 
   dispatch(fetchTaxonomyOptionsStarted(config.type)())
-  return getTaxonomy(selectedAmplicon, selectedTaxonomies, selectedTrait, selectedTaxonomySource)
+  return getTaxonomy(selectedAmplicon, selectedTaxonomies, selectedTrait)
     .then(data => {
       dispatch(fetchTaxonomyOptionsEnded(config.type)(data))
     })
@@ -66,7 +65,7 @@ export const updateTaxonomyDropDowns = taxonomy => () => (dispatch, getState) =>
 }
 
 export const clearAllTaxonomyFilters = createAction('CLEAR_ALL_TAXONOMY_FILTERS')
-export const fetchKingdoms = makeTaxonomyFetcher(taxonomyConfigFor('kingdom'))
+export const fetchTaxonomySources = makeTaxonomyFetcher(taxonomyConfigFor('taxonomy_source'))
 
 // Generic taxonomy reducers
 
@@ -142,6 +141,7 @@ function makeTaxonomyReducer(taxonomyName) {
 export default function taxonomyReducer(state = searchPageInitialState.filters.taxonomy, action) {
   return {
     ...state,
+    taxonomy_source: makeTaxonomyReducer('taxonomy_source')(state.taxonomy_source, action),
     kingdom: makeTaxonomyReducer('kingdom')(state.kingdom, action),
     phylum: makeTaxonomyReducer('phylum')(state.phylum, action),
     class: makeTaxonomyReducer('class')(state.class, action),

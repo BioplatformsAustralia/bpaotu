@@ -1,4 +1,5 @@
 import { times } from 'lodash'
+import { taxonomies as taxonomy_keys } from './pages/search_page/reducers/types'
 
 export interface SearchConfig {
   base_url: string
@@ -12,7 +13,6 @@ export interface SearchConfig {
 
   amplicon_endpoint: string
   trait_endpoint: string
-  taxonomy_source_endpoint: string
   taxonomy_endpoint: string
   contextual_endpoint: string
   contextual_graph_endpoint: string
@@ -49,7 +49,6 @@ export interface ContextualFilters {
 }
 
 export interface OTUQuery {
-  taxonomy_source_filter: string
   taxonomy_filters: TaxonomyFilter[]
   contextual_filters: ContextualFilters
   amplicon_filter: string
@@ -69,8 +68,7 @@ export const emptyContextualFilters: ContextualFilters = {
 }
 
 export const EmptyOTUQuery: OTUQuery = {
-  taxonomy_source_filter: '',
-  taxonomy_filters: times(7, _ => emptyTaxonomyFilter),
+  taxonomy_filters: times(taxonomy_keys.length, _ => emptyTaxonomyFilter),
   contextual_filters: emptyContextualFilters,
   amplicon_filter: '',
   trait_filter: ''

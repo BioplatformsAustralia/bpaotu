@@ -1,4 +1,4 @@
-export const taxonomies = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
+export const taxonomies = ['taxonomy_source', 'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
 
 export interface OperatorAndValue {
   value: string
@@ -40,6 +40,7 @@ export interface PageState {
   filters: {
     selectedAmplicon: OperatorAndValue
     taxonomy: {
+      taxonomy_source: SelectableLoadableValues
       kingdom: SelectableLoadableValues
       phylum: SelectableLoadableValues
       class: SelectableLoadableValues
@@ -49,7 +50,6 @@ export interface PageState {
       species: SelectableLoadableValues
     }
     selectedTrait: OperatorAndValue
-    selectedTaxonomySource: any
     contextual: any // TODO
   }
   samplesMapModal: {
@@ -89,7 +89,6 @@ export interface SampleMarker {
   lng: number
 }
 
-export const EmptyValue: any = { value: '' }
 export const EmptyOperatorAndValue: OperatorAndValue = { value: '', operator: 'is' }
 export const EmptyLoadableValues: LoadableValues = { isLoading: null, options: [] }
 export const EmptySelectableLoadableValues: SelectableLoadableValues = {
@@ -103,6 +102,7 @@ export const searchPageInitialState: PageState = {
   filters: {
     selectedAmplicon: EmptyOperatorAndValue,
     taxonomy: {
+      taxonomy_source: EmptySelectableLoadableValues,
       kingdom: EmptySelectableLoadableValues,
       phylum: EmptySelectableLoadableValues,
       class: EmptySelectableLoadableValues,
@@ -112,7 +112,6 @@ export const searchPageInitialState: PageState = {
       species: EmptySelectableLoadableValues
     },
     selectedTrait: EmptyOperatorAndValue,
-    selectedTaxonomySource: EmptyValue,
     contextual: {
       selectedEnvironment: EmptyOperatorAndValue,
       filtersMode: 'and',

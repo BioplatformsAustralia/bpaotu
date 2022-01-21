@@ -4,6 +4,7 @@ import { get as _get, map, partial } from 'lodash'
 import { store } from '../index'
 import '../interfaces'
 import { ckanAuthInfoEnded } from '../reducers/auth'
+import { taxonomies as taxonomy_keys } from '../pages/search_page/reducers/types'
 
 axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN'
 axios.defaults.xsrfCookieName = 'csrftoken'
@@ -24,19 +25,13 @@ export function getAmplicons() {
   return axios.get(window.otu_search_config.amplicon_endpoint)
 }
 
-export function getTraits(selectedAmplicon = { value: '5', operator: 'is' }, selectedTaxonomySource) {
+export function getTraits(selectedAmplicon = { value: '5', operator: 'is' }) {
   return axios.get(window.otu_search_config.trait_endpoint, {
     params: {
-      amplicon: JSON.stringify(selectedAmplicon),
-      taxonomy_source: JSON.stringify(selectedTaxonomySource)
+      amplicon: JSON.stringify(selectedAmplicon)
     }
   })
 }
-
-export function getTaxonomySources() {
-  return axios.get(window.otu_search_config.taxonomy_source_endpoint)
-}
-
 
 export function getContextualDataDefinitions() {
   return axios.get(window.otu_search_config.contextual_endpoint)
@@ -72,15 +67,14 @@ export function getTaxonomyDataForGraph(filters, options) {
   })
 }
 
-export function getTaxonomy(selectedAmplicon = { value: '' }, selectedTaxonomies, selectedTrait, selectedTaxonomySource) {
-  const taxonomies = completeArray(selectedTaxonomies, 7, { value: '' })
+export function getTaxonomy(selectedAmplicon = { value: '' }, selectedTaxonomies, selectedTrait) {
+  const taxonomies = completeArray(selectedTaxonomies, taxonomy_keys.length, { value: '' })
 
   return axios.get(window.otu_search_config.taxonomy_endpoint, {
     params: {
       amplicon: JSON.stringify(selectedAmplicon),
       selected: JSON.stringify(taxonomies),
-      trait: JSON.stringify(selectedTrait),
-      taxonomy_source: JSON.stringify(selectedTaxonomySource)
+      trait: JSON.stringify(selectedTrait)
     }
   })
 }

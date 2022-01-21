@@ -24,24 +24,23 @@ class Command(BaseCommand):
                     for kingdom_id in self.kingdom_possibilities:
                         q.possibilities(
                             TaxonomyFilter(
-                                self.make_is(taxonomy_source_id),
                                 self.make_is(amplicon_id),
-                                [self.make_is(kingdom_id), None, None, None, None, None, None],
+                                [self.make_is(taxonomy_source_id),
+                                self.make_is(kingdom_id), None, None, None, None, None, None],
                                 None), force_cache=True)
         print("Complete")
 
     def warm_map(self):
         print("Warming spatial cache")
-        default_amplicon = None
-        with OntologyInfo() as info:
-            default_amplicon = self.make_is(info.value_to_id(OTUAmplicon, settings.DEFAULT_AMPLICON))
         for taxonomy_source_id in self.taxonomy_source_possibilities:
-            params = OTUQueryParams(
-                contextual_filter=ContextualFilter('and', None),
-                taxonomy_filter=TaxonomyFilter(
-                    self.make_is(taxonomy_source_id),
-                    default_amplicon, [None, None, None, None, None, None, None], None))
-            spatial_query(params, cache_duration=CACHE_FOREVER, force_cache=True)
+            for amplicon_id in self.amplicon_possibilities:
+                params = OTUQueryParams(
+                    contextual_filter=ContextualFilter('and', None),
+                    taxonomy_filter=TaxonomyFilter(
+                        self.make_is(amplicon_id),
+                        [self.make_is(taxonomy_source_id),
+                        None, None, None, None, None, None, None], None))
+                spatial_query(params, cache_duration=CACHE_FOREVER, force_cache=True)
         print("Complete")
 
     def warm_schema_definitions(self):

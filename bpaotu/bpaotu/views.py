@@ -36,7 +36,7 @@ from .ckan_auth import require_CKAN_auth
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .importer import DataImporter
 from .models import NonDenoisedDataRequest
-from .otu import Environment, OTUAmplicon, SampleContext, TaxonomySource
+from .otu import Environment, OTUAmplicon, SampleContext
 from .query import (ContextualFilter, ContextualFilterTermDate,
                     ContextualFilterTermFloat, ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
@@ -103,14 +103,13 @@ clean_amplicon_filter = get_operator_and_int_value
 clean_environment_filter = get_operator_and_int_value
 
 
-def make_clean_taxonomy_filter(taxonomy_source, amplicon_filter, state_vector, trait_filter):
+def make_clean_taxonomy_filter(amplicon_filter, state_vector, trait_filter):
     """
     take an amplicon filter and a taxonomy filter
     # (a list of phylum, kingdom, ...) and clean it
     """
 
     return TaxonomyFilter(
-        get_operator_and_int_value(taxonomy_source),
         clean_amplicon_filter(amplicon_filter),
         list(map(
             get_operator_and_int_value,
@@ -135,7 +134,6 @@ def api_config(request):
         'amplicon_endpoint': reverse('amplicon_options'),
         'trait_endpoint': reverse('trait_options'),
         'taxonomy_endpoint': reverse('taxonomy_options'),
-        'taxonomy_source_endpoint': reverse('taxonomy_source_options'),
         'contextual_endpoint': reverse('contextual_fields'),
         'contextual_graph_endpoint': reverse('contextual_graph_fields'),
         'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),
@@ -177,11 +175,7 @@ def get_ontology_options(request, ontology_class):
         'possibilities': vals
     })
 
-
 amplicon_options = partial(get_ontology_options, ontology_class=OTUAmplicon)
-
-taxonomy_source_options = partial(get_ontology_options, ontology_class=TaxonomySource)
-
 
 @require_CKAN_auth
 @require_GET
@@ -189,13 +183,11 @@ def trait_options(request):
     """
     private API: return the possible traits
     """
-    taxonomy_source = json.loads(request.GET['taxonomy_source'])
     with OTUSampleOTUQuery(OTUQueryParams(
             None,
             TaxonomyFilter(
-                get_operator_and_int_value(taxonomy_source),
                 None,
-                [None, None, None, None, None, None, None],
+                [None, None, None, None, None, None, None, None],
                 None
             ))) as query:
         amplicon_filter = clean_amplicon_filter(json.loads(request.GET['amplicon']))
@@ -214,7 +206,6 @@ def taxonomy_options(request):
 
     with TaxonomyOptions() as options:
         taxonomy_filter = make_clean_taxonomy_filter(
-            json.loads(request.GET['taxonomy_source']),
             json.loads(request.GET['amplicon']),
             json.loads(request.GET['selected']),
             json.loads(request.GET['trait']))
@@ -490,7 +481,6 @@ def param_to_filters(query_str, contextual_filtering=True):
 
     otu_query = json.loads(query_str)
     taxonomy_filter = make_clean_taxonomy_filter(
-        otu_query['taxonomy_source_filter'],
         otu_query['amplicon_filter'],
         otu_query['taxonomy_filters'],
         otu_query['trait_filter'])
