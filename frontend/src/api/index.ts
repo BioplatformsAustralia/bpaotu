@@ -4,6 +4,7 @@ import { get as _get, map, partial } from 'lodash'
 import { store } from '../index'
 import '../interfaces'
 import { ckanAuthInfoEnded } from '../reducers/auth'
+import { taxonomies as taxonomy_keys } from '../pages/search_page/reducers/types'
 
 axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN'
 axios.defaults.xsrfCookieName = 'csrftoken'
@@ -27,7 +28,7 @@ export function getAmplicons() {
 export function getTraits(selectedAmplicon = { value: '5', operator: 'is' }) {
   return axios.get(window.otu_search_config.trait_endpoint, {
     params: {
-      amplicon: JSON.stringify(selectedAmplicon),
+      amplicon: JSON.stringify(selectedAmplicon)
     }
   })
 }
@@ -67,7 +68,7 @@ export function getTaxonomyDataForGraph(filters, options) {
 }
 
 export function getTaxonomy(selectedAmplicon = { value: '' }, selectedTaxonomies, selectedTrait) {
-  const taxonomies = completeArray(selectedTaxonomies, 7, { value: '' })
+  const taxonomies = completeArray(selectedTaxonomies, taxonomy_keys.length, { value: '' })
 
   return axios.get(window.otu_search_config.taxonomy_endpoint, {
     params: {

@@ -33,6 +33,8 @@ from .otu import (
     ImportedFile,
     ExcludedSamples,
     OntologyErrors,
+    Taxonomy,
+    TaxonomySource,
     make_engine)
 
 
@@ -158,6 +160,7 @@ class OTUQueryParams:
 
 class TaxonomyOptions:
     hierarchy = [
+        ('taxonomy_source_id', TaxonomySource),
         ('kingdom_id', OTUKingdom),
         ('phylum_id', OTUPhylum),
         ('class_id', OTUClass),
@@ -199,45 +202,42 @@ class TaxonomyOptions:
             "return without `_id`"
             return attr[:-3]
 
-        def determine_target():
+        def determine_target(state):
             # this query is built up over time, and validates the hierarchy provided to us
-            q = self._session.query(OTU.kingdom_id).group_by(OTU.kingdom_id)
+            q = self._session.query(Taxonomy.kingdom_id).join(OTU).group_by(
+                    Taxonomy.kingdom_id)
             q = apply_amplicon_filter(q, taxonomy_filter.amplicon_filter)
-            for idx, ((otu_attr, ontology_class), taxonomy) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
+            for idx, ((taxonomy_attr, ontology_class), taxonomy) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
                 valid = True
                 if taxonomy is None or taxonomy.get('value') is None:
                     valid = False
                 else:
-                    q = apply_otu_filter(otu_attr, q, taxonomy)
+                    q = apply_taxonomy_filter(taxonomy_attr, q, taxonomy)
                     valid = q.count() > 0
                 if not valid:
-                    return otu_attr, ontology_class, idx
+                    return taxonomy_attr, ontology_class, idx
             return None, None, None
 
-        state = taxonomy_filter.state_vector.copy()
-
         # scan through in order and find our target, by finding the first invalid selection
-        target_attr, target_class, target_idx = determine_target()
+        target_attr, target_class, target_idx = determine_target(taxonomy_filter.state_vector)
         # the targets to be reset as a result of this choice
         clear = [drop_id(attr) for attr, _ in TaxonomyOptions.hierarchy[target_idx:]]
 
         # no completion: we have a complete hierarchy
         if target_attr is None:
             return {}
-        # performance: hard-code kingdom (it's the slowest query, and the most common)
-        elif not taxonomy_filter.amplicon_filter and target_class is OTUKingdom:
-            possibilities = self._session.query(target_class.id, target_class.value).all()
         else:
             # clear invalidated part of the state
-            state = state[:target_idx] + [None] * (len(TaxonomyOptions.hierarchy) - target_idx)
+            state = taxonomy_filter.state_vector[:target_idx] + [None] * (
+                len(TaxonomyOptions.hierarchy) - target_idx)
             # build up a query of the OTUs for our target attribute
             q = self._session.query(
-                getattr(OTU, target_attr), target_class.value).group_by(
-                    getattr(OTU, target_attr), target_class.value).order_by(target_class.value)
+                getattr(Taxonomy, target_attr), target_class.value).join(OTU).group_by(
+                    getattr(Taxonomy, target_attr), target_class.value).order_by(target_class.value)
 
             q = apply_amplicon_filter(q, taxonomy_filter.amplicon_filter)
-            for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, state):
-                q = apply_otu_filter(otu_attr, q, taxonomy)
+            for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, state):
+                q = apply_taxonomy_filter(taxonomy_attr, q, taxonomy)
             q = apply_trait_filter(q, taxonomy_filter.trait_filter)
             q = q.join(target_class)
             possibilities = q.all()
@@ -350,11 +350,12 @@ class OTUSampleOTUQuery:
     def matching_taxonomy_graph_data(self, all=False):
         taxolistall = {}
         groupByAttr = getattr(OTUSampleOTU, "species_id")
-        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
+        for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy,
+                                                             self._taxonomy_filter.state_vector):
             if taxonomy is None or taxonomy.get('value') is None:
-                groupByAttr = getattr(OTUSampleOTU, otu_attr)
+                groupByAttr = getattr(OTUSampleOTU, taxonomy_attr)
                 break
-            taxolistall[otu_attr] = taxonomy
+            taxolistall[taxonomy_attr] = taxonomy
 
         if groupByAttr:
             ampliconAttr = getattr(OTUSampleOTU, 'amplicon_id')
@@ -379,7 +380,7 @@ class OTUSampleOTUQuery:
         vals = self._q_all_cached('import_traits', q)
         vals.sort(key=lambda v: v[0])
         return vals
-        
+
 class SampleQuery:
     """
     find samples IDs which match the given taxonomical and
@@ -494,10 +495,10 @@ class SampleQuery:
         # log_query(q)
         return self._q_all_cached('matching_selected_samples_20k', q)
 
-    def matching_otus(self, kingdom_id=None):
+    def matching_otus(self):
         q = self._session.query(OTU)
         subq = self._build_contextual_subquery()
-        q = self._assemble_otu_query(q, subq, kingdom_id).order_by(OTU.id)
+        q = self._assemble_otu_query(q, subq).order_by(OTU.id)
         return q
 
     def has_matching_sample_otus(self, kingdom_id):
@@ -520,7 +521,7 @@ class SampleQuery:
         q = self._taxonomy_filter.apply(q)
         q = self._contextual_filter.apply(q)
         if kingdom_id is not None:
-            q = q.filter(OTU.kingdom_id == kingdom_id)
+            q = q.filter(Taxonomy.kingdom_id == kingdom_id)
         # we don't cache this query: the result size is enormous,
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
@@ -528,41 +529,16 @@ class SampleQuery:
         # log_query(q)
         return q
 
-    def matching_sample_otus_abundance(self, *args, kingdom_id=None):
-        q = self._session.query(*args, func.sum(SampleOTU.count)) \
-            .filter(OTU.id == SampleOTU.otu_id) \
-            .filter(SampleContext.id == SampleOTU.sample_id) \
-            .group_by(SampleContext.latitude, SampleContext.longitude)
-        q = self._taxonomy_filter.apply(q)
-        q = self._contextual_filter.apply(q)
-        if kingdom_id is not None:
-            q = q.filter(OTU.kingdom_id == kingdom_id)
-        return q
-
-    def matching_sample_otus_groupby_lat_lng_id(self, *args, kingdom_id=None):
-        q = self._session.query(*args, func.sum(OTUSampleOTU.richness), func.sum(OTUSampleOTU.count)) \
-            .filter(SampleContext.id == OTUSampleOTU.sample_id) \
-            .group_by(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
-        q = apply_op_and_val_filter(getattr(OTUSampleOTU, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
-        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
-            q = apply_op_and_val_filter(getattr(OTUSampleOTU, otu_attr), q, taxonomy)
-        q = self._contextual_filter.apply(q)
-        if kingdom_id is not None:
-            q = q.filter(OTU.kingdom_id == kingdom_id)
-        # log_query(q)
-        return q
-
-    def matching_sample_otus_groupby_lat_lng_id_20k(self, *args, kingdom_id=None):
+    def matching_sample_otus_groupby_lat_lng_id_20k(self, *args):
         q = self._session.query(*args, func.sum(OTUSampleOTU20K.richness), func.sum(OTUSampleOTU20K.count)) \
             .filter(SampleContext.id == OTUSampleOTU20K.sample_id) \
             .group_by(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
         q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
         q = apply_op_and_array_filter(getattr(OTUSampleOTU20K, 'traits'), q, self._taxonomy_filter.trait_filter)
-        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
-            q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, otu_attr), q, taxonomy)
+        for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy,
+                                                             self._taxonomy_filter.state_vector):
+            q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, taxonomy_attr), q, taxonomy)
         q = self._contextual_filter.apply(q)
-        if kingdom_id is not None:
-            q = q.filter(OTU.kingdom_id == kingdom_id)
         # log_query(q)
         return q
 
@@ -577,8 +553,9 @@ class SampleQuery:
         q = self._session.query(OTUSampleOTU.sample_id).group_by(OTUSampleOTU.sample_id)
         q = apply_op_and_val_filter(getattr(OTUSampleOTU, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
         q = apply_op_and_array_filter(getattr(OTUSampleOTU, 'traits'), q, self._taxonomy_filter.trait_filter)
-        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
-            q = apply_op_and_val_filter(getattr(OTUSampleOTU, otu_attr), q, taxonomy)
+        for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy,
+                                                             self._taxonomy_filter.state_vector):
+            q = apply_op_and_val_filter(getattr(OTUSampleOTU, taxonomy_attr), q, taxonomy)
         # log_query(q)
         return q
 
@@ -593,8 +570,9 @@ class SampleQuery:
         q = self._session.query(OTUSampleOTU20K.sample_id).group_by(OTUSampleOTU20K.sample_id)
         q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
         q = apply_op_and_array_filter(getattr(OTUSampleOTU20K, 'traits'), q, self._taxonomy_filter.trait_filter)
-        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self._taxonomy_filter.state_vector):
-            q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, otu_attr), q, taxonomy)
+        for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy,
+                                                             self._taxonomy_filter.state_vector):
+            q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, taxonomy_attr), q, taxonomy)
         # log_query(q)
         return q
 
@@ -627,7 +605,7 @@ class SampleQuery:
         q = self._contextual_filter.apply(q)
         return q
 
-    def _assemble_otu_query(self, otu_query, contextual_subquery, kingdom_id):
+    def _assemble_otu_query(self, otu_query, contextual_subquery):
         """
         applies the passed contextual_subquery to apply taxonomy filters.
 
@@ -640,8 +618,6 @@ class SampleQuery:
             q = q.filter(OTU.id.in_(contextual_subquery))
         # apply taxonomic filter terms
         q = self._taxonomy_filter.apply(q)
-        if kingdom_id is not None:
-            q = q.filter(OTU.kingdom_id == kingdom_id)
         # log_query(q)
         return q
 
@@ -664,28 +640,34 @@ class SampleSchemaDefinition:
 class TaxonomyFilter:
     def __init__(self, amplicon_filter, state_vector, trait_filter):
         self.amplicon_filter = amplicon_filter
-        self.state_vector = state_vector
+        self.state_vector =  state_vector
         self.trait_filter = trait_filter
+        assert(len(self.state_vector) == len(TaxonomyOptions.hierarchy))
 
     def describe(self):
         with OntologyInfo() as info:
             amplicon_description = describe_op_and_val(info, 'amplicon_id', OTUAmplicon, self.amplicon_filter)
             trait_description = describe_op_and_val_only('trait', self.trait_filter)
             taxonomy_descriptions = []
-            for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self.state_vector):
-                descr = describe_op_and_val(info, otu_attr, ontology_class, taxonomy)
+            for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self.state_vector):
+                descr = describe_op_and_val(info, taxonomy_attr, ontology_class, taxonomy)
                 if descr:
                     taxonomy_descriptions.append(descr)
             return amplicon_description, taxonomy_descriptions, trait_description
 
-    def is_empty(self):
-        return not self.amplicon_filter and self.state_vector[0] is None and not self.trait_filter 
+    def is_empty(self): # FIXME this might always be false
+        return not self.amplicon_filter and self.state_vector[0] is None and not self.trait_filter
 
     def apply(self, q):
-        q = apply_amplicon_filter(q, self.amplicon_filter)
+        """
+        q: sqlalchemy query object selecting from or joined with OTU()
+        """
+        q = apply_amplicon_filter(
+            q.filter(OTU.id == Taxonomy.otu_id),
+            self.amplicon_filter)
         q = apply_trait_filter(q, self.trait_filter)
-        for (otu_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self.state_vector):
-            q = apply_otu_filter(otu_attr, q, taxonomy)
+        for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self.state_vector):
+            q = apply_taxonomy_filter(taxonomy_attr, q, taxonomy)
         return q
 
     def __repr__(self):
@@ -923,17 +905,12 @@ def apply_op_and_array_filter(attr, q, op_and_array):
     return q
 
 
-def apply_otu_filter(otu_attr, q, op_and_val):
-    return apply_op_and_val_filter(getattr(OTU, otu_attr), q, op_and_val)
+def apply_taxonomy_filter(taxonomy_attr, q, op_and_val):
+    return apply_op_and_val_filter(getattr(Taxonomy, taxonomy_attr), q, op_and_val)
 
-
-def apply_otu_array_filter(otu_attr, q, op_and_array):
-    return apply_op_and_array_filter(getattr(OTU, otu_attr), q, op_and_array)
-
-
-apply_amplicon_filter = partial(apply_otu_filter, 'amplicon_id')
-apply_trait_filter = partial(apply_otu_array_filter, 'traits')
 apply_environment_filter = partial(apply_op_and_val_filter, SampleContext.am_environment_id)
+apply_amplicon_filter = partial(apply_op_and_val_filter, OTU.amplicon_id)
+apply_trait_filter = partial(apply_op_and_array_filter, Taxonomy.traits)
 
 
 def log_query(q):

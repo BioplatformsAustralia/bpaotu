@@ -2,6 +2,7 @@ import zipstream
 from .otu import (
     OTUKingdom,
     SampleOTU,
+    Taxonomy,
     OTU,
     SampleContext)
 from .util import (
@@ -89,6 +90,7 @@ def tabular_zip_file_generator(params, onlyContextual):
                 'OTU',
                 'OTU Count',
                 'Amplicon',
+                'Taxonomy source',
                 'Kingdom',
                 'Phylum',
                 'Class',
@@ -100,21 +102,22 @@ def tabular_zip_file_generator(params, onlyContextual):
             yield fd.getvalue().encode('utf8')
             fd.seek(0)
             fd.truncate(0)
-            q = query.matching_sample_otus(OTU, SampleOTU, SampleContext, kingdom_id=kingdom_id)
-            for otu, sample_otu, sample_context in q.yield_per(50):
+            q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU, SampleContext, kingdom_id=kingdom_id)
+            for taxonomy, otu, sample_otu, sample_context in q.yield_per(50):
                 w.writerow([
                     format_sample_id(sample_otu.sample_id),
                     otu.code,
                     sample_otu.count,
                     val_or_empty(otu.amplicon),
-                    val_or_empty(otu.kingdom),
-                    val_or_empty(otu.phylum),
-                    val_or_empty(otu.klass),
-                    val_or_empty(otu.order),
-                    val_or_empty(otu.family),
-                    val_or_empty(otu.genus),
-                    val_or_empty(otu.species),
-                    array_or_empty(otu.traits).replace(",", ";")])
+                    val_or_empty(taxonomy.taxonomy_source),
+                    val_or_empty(taxonomy.kingdom),
+                    val_or_empty(taxonomy.phylum),
+                    val_or_empty(taxonomy.klass),
+                    val_or_empty(taxonomy.order),
+                    val_or_empty(taxonomy.family),
+                    val_or_empty(taxonomy.genus),
+                    val_or_empty(taxonomy.species),
+                    array_or_empty(taxonomy.traits).replace(",", ";")])
                 yield fd.getvalue().encode('utf8')
                 fd.seek(0)
                 fd.truncate(0)

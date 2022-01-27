@@ -1,4 +1,4 @@
-export const taxonomies = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
+export const taxonomies = ['taxonomy_source', 'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
 
 export interface OperatorAndValue {
   value: string
@@ -40,6 +40,7 @@ export interface PageState {
   filters: {
     selectedAmplicon: OperatorAndValue
     taxonomy: {
+      taxonomy_source: SelectableLoadableValues
       kingdom: SelectableLoadableValues
       phylum: SelectableLoadableValues
       class: SelectableLoadableValues
@@ -101,6 +102,7 @@ export const searchPageInitialState: PageState = {
   filters: {
     selectedAmplicon: EmptyOperatorAndValue,
     taxonomy: {
+      taxonomy_source: EmptySelectableLoadableValues,
       kingdom: EmptySelectableLoadableValues,
       phylum: EmptySelectableLoadableValues,
       class: EmptySelectableLoadableValues,

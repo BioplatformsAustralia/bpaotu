@@ -30,6 +30,7 @@ class Command(BaseCommand):
             contextual_filter=ContextualFilter('and', self.onto_is(Environment, 'Soil')),
             taxonomy_filter=TaxonomyFilter(
                 None, [
+                    self.make_is(1), # # FIXME! magic number taxonomy source
                     self.onto_is(OTUKingdom, 'Bacteria'),
                     self.onto_is(OTUPhylum, 'Bacteroidetes'),
                     self.onto_is(OTUClass, 'Ignavibacteria'),

@@ -65,7 +65,7 @@ export const updateTaxonomyDropDowns = taxonomy => () => (dispatch, getState) =>
 }
 
 export const clearAllTaxonomyFilters = createAction('CLEAR_ALL_TAXONOMY_FILTERS')
-export const fetchKingdoms = makeTaxonomyFetcher(taxonomyConfigFor('kingdom'))
+export const fetchTaxonomySources = makeTaxonomyFetcher(taxonomyConfigFor('taxonomy_source'))
 
 // Generic taxonomy reducers
 
@@ -141,6 +141,7 @@ function makeTaxonomyReducer(taxonomyName) {
 export default function taxonomyReducer(state = searchPageInitialState.filters.taxonomy, action) {
   return {
     ...state,
+    taxonomy_source: makeTaxonomyReducer('taxonomy_source')(state.taxonomy_source, action),
     kingdom: makeTaxonomyReducer('kingdom')(state.kingdom, action),
     phylum: makeTaxonomyReducer('phylum')(state.phylum, action),
     class: makeTaxonomyReducer('class')(state.class, action),

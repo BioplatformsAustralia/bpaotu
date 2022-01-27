@@ -12,7 +12,8 @@ export const fetchTraits = (dispatch: any, getState) => {
   return (dispatch: any, getState) => {
     dispatch(selectTrait(''))
     dispatch(fetchTraitsStarted())
-    return getTraits(getState().searchPage.filters.selectedAmplicon)
+    const state = getState()
+    return getTraits(state.searchPage.filters.selectedAmplicon)
       .then(data => {
         dispatch(fetchTraitsEnded(data))
       })

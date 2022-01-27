@@ -9,7 +9,7 @@ import os
 import re
 import time
 from collections import OrderedDict, defaultdict
-from functools import wraps
+from functools import wraps, partial
 from operator import itemgetter
 from io import BytesIO
 from xhtml2pdf import pisa
@@ -83,7 +83,7 @@ def get_operator_and_int_value(v):
     if v.get('value', '') == '':
         return None
     return OrderedDict((
-        ('operator', v.get('operator', '=')),
+        ('operator', v.get('operator', 'is')),
         ('value', int_if_not_already_none(v['value'])),
     ))
 
@@ -93,7 +93,7 @@ def get_operator_and_string_value(v):
     if v.get('value', '') == '':
         return None
     return OrderedDict((
-        ('operator', v.get('operator', '=')),
+        ('operator', v.get('operator', 'is')),
         ('value', v['value']),
     ))
 
@@ -109,7 +109,6 @@ def make_clean_taxonomy_filter(amplicon_filter, state_vector, trait_filter):
     # (a list of phylum, kingdom, ...) and clean it
     """
 
-    assert(len(state_vector) == len(TaxonomyOptions.hierarchy))
     return TaxonomyFilter(
         clean_amplicon_filter(amplicon_filter),
         list(map(
@@ -166,15 +165,17 @@ def api_config(request):
 
 @require_CKAN_auth
 @require_GET
-def amplicon_options(request):
+def get_ontology_options(request, ontology_class):
     """
-    private API: return the possible amplicons
+    private API: return the possible ontology values for ontology_class
     """
     with OntologyInfo() as options:
-        vals = options.get_values(OTUAmplicon)
+        vals = options.get_values(ontology_class)
     return JsonResponse({
         'possibilities': vals
     })
+
+amplicon_options = partial(get_ontology_options, ontology_class=OTUAmplicon)
 
 @require_CKAN_auth
 @require_GET
@@ -182,7 +183,13 @@ def trait_options(request):
     """
     private API: return the possible traits
     """
-    with OTUSampleOTUQuery(OTUQueryParams(None,None)) as query:
+    with OTUSampleOTUQuery(OTUQueryParams(
+            None,
+            TaxonomyFilter(
+                None,
+                [None, None, None, None, None, None, None, None],
+                None
+            ))) as query:
         amplicon_filter = clean_amplicon_filter(json.loads(request.GET['amplicon']))
         vals = [[x[0], x[0]] for x in query.import_traits(amplicon_filter)]
     return JsonResponse({
@@ -196,7 +203,7 @@ def taxonomy_options(request):
     """
     private API: given taxonomy constraints, return the possible options
     """
-    
+
     with TaxonomyOptions() as options:
         taxonomy_filter = make_clean_taxonomy_filter(
             json.loads(request.GET['amplicon']),
@@ -313,7 +320,7 @@ def contextual_graph_fields(request, contextual_filtering=True):
 @require_POST
 def taxonomy_graph_fields(request, contextual_filtering=True):
     # Exclude environment field of contextual_filters
-    am_environment_selected = None 
+    am_environment_selected = None
     otu_query = request.POST['otu_query']
     otu_query_dict = json.loads(otu_query)
     if(otu_query_dict.get('contextual_filters') and otu_query_dict.get('contextual_filters').get('environment')):
@@ -353,7 +360,7 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
     am_environment_results_all = []
     for taxonomy_am_environment, sum in df_results_all.groupby(['taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
         am_environment_results_all.append([taxonomy_am_environment, sum])
-    
+
     am_environment_results = {}
     if am_environment_selected and am_environment_selected.get('value', None):
         df_results_all = df_results_all.query('am_environment == @am_environment_selected.get("value", None)')
@@ -362,7 +369,7 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
             am_environment_results[taxonomy_am_environment[0]].append([taxonomy_am_environment[1], sum])
         else:
             am_environment_results[taxonomy_am_environment[0]] = [[taxonomy_am_environment[1], sum]]
-    
+
     am_environment_results_selected = {}
     for taxonomy_am_environment, sum in df_results_selected.groupby(['am_environment', 'taxonomy']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
         if am_environment_results_selected.get(taxonomy_am_environment[0]):
@@ -385,12 +392,12 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
         else:
             am_environment_results_non_selected[taxonomy_am_environment] = am_environment_results[taxonomy_am_environment]
 
-    # Traits calculations 
+    # Traits calculations
     traits_df_results_all = df_results_all.explode('traits')
     traits_am_environment_results_all = []
     for traits_am_environment, sum in traits_df_results_all.groupby(['traits']).agg({'sum': ['sum']}).itertuples(index=True, name=None):
         traits_am_environment_results_all.append([traits_am_environment, sum])
-    
+
     traits_am_environment_results = {}
     if am_environment_selected and am_environment_selected.get('value', None):
         traits_df_results_all = traits_df_results_all.query('am_environment == @am_environment_selected.get("value", None)')
@@ -399,7 +406,7 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
             traits_am_environment_results[traits_am_environment[0]].append([traits_am_environment[1], sum])
         else:
             traits_am_environment_results[traits_am_environment[0]] = [[traits_am_environment[1], sum]]
-    
+
     df_results_selected = df_results_selected.explode("traits")
     traits_am_environment_results_selected = {}
     for traits_am_environment, sum in df_results_selected.groupby(['am_environment', 'traits']).agg({'sum': ['sum']}).itertuples(index=True, name=None):

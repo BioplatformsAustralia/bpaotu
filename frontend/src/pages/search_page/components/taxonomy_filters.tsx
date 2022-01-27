@@ -4,12 +4,13 @@ import { bindActionCreators } from 'redux'
 import { createAction } from 'redux-actions'
 
 import DropDownFilter from '../../../components/drop_down_filter'
+import DropDownSelector from './taxonomy_selector'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 
-const taxonomyFilterStateToProps = name => state => {
+const taxonomyFilterStateToProps = (name, label : any = "") => state => {
   const { options, isDisabled, isLoading, selected } = state.searchPage.filters.taxonomy[name]
   return {
-    label: capitalize(name),
+    label: label || capitalize(name),
     options,
     selected,
     optionsLoading: isLoading,
@@ -28,12 +29,16 @@ const taxonomyDispatchToProps = name => dispatch => {
   )
 }
 
-const connectUpTaxonomyDropDownFilter = name =>
+const connectUpTaxonomyDropDownFilter = (name) =>
   connect(
     taxonomyFilterStateToProps(name),
     taxonomyDispatchToProps(name)
   )(DropDownFilter)
 
+export const TaxonomySelector = connect(
+  taxonomyFilterStateToProps('taxonomy_source', 'Taxonomy'),
+  taxonomyDispatchToProps('taxonomy_source')
+)(DropDownSelector)
 export const KingdomFilter = connectUpTaxonomyDropDownFilter('kingdom')
 export const PhylumFilter = connectUpTaxonomyDropDownFilter('phylum')
 export const ClassFilter = connectUpTaxonomyDropDownFilter('class')
