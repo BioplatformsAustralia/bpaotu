@@ -103,36 +103,8 @@ class SearchFilters extends React.Component<any> {
   }
 
   onSelectTaxonomy = (taxa) => {
-    switch(taxa) {
-      case "kingdom":
-        this.props.selectValueKingdom('')
-        this.props.onChangeKingdom(taxa)
-        break
-      case "phylum":
-        this.props.selectValuePhylum('')
-        this.props.onChangePhylum(taxa)
-        break
-      case "class":
-        this.props.selectValueClass('')
-        this.props.onChangeClass(taxa)
-        break
-      case "order":
-        this.props.selectValueOrder('')
-        this.props.onChangeOrder(taxa)
-        break
-      case "family":
-        this.props.selectValueFamily('')
-        this.props.onChangeFamily(taxa)
-        break
-      case "genus":
-        this.props.selectValueGenus('')
-        this.props.onChangeGenus(taxa)
-        break
-      case "species":
-        this.props.selectValueSpecies('')
-        this.props.onChangeSpecies(taxa)
-        break
-    }
+    this.props.clearTaxonomyValue(taxa)
+    this.props.updateTaxonomyDropDown(taxa)
     this.props.fetchContextualDataForGraph()
     this.props.fetchTaxonomyDataForGraph()
     this.props.selectToScroll('taxonomy_id')
@@ -270,20 +242,8 @@ function mapDispatchToProps(dispatch: any, props) {
       fetchTaxonomySources,
       clearAllTaxonomyFilters,
       updateTaxonomy: updateTaxonomyDropDowns(''),
-      selectValueKingdom: createAction('SELECT_KINGDOM'),
-      onChangeKingdom: updateTaxonomyDropDowns('kingdom'),
-      selectValuePhylum: createAction('SELECT_PHYLUM'),
-      onChangePhylum: updateTaxonomyDropDowns('phylum'),
-      selectValueClass: createAction('SELECT_CLASS'),
-      onChangeClass: updateTaxonomyDropDowns('class'),
-      selectValueOrder: createAction('SELECT_ORDER'),
-      onChangeOrder: updateTaxonomyDropDowns('order'),
-      selectValueFamily: createAction('SELECT_FAMILY'),
-      onChangeFamily: updateTaxonomyDropDowns('family'),
-      selectValueGenus: createAction('SELECT_GENUS'),
-      onChangeGenus: updateTaxonomyDropDowns('genus'),
-      selectValueSpecies: createAction('SELECT_SPECIES'),
-      onChangeSpecies: updateTaxonomyDropDowns('species'),
+      clearTaxonomyValue: (taxonomy) => (createAction('SELECT_' + taxonomy.toUpperCase())('')),
+      updateTaxonomyDropDown: (taxonomy) => (updateTaxonomyDropDowns(taxonomy)()),
       selectEnvironment,
       removeContextualFilter,
       selectContextualFiltersMode,

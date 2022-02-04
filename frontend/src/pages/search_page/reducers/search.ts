@@ -3,7 +3,8 @@ import { createActions, handleActions } from 'redux-actions'
 
 import { executeSearch } from '../../../api'
 import { submitToGalaxyEnded, submitToGalaxyStarted } from './submit_to_galaxy'
-import { ErrorList, searchPageInitialState, taxonomies } from './types'
+import { ErrorList, searchPageInitialState } from './types'
+import { taxonomy_keys } from '../../../constants'
 
 export const { changeTableProperties, searchStarted, searchEnded } = createActions(
   'CHANGE_TABLE_PROPERTIES',
@@ -56,7 +57,7 @@ function marshallContextual(state, contextualDataDefinitions) {
 export const describeSearch = (stateFilters, contextualDataDefinitions) => {
   const selectedAmplicon = stateFilters.selectedAmplicon
   const selectedTrait = stateFilters.selectedTrait
-  const selectedTaxonomies = map(taxonomies, taxonomy => stateFilters.taxonomy[taxonomy].selected)
+  const selectedTaxonomies = map(taxonomy_keys, taxonomy => stateFilters.taxonomy[taxonomy].selected)
 
   return {
     amplicon_filter: selectedAmplicon,

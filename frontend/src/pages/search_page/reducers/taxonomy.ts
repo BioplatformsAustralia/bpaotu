@@ -1,14 +1,15 @@
-import { findIndex, first, isEmpty, last, map, takeWhile } from 'lodash'
+import { findIndex, first, isEmpty, last, map, takeWhile, mapValues, pick} from 'lodash'
 import { createAction } from 'redux-actions'
 
-import { EmptyOperatorAndValue, EmptySelectableLoadableValues, searchPageInitialState, taxonomies } from './types'
+import { EmptyOperatorAndValue, EmptySelectableLoadableValues, searchPageInitialState } from './types'
+import { taxonomy_keys } from '../../../constants'
 
 import { getTaxonomy } from '../../../api'
 
 // Generic Taxonomy Actions
 
-const taxonomiesBefore = target => takeWhile(taxonomies, t => t !== target)
-const taxonomiesAfter = target => taxonomies.slice(findIndex(taxonomies, t => t === target) + 1)
+const taxonomiesBefore = target => takeWhile(taxonomy_keys, t => t !== target)
+const taxonomiesAfter = target => taxonomy_keys.slice(findIndex(taxonomy_keys, t => t === target) + 1)
 
 const fetchStarted = type => `FETCH_${type.toUpperCase()}_STARTED`
 const fetchEnded = type => `FETCH_${type.toUpperCase()}_ENDED`
@@ -48,7 +49,7 @@ const makeTaxonomyFetcher = config => () => (dispatch, getState) => {
 }
 
 export const updateTaxonomyDropDowns = taxonomy => () => (dispatch, getState) => {
-  const rest = taxonomy === '' ? taxonomies : taxonomiesAfter(taxonomy)
+  const rest = taxonomy === '' ? taxonomy_keys : taxonomiesAfter(taxonomy)
 
   if (isEmpty(rest)) {
     return Promise.resolve()
@@ -141,13 +142,6 @@ function makeTaxonomyReducer(taxonomyName) {
 export default function taxonomyReducer(state = searchPageInitialState.filters.taxonomy, action) {
   return {
     ...state,
-    taxonomy_source: makeTaxonomyReducer('taxonomy_source')(state.taxonomy_source, action),
-    kingdom: makeTaxonomyReducer('kingdom')(state.kingdom, action),
-    phylum: makeTaxonomyReducer('phylum')(state.phylum, action),
-    class: makeTaxonomyReducer('class')(state.class, action),
-    order: makeTaxonomyReducer('order')(state.order, action),
-    family: makeTaxonomyReducer('family')(state.family, action),
-    genus: makeTaxonomyReducer('genus')(state.genus, action),
-    species: makeTaxonomyReducer('species')(state.species, action)
+    ...mapValues(pick(state, taxonomy_keys), (value, key) => makeTaxonomyReducer(key)(value, action))
   }
 }

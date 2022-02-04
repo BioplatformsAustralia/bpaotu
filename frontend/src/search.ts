@@ -1,5 +1,5 @@
 import { times } from 'lodash'
-import { taxonomies as taxonomy_keys } from './pages/search_page/reducers/types'
+import { taxonomy_keys } from './constants'
 
 export interface SearchConfig {
   base_url: string

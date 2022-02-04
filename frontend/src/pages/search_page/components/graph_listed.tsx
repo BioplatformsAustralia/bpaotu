@@ -14,18 +14,19 @@ import SunBurstChartTaxonomy from './charts/sunburst_chart_taxonomy';
 import {AmpliconFilterInfo, TaxonomyFilterInfo, TaxonomyNoAmpliconInfo, TraitFilterInfo} from './amplicon_taxonomy_filter_card'
 import {EnvironmentInfo} from './environment_filter'
 import {ContextualFilterInfo} from './contextual_filter_card'
+import { chart_enabled } from './util'
 
 
 class GraphListed extends React.Component<any> {
 
-    graphlist = filter(Object.keys(this.props.contextualGraphdata), val => val !== "am_environment_id") 
+    graphlist = filter(Object.keys(this.props.contextualGraphdata), val => val !== "am_environment_id")
     public applyEnvironmentFilter(filterName) {
         const selectedEnvironment = this.props.selectedEnvironment && this.props.selectedEnvironment.value?""+this.props.selectedEnvironment.value:""
         const filter = find(this.props.optionscontextualFilter, def => def.name === filterName)
         const filterEnvironent = filter && filter.environment?""+filter.environment:""
         if (selectedEnvironment === "")
             return true
-        else 
+        else
             return filterEnvironent === "" || filterEnvironent === selectedEnvironment
     }
 
@@ -43,11 +44,11 @@ class GraphListed extends React.Component<any> {
             justifyContent: 'center',
             alignItems: 'center'
         };
-        
+
         return (
             <>
                 {this.props.contextualIsLoading || this.props.taxonomyIsLoading
-                    ? 
+                    ?
                     <div style={loadingstyle}>
                         <AnimateHelix />
                     </div>
@@ -87,12 +88,12 @@ class GraphListed extends React.Component<any> {
                                         {(!this.props.selectedAmplicon || this.props.selectedAmplicon.value === '') &&
                                             <p className="lead">{TaxonomyNoAmpliconInfo}</p>
                                         }
-                                        {(!this.props.taxonomyIsLoading) && (!this.props.contextualIsLoading) && (!this.props.taxonomy.kingdom.isDisabled) &&
+                                        {chart_enabled(this) &&
                                             <>
                                                 <SunBurstChartTaxonomy selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy" taxonomyIsLoading={this.props.taxonomyIsLoading} contextualIsLoading={this.props.contextualIsLoading} taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
                                                 <StackChartTaxonomy selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy_am_environment_id" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
                                             </>
-                                        } 
+                                        }
                                     </CardBody>
                                 </Card>
                             </Col>
@@ -110,12 +111,12 @@ class GraphListed extends React.Component<any> {
                                         </UncontrolledTooltip>
                                     </CardHeader>
                                     <CardBody>
-                                        {(!this.props.taxonomyIsLoading) && (!this.props.contextualIsLoading) && (!this.props.taxonomy.kingdom.isDisabled) &&
+                                        {chart_enabled(this) &&
                                             <>
                                                 <PieChartTraits selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="traits" taxonomyGraphdata={this.props.taxonomyGraphdata.traits} />
                                                 <StackChartTraits selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy_am_environment_id" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
                                             </>
-                                        } 
+                                        }
                                     </CardBody>
                                 </Card>
                             </Col>
@@ -133,11 +134,11 @@ class GraphListed extends React.Component<any> {
                                         </UncontrolledTooltip>
                                     </CardHeader>
                                     <CardBody>
-                                    {(!this.props.taxonomyIsLoading) && (!this.props.contextualIsLoading) && (!this.props.taxonomy.kingdom.isDisabled) &&
+                                    {chart_enabled(this) &&
                                         <>
                                             <PieChartEnvironment selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="am_environment_id" contextualGraphdata={this.props.contextualGraphdata} />
                                         </>
-                                    } 
+                                    }
                                     </CardBody>
                                 </Card>
                             </Col>
@@ -156,7 +157,7 @@ class GraphListed extends React.Component<any> {
                                     </CardHeader>
                                     <CardBody>
                                         {
-                                            this.graphlist.map(graphName =>  
+                                            this.graphlist.map(graphName =>
                                                 this.applyEnvironmentFilter(graphName)
                                                 ?
                                                     find(this.props.optionscontextualFilter, dd => dd.name === graphName && dd.type === "ontology")
@@ -174,7 +175,7 @@ class GraphListed extends React.Component<any> {
                         </Row>
                     </Container>
                 }
-            </>          
+            </>
         )
     }
 }

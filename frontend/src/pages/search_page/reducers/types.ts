@@ -1,4 +1,4 @@
-export const taxonomies = ['taxonomy_source', 'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
+import { taxonomy_keys } from '../../../constants'
 
 export interface OperatorAndValue {
   value: string
@@ -40,14 +40,7 @@ export interface PageState {
   filters: {
     selectedAmplicon: OperatorAndValue
     taxonomy: {
-      taxonomy_source: SelectableLoadableValues
-      kingdom: SelectableLoadableValues
-      phylum: SelectableLoadableValues
-      class: SelectableLoadableValues
-      order: SelectableLoadableValues
-      family: SelectableLoadableValues
-      genus: SelectableLoadableValues
-      species: SelectableLoadableValues
+      [key: string]: SelectableLoadableValues
     }
     selectedTrait: OperatorAndValue
     contextual: any // TODO
@@ -101,16 +94,8 @@ export const EmptySelectableLoadableValues: SelectableLoadableValues = {
 export const searchPageInitialState: PageState = {
   filters: {
     selectedAmplicon: EmptyOperatorAndValue,
-    taxonomy: {
-      taxonomy_source: EmptySelectableLoadableValues,
-      kingdom: EmptySelectableLoadableValues,
-      phylum: EmptySelectableLoadableValues,
-      class: EmptySelectableLoadableValues,
-      order: EmptySelectableLoadableValues,
-      family: EmptySelectableLoadableValues,
-      genus: EmptySelectableLoadableValues,
-      species: EmptySelectableLoadableValues
-    },
+    taxonomy: Object.fromEntries(
+      taxonomy_keys.map(k => [k, EmptySelectableLoadableValues])),
     selectedTrait: EmptyOperatorAndValue,
     contextual: {
       selectedEnvironment: EmptyOperatorAndValue,

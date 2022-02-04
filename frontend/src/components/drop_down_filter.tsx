@@ -28,8 +28,8 @@ export default class DropDownFilter extends React.Component<any> {
   public render() {
     return (
       <FormGroup row={true}>
-        {this.props.info 
-          ? 
+        {this.props.info
+          ?
           <Label sm={3}>{this.props.label+" "}<span id={this.props.label+"Tip"}>
           <Octicon name="info" />
         </span>
@@ -79,7 +79,7 @@ export default class DropDownFilter extends React.Component<any> {
       map(this.props.options, this.renderOption)
     )
   }
-  
+
   public renderOption(option) {
     return (
       { value: option.id, label: option.value }

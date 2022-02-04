@@ -4,7 +4,7 @@ import { get as _get, map, partial } from 'lodash'
 import { store } from '../index'
 import '../interfaces'
 import { ckanAuthInfoEnded } from '../reducers/auth'
-import { taxonomies as taxonomy_keys } from '../pages/search_page/reducers/types'
+import { taxonomy_keys } from '../constants'
 
 axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN'
 axios.defaults.xsrfCookieName = 'csrftoken'

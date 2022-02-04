@@ -16,13 +16,7 @@ import TraitFilter from './trait_filter'
 import AmpliconFilter from './amplicon_filter'
 import {
   TaxonomySelector,
-  ClassFilter,
-  FamilyFilter,
-  GenusFilter,
-  KingdomFilter,
-  OrderFilter,
-  PhylumFilter,
-  SpeciesFilter
+  TaxonomyDropDowns
 } from './taxonomy_filters'
 
 export const AmpliconFilterInfo =
@@ -84,14 +78,7 @@ export class AmpliconTaxonomyFilterCard extends React.Component<any> {
           </Row>
 
           <TaxonomySelector info={TaxonomySourceInfo} placeholder="Select database and method&hellip;" />
-          <KingdomFilter />
-          <PhylumFilter />
-          <ClassFilter />
-          <OrderFilter />
-          <FamilyFilter />
-          <GenusFilter />
-          <SpeciesFilter />
-
+          {TaxonomyDropDowns}
           <hr />
           <TraitFilter info={TraitFilterInfo} />
         </CardBody>
