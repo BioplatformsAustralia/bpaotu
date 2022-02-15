@@ -108,7 +108,7 @@ def make_clean_taxonomy_filter(amplicon_filter, state_vector, trait_filter):
     take an amplicon filter and a taxonomy filter
     # (a list of phylum, kingdom, ...) and clean it
     """
-
+    assert(len(state_vector) == len(TaxonomyOptions.hierarchy))
     return TaxonomyFilter(
         clean_amplicon_filter(amplicon_filter),
         list(map(
@@ -185,11 +185,7 @@ def trait_options(request):
     """
     with OTUSampleOTUQuery(OTUQueryParams(
             None,
-            TaxonomyFilter(
-                None,
-                [None, None, None, None, None, None, None, None],
-                None
-            ))) as query:
+            TaxonomyFilter(None, [], None))) as query:
         amplicon_filter = clean_amplicon_filter(json.loads(request.GET['amplicon']))
         vals = [[x[0], x[0]] for x in query.import_traits(amplicon_filter)]
     return JsonResponse({

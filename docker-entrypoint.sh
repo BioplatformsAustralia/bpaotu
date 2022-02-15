@@ -165,7 +165,7 @@ function _runserver() {
     _django_collectstatic
     _django_migrate
     _django_fixtures
-    _warmcache
+    [ -f  "$(dirname "$0")/_skip_warmcache" ] || _warmcache
 
     info "RUNSERVER_OPTS is ${RUNSERVER_OPTS}"
     set -x

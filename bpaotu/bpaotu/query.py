@@ -17,24 +17,17 @@ from .otu import (
     Environment,
     OTU,
     OTUAmplicon,
-    OTUKingdom,
-    OTUPhylum,
-    OTUClass,
-    OTUOrder,
-    OTUFamily,
-    OTUGenus,
-    OTUSpecies,
+    taxonomy_rank_id_names,
+    taxonomy_ontology_classes,
     SampleContext,
     SampleOTU,
     OTUSampleOTU,
     OTUSampleOTU20K,
-    SampleOTU20K,
     ImportMetadata,
     ImportedFile,
     ExcludedSamples,
     OntologyErrors,
     Taxonomy,
-    TaxonomySource,
     make_engine)
 
 
@@ -159,16 +152,7 @@ class OTUQueryParams:
 
 
 class TaxonomyOptions:
-    hierarchy = [
-        ('taxonomy_source_id', TaxonomySource),
-        ('kingdom_id', OTUKingdom),
-        ('phylum_id', OTUPhylum),
-        ('class_id', OTUClass),
-        ('order_id', OTUOrder),
-        ('family_id', OTUFamily),
-        ('genus_id', OTUGenus),
-        ('species_id', OTUSpecies),
-    ]
+    hierarchy = tuple(zip(taxonomy_rank_id_names, taxonomy_ontology_classes))
 
     def __init__(self):
         self._session = Session()
@@ -204,8 +188,7 @@ class TaxonomyOptions:
 
         def determine_target(state):
             # this query is built up over time, and validates the hierarchy provided to us
-            q = self._session.query(Taxonomy.kingdom_id).join(OTU).group_by(
-                    Taxonomy.kingdom_id)
+            q = self._session.query(Taxonomy.id).join(OTU)
             q = apply_amplicon_filter(q, taxonomy_filter.amplicon_filter)
             for idx, ((taxonomy_attr, ontology_class), taxonomy) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
                 valid = True
@@ -213,7 +196,7 @@ class TaxonomyOptions:
                     valid = False
                 else:
                     q = apply_taxonomy_filter(taxonomy_attr, q, taxonomy)
-                    valid = q.count() > 0
+                    valid = q.first() is not None
                 if not valid:
                     return taxonomy_attr, ontology_class, idx
             return None, None, None
@@ -244,7 +227,6 @@ class TaxonomyOptions:
 
         result = {
             'new_options': {
-                'target': drop_id(target_attr),
                 'possibilities': possibilities,
             },
             'clear': clear
@@ -349,7 +331,7 @@ class OTUSampleOTUQuery:
 
     def matching_taxonomy_graph_data(self, all=False):
         taxolistall = {}
-        groupByAttr = getattr(OTUSampleOTU, "species_id")
+        groupByAttr = getattr(OTUSampleOTU, taxonomy_rank_id_names[-1])
         for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy,
                                                              self._taxonomy_filter.state_vector):
             if taxonomy is None or taxonomy.get('value') is None:
@@ -501,17 +483,7 @@ class SampleQuery:
         q = self._assemble_otu_query(q, subq).order_by(OTU.id)
         return q
 
-    def has_matching_sample_otus(self, kingdom_id):
-        def to_boolean(result):
-            return result[0][0]
-
-        q = self._session.query(self.matching_sample_otus(
-            SampleOTU.sample_id,
-            SampleOTU.otu_id,
-            SampleOTU.count, kingdom_id=kingdom_id).exists())
-        return self._q_all_cached('has_matching_sample_otus:%s' % (kingdom_id), q, to_boolean)
-
-    def matching_sample_otus(self, *args, kingdom_id=None):
+    def matching_sample_otus(self, *args):
         # we do a cross-join, but convert to an inner-join with
         # filters. as SampleContext is in the main query, the
         # machinery for filtering above will just work
@@ -520,8 +492,6 @@ class SampleQuery:
             .filter(SampleContext.id == SampleOTU.sample_id)
         q = self._taxonomy_filter.apply(q)
         q = self._contextual_filter.apply(q)
-        if kingdom_id is not None:
-            q = q.filter(Taxonomy.kingdom_id == kingdom_id)
         # we don't cache this query: the result size is enormous,
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
@@ -640,9 +610,9 @@ class SampleSchemaDefinition:
 class TaxonomyFilter:
     def __init__(self, amplicon_filter, state_vector, trait_filter):
         self.amplicon_filter = amplicon_filter
-        self.state_vector =  state_vector
+        sv_iter = iter(state_vector)
+        self.state_vector =  [next(sv_iter, None) for _ in TaxonomyOptions.hierarchy]
         self.trait_filter = trait_filter
-        assert(len(self.state_vector) == len(TaxonomyOptions.hierarchy))
 
     def describe(self):
         with OntologyInfo() as info:
@@ -657,6 +627,9 @@ class TaxonomyFilter:
 
     def is_empty(self): # FIXME this might always be false
         return not self.amplicon_filter and self.state_vector[0] is None and not self.trait_filter
+
+    def get_rank_equality_value(self, rank_level):
+        return get_op_is_value(self.state_vector[rank_level])
 
     def apply(self, q):
         """
@@ -883,6 +856,11 @@ def describe_op_and_val_only(attr, q):
         return None
     return ''.join(([attr, OP_DESCR[q.get('operator')], repr(q.get('value'))]))
 
+def get_op_is_value(op_and_val):
+    op, val = (op_and_val and
+               (op_and_val.get('operator'), op_and_val.get('value')) or
+               (None, None))
+    return val if ((val is not None) and (op != 'isnot')) else None
 
 def apply_op_and_val_filter(attr, q, op_and_val):
     if op_and_val is None or op_and_val.get('value') is None:

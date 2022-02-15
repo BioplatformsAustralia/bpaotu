@@ -1,6 +1,11 @@
 import zipstream
+import re
+from sqlalchemy.orm import joinedload
 from .otu import (
-    OTUKingdom,
+    get_taxonomy_labels,
+    taxonomy_ranks,
+    taxonomy_rank_id_names,
+    taxonomy_ontology_classes,
     SampleOTU,
     Taxonomy,
     OTU,
@@ -78,58 +83,68 @@ def contextual_csv(samples):
         w.writerow(get_context_value(sample, field) for field in fields)
     return csv_fd.getvalue()
 
+def sample_otu_csv_rows(taxonomy_source_id, q):
+    fd = io.StringIO()
+    w = csv.writer(fd)
+    taxonomy_labels = get_taxonomy_labels(taxonomy_source_id)
+    w.writerow((
+        'Sample ID',
+        'OTU',
+        'OTU Count',
+        'Amplicon') +
+        taxonomy_labels + (
+        'Traits',))
+    yield fd.getvalue().encode('utf8')
+    fd.seek(0)
+    fd.truncate(0)
+
+    for taxonomy, otu, sample_otu in q.yield_per(50):
+        w.writerow([
+            format_sample_id(sample_otu.sample_id),
+            otu.code,
+            sample_otu.count,
+            val_or_empty(otu.amplicon)] +
+            [val_or_empty(getattr(taxonomy, attr))
+             for attr in taxonomy_ranks[:len(taxonomy_labels)]] +
+            [array_or_empty(taxonomy.traits).replace(",", ";")])
+        yield fd.getvalue().encode('utf8')
+        fd.seek(0)
+        fd.truncate(0)
+
+def sanitise(filename):
+    return re.sub(r'[\W]+', '-', filename)
 
 def tabular_zip_file_generator(params, onlyContextual):
+    taxonomy_source_id = params.taxonomy_filter.get_rank_equality_value(0)
+    assert taxonomy_source_id != None
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
-    with SampleQuery(params) as query:
-        def sample_otu_csv_rows(kingdom_id):
-            fd = io.StringIO()
-            w = csv.writer(fd)
-            w.writerow([
-                'Sample ID',
-                'OTU',
-                'OTU Count',
-                'Amplicon',
-                'Taxonomy source',
-                'Kingdom',
-                'Phylum',
-                'Class',
-                'Order',
-                'Family',
-                'Genus',
-                'Species',
-                'Traits'])
-            yield fd.getvalue().encode('utf8')
-            fd.seek(0)
-            fd.truncate(0)
-            q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU, SampleContext, kingdom_id=kingdom_id)
-            for taxonomy, otu, sample_otu, sample_context in q.yield_per(50):
-                w.writerow([
-                    format_sample_id(sample_otu.sample_id),
-                    otu.code,
-                    sample_otu.count,
-                    val_or_empty(otu.amplicon),
-                    val_or_empty(taxonomy.taxonomy_source),
-                    val_or_empty(taxonomy.kingdom),
-                    val_or_empty(taxonomy.phylum),
-                    val_or_empty(taxonomy.klass),
-                    val_or_empty(taxonomy.order),
-                    val_or_empty(taxonomy.family),
-                    val_or_empty(taxonomy.genus),
-                    val_or_empty(taxonomy.species),
-                    array_or_empty(taxonomy.traits).replace(",", ";")])
-                yield fd.getvalue().encode('utf8')
-                fd.seek(0)
-                fd.truncate(0)
-
+    # Rank 1 is top level below taxonomy source, e.g. kingdom
+    taxonomy_rank1_id_attr = getattr(Taxonomy, taxonomy_rank_id_names[1])
+    rank1_ontology_class = taxonomy_ontology_classes[1]
+    with SampleQuery(params) as query, OntologyInfo() as info:
         zf.writestr('contextual.csv', contextual_csv(query.matching_samples()).encode('utf8'))
         zf.writestr('info.txt', info_text(params))
         if onlyContextual=='f':
-            with OntologyInfo() as info:
-                for kingdom_id, kingdom_label in info.get_values(OTUKingdom):
-                    if not query.has_matching_sample_otus(kingdom_id):
+            q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU)
+            taxonomy_lookups = [joinedload(getattr(Taxonomy, rel)) for rel in taxonomy_ranks]
+            rank1_id_is_value = params.taxonomy_filter.get_rank_equality_value(1)
+            if rank1_id_is_value is None: # not selecting a specific kingdom
+                for rank1_id, rank1_name in info.get_values(rank1_ontology_class):
+                    # We have to do this as separate queries because
+                    # zf.write_iter() just stores the query iterator and evaluates
+                    # it later
+                    rank1_query = q.filter(taxonomy_rank1_id_attr == rank1_id)
+                    if rank1_query.first() is None:
                         continue
-                    zf.write_iter('%s.csv' % (kingdom_label), sample_otu_csv_rows(kingdom_id))
+                    zf.write_iter("{}.csv".format(sanitise(rank1_name)),
+                                  sample_otu_csv_rows(taxonomy_source_id,
+                                                      rank1_query.options(taxonomy_lookups)))
+            elif q.first():
+                zf.write_iter(
+                    "{}.csv".format(sanitise(info.id_to_value(rank1_ontology_class,
+                                                              rank1_id_is_value))),
+                    sample_otu_csv_rows(taxonomy_source_id,
+                                        q.options(taxonomy_lookups)))
         return zf
 
 

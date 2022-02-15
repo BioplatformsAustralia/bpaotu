@@ -11,9 +11,7 @@ from ...query import (
     ContextualFilterTermOntology,
     ContextualFilterTermString)
 from ...otu import (
-    OTUKingdom,
-    OTUPhylum,
-    OTUClass,
+    taxonomy_ontology_classes,
     Environment,
     SampleAustralianSoilClassification)
 from ...biom import generate_biom_file
@@ -60,15 +58,12 @@ class Command(BaseCommand):
         params = OTUQueryParams(
             contextual_filter=contextual_filter,
             taxonomy_filter=TaxonomyFilter(
-                None, [
-                    self.make_is(1), # FIXME! magic number taxonomy source
-                    self.onto_is(OTUKingdom, 'Bacteria'),
-                    self.onto_is(OTUPhylum, 'Bacteroidetes'),
-                    self.onto_is(OTUClass, 'Ignavibacteria'),
-                    None,
-                    None,
-                    None,
-                    None]))
+                None,
+                [self.make_is(1),  # FIXME! magic number taxonomy source
+                 self.onto_is(taxonomy_ontology_classes[1], 'Bacteria'),
+                 self.onto_is(taxonomy_ontology_classes[2], 'Bacteroidetes'),
+                 self.onto_is(taxonomy_ontology_classes[3], 'Ignavibacteria')],
+                None]))
 
         timestamp = make_timestamp()
         print(params.filename(timestamp, '.biom.zip'))

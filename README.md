@@ -94,24 +94,18 @@ This file describes sample specific metadata. The current schema of the contextu
 
 ### Taxonomy files
 
-A tab-delimited file with extension `.taxonomy`
+A gzip-compressed tab-delimited file with extension `.taxonomy.gz`
 
-The first row of this file must contains header. Only header fields required/used by bpaotu are:
+The first row of this file must contain a header. The required header fields are:
 
 ```tsv
 #OTU ID\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\tamplicon\ttraits
 ```
 
-Each column has the following format:
+Each column value is an arbitrary character string, with the following restrictions:
 
 * #OTU ID: a string describing the OTU (GATC string)
-* kingdom: text string
-* phylum: text string
-* class: text string
-* order: text string
-* family: text string
-* genus: text string
-* species: text string
+* kingdom...species: taxon as a text string, e.g., d_Bacteria
 * amplicon: text string (e.g. 16S, A16S, 18S, ITS, ...)
 * traits: text string (multiple traits are comma separated)
 
@@ -119,7 +113,7 @@ NB: Taxonomic ranks must be forward filled with last known field assignment if e
 
 ### Abundance files
 
-A tab-delimited file with the extension `.txt`
+A gzip-compressed tab-delimited file with the extension `.txt.gz`
 
 The first row is a header, with the following format:
 

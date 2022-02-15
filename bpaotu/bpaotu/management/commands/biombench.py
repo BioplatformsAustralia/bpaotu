@@ -2,7 +2,7 @@
 import sys
 from django.core.management.base import BaseCommand
 from ...query import OTUQueryParams, ContextualFilter, OntologyInfo, SampleQuery, TaxonomyFilter
-from ...otu import OTUKingdom, OTUPhylum, OTUClass, Environment
+from ...otu import taxonomy_ontology_classes, Environment
 from ...biom import generate_biom_file
 from collections import OrderedDict
 
@@ -29,15 +29,12 @@ class Command(BaseCommand):
         params = OTUQueryParams(
             contextual_filter=ContextualFilter('and', self.onto_is(Environment, 'Soil')),
             taxonomy_filter=TaxonomyFilter(
-                None, [
-                    self.make_is(1), # # FIXME! magic number taxonomy source
-                    self.onto_is(OTUKingdom, 'Bacteria'),
-                    self.onto_is(OTUPhylum, 'Bacteroidetes'),
-                    self.onto_is(OTUClass, 'Ignavibacteria'),
-                    None,
-                    None,
-                    None,
-                    None]))
+                None,
+                [self.make_is(1),  # FIXME! magic number taxonomy source
+                 self.onto_is(taxonomy_ontology_classes[1], 'Bacteria'),
+                 self.onto_is(taxonomy_ontology_classes[2], 'Bacteroidetes'),
+                 self.onto_is(taxonomy_ontology_classes[3], 'Ignavibacteria')],
+                None))
 
         with SampleQuery(params) as query:
             size = 0

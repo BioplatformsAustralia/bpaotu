@@ -80,37 +80,34 @@ class OTUAmplicon(OntologyMixin, Base):
     pass
 
 
-class TaxonomySource(OntologyMixin, Base):
-    pass
+taxonomy_ranks = [
+    'taxonomy_source',
+    'kingdom',
+    'phylum',
+    'class',
+    'order',
+    'family',
+    'genus',
+    'species'
+]
+taxonomy_rank_id_names = [(r + '_id') for r in taxonomy_ranks]
+taxonomy_ontology_classes = [type(name, (OntologyMixin, Base), {}) for name in (
+    'TaxonomySource',
+    'OTUKingdom',
+    'OTUPhylum',
+    'OTUClass',
+    'OTUOrder',
+    'OTUFamily',
+    'OTUGenus',
+    'OTUSpecies')]
 
 
-class OTUKingdom(OntologyMixin, Base):
-    pass
+_taxonomy_labels =  tuple(r.capitalize() for r in taxonomy_ranks[1:])
+def get_taxonomy_labels(taxonomy_source_id):
+    # FIXME stub.
+    return _taxonomy_labels
 
-
-class OTUPhylum(OntologyMixin, Base):
-    pass
-
-
-class OTUClass(OntologyMixin, Base):
-    pass
-
-
-class OTUOrder(OntologyMixin, Base):
-    pass
-
-
-class OTUFamily(OntologyMixin, Base):
-    pass
-
-
-class OTUGenus(OntologyMixin, Base):
-    pass
-
-
-class OTUSpecies(OntologyMixin, Base):
-    pass
-
+taxonomy_ranks[3] = 'klass' # allows python .klass
 
 class Taxonomy(SchemaMixin, Base):
     """
@@ -128,39 +125,35 @@ class Taxonomy(SchemaMixin, Base):
     id = Column(Integer, primary_key=True)
     otu_id = Column(Integer,
                     ForeignKey(SCHEMA + '.otu.id'), nullable=False, index=True)
-    taxonomy_source_id = ontology_fkey(TaxonomySource, index=True)
-    # we query OTUs via hierarchy, so indexes on the first few
-    # layers are sufficient
-    kingdom_id = ontology_fkey(OTUKingdom, index=True)
-    phylum_id = ontology_fkey(OTUPhylum, index=True)
-    class_id = ontology_fkey(OTUClass, index=True)
-    order_id = ontology_fkey(OTUOrder, index=True)
-    family_id = ontology_fkey(OTUFamily, index=True)
-    genus_id = ontology_fkey(OTUGenus, index=True)
-    species_id = ontology_fkey(OTUSpecies, index=True)
+    taxonomy_source_id = ontology_fkey(taxonomy_ontology_classes[0], index=True)
+    # The taxonomy rank columns are added at runtime - see _setup_taxonomy() below
     traits = Column(ARRAY(String))
 
     otu = relationship("OTU", back_populates="taxonomies")
-    taxonomy_source = relationship(TaxonomySource)
-    kingdom = relationship(OTUKingdom)
-    phylum = relationship(OTUPhylum)
-    klass = relationship(OTUClass)
-    order = relationship(OTUOrder)
-    family = relationship(OTUFamily)
-    genus = relationship(OTUGenus)
-    species = relationship(OTUSpecies)
+    taxonomy_source = relationship(taxonomy_ontology_classes[0])
 
     def __repr__(self):
-        return "<Taxonomy(%d: %s,%s,%s,%s,%s,%s,%s,%s)>" % (
+        return "<Taxonomy(%d: %s,%s)>" % (
             self.id,
-            self.kingdom_id,
-            self.phylum_id,
-            self.class_id,
-            self.order_id,
-            self.family_id,
-            self.genus_id,
-            self.species_id,
+            ','.join(getattr(self, a) for a in taxonomy_rank_id_names),
             self.traits)
+
+    @classmethod
+    def _add_taxonomy_attrs(cls):
+        """
+        Add taxonomy columns and relationship()s dynamically
+        xxx_id = ontology_fkey(OTUxxx)
+        xxx = relationship(OTUxxx)
+        See https://docs.sqlalchemy.org/en/13/orm/extensions/declarative/basic_use.html#defining-attributes
+        """
+        for (rank_id, rank, OntologyClass) in zip(taxonomy_rank_id_names[1:],
+                                                  taxonomy_ranks[1:],
+                                                  taxonomy_ontology_classes[1:]):
+            setattr(cls, rank_id, ontology_fkey(OntologyClass, index=True))
+            setattr(cls, rank, relationship(OntologyClass))
+
+Taxonomy._add_taxonomy_attrs()
+
 
 class OTU(SchemaMixin, Base):
     """
@@ -803,6 +796,11 @@ class SampleOTU20K(SchemaMixin, Base):
         return "<SampleOTU20K(%d,%d,%d)>" % (self.sample_id, self.otu_id, self.count)
 
 
+taxonomy_rank_id_attrs = [getattr(Taxonomy, name) for name in taxonomy_rank_id_names]
+
+def _sample_otu_indexes(prefix):
+    return [Index(prefix + name + '_idx', name) for name in taxonomy_rank_id_names]
+
 class OTUSampleOTU(SchemaMixin, Base):
     __table__ = create_materialized_view(
         name='otu_sample_otu',
@@ -811,43 +809,21 @@ class OTUSampleOTU(SchemaMixin, Base):
                 SampleOTU.sample_id,
                 func.count(SampleOTU.otu_id).label("richness"),
                 func.sum(SampleOTU.count).label("count"),
-                Taxonomy.taxonomy_source_id,
-                Taxonomy.kingdom_id,
-                Taxonomy.phylum_id,
-                Taxonomy.class_id,
-                Taxonomy.order_id,
-                Taxonomy.family_id,
-                Taxonomy.genus_id,
-                Taxonomy.species_id,
+             ] + taxonomy_rank_id_attrs + [
                 OTU.amplicon_id,
                 Taxonomy.traits
-            ],
+             ],
             from_obj=(
                 SampleOTU.__table__
                 .join(OTU, OTU.id == SampleOTU.otu_id).join(
                     Taxonomy, OTU.id == Taxonomy.otu_id))
         ).group_by(SampleOTU.sample_id)
-        .group_by(Taxonomy.taxonomy_source_id)
-        .group_by(Taxonomy.kingdom_id)
-        .group_by(Taxonomy.phylum_id)
-        .group_by(Taxonomy.class_id)
-        .group_by(Taxonomy.order_id)
-        .group_by(Taxonomy.family_id)
-        .group_by(Taxonomy.genus_id)
-        .group_by(Taxonomy.species_id)
+        .group_by(*taxonomy_rank_id_attrs)
         .group_by(OTU.amplicon_id)
         .group_by(Taxonomy.traits),
         metadata=Base.metadata,
-        indexes=[
-            Index('otu_sample_otu_index_taxonomy_source_id_idx', 'taxonomy_source_id'),
+        indexes=  _sample_otu_indexes('otu_sample_otu_index_') +   [
             Index('otu_sample_otu_index_sample_id_idx', 'sample_id'),
-            Index('otu_sample_otu_index_kingdom_id_idx', 'kingdom_id'),
-            Index('otu_sample_otu_index_phylum_id_idx', 'phylum_id'),
-            Index('otu_sample_otu_index_class_id_idx', 'class_id'),
-            Index('otu_sample_otu_index_order_id_idx', 'order_id'),
-            Index('otu_sample_otu_index_family_id_idx', 'family_id'),
-            Index('otu_sample_otu_index_genus_id_idx', 'genus_id'),
-            Index('otu_sample_otu_index_species_id_idx', 'species_id'),
             Index('otu_sample_otu_index_amplicon_id_idx', 'amplicon_id'),
             Index('otu_sample_otu_index_traits_idx', 'traits', postgresql_using='gin'),
         ]
@@ -862,43 +838,21 @@ class OTUSampleOTU20K(SchemaMixin, Base):
                 SampleOTU20K.sample_id,
                 func.count(SampleOTU20K.otu_id).label("richness"),
                 func.sum(SampleOTU20K.count).label("count"),
-                Taxonomy.taxonomy_source_id,
-                Taxonomy.kingdom_id,
-                Taxonomy.phylum_id,
-                Taxonomy.class_id,
-                Taxonomy.order_id,
-                Taxonomy.family_id,
-                Taxonomy.genus_id,
-                Taxonomy.species_id,
+            ] + taxonomy_rank_id_attrs + [
                 OTU.amplicon_id,
-                Taxonomy.traits,
+                Taxonomy.traits
             ],
             from_obj=(
                 SampleOTU20K.__table__
                 .join(OTU, OTU.id == SampleOTU20K.otu_id).join(
                     Taxonomy, OTU.id == Taxonomy.otu_id))
         ).group_by(SampleOTU20K.sample_id)
-        .group_by(Taxonomy.taxonomy_source_id)
-        .group_by(Taxonomy.kingdom_id)
-        .group_by(Taxonomy.phylum_id)
-        .group_by(Taxonomy.class_id)
-        .group_by(Taxonomy.order_id)
-        .group_by(Taxonomy.family_id)
-        .group_by(Taxonomy.genus_id)
-        .group_by(Taxonomy.species_id)
+        .group_by(*taxonomy_rank_id_attrs)
         .group_by(OTU.amplicon_id)
         .group_by(Taxonomy.traits),
         metadata=Base.metadata,
-        indexes=[
-            Index('otu_sample_otu_20k_index_taxonomy_source_id_idx', 'taxonomy_source_id'),
+        indexes=  _sample_otu_indexes('otu_sample_otu_20k_index_') +   [
             Index('otu_sample_otu_20k_index_sample_id_idx', 'sample_id'),
-            Index('otu_sample_otu_20k_index_kingdom_id_idx', 'kingdom_id'),
-            Index('otu_sample_otu_20k_index_phylum_id_idx', 'phylum_id'),
-            Index('otu_sample_otu_20k_index_class_id_idx', 'class_id'),
-            Index('otu_sample_otu_20k_index_order_id_idx', 'order_id'),
-            Index('otu_sample_otu_20k_index_family_id_idx', 'family_id'),
-            Index('otu_sample_otu_20k_index_genus_id_idx', 'genus_id'),
-            Index('otu_sample_otu_20k_index_species_id_idx', 'species_id'),
             Index('otu_sample_otu_20k_index_amplicon_id_idx', 'amplicon_id'),
             Index('otu_sample_otu_20k_index_traits_idx', 'traits', postgresql_using='gin'),
         ]

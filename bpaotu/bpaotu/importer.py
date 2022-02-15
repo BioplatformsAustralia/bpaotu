@@ -25,18 +25,20 @@ from sqlalchemy.sql.expression import text
 
 from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon,
-                  OTUClass, OTUFamily, OTUGenus, OTUKingdom, OTUOrder,
-                  OTUPhylum, OTUSpecies, SampleAustralianSoilClassification,
+                  taxonomy_ranks, taxonomy_ontology_classes, taxonomy_rank_id_names,
+                  SampleAustralianSoilClassification,
                   SampleColor, SampleContext, SampleEcologicalZone,
-                  SampleFAOSoilClassification, SampleHorizonClassification,
+                  SampleHorizonClassification,
                   SampleLandUse, SampleOTU, SampleOTU20K, OTUSampleOTU, OTUSampleOTU20K,
                   SampleProfilePosition,
                   SampleStorageMethod, SampleTillage, SampleType,
                   SampleVegetationType,
                   SampleIntegrityWarnings, SampleVolumeNotes, SampleBioticRelationship,
                   SampleEnvironmentMedium,
-                  SampleHostAssociatedMicrobiomeZone, SampleHostType, Taxonomy, TaxonomySource,
+                  SampleHostAssociatedMicrobiomeZone, SampleHostType, Taxonomy,
                   make_engine, refresh_otu_sample_otu_mv)
+
+OTUSpecies =  taxonomy_ontology_classes[-1]
 
 logger = logging.getLogger("rainbow")
 
@@ -261,25 +263,14 @@ class DataImporter:
         otu_lookup = {}
         otu_fields = ['id', 'code', 'amplicon_id'] # Must match otu.OTU()
 
-        taxonomy_fields = [
-            # must match fields in OTU.Taxonomy()
-            'id', 'otu_id', 'taxonomy_source_id'
-            # order here must match `taxonomy_keys' below
-            'kingdom_id', 'phylum_id', 'class_id', 'order_id', 'family_id', 'genus_id', 'species_id',
-            'traits']
-        taxonomy_keys = ('taxonomy_source', 'kingdom', 'phylum', 'class', 'order', 'family',
-                         'genus', 'species')  # subset of ontologies.keys() below
-        ontologies = OrderedDict([
-            ('taxonomy_source', TaxonomySource),
-            ('kingdom', OTUKingdom),
-            ('phylum', OTUPhylum),
-            ('class', OTUClass),
-            ('order', OTUOrder),
-            ('family', OTUFamily),
-            ('genus', OTUGenus),
-            ('species', OTUSpecies),
-            ('amplicon', OTUAmplicon)
-        ])
+        taxonomy_fields = ( # must match fields in OTU.Taxonomy()
+            ['id', 'otu_id'] +
+            taxonomy_rank_id_names + # order here must match `taxonomy_keys' below
+            ['traits'])
+        taxonomy_keys = taxonomy_ranks  # subset of ontologies.keys() below
+        ontologies = OrderedDict(
+            tuple(zip(taxonomy_ranks, taxonomy_ontology_classes)) +
+            ('amplicon', OTUAmplicon))
         taxonomy_file_info = {}
 
         def _taxon_rows_iter(taxonomy_files):
