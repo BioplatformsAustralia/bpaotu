@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { capitalize } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { createAction } from 'redux-actions'
@@ -7,34 +6,35 @@ import { createAction } from 'redux-actions'
 import DropDownFilter from '../../../components/drop_down_filter'
 import DropDownSelector from './taxonomy_selector'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
-import { taxonomy_levels } from '../../../constants'
+import { taxonomy_ranks } from '../../../constants'
 
-const taxonomyFilterStateToProps = (name, label : any = "") => state => {
-  const { options, isDisabled, isLoading, selected } = state.searchPage.filters.taxonomy[name]
+const taxonomyFilterStateToProps = (rank, label : any = "") => state => {
+  const { options, isDisabled, isLoading, selected } = state.searchPage.filters.taxonomy[rank]
+
   return {
-    label: label || capitalize(name),
+    label: label || state.referenceData.ranks.rankLabels[rank] || null,
     options,
     selected,
     optionsLoading: isLoading,
     isDisabled
   }
 }
-const taxonomyDispatchToProps = name => dispatch => {
-  const nameU = name.toUpperCase()
+const taxonomyDispatchToProps = rank => dispatch => {
+  const nameU = rank.toUpperCase()
   return bindActionCreators(
     {
       selectValue: createAction('SELECT_' + nameU),
       selectOperator: createAction(`SELECT_${nameU}_OPERATOR`),
-      onChange: updateTaxonomyDropDowns(name)
+      onChange: updateTaxonomyDropDowns(rank)
     },
     dispatch
   )
 }
 
-const connectUpTaxonomyDropDownFilter = (name) =>
+const connectUpTaxonomyDropDownFilter = (rank) =>
   connect(
-    taxonomyFilterStateToProps(name),
-    taxonomyDispatchToProps(name)
+    taxonomyFilterStateToProps(rank),
+    taxonomyDispatchToProps(rank)
   )(DropDownFilter)
 
 export const TaxonomySelector = connect(
@@ -42,8 +42,8 @@ export const TaxonomySelector = connect(
   taxonomyDispatchToProps('taxonomy_source')
 )(DropDownSelector)
 
-export const TaxonomyDropDowns = taxonomy_levels.map(
-  (name) => {
-    const TaxonomyLevelDropDown = connectUpTaxonomyDropDownFilter(name);
-    return <TaxonomyLevelDropDown key={name}/>;
+export const TaxonomyDropDowns = taxonomy_ranks.map(
+  (rank) => {
+    const TaxonomyLevelDropDown = connectUpTaxonomyDropDownFilter(rank);
+    return <TaxonomyLevelDropDown key={rank}/>;
   });

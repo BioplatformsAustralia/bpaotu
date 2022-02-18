@@ -3,7 +3,7 @@ import { connect } from 'react-redux'
 import { filter as _filter } from 'lodash'
 import { bindActionCreators } from 'redux'
 import { fetchContextualDataDefinitions } from '../reducers/contextual_data_definitions'
-import { fetchAmplicons } from '../reducers/reference_data/amplicons'
+import { fetchReferenceData } from '../reducers/reference_data/reference_data'
 
 import { Form, FormGroup, FormFeedback, Col, Container, Row, Input, Label, Button } from 'reactstrap'
 import { nondenoisedDataRequest } from '../api'
@@ -24,7 +24,7 @@ class NonDenoisedPage extends React.Component<any> {
 
     public componentDidMount() {
         this.props.fetchContextualDataDefinitions();
-        this.props.fetchAmplicons();
+        this.props.fetchReferenceData();
     }
 
     submit() {
@@ -161,7 +161,7 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
     return bindActionCreators(
         {
-            fetchAmplicons,
+            fetchReferenceData,
             fetchContextualDataDefinitions,
         },
         dispatch

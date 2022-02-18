@@ -8,7 +8,7 @@ admin.autodiscover()
 
 urlpatterns = [
     url(r'^private/api/v1/config$', views.api_config, name="api_config"),
-    url(r'^private/api/v1/amplicon-options$', views.amplicon_options, name="amplicon_options"),
+    url(r'^private/api/v1/reference-data-options$', views.reference_data_options, name="reference_data_options"),
     url(r'^private/api/v1/trait-options$', views.trait_options, name="trait_options"),
     url(r'^private/api/v1/taxonomy-options$', views.taxonomy_options, name="taxonomy_options"),
     url(r'^private/api/v1/contextual-fields$', views.contextual_fields, name="contextual_fields"),

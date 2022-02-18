@@ -26,6 +26,9 @@ export default class DropDownFilter extends React.Component<any> {
   }
 
   public render() {
+    if (this.props.label === null) {
+      return (null); // Don't render
+    }
     return (
       <FormGroup row={true}>
         {this.props.info

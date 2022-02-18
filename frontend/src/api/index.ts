@@ -21,8 +21,8 @@ export function ckanAuthInfo() {
   return axios.get(window.otu_search_config.ckan_check_permissions)
 }
 
-export function getAmplicons() {
-  return axios.get(window.otu_search_config.amplicon_endpoint)
+export function getReferenceData() {
+  return axios.get(window.otu_search_config.reference_data_endpoint)
 }
 
 export function getTraits(selectedAmplicon = { value: '5', operator: 'is' }) {

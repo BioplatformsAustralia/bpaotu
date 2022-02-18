@@ -104,10 +104,11 @@ taxonomy_ontology_classes = [type(name, (OntologyMixin, Base), {}) for name in (
 
 _taxonomy_labels =  tuple(r.capitalize() for r in taxonomy_ranks[1:])
 def get_taxonomy_labels(taxonomy_source_id):
-    # FIXME stub.
+    # FIXME stub. labels will change with taxonomy_source
     return _taxonomy_labels
 
-taxonomy_ranks[3] = 'klass' # allows python .klass
+taxonomy_ranks[3] = 'klass'
+ # FIXME just allows allows obj.klass syntax. Get rid of this when rank levels are abstracted.
 
 class Taxonomy(SchemaMixin, Base):
     """

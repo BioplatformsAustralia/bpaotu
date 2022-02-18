@@ -2,7 +2,7 @@ import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
-import { fetchAmplicons} from '../../../reducers/reference_data/amplicons'
+import { fetchReferenceData } from '../../../reducers/reference_data/reference_data'
 import { selectAmplicon, getDefaultAmplicon } from '../reducers/amplicon'
 import { selectTrait } from '../reducers/trait'
 
@@ -46,7 +46,7 @@ export class AmpliconTaxonomyFilterCard extends React.Component<any> {
   }
 
   componentDidMount() {
-    this.props.fetchAmplicons()
+    this.props.fetchReferenceData()
   }
 
   componentDidUpdate() {
@@ -108,7 +108,7 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch: any) {
   return bindActionCreators(
     {
-      fetchAmplicons,
+      fetchReferenceData,
       fetchTaxonomySources,
       fetchTraits,
       selectAmplicon,

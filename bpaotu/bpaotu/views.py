@@ -9,11 +9,10 @@ import os
 import re
 import time
 from collections import OrderedDict, defaultdict
-from functools import wraps, partial
+from functools import wraps
 from operator import itemgetter
 from io import BytesIO
 from xhtml2pdf import pisa
-from requests.models import HTTPError
 import requests as requests
 
 
@@ -36,7 +35,8 @@ from .ckan_auth import require_CKAN_auth
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .importer import DataImporter
 from .models import NonDenoisedDataRequest
-from .otu import Environment, OTUAmplicon, SampleContext
+from .otu import (Environment, OTUAmplicon, SampleContext,
+                  taxonomy_ontology_classes, get_taxonomy_labels)
 from .query import (ContextualFilter, ContextualFilterTermDate,
                     ContextualFilterTermFloat, ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
@@ -131,7 +131,7 @@ def normalise_blast_search_string(s):
 @ensure_csrf_cookie
 def api_config(request):
     config = {
-        'amplicon_endpoint': reverse('amplicon_options'),
+        'reference_data_endpoint': reverse('reference_data_options'),
         'trait_endpoint': reverse('trait_options'),
         'taxonomy_endpoint': reverse('taxonomy_options'),
         'contextual_endpoint': reverse('contextual_fields'),
@@ -165,17 +165,18 @@ def api_config(request):
 
 @require_CKAN_auth
 @require_GET
-def get_ontology_options(request, ontology_class):
+def reference_data_options(request):
     """
-    private API: return the possible ontology values for ontology_class
+    private API: return the available amplicons and taxonomic rank names
     """
     with OntologyInfo() as options:
-        vals = options.get_values(ontology_class)
+        amplicons = options.get_values(OTUAmplicon)
+        taxonomy_sources = options.get_values(taxonomy_ontology_classes[0])
     return JsonResponse({
-        'possibilities': vals
+        'amplicons': amplicons,
+        'ranks': {k: get_taxonomy_labels(k) for k, _ in taxonomy_sources}
     })
 
-amplicon_options = partial(get_ontology_options, ontology_class=OTUAmplicon)
 
 @require_CKAN_auth
 @require_GET

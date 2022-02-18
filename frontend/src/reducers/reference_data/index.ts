@@ -1,8 +1,9 @@
 import { combineReducers } from 'redux'
-import ampliconsReducer from './amplicons'
+import { ampliconsReducer, ranksReducer } from './reference_data'
 import traitsReducer from './traits'
 
 export default combineReducers({
   amplicons: ampliconsReducer,
+  ranks: ranksReducer,
   traits: traitsReducer
 })

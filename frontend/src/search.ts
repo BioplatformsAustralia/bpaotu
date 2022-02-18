@@ -11,7 +11,7 @@ export interface SearchConfig {
   ckan_check_permissions: string
   default_amplicon: string
 
-  amplicon_endpoint: string
+  reference_data_endpoint: string
   trait_endpoint: string
   taxonomy_endpoint: string
   contextual_endpoint: string

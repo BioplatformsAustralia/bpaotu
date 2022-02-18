@@ -156,6 +156,7 @@ BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
 BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
 STATICFILES_DIRS = [
     BLAST_RESULTS_PATH,
+    # FIXME missing dir causes crash in collectstatic. This should probably go in MEDIA_ROOT instead. https://docs.djangoproject.com/en/4.0/howto/static-files/#serving-files-uploaded-by-a-user-during-development
 ]
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',

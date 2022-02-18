@@ -204,6 +204,7 @@ class TaxonomyOptions:
         # scan through in order and find our target, by finding the first invalid selection
         target_attr, target_class, target_idx = determine_target(taxonomy_filter.state_vector)
         # the targets to be reset as a result of this choice
+        # FIXME this could be done without drop_id() once we have abstract level names (i.e. without klass vs class)
         clear = [drop_id(attr) for attr, _ in TaxonomyOptions.hierarchy[target_idx:]]
 
         # no completion: we have a complete hierarchy

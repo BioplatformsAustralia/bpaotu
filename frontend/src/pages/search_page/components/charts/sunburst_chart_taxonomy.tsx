@@ -10,13 +10,13 @@ import { updateTaxonomyDropDowns } from '../../reducers/taxonomy'
 import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 import { createAction } from 'redux-actions'
-import { taxonomy_levels } from '../../../../constants'
+import { taxonomy_ranks } from '../../../../constants'
 
 const make_id = (name, tx_id) => `${name}_${tx_id}`;
 
 class SunBurstChartTaxonomy extends React.Component<any> {
 
-  public loadTaxonomyData = (sunburst_data, parentLabel, taxonomy, taxa, taxonomyGraphData) => {
+  public loadTaxonomyData = (sunburst_data, parentId, taxonomy, taxa, taxa_label, taxonomyGraphData) => {
     let selectedTaxonomy = taxonomy.selected.value;
     if(selectedTaxonomy) {
       let lab = find(
@@ -25,9 +25,10 @@ class SunBurstChartTaxonomy extends React.Component<any> {
       if(lab) {
         let total = sum(Object.values(taxonomyGraphData).map(abundance => Number(abundance)))
         sunburst_data.labels.push(lab.value)
-        sunburst_data.parents.push(parentLabel)
+        sunburst_data.parents.push(parentId)
         sunburst_data.ids.push(make_id(taxa, selectedTaxonomy))
-        sunburst_data.text.push(taxa)
+        sunburst_data.text.push(taxa_label)
+        sunburst_data.customdata.push(taxa)
         sunburst_data.values.push(total)
       }
     } else {
@@ -37,9 +38,10 @@ class SunBurstChartTaxonomy extends React.Component<any> {
           val = 0
         else {
           sunburst_data.labels.push(option.value)
-          sunburst_data.parents.push(parentLabel)
+          sunburst_data.parents.push(parentId)
           sunburst_data.ids.push(make_id(taxa, option.value))
-          sunburst_data.text.push(taxa)
+          sunburst_data.text.push(taxa_label)
+          sunburst_data.customdata.push(taxa)
           sunburst_data.values.push(val)
         }
       }
@@ -79,6 +81,7 @@ class SunBurstChartTaxonomy extends React.Component<any> {
         type: "sunburst",
         parents: graphData.parents,
         ids:  graphData.ids,
+        customdata: graphData.customdata,
         text:  graphData.text,
         values:  graphData.values,
         branchvalues: "total",
@@ -94,6 +97,7 @@ class SunBurstChartTaxonomy extends React.Component<any> {
       data = [{
         labels: graphData.labels,
         values:graphData.values,
+        customdata: graphData.customdata,
         text: graphData.text,
         textinfo: 'label+value+percent',
         type: 'pie',
@@ -125,8 +129,8 @@ class SunBurstChartTaxonomy extends React.Component<any> {
             const { points } = e;
             if(points) {
               if (isUndefined(e.nextLevel) && points[0].label !== points[0].root &&
-                this.props.taxonomy[points[0].text].selected.value === "") {
-                this.onSelectTaxonomy(points[0].text, points[0].label)
+                this.props.taxonomy[points[0].customdata].selected.value === "") {
+                this.onSelectTaxonomy(points[0].customdata, points[0].label)
                 this.props.selectToScroll(this.props.filter)
                 this.props.selectTab('tab_' + this.props.filter)
               }
@@ -141,17 +145,22 @@ class SunBurstChartTaxonomy extends React.Component<any> {
   }
 
   public generateGraphData() {
-    let sunburst_data = {"labels":[], "parents":[], "text":[], "ids":[], "values":[]}
+    let sunburst_data = {"labels":[], "parents":[], "text":[], "ids":[], "values":[], "customdata":[]}
     if(!this.props.taxonomyIsLoading && this.props.taxonomyGraphdata.taxonomy) {
-      let parentLabel = "";
-      for (const taxa of taxonomy_levels) {
+      let parentId = "";
+      for (const taxa of taxonomy_ranks) {
+        const taxa_label = this.props.rankLabels[taxa]
+        if (!taxa_label) {
+          break // Reached the last rank for the current taxonomy
+        }
         const selectedTaxonomy = this.loadTaxonomyData(
           sunburst_data,
-          parentLabel,
+          parentId,
           this.props.taxonomy[taxa],
           taxa,
+          taxa_label,
           this.props.taxonomyGraphdata.taxonomy)
-        parentLabel = make_id(taxa, selectedTaxonomy);
+        parentId = make_id(taxa, selectedTaxonomy);
       }
     }
     return sunburst_data;
@@ -161,6 +170,7 @@ class SunBurstChartTaxonomy extends React.Component<any> {
 function mapStateToProps(state) {
   return {
     taxonomy: state.searchPage.filters.taxonomy,
+    rankLabels: state.referenceData.ranks.rankLabels
   }
 }
 

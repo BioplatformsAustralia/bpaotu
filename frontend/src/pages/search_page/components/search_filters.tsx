@@ -137,13 +137,21 @@ class SearchFilters extends React.Component<any> {
       switch(key) {
         case "selectedAmplicon":
           if (value['value']) {
-            let searchFilter = <SearchFilterButton onClick={() => this.onSelectAmplicon()}  color="primary" key={key} octicon="x" text={"Amplicon <"+value['operator']+"> "+this.getSelectedFilter(this.props.amplicons, value['value'], 'value')} />
+            let searchFilter = <SearchFilterButton
+              onClick={() => this.onSelectAmplicon()}
+              color="primary" key={key} octicon="x"
+              text={"Amplicon <" + value['operator'] + "> " +
+                this.getSelectedFilter(this.props.amplicons, value['value'], 'value')} />
             searchFilters.push(searchFilter)
           }
           break
         case "selectedTrait":
           if (value['value']) {
-            let searchFilter = <SearchFilterButton onClick={() => this.onSelectTrait()}  color="secondary" key={key} octicon="x" text={"Trait <"+value['operator']+"> "+this.getSelectedFilter(this.props.traits, value['value'], 'value')} />
+            let searchFilter = <SearchFilterButton
+              onClick={() => this.onSelectTrait()}
+              color="secondary" key={key} octicon="x"
+              text={"Trait <" + value['operator'] + "> " +
+                this.getSelectedFilter(this.props.traits, value['value'], 'value')} />
             searchFilters.push(searchFilter)
           }
           break
@@ -151,11 +159,13 @@ class SearchFilters extends React.Component<any> {
           for (const [taxoType, taxoValue] of Object.entries(value)) {
             let selectedTaxo = taxoValue['selected']
             if (selectedTaxo && selectedTaxo['value']) {
-                let searchFilter = <SearchFilterButton
+              let searchFilter = <SearchFilterButton
                 id={taxoType}
                 onClick={() => this.onSelectTaxonomy(taxoType)}
                 color="secondary" key={taxoType} octicon="x"
-                text={taxoType+" <"+selectedTaxo['operator']+"> "+this.getSelectedFilter(taxoValue['options'], selectedTaxo['value'], 'value')} />
+                text={this.props.rankLabels[taxoType] +
+                  " <" + selectedTaxo['operator'] + "> " +
+                  this.getSelectedFilter(taxoValue['options'], selectedTaxo['value'], 'value')} />
                 searchFilters.push(searchFilter)
             }
           }
@@ -164,11 +174,12 @@ class SearchFilters extends React.Component<any> {
           let selectedEnvironmentValue = value['selectedEnvironment']
           if (selectedEnvironmentValue && selectedEnvironmentValue['value']) {
             let searchFilter = <SearchFilterButton
-            onClick={() => this.onSelectEnvironment()}
-            color="info"
-            key={'selectedEnvironment'}
-            octicon="x"
-            text={"AM Environment <"+selectedEnvironmentValue['operator'] + "> "+this.getSelectedFilter(this.props.environment, selectedEnvironmentValue['value'], 'name')} />
+              onClick={() => this.onSelectEnvironment()}
+              color="info"
+              key={'selectedEnvironment'}
+              octicon="x"
+              text={"AM Environment <" + selectedEnvironmentValue['operator'] +
+                "> " + this.getSelectedFilter(this.props.environment, selectedEnvironmentValue['value'], 'name')} />
             searchFilters.push(searchFilter)
           }
           let selectedFilters = value['filters']
@@ -187,7 +198,8 @@ class SearchFilters extends React.Component<any> {
                 text += " <"+(selectedFilter['operator']?"not between":"between")+"> "+value+" and "+value2
               }
               else if (!isNull(value)) {
-                text += " <"+(selectedFilter['operator']?"doesn't contain":"contains")+"> "+this.getSelectedFilterValue(this.props.contextualFilters, name, value)
+                text += " <" + (selectedFilter['operator'] ? "doesn't contain" : "contains") + "> " +
+                  this.getSelectedFilterValue(this.props.contextualFilters, name, value)
               }
               let searchFilter = <SearchFilterButton index={selectedFilterIndex}
               onClick={() => this.onSelectFilter(selectedFilterIndex, name)}
@@ -225,6 +237,7 @@ function mapStateToProps(state) {
   return {
     amplicons: state.referenceData.amplicons.values,
     traits: state.referenceData.traits.values,
+    rankLabels: state.referenceData.ranks.rankLabels,
     filters: state.searchPage.filters,
     environment: state.contextualDataDefinitions.environment,
     contextualFilters: state.contextualDataDefinitions.filters,
