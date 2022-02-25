@@ -17,8 +17,11 @@ from .otu import (
     Environment,
     OTU,
     OTUAmplicon,
-    taxonomy_rank_id_names,
+    TaxonomySource,
+    taxonomy_keys,
+    taxonomy_key_id_names,
     taxonomy_ontology_classes,
+    rank_labels_lookup,
     SampleContext,
     SampleOTU,
     OTUSampleOTU,
@@ -152,7 +155,7 @@ class OTUQueryParams:
 
 
 class TaxonomyOptions:
-    hierarchy = tuple(zip(taxonomy_rank_id_names, taxonomy_ontology_classes))
+    hierarchy = tuple(zip(taxonomy_key_id_names, taxonomy_ontology_classes))
 
     def __init__(self):
         self._session = Session()
@@ -182,10 +185,6 @@ class TaxonomyOptions:
         TaxonomyOptions.hierarchy. a value of None indicates there is no selection.
         """
 
-        def drop_id(attr):
-            "return without `_id`"
-            return attr[:-3]
-
         def determine_target(state):
             # this query is built up over time, and validates the hierarchy provided to us
             q = self._session.query(Taxonomy.id).join(OTU)
@@ -204,8 +203,7 @@ class TaxonomyOptions:
         # scan through in order and find our target, by finding the first invalid selection
         target_attr, target_class, target_idx = determine_target(taxonomy_filter.state_vector)
         # the targets to be reset as a result of this choice
-        # FIXME this could be done without drop_id() once we have abstract level names (i.e. without klass vs class)
-        clear = [drop_id(attr) for attr, _ in TaxonomyOptions.hierarchy[target_idx:]]
+        clear = taxonomy_keys[target_idx:]
 
         # no completion: we have a complete hierarchy
         if target_attr is None:
@@ -288,6 +286,10 @@ class OntologyInfo:
             return None
         return self._session.query(ontology_class.id).filter(ontology_class.value == value).one()[0]
 
+    def get_taxonomy_labels(self):
+        return {obj.id: rank_labels_lookup[obj.hierarchy_type]
+                for obj in self._session.query(TaxonomySource).all()}
+
 
 class OTUSampleOTUQuery:
     """
@@ -332,7 +334,7 @@ class OTUSampleOTUQuery:
 
     def matching_taxonomy_graph_data(self, all=False):
         taxolistall = {}
-        groupByAttr = getattr(OTUSampleOTU, taxonomy_rank_id_names[-1])
+        groupByAttr = getattr(OTUSampleOTU, taxonomy_key_id_names[-1])
         for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy,
                                                              self._taxonomy_filter.state_vector):
             if taxonomy is None or taxonomy.get('value') is None:
@@ -365,6 +367,7 @@ class OTUSampleOTUQuery:
         return vals
 
 class SampleQuery:
+    # FIXME DRY OTUSampleOTUQuery
     """
     find samples IDs which match the given taxonomical and
     contextual filters

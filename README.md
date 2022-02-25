@@ -101,6 +101,12 @@ The first row of this file must contain a header. The required header fields are
 ```tsv
 #OTU ID\tkingdom\tphylum\tclass\torder\tfamily\tgenus\tspecies\tamplicon\ttraits
 ```
+or
+
+```tsv
+#OTU ID\tkingdom\tsupergroup\tdivision\tclass\torder\tfamily\tgenus\tspecies\tamplicon\ttraits
+
+```
 
 Each column value is an arbitrary character string, with the following restrictions:
 

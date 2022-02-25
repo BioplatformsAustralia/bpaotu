@@ -80,35 +80,32 @@ class OTUAmplicon(OntologyMixin, Base):
     pass
 
 
-taxonomy_ranks = [
+taxonomy_keys = [
     'taxonomy_source',
-    'kingdom',
-    'phylum',
-    'class',
-    'order',
-    'family',
-    'genus',
-    'species'
-]
-taxonomy_rank_id_names = [(r + '_id') for r in taxonomy_ranks]
+    # r1, r2, ...  generally correspond to kingdom, phylum, ... , species, but vary
+    # depending on TaxonomySource(). See rank_labels_lookup
+    'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8']
+
+taxonomy_key_id_names = [(r + '_id') for r in taxonomy_keys]
 taxonomy_ontology_classes = [type(name, (OntologyMixin, Base), {}) for name in (
+    # Must correspond to taxonomy_keys
     'TaxonomySource',
-    'OTUKingdom',
-    'OTUPhylum',
-    'OTUClass',
-    'OTUOrder',
-    'OTUFamily',
-    'OTUGenus',
-    'OTUSpecies')]
+    'OTUr1', 'OTUr2', 'OTUr3', 'OTUr4', 'OTUr5', 'OTUr6', 'OTUr7', 'OTUr8')]
 
+# Different taxonomies have different rank names. See importer.DataImporter()
+TaxonomySource = taxonomy_ontology_classes[0]
+TaxonomySource.hierarchy_type = Column(Integer) # Index into rank_labels_lookup
 
-_taxonomy_labels =  tuple(r.capitalize() for r in taxonomy_ranks[1:])
-def get_taxonomy_labels(taxonomy_source_id):
-    # FIXME stub. labels will change with taxonomy_source
-    return _taxonomy_labels
+rank_labels_lookup = (
+    # Sequence of acceptable taxonomy column headers for taxonomy files, indexed
+    # by TaxonomySource.hierarchy_type.  First match wins, so put longer ones
+    # first. The field order of each entry is important and must correspond to
+    # taxonomy_keys[1:]. Entries can be shorter than r1...r8.
+    ('Kingdom', 'Supergroup', 'Division', 'Class', 'Order', 'Family', 'Genus', 'Species'),
+    ('Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species'),
+    ('Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus')
+)
 
-taxonomy_ranks[3] = 'klass'
- # FIXME just allows allows obj.klass syntax. Get rid of this when rank levels are abstracted.
 
 class Taxonomy(SchemaMixin, Base):
     """
@@ -126,17 +123,17 @@ class Taxonomy(SchemaMixin, Base):
     id = Column(Integer, primary_key=True)
     otu_id = Column(Integer,
                     ForeignKey(SCHEMA + '.otu.id'), nullable=False, index=True)
-    taxonomy_source_id = ontology_fkey(taxonomy_ontology_classes[0], index=True)
+    taxonomy_source_id = ontology_fkey(TaxonomySource, index=True)
     # The taxonomy rank columns are added at runtime - see _setup_taxonomy() below
     traits = Column(ARRAY(String))
 
     otu = relationship("OTU", back_populates="taxonomies")
-    taxonomy_source = relationship(taxonomy_ontology_classes[0])
+    taxonomy_source = relationship(TaxonomySource)
 
     def __repr__(self):
         return "<Taxonomy(%d: %s,%s)>" % (
             self.id,
-            ','.join(getattr(self, a) for a in taxonomy_rank_id_names),
+            ','.join(getattr(self, a) for a in taxonomy_key_id_names),
             self.traits)
 
     @classmethod
@@ -147,8 +144,8 @@ class Taxonomy(SchemaMixin, Base):
         xxx = relationship(OTUxxx)
         See https://docs.sqlalchemy.org/en/13/orm/extensions/declarative/basic_use.html#defining-attributes
         """
-        for (rank_id, rank, OntologyClass) in zip(taxonomy_rank_id_names[1:],
-                                                  taxonomy_ranks[1:],
+        for (rank_id, rank, OntologyClass) in zip(taxonomy_key_id_names[1:],
+                                                  taxonomy_keys[1:],
                                                   taxonomy_ontology_classes[1:]):
             setattr(cls, rank_id, ontology_fkey(OntologyClass, index=True))
             setattr(cls, rank, relationship(OntologyClass))
@@ -797,10 +794,10 @@ class SampleOTU20K(SchemaMixin, Base):
         return "<SampleOTU20K(%d,%d,%d)>" % (self.sample_id, self.otu_id, self.count)
 
 
-taxonomy_rank_id_attrs = [getattr(Taxonomy, name) for name in taxonomy_rank_id_names]
+taxonomy_rank_id_attrs = [getattr(Taxonomy, name) for name in taxonomy_key_id_names]
 
 def _sample_otu_indexes(prefix):
-    return [Index(prefix + name + '_idx', name) for name in taxonomy_rank_id_names]
+    return [Index(prefix + name + '_idx', name) for name in taxonomy_key_id_names]
 
 class OTUSampleOTU(SchemaMixin, Base):
     __table__ = create_materialized_view(

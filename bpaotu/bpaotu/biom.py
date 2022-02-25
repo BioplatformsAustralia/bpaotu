@@ -11,7 +11,7 @@ from .query import (
     SampleQuery,
     OntologyInfo)
 from .util import val_or_empty, make_timestamp, empty_to_none
-from .otu import SampleContext, Taxonomy, taxonomy_ranks
+from .otu import SampleContext, Taxonomy, taxonomy_keys
 
 logger = logging.getLogger('rainbow')
 
@@ -77,7 +77,7 @@ def biom_header(comment):
 
 def otu_rows(query, otu_to_row):
     q = query.matching_otus().join(Taxonomy).add_entity(Taxonomy)
-    taxonomy_fields = taxonomy_ranks[1:] # first rank is taxonomy source - not really a rank
+    taxonomy_fields = taxonomy_keys[1:]
 
     for idx, row in enumerate(q.yield_per(50)):
         def get_value(obj, attr):

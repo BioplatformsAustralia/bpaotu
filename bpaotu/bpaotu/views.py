@@ -35,8 +35,7 @@ from .ckan_auth import require_CKAN_auth
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .importer import DataImporter
 from .models import NonDenoisedDataRequest
-from .otu import (Environment, OTUAmplicon, SampleContext,
-                  taxonomy_ontology_classes, get_taxonomy_labels)
+from .otu import (Environment, OTUAmplicon, SampleContext, TaxonomySource)
 from .query import (ContextualFilter, ContextualFilterTermDate,
                     ContextualFilterTermFloat, ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
@@ -171,10 +170,10 @@ def reference_data_options(request):
     """
     with OntologyInfo() as options:
         amplicons = options.get_values(OTUAmplicon)
-        taxonomy_sources = options.get_values(taxonomy_ontology_classes[0])
+        taxonomy_labels = options.get_taxonomy_labels()
     return JsonResponse({
         'amplicons': amplicons,
-        'ranks': {k: get_taxonomy_labels(k) for k, _ in taxonomy_sources}
+        'ranks': taxonomy_labels
     })
 
 

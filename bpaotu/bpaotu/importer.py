@@ -13,7 +13,8 @@ from hashlib import md5
 from itertools import zip_longest
 from ._version import __version__
 
-import subprocess
+from django.conf import settings
+
 import sqlalchemy
 from bpaingest.metadata import DownloadMetadata
 from bpaingest.projects.amdb.sqlite_contextual import \
@@ -25,7 +26,8 @@ from sqlalchemy.sql.expression import text
 
 from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon,
-                  taxonomy_ranks, taxonomy_ontology_classes, taxonomy_rank_id_names,
+                  taxonomy_keys, taxonomy_key_id_names, rank_labels_lookup,
+                  TaxonomySource, taxonomy_ontology_classes,
                   SampleAustralianSoilClassification,
                   SampleColor, SampleContext, SampleEcologicalZone,
                   SampleHorizonClassification,
@@ -38,12 +40,10 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   SampleHostAssociatedMicrobiomeZone, SampleHostType, Taxonomy,
                   make_engine, refresh_otu_sample_otu_mv)
 
-OTUSpecies =  taxonomy_ontology_classes[-1]
-
 logger = logging.getLogger("rainbow")
 
 
-class ImportException(Exception):
+class DataImportError(Exception):
     pass
 
 
@@ -68,11 +68,105 @@ def otu_hash(code, amplicon_id):
 from contextlib import contextmanager
 @contextmanager
 def tmp_csv_file():
-    with tempfile.NamedTemporaryFile(mode='w', dir='/data', prefix='bpaotu-', delete=False) as temp_fd:
+    with tempfile.NamedTemporaryFile(mode='w+',
+                                     dir=settings.BPAOTU_TMP_DIR,
+                                     prefix='bpaotu-') as temp_fd:
         fname = temp_fd.name
         os.chmod(fname, 0o644)
         w = csv.writer(temp_fd)
-        yield w, fname
+        yield w, temp_fd
+        temp_fd.close() # delete now, rather than waiting for garbage collection
+
+
+class TaxonomyRowsIterator:
+    hierarchy_type_by_source = {}
+    taxonomy_file_info = {}
+    code_re = re.compile(r'^[GATC]+')
+    otu_header = '#otu id'
+    amplicon_header = 'amplicon'
+    traits_header = 'traits'
+
+    def __init__(self, taxonomy_files):
+        self.taxonomy_files = tuple(taxonomy_files)
+
+    def __iter__(self):
+        self.hierarchy_type_by_source = {}
+        self.taxonomy_file_info = {}
+        amplicons_by_code = {}
+        for amplicon_code, fname in self.taxonomy_files:
+            logger.info('reading taxonomy file: {}'.format(fname))
+            taxonomy_db, taxonomy_method = fname.split('.')[-4:-2]
+            taxonomy_source = "{} {}".format(taxonomy_db, taxonomy_method)
+            with gzip.open(fname, 'rt') as fd:
+                reader = csv.reader(fd, dialect='excel-tab')
+                header = [name.lower() for name in next(reader)]
+                try:
+                    amplicon_header_index = header.index(self.amplicon_header)
+                except ValueError:
+                    raise DataImportError("No amplicon column header in {}".format(fname))
+                traits_header_index = header.index(self.traits_header) if self.traits_header in header else -1
+                if header[0] != self.otu_header:
+                    raise DataImportError("First column must be OTU in {}".formate(fname))
+                # Assume all the taxonomy fields are before the amplicon field
+                taxo_header_lower = header[1:amplicon_header_index]
+                h = set(taxo_header_lower)
+                for hierarchy_type, headings in enumerate(rank_labels_lookup):
+                    selected_header = [label.lower() for label in headings]
+                    if h.issuperset(set(selected_header)):
+                        break
+                else:
+                    raise DataImportError("Unrecognisable header in {}".format(fname))
+                if self.hierarchy_type_by_source.get(taxonomy_source) not in (None, hierarchy_type):
+                    raise DataImportError("Header for {} must be \"{}\" in {}".format(
+                        taxonomy_source, self.hierarchy_type_by_source[taxonomy_source], fname))
+                self.hierarchy_type_by_source[taxonomy_source] = hierarchy_type
+
+                # Need to map column header names to corresponding rank
+                # names. selected_header can be shorter than taxonomy_keys,
+                # in which case some ranks are not used for the corresponding
+                # taxonomy_source
+                taxo_header_map = dict(zip(selected_header, taxonomy_keys[1:]))
+                ranks_for_header = [taxo_header_map.get(k) for k in taxo_header_lower]
+
+                amplicon = None
+                for idx, row in enumerate(reader):
+                    code = row[0]
+                    if not self.code_re.match(code) and not code.startswith('mxa_'):
+                        raise DataImportError('Invalid OTU code "{}" in {}'.format(code, fname))
+                    traits = (row[traits_header_index].replace(";", ",").strip()
+                                if traits_header_index > -1 else "")
+                    if traits:
+                        if re.search(r'["{}\\]', traits):
+                            raise DataImportError('Invalid character in traits "{}" in {}'.format(traits, fname))
+                        # Convert String value to PSQL Array Value Input format '{ val1 delim val2 delim ... }'
+                        traits = "{"+",".join('"{}"'.format(i) for i in traits.split(','))+"}"
+                    obj = dict((k, v) for (k, v) in
+                                zip(ranks_for_header, row[1:amplicon_header_index])
+                                if k is not None)
+                    obj.update({
+                        'taxonomy_source': taxonomy_source,
+                        'amplicon': row[amplicon_header_index],
+                        'amplicon_code': amplicon_code,
+                        'traits': traits,
+                        'otu': code,
+                    })
+                    if amplicon is None:
+                        amplicon = obj['amplicon']
+                        v = amplicons_by_code.get(amplicon_code)
+                        if v not in (None, amplicon):
+                            raise DataImportError(
+                                'More than one amplicon in directory: {} vs {}'.format(amplicon, v))
+                        amplicons_by_code[amplicon_code] = amplicon
+                    elif amplicon != obj['amplicon']:
+                        raise DataImportError(
+                            'More than one amplicon in {}: {} vs {}'.format(
+                                fname, amplicon, obj['amplicon']))
+                    yield obj
+            self.taxonomy_file_info[fname] = {
+                'file_type': 'Taxonomy',
+                'rows_imported': idx + 1,
+                'rows_skipped': 0
+            }
 
 class DataImporter:
     # note: some files have species, some don't
@@ -99,7 +193,6 @@ class DataImporter:
     ])
 
     def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True):
-        self.amplicon_code_names = {}  # mapping from dirname to amplicon ontology
         self._engine = make_engine()
         self._create_extensions()
         self._session = sessionmaker(bind=self._engine)()
@@ -141,8 +234,9 @@ class DataImporter:
             c for c
             in list(self.amd_ontologies.values())
             if c is not Environment)
-        # Species is the only potentially blank taxonomy
-        all_cls.add(OTUSpecies)
+        # Unused taxonomy ranks can also be blank
+        min_required = min(len(labels) for labels in rank_labels_lookup)
+        all_cls |= set(taxonomy_ontology_classes[min_required:])
         for db_class in all_cls:
             instance = db_class(id=0, value='')
             self._session.add(instance)
@@ -220,7 +314,7 @@ class DataImporter:
         # blow up if any of the ontologies hasn't worked
         for db_class, val_set in vals.items():
             if len(val_set) == 0:
-                raise ImportException("empty ontology: {}".format(db_class))
+                raise DataImportError("empty ontology: {}".format(db_class))
 
         mappings = {}
         for db_class, fields in by_class.items():
@@ -242,160 +336,85 @@ class DataImporter:
         self._session.add(instance)
         self._session.commit()
 
-    def load_from_csv(self, sql_copy_stmt, filename):
+    def load_from_csv(self, sql_copy_stmt, fd):
         try:
-            with open(filename, 'r') as fd:
-                raw_conn = self._engine.raw_connection()
-                cur = raw_conn.cursor()
-                cur.copy_expert(sql_copy_stmt, fd)
-                raw_conn.commit()
-                cur.close()
+            fd.flush()
+            fd.seek(0)
+            raw_conn = self._engine.raw_connection()
+            cur = raw_conn.cursor()
+            cur.copy_expert(sql_copy_stmt, fd)
         except:
-            logger.error("Problem loading data with \"{}\".".format(sql_copy_stmt))
-            traceback.print_exc()
+            logger.error("Problem loading data from {} with \"{}\".".format(
+                fd.name, sql_copy_stmt),
+                exc_info=True)
         finally:
             raw_conn.commit()
             cur.close()
 
     def load_taxonomies(self):
         # md5(otu code) -> otu ID, returned
-
         otu_lookup = {}
-        otu_fields = ['id', 'code', 'amplicon_id'] # Must match otu.OTU()
-
         taxonomy_fields = ( # must match fields in OTU.Taxonomy()
             ['id', 'otu_id'] +
-            taxonomy_rank_id_names + # order here must match `taxonomy_keys' below
+            taxonomy_key_id_names + # order here must match `taxonomy_keys' below
             ['traits'])
-        taxonomy_keys = taxonomy_ranks  # subset of ontologies.keys() below
         ontologies = OrderedDict(
-            tuple(zip(taxonomy_ranks, taxonomy_ontology_classes)) +
-            ('amplicon', OTUAmplicon))
-        taxonomy_file_info = {}
+            tuple(zip(taxonomy_keys, taxonomy_ontology_classes)) +
+            (('amplicon', OTUAmplicon),))
 
-        def _taxon_rows_iter(taxonomy_files):
-            code_re = re.compile(r'^[GATC]+')
-            otu_header = '#OTU ID'
-            amplicon_header = 'amplicon'
-            traits_header = 'traits'
-            for amplicon_code, fname in taxonomy_files:
-                logger.warning('reading taxonomy file: {}'.format(fname))
-                taxonomy_db, taxonomy_method = fname.split('.')[-4:-2]
-                taxonomy_source = "{} {}".format(taxonomy_db, taxonomy_method)
-                amplicon = None
-                with gzip.open(fname, 'rt') as fd:
-                    reader = csv.reader(fd, dialect='excel-tab')
-                    header = next(reader)
-                    try:
-                        amplicon_header_index = header.index(amplicon_header)
-                    except ValueError:
-                        raise ImportException("No amplicon column header in {}".format(fname))
-                    traits_header_index = header.index(traits_header) if traits_header in header else -1
-                    hasTraits = traits_header_index != -1
-                    if header[0] != otu_header:
-                        raise ImportException("First column must be OTU in {}".formate(fname))
-                    # Assume all the taxonomy fields are before the amplicon field
-                    taxo_header = header[1:amplicon_header_index]
-                    for idx, row in enumerate(csv.reader(fd, dialect='excel-tab')):
-                        code = row[0]
-                        if not code_re.match(code) and not code.startswith('mxa_'):
-                            raise ImportException('Invalid OTU code "{}" in {}'.format(code, fname))
-                        traits = (row[traits_header_index].replace(";", ",").strip()
-                                  if hasTraits else "")
-                        if traits:
-                            if re.search(r'["{}\\]', traits):
-                                raise ImportException('Invalid character in traits "{}" in {}'.format(traits, fname))
-                            # Convert String value to PSQL Array Value Input format '{ val1 delim val2 delim ... }'
-                            traits = "{"+",".join('"{}"'.format(i) for i in traits.split(','))+"}"
-                        obj = dict((zip(taxo_header, row[1:amplicon_header_index])))
-                        obj.update({
-                            'taxonomy_source': taxonomy_source,
-                            'amplicon': row[amplicon_header_index],
-                            'traits': traits,
-                            'otu': code,
-                        })
-                        if amplicon is None:
-                            amplicon = obj['amplicon']
-                        if amplicon != obj['amplicon']:
-                            raise ImportException(
-                                'More than one amplicon in {}: {} vs {}'.format(
-                                    fname, amplicon, obj['amplicon']))
-                        yield obj
-                k = amplicon_code.lower()
-                v = self.amplicon_code_names.get(k)
-                if v not in (None, amplicon):
-                    raise ImportException(
-                                'More than one amplicon in directory: {} vs {}'.format(amplicon, v))
-                self.amplicon_code_names[k] = amplicon
-                taxonomy_file_info[fname] = {
-                    'file_type': 'Taxonomy',
-                    'rows_imported': idx + 1,
-                    'rows_skipped': 0
-                }
+        taxonomy_rows_iter = TaxonomyRowsIterator(
+            self.amplicon_files('*.*.*.taxonomy.gz'))
 
-        # Grab the list of files once to make sure it doesn't change between passes
-        taxonomy_files = tuple(self.amplicon_files('*.*.*.taxonomy.gz'))
-        logger.warning("loading taxonomies - pass 1, defining ontologies")
+        logger.info("loading taxonomies - pass 1, defining ontologies")
         mappings = self._load_ontology(
             ontologies,
-            _taxon_rows_iter(taxonomy_files))
-        # TODO need nicer taxonomy source names via some kind of lookup (maybe a yaml file)?
-
-        logger.warning("loading taxonomies - pass 2, defining OTUs")
-
-        fname = None
+            taxonomy_rows_iter)
         taxonomy_source_id_by_name = mappings['taxonomy_source']
-        try:
-            with tmp_csv_file() as (w, fname):
-                logger.warning("Writing OTUs to temporary CSV file {}".format(fname))
-                w.writerow(otu_fields)
-                for (_id, row) in enumerate(_taxon_rows_iter(taxonomy_files), 1):
-                    ts_id = taxonomy_source_id_by_name[row['taxonomy_source']]
-                    otu_key = otu_hash(row['otu'], row['amplicon'])
-                    otu_lookup_val = otu_lookup.get(otu_key)
-                    if otu_lookup_val:
-                        taxonomy_source_ids = otu_lookup_val[1]
-                        if ts_id in taxonomy_source_ids:
-                            raise ImportException("Duplicate OTU: {} {} {}".format(
-                                row['otu'], row['amplicon'], row['taxonomy_source']))
-                        taxonomy_source_ids.add(ts_id)
-                        # Since we have multiple taxonomies, the same organism can be repeated.
-                        # otu,otu.id will not be contiguous, but that's OK
-                        continue
-                    otu_lookup[otu_key] = (_id, {ts_id})
+        for obj in self._session.query(TaxonomySource).all():
+            obj.hierarchy_type = taxonomy_rows_iter.hierarchy_type_by_source[obj.value]
+        self._session.commit()
 
+        # TODO need nicer taxonomy source names via some kind of lookup (maybe a yaml file)?
+        logger.info("loading taxonomies - pass 2, defining OTUs")
+        with tmp_csv_file() as (w, otu_fd), tmp_csv_file() as (w2, tax_fd):
+            logger.info("Writing OTUs to temporary CSV file {}".format(otu_fd.name))
+            logger.info("writing taxonomies to temporary CSV file {}".format(tax_fd.name))
+            for (_id, row) in enumerate(taxonomy_rows_iter, 1):
+                ts_id = taxonomy_source_id_by_name[row['taxonomy_source']]
+                otu_key = otu_hash(row['otu'], row['amplicon_code'])
+                otu_lookup_val = otu_lookup.get(otu_key)
+
+                # Since we can have multiple taxonomies, the same organism can
+                # be repeated. Just add the first occurrence to otu.otu.
+                # otu,otu.id will not be contiguous, but that's OK.
+                if otu_lookup_val:
+                    taxonomy_source_ids = otu_lookup_val[1]
+                    if ts_id in taxonomy_source_ids:
+                        raise DataImportError("Duplicate OTU: {} {} {}".format(
+                            row['otu'], row['amplicon'], row['taxonomy_source']))
+                    taxonomy_source_ids.add(ts_id)
+                else:
+                    otu_lookup[otu_key] = otu_lookup_val = (_id, {ts_id})
                     val = row.get('amplicon', '')
                     otu_row = [_id, row['otu'], mappings.get('amplicon').get(val, "")]
                     w.writerow(otu_row)
-            logger.warning("Loading OTU data from temporary CSV file")
-            self.load_from_csv("COPY otu.otu from stdin CSV HEADER", fname)
-        finally:
-            if fname:
-                os.unlink(fname)
-        for fname, info in taxonomy_file_info.items():
+
+                taxonomy_row = [_id, otu_lookup_val[0]]
+                for field in taxonomy_keys:
+                    val = row.get(field, '')
+                    taxonomy_row.append(mappings.get(field).get(val, ""))
+                taxonomy_row.append(row['traits'])
+                w2.writerow(taxonomy_row)
+
+            logger.info("Loading OTU data from {}".format(otu_fd.name))
+            self.load_from_csv("COPY otu.otu (id, code, amplicon_id) FROM STDIN CSV", otu_fd)
+            logger.info("Loading taxonomy data from {}".format(tax_fd.name))
+            self.load_from_csv("COPY otu.taxonomy (" +
+                               ",".join(taxonomy_fields) +
+                               ") FROM STDIN CSV", tax_fd)
+
+        for fname, info in taxonomy_rows_iter.taxonomy_file_info.items():
             self.make_file_log(fname, **info)
-
-        logger.warning("loading taxonomies - pass 3, defining taxonomies")
-
-        fname = None
-        try:
-            with tmp_csv_file() as (w, fname):
-                logger.warning("writing taxonomies to temporary CSV file {}".format(fname))
-                w.writerow(taxonomy_fields)
-                for (_id, row) in enumerate(_taxon_rows_iter(taxonomy_files), 1):
-                    otu_key = otu_hash(row['otu'], row['amplicon'])
-                    otu_id = otu_lookup[otu_key][0]
-                    taxonomy_row = [_id, otu_id]
-                    for field in taxonomy_keys:
-                        val = row.get(field, '')
-                        taxonomy_row.append(mappings.get(field).get(val, ""))
-                    taxonomy_row.append(row['traits'])
-                    w.writerow(taxonomy_row)
-            logger.warning("Loading taxonomy data from temporary CSV file")
-            self.load_from_csv("COPY otu.taxonomy from stdin CSV HEADER", fname)
-        finally:
-            if fname:
-                os.unlink(fname)
 
         return otu_lookup
 
@@ -413,8 +432,8 @@ class DataImporter:
     def contextual_rows(self, ingest_cls, name):
         # flatten contextual metadata into dicts
         metadata = defaultdict(dict)
-        with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name), has_sql_context=self._has_sql_context, force_fetch=self._force_fetch) as dlmeta:
-        # with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name), has_sql_context=True, force_fetch=False) as dlmeta:
+        with DownloadMetadata(logger, ingest_cls, path='/data/{}/'.format(name),
+                              has_sql_context=self._has_sql_context, force_fetch=self._force_fetch) as dlmeta:
             for contextual_source in dlmeta.meta.contextual_metadata:
                 self.save_ontology_errors(
                     getattr(contextual_source, "environment_ontology_errors", None))
@@ -436,6 +455,7 @@ class DataImporter:
         return rows
 
     def contextual_row_context(self, metadata, ontologies, mappings, fields_used):
+        column_names = set(t.name for t in SampleContext.__table__.columns)
         for row in metadata:
             sample_id = row['sample_id']
             if sample_id is None:
@@ -444,12 +464,12 @@ class DataImporter:
                 'id': sample_id.split('/')[-1]
             }
             for field in ontologies:
-                if field not in row or field == '' or row[field] == '':
+                if field not in row or field == '':
                     continue
-                attrs[field + '_id'] = mappings[field][row[field]]
+                v = row[field]
+                attrs[field + '_id'] = mappings[field][v] if v else 0 # 0 is ontology_fkey() default
             for field, value in row.items():
-                # Skipping fields already added to attrs dict and those not exists in sample_context table of otu DB
-                if field in attrs or (field + '_id') in attrs or field == 'sample_id' or field not in set(t.name for t in SampleContext.__table__.columns):
+                if field in attrs or (field + '_id') in attrs or field == 'sample_id' or field not in column_names:
                     continue
 
                 # Replacing empty value with None
@@ -458,27 +478,32 @@ class DataImporter:
 
                 attrs[field] = value
             fields_used.update(set(attrs.keys()))
-            yield SampleContext(**attrs)
+            yield attrs
 
     def load_contextual_metadata(self):
         # we have a bit of a broken window in the SampleContext class, so we
         # check whether or not we are using all the fields to assist us when
         # updating the code for new versions of the source spreadsheet
         utilised_fields = set()
-        logger.warning("loading contextual metadata")
+        logger.info("loading contextual metadata")
         metadata = self.contextual_rows(AccessAMDContextualMetadata, name='amd-metadata')
-        logger.warning("loading sample context ontologies")
+        logger.info("loading sample context ontologies")
         mappings = self._load_ontology(DataImporter.amd_ontologies, metadata)
-        logger.warning("loading sample context metadata")
-        for obj in self.contextual_row_context(metadata, DataImporter.amd_ontologies, mappings, utilised_fields):
-            self._session.add(obj)
-            self._session.flush()
-        self._session.commit()
-        unused = set(t.name for t in SampleContext.__table__.columns) - utilised_fields
-        if unused:
-            logger.info("Unutilised fields:")
-            for field in sorted(unused):
-                logger.info(field)
+
+        column_names = [t.name for t in SampleContext.__table__.columns]
+        with tmp_csv_file() as (w, fd):
+            logger.info("writing sample context metadata to {}".format(fd.name))
+            for row in self.contextual_row_context(metadata, DataImporter.amd_ontologies, mappings, utilised_fields):
+                # Note: column order here must match table field order for COPY table FROM STDIN to work
+                w.writerow(row.get(k) for k in column_names)
+            logger.info("loading sample context metadata from {}".format(fd.name))
+            self.load_from_csv("COPY otu.sample_context FROM STDIN CSV", fd)
+            unused = set(column_names) - utilised_fields
+            if unused:
+                logger.info("Unutilised fields:")
+                for field in sorted(unused):
+                    logger.info(field)
+
         # set methodology to store version of code and contextual DB in this format (<packagename>_<version>_<SQLite DB>)
         db_file = ""
         analysis_version = ""
@@ -499,9 +524,11 @@ class DataImporter:
 
     def _otu_abundance_rows(self, fd, amplicon_code, otu_lookup):
         reader = csv.reader(fd, dialect='excel-tab')
-        header = next(reader)
+        header = [name.lower() for name in next(reader)]
+        if header != ["#otu id", "sample_only", "abundance"]:
+            raise DataImportError(
+                "Expected tab-separated \"#otu id sample_only abundance\" header in {}".format(fd.name))
 
-        assert(header == ["#OTU ID", "Sample_only", "Abundance"])
         integer_re = re.compile(r'^[0-9]+$')
         samn_id_re = re.compile(r"^SAMN(\d+)$")
 
@@ -516,7 +543,7 @@ class DataImporter:
                         logger.warning('[{}] skipped non-integer sample ID: {}'.format(amplicon_code, sample_id))
                         self.sample_non_integer.add(sample_id)
                     continue
-            hash = otu_hash(otu_code, self.amplicon_code_names[amplicon_code.lower()])
+            hash = otu_hash(otu_code, amplicon_code)
             otu_lookup_val = otu_lookup.get(hash)
             if not otu_lookup_val:
                 continue
@@ -538,35 +565,20 @@ class DataImporter:
                 self.make_file_log(
                     fname, file_type='Abundance', rows_imported=(entry + 1), rows_skipped=rows_skipped)
 
-        logger.warning('Loading OTU abundance tables')
+        logger.info('Loading OTU abundance tables')
 
         present_sample_ids = set([t[0] for t in self._session.query(SampleContext.id)])
 
         for amplicon_code, sampleotu_fname in self.amplicon_files('*[0-9].txt.gz'):
             def log_amplicon(msg):
-                logger.warning('[{}] {}'.format(amplicon_code, msg))
-            fname = None
-            try:
-                log_amplicon("reading from: {}".format(sampleotu_fname))
-                with tmp_csv_file() as (w, fname):
-                    log_amplicon("writing out OTU abundance data to CSV tempfile: {}".format(fname))
-                    w.writerow(['sample_id', 'otu_id', 'count'])
-                    w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
+                logger.info('[{}] {}'.format(amplicon_code, msg))
+
+            log_amplicon("reading from: {}".format(sampleotu_fname))
+            with tmp_csv_file() as (w, fd):
+                log_amplicon("writing out OTU abundance data to CSV tempfile: {}".format(fd.name))
+                w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
                 log_amplicon("loading OTU abundance data into database")
-                try:
-                    with open(fname, 'r') as fd:
-                        raw_conn = self._engine.raw_connection()
-                        cur = raw_conn.cursor()
-                        cur.copy_expert("COPY otu.sample_otu from stdin CSV HEADER", fd)
-                except:  # noqa
-                    log_amplicon("unable to import {}".format(sampleotu_fname))
-                    traceback.print_exc()
-                finally:
-                    raw_conn.commit()
-                    cur.close()
-            finally:
-                if fname:
-                    os.unlink(fname)
+                self.load_from_csv("COPY otu.sample_otu (sample_id, otu_id, count) FROM STDIN CSV", fd)
 
     def load_otu_abundance_20k(self, otu_lookup):
         def _make_sample_otus(fname, amplicon_code, present_sample_ids):
@@ -584,32 +596,17 @@ class DataImporter:
                 self.make_file_log(
                     fname, file_type='Abundance', rows_imported=(entry + 1), rows_skipped=rows_skipped)
 
-        logger.warning('Loading OTU abundance 20k tables')
+        logger.info('Loading OTU abundance 20k tables')
 
         present_sample_ids = set([t[0] for t in self._session.query(SampleContext.id)])
 
         for amplicon_code, sampleotu_fname in self.amplicon_files('*_20K.txt.gz'):
             def log_amplicon(msg):
-                logger.warning('[{}] {}'.format(amplicon_code, msg))
-            fname = None
-            try:
-                log_amplicon("reading from: {}".format(sampleotu_fname))
-                with tmp_csv_file() as (w, fname):
-                    log_amplicon("writing out OTU abundance 20k data to CSV tempfile: {}".format(fname))
-                    w.writerow(['sample_id', 'otu_id', 'count'])
-                    w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
+                logger.info('[{}] {}'.format(amplicon_code, msg))
+
+            log_amplicon("reading from: {}".format(sampleotu_fname))
+            with tmp_csv_file() as (w, fd):
+                log_amplicon("writing out OTU abundance 20k data to CSV tempfile: {}".format(fd.name))
+                w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
                 log_amplicon("loading OTU abundance 20k data into database")
-                try:
-                    with open(fname, 'r') as fd:
-                        raw_conn = self._engine.raw_connection()
-                        cur = raw_conn.cursor()
-                        cur.copy_expert("COPY otu.sample_otu_20k from stdin CSV HEADER", fd)
-                except:  # noqa
-                    log_amplicon("unable to import {}".format(sampleotu_fname))
-                    traceback.print_exc()
-                finally:
-                    raw_conn.commit()
-                    cur.close()
-            finally:
-                if fname:
-                    os.unlink(fname)
+                self.load_from_csv("COPY otu.sample_otu_20k (sample_id, otu_id, count) FROM STDIN CSV", fd)

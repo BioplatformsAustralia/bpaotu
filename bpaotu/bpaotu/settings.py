@@ -20,14 +20,15 @@ BASE_URL = SCRIPT_NAME
 WEBAPP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # a directory that will be writable by the webserver, for storing various files...
-WRITABLE_DIRECTORY = env.get("writable_directory", "/tmp")
+WRITABLE_DIRECTORY = env.get("writable_directory", "/tmp") # FIXME used?
+BPAOTU_TMP_DIR = '/var/tmp' # For large temporary files
 
 SECRET_KEY = env.get("secret_key", "change-it")
 
 # Default SSL on and forced, turn off if necessary
 PRODUCTION = env.get("production", False)
-SSL_ENABLED = PRODUCTION
-SSL_FORCE = PRODUCTION
+SSL_ENABLED = PRODUCTION # FIXME?  used?
+SSL_FORCE = PRODUCTION # FIXME?  used?
 
 DEBUG = env.get("debug", not PRODUCTION)
 
