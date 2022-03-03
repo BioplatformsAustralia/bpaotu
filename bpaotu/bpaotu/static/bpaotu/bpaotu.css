@@ -161,3 +161,7 @@ body {
 .footer-logos {
     max-width: 150px;
 }
+
+.nav-item a {
+    cursor: pointer;
+}

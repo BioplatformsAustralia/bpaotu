@@ -12,7 +12,7 @@
 
     <link rel="icon" href="{% static 'bpa-logos/favicon.ico' %}" type="image/x-icon">
     <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/common.css' %}"/>
-    <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/bpaotu.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'bpaotu/bpaotu.css' %}?cb=1"/>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
@@ -31,7 +31,7 @@
         margin-bottom: 5px;
 
     }
-    
+
     table, th, td {
         padding: 5px;
         border: 1 solid;
@@ -45,7 +45,7 @@
         <div class="col-md-12">
             <h1>Bioplatforms OTU Database - Ingest log</h1>
             <hr />
-            
+
             {% if not pdf %}
             <h5 style="text-align:right">&#8595; Download as <a href="download">JSON</a> | <a href="?pdf=true&download=true" target="_blank">PDF</a></h5>
             {% endif %}
@@ -53,7 +53,7 @@
             <br />
             <h2>Database </h2>
 
-            
+
 
             <table>
                 <tr>
@@ -93,7 +93,7 @@
                     <th>Rows imported</th>
                     <th>Rows skipped</th>
                 </thead>
-                
+
                 {% for file in files %}
                 <tr>
                     <td style="word-wrap: break-word">{{ file.filename }}</td>
@@ -106,14 +106,14 @@
             </table>
             <br />
             <h2>Ontology errors</h2>
-            
+
             <table>
                 <thead>
                     <th>Environment</th>
                     <th>Ontology Name</th>
                     <th>Invalid values (dropped by import)</th>
                 </thead>
-                
+
                 {% for item in ontology_errors %}
                 {% if item.invalid_values %}
                 <tr>
@@ -133,7 +133,7 @@
             </table>
             <br />
             <h2>Samples excluded: non-Bioplatforms Sample ID ({{ sample_non_integer | length }})</h2>
-            
+
             <table>
                 <thead>
                     <th>Sample ID</th>
@@ -147,7 +147,7 @@
 
             <br />
             <h2>Samples excluded: metadata exists, but does not meet minimum standards ({{ sample_metadata_incomplete | length }})</h2>
-            
+
             <table>
                 <thead>
                     <th>Sample ID</th>
@@ -162,10 +162,10 @@
                     {% endfor %}
                 </td></tr>
             </table>
-            
+
             <br />
             <h2>Samples excluded: no metadata ({{ sample_not_in_metadata | length }})</h2>
-            
+
             <table>
                 <thead>
                     <th>Sample ID</th>

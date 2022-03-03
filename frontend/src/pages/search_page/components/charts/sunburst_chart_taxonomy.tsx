@@ -125,12 +125,22 @@ class SunBurstChartTaxonomy extends React.Component<any> {
             hovermode: 'closest',
           }}
           config={plotly_chart_config(title)}
+
+          onHover={e => {
+            // This may be the least ugly way to set a pointer cursor for our
+            // click handler. There's no documented way to identify the outer
+            // slices in the DOM, so we can't do it reliably with CSS selectors.
+            if (e.points && this.get_clickable_rank(e)) {
+              e.event.currentTarget.style.cursor = 'pointer';
+            }
+          }}
+
           onClick={e => {
             const { points } = e;
             if(points) {
-              if (isUndefined(e.nextLevel) && points[0].label !== points[0].root &&
-                this.props.taxonomy[points[0].customdata].selected.value === "") {
-                this.onSelectTaxonomy(points[0].customdata, points[0].label)
+              const rank = this.get_clickable_rank(e)
+              if (rank) {
+                this.onSelectTaxonomy(rank, points[0].label)
                 this.props.selectToScroll(this.props.filter)
                 this.props.selectTab('tab_' + this.props.filter)
               }
@@ -142,6 +152,13 @@ class SunBurstChartTaxonomy extends React.Component<any> {
         <span id={this.props.filter}></span>
       </>
     );
+  }
+
+  get_clickable_rank(e) {
+    const cd = e.points[0].customdata
+    const rank = Array.isArray(cd)? cd[0]: cd // cd will be 1-element array for pie chart
+    return (isUndefined(e.nextLevel) && e.points[0].label !== e.points[0].root &&
+      this.props.taxonomy[rank].selected.value === "")? rank : null;
   }
 
   public generateGraphData() {
