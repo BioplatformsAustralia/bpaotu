@@ -13,6 +13,7 @@ import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import { fetchContextualDataForGraph } from '../../../reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from '../../../reducers/taxonomy_data_graph'
 import { createAction } from 'redux-actions'
+import { taxonomy_ranks } from '../../../constants'
 
 const SearchFilterButton = props => {
 
@@ -158,7 +159,9 @@ class SearchFilters extends React.Component<any> {
         case "taxonomy":
           for (const [taxoType, taxoValue] of Object.entries(value)) {
             let selectedTaxo = taxoValue['selected']
-            if (selectedTaxo && selectedTaxo['value']) {
+            if (selectedTaxo && selectedTaxo['value'] &&
+              // Doesn't make sense to include taxonomy_source
+              taxonomy_ranks.indexOf(taxoType) > -1) {
               let searchFilter = <SearchFilterButton
                 id={taxoType}
                 onClick={() => this.onSelectTaxonomy(taxoType)}
@@ -166,7 +169,7 @@ class SearchFilters extends React.Component<any> {
                 text={this.props.rankLabels[taxoType] +
                   " <" + selectedTaxo['operator'] + "> " +
                   this.getSelectedFilter(taxoValue['options'], selectedTaxo['value'], 'value')} />
-                searchFilters.push(searchFilter)
+              searchFilters.push(searchFilter)
             }
           }
           break
