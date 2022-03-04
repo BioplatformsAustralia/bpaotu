@@ -5,15 +5,13 @@ import { getReferenceData } from '../../api'
 import { taxonomy_keys } from '../../constants'
 import { handleSimpleAPIResponse } from '../utils'
 
-export const { fetchReferenceDataStarted, fetchReferenceDataEnded, selectTaxonomySource } = createActions(
-  'FETCH_REFERENCE_DATA_STARTED',
+export const { fetchReferenceDataEnded, selectTaxonomySource } = createActions(
   'FETCH_REFERENCE_DATA_ENDED',
   'SELECT_TAXONOMY_SOURCE'
 )
 
 export function fetchReferenceData() {
   return (dispatch: any) => {
-    dispatch(fetchReferenceDataStarted()) // FIXME not used
     handleSimpleAPIResponse(dispatch, getReferenceData, fetchReferenceDataEnded)
   }
 }

@@ -10,7 +10,7 @@ import { search } from '../../reducers/search'
 import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 
-class PieChartAmplicon extends React.Component<any> {
+class PieChartTraits extends React.Component<any> {
   render() {
     let graphData = this.props.taxonomyGraphdata
     const title = startCase(this.props.filter)  +' Plot'
@@ -49,10 +49,10 @@ class PieChartAmplicon extends React.Component<any> {
       <Plot
         data={chart_data}
         config={plotly_chart_config(title)}
-        layout={{ 
+        layout={{
           autosize: true,
-          width: this.props.width, height: this.props.height, 
-          title: {'text':title, 'font':{  'size': 20}, 'position':'middle center'}, 
+          width: this.props.width, height: this.props.height,
+          title: {'text':title, 'font':{  'size': 20}, 'position':'middle center'},
           hovermode: 'closest'
         }}
         onClick={e => {
@@ -100,4 +100,4 @@ function mapDispatchToProps(dispatch: any) {
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(PieChartAmplicon)
+)(PieChartTraits)

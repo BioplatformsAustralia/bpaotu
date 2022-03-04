@@ -2,13 +2,7 @@ import React from 'react';
 import Plot from 'react-plotly.js';
 import {plotly_chart_config} from './plotly_chart'
 import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
 import { startCase } from 'lodash'
-import { selectAmplicon } from '../../reducers/amplicon'
-import { updateTaxonomyDropDowns } from '../../reducers/taxonomy'
-import { search } from '../../reducers/search'
-import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
-import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 
 class PieChartAmplicon extends React.Component<any> {
   render() {
@@ -31,7 +25,7 @@ class PieChartAmplicon extends React.Component<any> {
             text.push(option.id)
         }
     }
-    
+
     let chart_data = [
       {
         values: values,
@@ -55,28 +49,12 @@ class PieChartAmplicon extends React.Component<any> {
       <Plot
         data={chart_data}
         config={plotly_chart_config(title)}
-        layout={{ 
+        layout={{
           autosize: true,
           width: this.props.width, height: this.props.height,
-          title: {'text':title, 'font':{  'size': 20}, 'position':'middle center'}, 
+          title: {'text':title, 'font':{  'size': 20}, 'position':'middle center'},
           hovermode: 'closest'
         }}
-        // onClick={e => {
-        //   const { points } = e;
-        //   if(points) {
-        //     let env_val = points[0].text
-        //     let textData = chart_data[0].text
-        //     if (!textData.includes(env_val))
-        //       env_val = ''
-        //     console.log(env_val)
-        //     this.props.selectAmplicon(env_val)
-        //     this.props.updateTaxonomy()
-        //     this.props.fetchContextualDataForGraph()
-        //     this.props.fetchTaxonomyDataForGraph()
-        //     this.props.selectToScroll(this.props.filter)
-        //     this.props.selectTab('tab_'+this.props.filter)
-        //   }
-        // }}
       />
       <span id={this.props.filter}></span>
       </>
@@ -91,20 +69,6 @@ function mapStateToProps(state) {
   }
 }
 
-function mapDispatchToProps(dispatch: any) {
-  return bindActionCreators(
-    {
-      selectAmplicon,
-      updateTaxonomy: updateTaxonomyDropDowns(''),
-      search,
-      fetchContextualDataForGraph,
-      fetchTaxonomyDataForGraph
-    },
-    dispatch
-  )
-}
-
 export default connect(
-  mapStateToProps,
-  mapDispatchToProps
+  mapStateToProps
 )(PieChartAmplicon)

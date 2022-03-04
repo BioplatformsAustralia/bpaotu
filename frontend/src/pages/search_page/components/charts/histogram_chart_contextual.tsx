@@ -9,7 +9,7 @@ import { fetchContextualDataForGraph } from '../../../../reducers/contextual_dat
 import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 
 import {
-  addContextualFilter, 
+  addContextualFilter,
   changeContextualFilterOperator,
   changeContextualFilterValue,
   changeContextualFilterValue2,
@@ -71,12 +71,12 @@ class HistogramChartContextual extends React.Component<any> {
       <>
       <Plot
         data={chart_data}
-        layout={{ 
+        layout={{
           autosize: true,
           width: this.props.width, height: this.props.height,
           dragmode:'select',
-          title: {'text':title, 'font':{'size': 20}}, 
-          hovermode: 'closest', 
+          title: {'text':title, 'font':{'size': 20}},
+          hovermode: 'closest',
           yaxis: {title: 'Frequency', 'exponentformat': 'e'}, xaxis: {title: xaxisTitle, type: xaxisCategory, 'exponentformat': 'e'},
        }}
         config={plotly_chart_config(title)}
