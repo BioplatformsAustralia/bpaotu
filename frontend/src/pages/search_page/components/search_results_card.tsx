@@ -5,8 +5,6 @@ import { bindActionCreators } from 'redux'
 
 import { Alert, Button, Card, CardBody, CardHeader  } from 'reactstrap'
 import Octicon from '../../../components/octicon'
-import { openSamplesMapModal } from '../reducers/samples_map_modal'
-import { openSamplesGraphModal } from '../reducers/samples_graph_modal'
 import { describeSearch } from '../reducers/search'
 import { clearGalaxyAlert, submitToGalaxy, workflowOnGalaxy } from '../reducers/submit_to_galaxy'
 import { clearTips, showPhinchTip } from '../reducers/tips'
@@ -16,15 +14,15 @@ import SamplesGraphModal from './samples_graph_modal'
 import SearchResultsTable from './search_results_table'
 
 const HeaderButton = props => (
-  <Button 
-    id={props.text} 
+  <Button
+    id={props.text}
     size="sm"
-    style={{ marginRight: 10 }} 
-    outline={true} 
-    color="primary" 
-    disabled={props.disabled} 
-    onClick={props.onClick} 
-    data-tut={props.text} 
+    style={{ marginRight: 10 }}
+    outline={true}
+    color="primary"
+    disabled={props.disabled}
+    onClick={props.onClick}
+    data-tut={props.text}
     title={props.disabled?'Select Amplicon to '+props.text:''}
   >
     {props.octicon ? (
@@ -110,7 +108,7 @@ class SearchResultsCard extends React.Component<any, any> {
             <SearchResultsTable />
           </CardBody>
         </Card>
-        
+
         <SamplesMapModal />
         <SamplesGraphModal />
       </div>
@@ -166,8 +164,6 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
-      openSamplesMapModal,
-      openSamplesGraphModal,
       submitToGalaxy,
       workflowOnGalaxy,
       clearGalaxyAlert,
