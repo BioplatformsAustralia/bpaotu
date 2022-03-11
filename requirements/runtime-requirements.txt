@@ -25,7 +25,7 @@ zipstream==1.1.4
 h5py==2.10.0
 numpy==1.16.6
 celery==4.4.2
-Pillow==6.2.2
+Pillow==9.0.1
 python-resize-image==1.1.19
 django-webpack-loader==0.7.0
 git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
