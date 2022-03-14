@@ -1,4 +1,4 @@
-Django==2.2.10
+Django==2.2.27
 Django-suit==0.2.28
 Unipath==1.1
 Werkzeug==0.16.1
