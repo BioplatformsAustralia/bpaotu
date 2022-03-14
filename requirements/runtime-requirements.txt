@@ -24,7 +24,7 @@ django-redis==4.10.0
 zipstream==1.1.4
 h5py==2.10.0
 numpy==1.16.6
-celery==4.4.2
+celery==5.2.2
 Pillow>=8.1.1
 python-resize-image==1.1.19
 django-webpack-loader==0.7.0
