@@ -5,7 +5,7 @@ import { bindActionCreators } from 'redux'
 import { Button, Input,  UncontrolledTooltip } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 import { selectEnvironment, removeContextualFilter, selectContextualFiltersMode } from '../reducers/contextual'
-import { clearAllTaxonomyFilters, fetchTaxonomySources } from '../reducers/taxonomy'
+import { clearAllTaxonomyFilters } from '../reducers/taxonomy'
 import { fetchTraits } from '../../../reducers/reference_data/traits'
 import { selectAmplicon, getDefaultAmplicon } from '../reducers/amplicon'
 import { selectTrait } from '../reducers/trait'
@@ -85,7 +85,7 @@ class SearchFilters extends React.Component<any> {
 
   onSelectTrait = () => {
     this.props.selectTrait('')
-    this.props.updateTaxonomy()
+    this.props.updateTaxonomyDropDown('')
     this.props.fetchContextualDataForGraph()
     this.props.fetchTaxonomyDataForGraph()
     this.props.selectToScroll('amplicon_id')
@@ -97,7 +97,7 @@ class SearchFilters extends React.Component<any> {
     this.props.selectAmplicon(defaultAmplicon?defaultAmplicon.id:"")
     this.props.fetchTraits()
     this.props.selectTrait('')
-    this.props.updateTaxonomy()
+    this.props.updateTaxonomyDropDown('')
     this.props.fetchContextualDataForGraph()
     this.props.fetchTaxonomyDataForGraph()
     this.props.selectToScroll('amplicon_id')
@@ -137,7 +137,7 @@ class SearchFilters extends React.Component<any> {
     for (const [key, value] of Object.entries(this.props.filters)) {
       switch(key) {
         case "selectedAmplicon":
-          if (value['value']) {
+          if (value['value'] && this.props.filters.preselectedAmplicon === '') {
             let searchFilter = <SearchFilterButton
               onClick={() => this.onSelectAmplicon()}
               color="primary" key={key} octicon="x"
@@ -255,9 +255,7 @@ function mapDispatchToProps(dispatch: any, props) {
       selectAmplicon,
       selectTrait,
       fetchTraits,
-      fetchTaxonomySources,
       clearAllTaxonomyFilters,
-      updateTaxonomy: updateTaxonomyDropDowns(''),
       clearTaxonomyValue: (taxonomy) => (createAction('SELECT_' + taxonomy.toUpperCase())('')),
       updateTaxonomyDropDown: (taxonomy) => (updateTaxonomyDropDowns(taxonomy)()),
       selectEnvironment,

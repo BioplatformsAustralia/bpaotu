@@ -31,22 +31,11 @@ export default class Header extends React.Component<any, any> {
         </NavbarBrand>
         <NavbarToggler onClick={this.toggle} />
         <Collapse isOpen={this.state.isOpen} navbar={true}>
-          <Nav className="navbar-nav">
-            <NavItem>
-              <NavLink target="_am" href={window.otu_search_config.ckan_base_url+"organization/about/australian-microbiome"}>
-                Australian Microbiome Home
-              </NavLink>
-            </NavItem>
+          <Nav tabs className="navbar-nav">
 
             <NavItem>
               <NavLink exact={true} to="/" activeClassName="active" tag={RRNavLink}>
                 Search
-              </NavLink>
-            </NavItem>
-
-            <NavItem>
-              <NavLink to="/map" activeClassName="active" tag={RRNavLink}>
-                Map
               </NavLink>
             </NavItem>
 
@@ -63,22 +52,34 @@ export default class Header extends React.Component<any, any> {
             </NavItem>
 
             <NavItem>
-              <NavLink target="_am" href={window.otu_search_config.ckan_base_url+"organization/pages/australian-microbiome/processed"}>
+              <NavLink to="/metagenome" activeClassName="active" tag={RRNavLink}>
+                Metagenome
+              </NavLink>
+            </NavItem>
+          </Nav>
+          <Nav className="ml-auto" navbar={true}>
+
+            <NavItem>
+              <NavLink>
+                <BPAOTUTour />
+              </NavLink>
+            </NavItem>
+
+            <NavItem>
+              <NavLink target="_am" href={window.otu_search_config.ckan_base_url + "organization/pages/australian-microbiome/processed"}>
                 Help
               </NavLink>
             </NavItem>
 
             <NavItem>
-              <NavLink>
-                <BPAOTUTour/> 
+              <NavLink target="_am" href={window.otu_search_config.ckan_base_url + "organization/about/australian-microbiome"}>
+                Australian Microbiome Home
               </NavLink>
             </NavItem>
 
-          </Nav>
-          <Nav className="ml-auto" navbar={true}>
             <NavItem>
               {this.props.userEmailAddress ? (
-                <div>
+                <div className="navbar-text">
                   <Octicon name="person" />
                   <span className="site-header-username">{this.props.userEmailAddress}</span>
                 </div>

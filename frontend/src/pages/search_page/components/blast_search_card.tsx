@@ -1,10 +1,11 @@
 import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-
 import { Alert, Button, Card, CardBody, CardFooter, CardHeader, Input } from 'reactstrap'
+
 import AnimateHelix from '../../../components/animate_helix'
 import { clearBlastAlert, handleBlastSequence, runBlast } from '../reducers/blast_search'
+import { getAmpliconFilter } from '../reducers/amplicon'
 
 export class BlastSearchCard extends React.Component<any> {
   public render() {
@@ -47,12 +48,13 @@ export class BlastSearchCard extends React.Component<any> {
 }
 
 function mapStateToProps(state, props) {
+  const selectedAmplicon = getAmpliconFilter(state)
   return {
-    isAmpliconSelected: state.searchPage.filters.selectedAmplicon.value,
+    isAmpliconSelected: selectedAmplicon.value,
     sequenceValue: state.searchPage.blastSearch.sequenceValue,
     isSubmitting: state.searchPage.blastSearch.isSubmitting,
     isSearchDisabled:
-      state.searchPage.filters.selectedAmplicon.value === '' ||
+      selectedAmplicon.value === '' ||
       state.searchPage.blastSearch.sequenceValue === '' ||
       state.searchPage.blastSearch.isSubmitting,
     alerts: state.searchPage.blastSearch.alerts

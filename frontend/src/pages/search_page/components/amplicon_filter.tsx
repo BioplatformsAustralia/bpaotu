@@ -1,10 +1,25 @@
+import * as React from 'react'
 import { get as _get } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { selectAmplicon, selectAmpliconOperator } from '../reducers/amplicon'
-import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
-import { fetchTraits } from '../../../reducers/reference_data/traits'
+import { selectAmplicon, selectAmpliconOperator, getDefaultAmplicon } from '../reducers/amplicon'
 import DropDownFilter from '../../../components/drop_down_filter'
+
+class AmpliconFilter extends React.Component<any> {
+
+  componentDidUpdate() {
+    const defaultAmplicon = getDefaultAmplicon(this.props.options)
+    if (this.props.selected.value === '' && defaultAmplicon) {
+      this.props.selectValue(defaultAmplicon.id)
+    }
+  }
+
+  public render() {
+    return (
+      <DropDownFilter {...this.props} />
+    )
+  }
+}
 
 function mapStateToProps(state) {
   return {
@@ -21,17 +36,13 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
       selectValue: selectAmplicon,
-      selectOperator: selectAmpliconOperator,
-      onChange: updateTaxonomyDropDowns(''),
-      updateTraits: fetchTraits
+      selectOperator: selectAmpliconOperator
     },
     dispatch
   )
 }
 
-const AmpliconFilter = connect(
+export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(DropDownFilter)
-
-export default AmpliconFilter
+)(AmpliconFilter)

@@ -11,17 +11,16 @@ import HistogramChartContextual from './charts/histogram_chart_contextual'
 import StackChartTaxonomy from './charts/stack_chart_taxonomy'
 import StackChartTraits from './charts/stack_chart_traits'
 import SunBurstChartTaxonomy from './charts/sunburst_chart_taxonomy';
-import {AmpliconFilterInfo, TaxonomyFilterInfo, TaxonomyNoAmpliconInfo, TraitFilterInfo} from './amplicon_taxonomy_filter_card'
+import {AmpliconFilterInfo, TaxonomyFilterInfo, TraitFilterInfo} from './amplicon_taxonomy_filter_card'
 import {EnvironmentInfo} from './environment_filter'
 import {ContextualFilterInfo} from './contextual_filter_card'
-import { chart_enabled } from './util'
-
 
 class GraphListed extends React.Component<any> {
 
     graphlist = filter(Object.keys(this.props.contextualGraphdata), val => val !== "am_environment_id")
     public applyEnvironmentFilter(filterName) {
-        const selectedEnvironment = this.props.selectedEnvironment && this.props.selectedEnvironment.value?""+this.props.selectedEnvironment.value:""
+        const selectedEnvironment = this.props.selectedEnvironment && this.props.selectedEnvironment.value ?
+            "" + this.props.selectedEnvironment.value : ""
         const filter = find(this.props.optionscontextualFilter, def => def.name === filterName)
         const filterEnvironent = filter && filter.environment?""+filter.environment:""
         if (selectedEnvironment === "")
@@ -65,9 +64,13 @@ class GraphListed extends React.Component<any> {
                                         <UncontrolledTooltip target="ampliconTipGraph" placement="auto">
                                             {AmpliconFilterInfo}
                                         </UncontrolledTooltip>
-                                        </CardHeader>
+                                    </CardHeader>
                                     <CardBody>
-                                        <PieChartAmplicon selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="amplicon" taxonomyGraphdata={this.props.taxonomyGraphdata.amplicon} />
+                                        <PieChartAmplicon
+                                            selectTab={(e) => {this.props.selectTab(e)}}
+                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                            filter="amplicon"
+                                            taxonomyGraphdata={this.props.taxonomyGraphdata.amplicon} />
                                     </CardBody>
                                 </Card>
                             </Col>
@@ -85,14 +88,23 @@ class GraphListed extends React.Component<any> {
                                         </UncontrolledTooltip>
                                     </CardHeader>
                                     <CardBody>
-                                        {(!this.props.selectedAmplicon || this.props.selectedAmplicon.value === '') &&
-                                            <p className="lead">{TaxonomyNoAmpliconInfo}</p>
-                                        }
-                                        {chart_enabled(this) &&
+                                        {this.props.chart_enabled &&
                                             <>
-                                                <SunBurstChartTaxonomy selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy" taxonomyIsLoading={this.props.taxonomyIsLoading} contextualIsLoading={this.props.contextualIsLoading} taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
-                                                <StackChartTaxonomy selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy_am_environment_id" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
-                                            </>
+                                                <SunBurstChartTaxonomy
+                                                    selectTab={(e) => {this.props.selectTab(e)}}
+                                                    selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                                    filter="taxonomy"
+                                                    taxonomyIsLoading={this.props.taxonomyIsLoading}
+                                                    contextualIsLoading={this.props.contextualIsLoading}
+                                                    taxonomyGraphdata={this.props.taxonomyGraphdata}
+                                                    contextualGraphdata={this.props.contextualGraphdata} />
+                                                <StackChartTaxonomy
+                                                    selectTab={(e) => {this.props.selectTab(e)}}
+                                                    selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                                    filter="taxonomy_am_environment_id"
+                                                    taxonomyGraphdata={this.props.taxonomyGraphdata}
+                                                    contextualGraphdata={this.props.contextualGraphdata} />
+                                            </ >
                                         }
                                     </CardBody>
                                 </Card>
@@ -111,10 +123,19 @@ class GraphListed extends React.Component<any> {
                                         </UncontrolledTooltip>
                                     </CardHeader>
                                     <CardBody>
-                                        {chart_enabled(this) &&
+                                        {this.props.chart_enabled &&
                                             <>
-                                                <PieChartTraits selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="traits" taxonomyGraphdata={this.props.taxonomyGraphdata.traits} />
-                                                <StackChartTraits selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy_am_environment_id" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
+                                                <PieChartTraits
+                                                    selectTab={(e) => {this.props.selectTab(e)}}
+                                                    selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                                    filter="traits"
+                                                    taxonomyGraphdata={this.props.taxonomyGraphdata.traits} />
+                                                <StackChartTraits
+                                                    selectTab={(e) => {this.props.selectTab(e)}}
+                                                    selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                                    filter="taxonomy_am_environment_id"
+                                                    taxonomyGraphdata={this.props.taxonomyGraphdata}
+                                                    contextualGraphdata={this.props.contextualGraphdata} />
                                             </>
                                         }
                                     </CardBody>
@@ -134,10 +155,14 @@ class GraphListed extends React.Component<any> {
                                         </UncontrolledTooltip>
                                     </CardHeader>
                                     <CardBody>
-                                    {chart_enabled(this) &&
-                                        <>
-                                            <PieChartEnvironment selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="am_environment_id" contextualGraphdata={this.props.contextualGraphdata} />
-                                        </>
+                                    {this.props.chart_enabled &&
+                                            <>
+                                                <PieChartEnvironment
+                                                    selectTab={(e) => {this.props.selectTab(e)}}
+                                                    selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                                    filter="am_environment_id"
+                                                    contextualGraphdata={this.props.contextualGraphdata} />
+                                            </>
                                     }
                                     </CardBody>
                                 </Card>
@@ -162,9 +187,23 @@ class GraphListed extends React.Component<any> {
                                                 ?
                                                     find(this.props.optionscontextualFilter, dd => dd.name === graphName && dd.type === "ontology")
                                                     ?
-                                                    <PieChartContextual key={"pie"+graphName} width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter={graphName} contextualGraphdata={this.props.contextualGraphdata} />
+                                                        <PieChartContextual
+                                                            key={"pie" + graphName}
+                                                            width={this.props.chartWidth}
+                                                            height={this.props.chartHeight}
+                                                            selectTab={(e) => {this.props.selectTab(e)}}
+                                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                                            filter={graphName}
+                                                            contextualGraphdata={this.props.contextualGraphdata} />
                                                     :
-                                                    <HistogramChartContextual key={"hist"+graphName} width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter={graphName} contextualGraphdata={this.props.contextualGraphdata} />
+                                                        <HistogramChartContextual
+                                                            key={"hist" + graphName}
+                                                            width={this.props.chartWidth}
+                                                            height={this.props.chartHeight}
+                                                            selectTab={(e) => {this.props.selectTab(e)}}
+                                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                                            filter={graphName}
+                                                            contextualGraphdata={this.props.contextualGraphdata} />
                                                 :
                                                 ""
                                             )

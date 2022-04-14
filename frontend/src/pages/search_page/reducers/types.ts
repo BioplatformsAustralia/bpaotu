@@ -54,8 +54,11 @@ export interface PageState {
   samplesGraphModal: {
     isOpen: boolean
     isLoading: boolean
-    markers: SampleMarker[],
+    markers: SampleMarker[], // FIXME used?
     sample_otus: any[]
+  }
+  metagenomeModal: {
+    sample_id: any
   }
   galaxy: {
     isSubmitting: boolean
@@ -114,6 +117,9 @@ export const searchPageInitialState: PageState = {
     isLoading: false,
     markers: [],
     sample_otus: []
+  },
+  metagenomeModal: {
+    sample_id: null
   },
   galaxy: {
     alerts: [],

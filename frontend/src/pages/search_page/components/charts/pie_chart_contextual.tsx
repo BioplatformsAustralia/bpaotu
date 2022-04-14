@@ -5,7 +5,7 @@ import { find } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import {
-    addContextualFilter, 
+    addContextualFilter,
     changeContextualFilterOperator,
     changeContextualFilterValue,
     changeContextualFilterValue2,
@@ -74,11 +74,11 @@ class PieChartContextual extends React.Component<any> {
       <>
       <Plot
         data={chart_data}
-        layout={{ 
+        layout={{
           autosize: true,
           width: this.props.width, height: this.props.height,
-          title: {'text':title, 'font':{'size': 20}}, 
-         hovermode: 'closest',  
+          title: {'text':title, 'font':{'size': 20}},
+         hovermode: 'closest',
         }}
         config={plotly_chart_config(title)}
         onClick={e => {

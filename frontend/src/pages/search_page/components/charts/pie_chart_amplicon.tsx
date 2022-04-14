@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js';
 import {plotly_chart_config} from './plotly_chart'
 import { connect } from 'react-redux'
 import { startCase } from 'lodash'
+import { getAmpliconFilter } from '../../reducers/amplicon'
 
 class PieChartAmplicon extends React.Component<any> {
   render() {
@@ -65,7 +66,7 @@ class PieChartAmplicon extends React.Component<any> {
 function mapStateToProps(state) {
   return {
     options: state.referenceData.amplicons.values,
-    selected: state.searchPage.filters.selectedAmplicon
+    selected: getAmpliconFilter(state)
   }
 }
 

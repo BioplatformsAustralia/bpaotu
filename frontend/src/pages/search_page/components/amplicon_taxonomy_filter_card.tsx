@@ -1,16 +1,14 @@
 import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
+import { Button, Card, CardBody, CardFooter, CardHeader, Row, Col, UncontrolledTooltip } from 'reactstrap'
 
 import { fetchReferenceData } from '../../../reducers/reference_data/reference_data'
-import { selectAmplicon, getDefaultAmplicon } from '../reducers/amplicon'
 import { selectTrait } from '../reducers/trait'
-
+import { preselectAmplicon, getAmpliconFilter } from '../reducers/amplicon'
+import { EmptyOperatorAndValue } from '../reducers/types'
 import { fetchTraits } from '../../../reducers/reference_data/traits'
-
-import { Button, Card, CardBody, CardFooter, CardHeader, Row, Col, UncontrolledTooltip } from 'reactstrap'
 import { clearAllTaxonomyFilters, fetchTaxonomySources } from '../reducers/taxonomy'
-
 import Octicon from '../../../components/octicon'
 import TraitFilter from './trait_filter'
 import AmpliconFilter from './amplicon_filter'
@@ -29,53 +27,52 @@ export const TaxonomyNoAmpliconInfo =
   'Select Amplicon to filter taxonomy'
 const TaxonomySourceInfo = "Selects the database and method used for taxonomy classification"
 
-export class AmpliconTaxonomyFilterCard extends React.Component<any> {
+
+class TaxonomyFilterCard extends React.Component<any> {
+
+  prevAmplicon = {...EmptyOperatorAndValue}
+
   constructor(props) {
     super(props)
     this.clearFilters = this.clearFilters.bind(this)
   }
 
-  initAmplicon() {
-    const defaultAmplicon = getDefaultAmplicon(this.props.amplicons.values)
-    if(!this.props.selectedAmplicon.value && defaultAmplicon) {
-      this.props.selectAmplicon(defaultAmplicon.id)
+  componentDidMount() {
+    this.prevAmplicon = {...EmptyOperatorAndValue}
+    this.props.preselectAmplicon(this.props.preselectedAmplicon)
+    this.props.fetchReferenceData()
+  }
+
+  componentDidUpdate() {
+    // (re)fetch taxonomy and traits when the amplicon selection becomes available or changes
+    if (this.props.amplicons.values.length > 0 &&
+      this.props.selectedAmplicon.value !== '' &&
+      (this.prevAmplicon.value !== this.props.selectedAmplicon.value ||
+        this.prevAmplicon.operator !== this.props.selectedAmplicon.operator)) {
+      this.prevAmplicon = { ...this.props.selectedAmplicon }
       this.props.fetchTraits()
       this.props.selectTrait('')
       this.props.fetchTaxonomySources()
     }
   }
 
-  componentDidMount() {
-    this.props.fetchReferenceData()
-  }
-
-  componentDidUpdate() {
-    this.initAmplicon()
-  }
-
   public render() {
+    const children = React.Children.toArray(this.props.children)
     return (
       <Card>
         <CardHeader tag="h5">
-          Filter by Amplicon, Taxonomy and Traits
+          { this.props.cardHeader }
         </CardHeader>
         <CardBody className="filters">
-          <AmpliconFilter info={AmpliconFilterInfo} />
-
-          <hr />
+          { children.length? children[0] : null }
           <h5 className="text-center">Taxonomy <span id="taxonomyTip1">
             <Octicon name="info" />
           </span></h5>
           <UncontrolledTooltip target="taxonomyTip1" placement="auto">
             {TaxonomyFilterInfo}
           </UncontrolledTooltip>
-          <Row>
-            <Col>
-              <p className="text-center">
-              {TaxonomyNoAmpliconInfo}
-              </p>
-            </Col>
-          </Row>
+
+          { children.length? children[1] : null}
 
           <TaxonomySelector info={TaxonomySourceInfo} placeholder="Select database and method&hellip;" />
           {TaxonomyDropDowns}
@@ -93,15 +90,16 @@ export class AmpliconTaxonomyFilterCard extends React.Component<any> {
 
   public clearFilters() {
     this.props.clearAllTaxonomyFilters()
-    this.initAmplicon()
+    this.prevAmplicon = { ...EmptyOperatorAndValue }
   }
 }
 
-function mapStateToProps(state) {
+
+function mapStateToProps(state, ownProps) {
   return {
     amplicons: state.referenceData.amplicons,
     traits: state.referenceData.traits,
-    selectedAmplicon: state.searchPage.filters.selectedAmplicon
+    selectedAmplicon:  getAmpliconFilter(state),
   }
 }
 
@@ -111,7 +109,7 @@ function mapDispatchToProps(dispatch: any) {
       fetchReferenceData,
       fetchTaxonomySources,
       fetchTraits,
-      selectAmplicon,
+      preselectAmplicon,
       selectTrait,
       clearAllTaxonomyFilters
     },
@@ -119,7 +117,38 @@ function mapDispatchToProps(dispatch: any) {
   )
 }
 
-export default connect(
+const ConnectedTaxonomyFilterCard =  connect(
   mapStateToProps,
   mapDispatchToProps
-)(AmpliconTaxonomyFilterCard)
+)(TaxonomyFilterCard)
+
+
+export function AmpliconTaxonomyFilterCard() {
+  return (
+    <ConnectedTaxonomyFilterCard
+      preselectedAmplicon=''
+      cardHeader='Filter by amplicon, taxonomy and traits'>
+
+      <React.Fragment>
+        <AmpliconFilter info={AmpliconFilterInfo} />
+        <hr />
+      </React.Fragment>
+
+      <Row>
+        <Col>
+          <p className="text-center">
+            {TaxonomyNoAmpliconInfo}
+          </p>
+        </Col>
+      </Row>
+    </ConnectedTaxonomyFilterCard>
+  )
+}
+
+export function MetagenomeTaxonomyFilterCard() {
+  return (
+    <ConnectedTaxonomyFilterCard
+      preselectedAmplicon={window.otu_search_config.metagenome_amplicon}
+      cardHeader='Filter by taxonomy and traits' />
+  )
+}

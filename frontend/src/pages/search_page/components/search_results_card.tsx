@@ -8,9 +8,11 @@ import Octicon from '../../../components/octicon'
 import { describeSearch } from '../reducers/search'
 import { clearGalaxyAlert, submitToGalaxy, workflowOnGalaxy } from '../reducers/submit_to_galaxy'
 import { clearTips, showPhinchTip } from '../reducers/tips'
+import { openMetagenomeModal, openBulkMetagenomeModal } from '../reducers/metagenome_modal'
 import { GalaxySubmission } from '../reducers/types'
 import SamplesMapModal from './samples_map_modal'
 import SamplesGraphModal from './samples_graph_modal'
+import MetagenomeModal from './metagenome_modal'
 import SearchResultsTable from './search_results_table'
 
 const HeaderButton = props => (
@@ -37,7 +39,29 @@ const HeaderButton = props => (
   </Button>
 )
 
-class SearchResultsCard extends React.Component<any, any> {
+const wrapText = text => ({ __html: text })
+
+const AlertBoxes = props => (
+  <div>
+    {props.alerts.map((alert, idx) => (
+      <Alert
+        key={idx}
+        color={alert.color}
+        className="text-center"
+        toggle={() => props.clearAlerts(idx)}
+      >
+        <div dangerouslySetInnerHTML={wrapText(alert.text)} />
+      </Alert>
+    ))}
+  </div>
+)
+
+const cell_button = (props, action) => (
+   <Button onClick={() => {action(props)}}>{props.value}</Button>
+)
+
+class _SearchResultsCard extends React.Component<any, any> {
+
   constructor(props) {
     super(props)
     this.exportCSV = this.exportCSV.bind(this)
@@ -53,7 +77,6 @@ class SearchResultsCard extends React.Component<any, any> {
         In case, we keep this code, we should probably use something like sanitize-html to make sure we don't end up with
         anything dangerous in the text.
         */
-    const wrapText = text => ({ __html: text })
     return (
       <div>
         <Card>
@@ -66,7 +89,7 @@ class SearchResultsCard extends React.Component<any, any> {
                 <HeaderButton
                   octicon="clippy"
                   text="Export Data to Galaxy Australia for further analysis"
-                  disabled={this.isGalaxySubmissionDisabled() || this.isAmpliconSelected()}
+                  disabled={this.isGalaxySubmissionDisabled()}
                   onClick={this.props.submitToGalaxy}
                 />
               )}
@@ -74,37 +97,15 @@ class SearchResultsCard extends React.Component<any, any> {
                 <HeaderButton
                   octicon="graph"
                   text="Export Data to Galaxy Australia for Krona Taxonomic Abundance Graph"
-                  disabled={this.isGalaxySubmissionDisabled() || this.isAmpliconSelected()}
+                  disabled={this.isGalaxySubmissionDisabled()}
                   onClick={this.props.workflowOnGalaxy}
                 />
               )}
             </div>
           </CardHeader>
           <CardBody>
-            <div>
-              {this.props.galaxy.alerts.map((alert, idx) => (
-                <Alert
-                  key={idx}
-                  color={alert.color}
-                  className="text-center"
-                  toggle={() => this.props.clearGalaxyAlert(idx)}
-                >
-                  <div dangerouslySetInnerHTML={wrapText(alert.text)} />
-                </Alert>
-              ))}
-            </div>
-            <div>
-              {this.props.tips.alerts.map((alert, idx) => (
-                <Alert
-                  key={idx}
-                  color={alert.color}
-                  className="text-center"
-                  toggle={() => this.props.clearTips(idx)}
-                >
-                  <div dangerouslySetInnerHTML={wrapText(alert.text)} />
-                </Alert>
-              ))}
-            </div>
+            <AlertBoxes alerts={this.props.galaxy.alerts} clearAlerts={this.props.clearGalaxyAlert} />
+            <AlertBoxes alerts={this.props.tips.alerts} clearAlerts={this.props.clearTips} />
             <SearchResultsTable />
           </CardBody>
         </Card>
@@ -123,14 +124,10 @@ class SearchResultsCard extends React.Component<any, any> {
     return lastSubmission && !lastSubmission.finished
   }
 
-  public isAmpliconSelected() {
-    return this.props.filters.selectedAmplicon.value===""?true:false
-  }
-
   public export(baseURL, onlyContextual=false) {
     const params = new URLSearchParams()
     params.set('token', this.props.ckanAuthToken)
-    params.set('q', JSON.stringify(describeSearch(this.props.filters, this.props.contexualDataDefinitions)))
+    params.set('q', JSON.stringify(this.props.describeSearch()))
     params.set('only_contextual', onlyContextual?'t':'f')
 
     const url = `${baseURL}?${params.toString()}`
@@ -151,13 +148,38 @@ class SearchResultsCard extends React.Component<any, any> {
   }
 }
 
+const _MetagenomeSearchResultsCard = (props) => (
+  <div>
+    <Card>
+      <CardHeader>
+        <div className="text-center">
+          <HeaderButton octicon="desktop-download"
+            disabled={props.rowsCount < 1}
+            text={(props.rowsCount < 1) ?
+              'Metagenome download unavailable: no samples.'
+              :
+              `Download ZIP archive of selected metagenome files for ${props.rowsCount} samples`}
+            onClick={() => { props.openBulkMetagenomeModal() }} />
+        </div>
+      </CardHeader>
+      <CardBody>
+        <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
+        <SearchResultsTable cell_func={(cell_props) => cell_button(cell_props, props.openMetagenomeModal)} />
+      </CardBody>
+    </Card>
+
+    <SamplesMapModal />
+    <SamplesGraphModal />
+    <MetagenomeModal />
+  </div>
+)
+
 function mapStateToProps(state) {
   return {
     ckanAuthToken: state.auth.ckanAuthToken,
     galaxy: state.searchPage.galaxy,
     tips: state.searchPage.tips,
-    filters: state.searchPage.filters,
-    contexualDataDefinitions: state.contextualDataDefinitions
+    describeSearch: () => describeSearch(state)
   }
 }
 
@@ -168,13 +190,37 @@ function mapDispatchToProps(dispatch) {
       workflowOnGalaxy,
       clearGalaxyAlert,
       clearTips,
-      showPhinchTip,
+      showPhinchTip
     },
     dispatch
   )
 }
 
-export default connect(
+export const SearchResultsCard =  connect(
   mapStateToProps,
   mapDispatchToProps
-)(SearchResultsCard)
+)(_SearchResultsCard)
+
+function mapMgStateToProps(state) {
+  return {
+    rowsCount: state.searchPage.results.rowsCount,
+    tips: state.searchPage.tips,
+  }
+}
+
+function mapMgDispatchToProps(dispatch) {
+  return bindActionCreators(
+    {
+      clearTips,
+      showPhinchTip,
+      openMetagenomeModal,
+      openBulkMetagenomeModal
+    },
+    dispatch
+  )
+}
+
+export const MetagenomeSearchResultsCard = connect(
+  mapMgStateToProps,
+  mapMgDispatchToProps
+)(_MetagenomeSearchResultsCard)
