@@ -187,7 +187,7 @@ class TaxonomyOptions:
 
         def determine_target(state):
             # this query is built up over time, and validates the hierarchy provided to us
-            q = self._session.query(Taxonomy.id).join(OTU)
+            q = self._session.query(Taxonomy.id)
             q = apply_amplicon_filter(q, taxonomy_filter.amplicon_filter)
             for idx, ((taxonomy_attr, ontology_class), taxonomy) in enumerate(zip(TaxonomyOptions.hierarchy, state)):
                 valid = True
@@ -212,11 +212,10 @@ class TaxonomyOptions:
             # clear invalidated part of the state
             state = taxonomy_filter.state_vector[:target_idx] + [None] * (
                 len(TaxonomyOptions.hierarchy) - target_idx)
-            # build up a query of the OTUs for our target attribute
+            # build up a query for our target attribute
             q = self._session.query(
-                getattr(Taxonomy, target_attr), target_class.value).join(OTU).group_by(
+                getattr(Taxonomy, target_attr), target_class.value).group_by(
                     getattr(Taxonomy, target_attr), target_class.value).order_by(target_class.value)
-
             q = apply_amplicon_filter(q, taxonomy_filter.amplicon_filter)
             for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, state):
                 q = apply_taxonomy_filter(taxonomy_attr, q, taxonomy)
@@ -640,7 +639,7 @@ class TaxonomyFilter:
         q: sqlalchemy query object selecting from or joined with OTU()
         """
         q = apply_amplicon_filter(
-            q.filter(OTU.id == Taxonomy.otu_id),
+            q.join(Taxonomy.otus),
             self.amplicon_filter)
         q = apply_trait_filter(q, self.trait_filter)
         for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self.state_vector):
@@ -891,7 +890,7 @@ def apply_taxonomy_filter(taxonomy_attr, q, op_and_val):
     return apply_op_and_val_filter(getattr(Taxonomy, taxonomy_attr), q, op_and_val)
 
 apply_environment_filter = partial(apply_op_and_val_filter, SampleContext.am_environment_id)
-apply_amplicon_filter = partial(apply_op_and_val_filter, OTU.amplicon_id)
+apply_amplicon_filter = partial(apply_op_and_val_filter, Taxonomy.amplicon_id)
 apply_trait_filter = partial(apply_op_and_array_filter, Taxonomy.traits)
 
 

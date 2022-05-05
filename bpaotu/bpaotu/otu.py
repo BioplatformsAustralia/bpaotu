@@ -3,8 +3,8 @@ import os
 
 from citext import CIText
 from django.conf import settings
-from sqlalchemy import (MetaData, ARRAY, Column, Date, Time, Float, ForeignKey, Integer,
-                        String, create_engine, select, Index, UniqueConstraint)
+from sqlalchemy import (MetaData, ARRAY, Table, Column, Date, Time, Float, ForeignKey, Integer,
+                        String, create_engine, select, Index)
 from sqlalchemy.sql import func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
@@ -106,33 +106,40 @@ rank_labels_lookup = (
     ('Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus')
 )
 
+taxonomy_otu = Table(
+    'taxonomy_otu', Base.metadata,
+    Column('otu_id', ForeignKey(SCHEMA + '.otu.id'), primary_key=True),
+    Column('taxonomy_id', ForeignKey(SCHEMA + '.taxonomy.id'), primary_key=True)
+)
 
 class Taxonomy(SchemaMixin, Base):
     """
-    Describes a taxonomy for a particular OTU (see below). Note that there is
-    nothing preventing the same kingdom...species hierarchy being duplicated in
-    this table, and it is quite common for many OTUs to have the same hierarchy.
-    This implies that the OTU - Taxonomy relationship is essentially many-to-one
-    (or many-to-many when taking into account multiple taxonomy sources), but
-    that's been denormalised here.
+    Describes a taxonomy for an OTU (see below). There is a many-to-many
+    relationship betweens OTUs and taxonomies: one taxonomy can have many OTUS
+    and one OTU can be classified as several taxonomies, each with a different
+    taxonomy_source. See taxonomy_otu.
+    Note that each OTU should only have one taxonomy per taxonomy source, but
+    this is difficult to enforce using database design and constraints without
+    allowing other inconsistencies.
     """
     __tablename__ = 'taxonomy'
-    # Each OTU can only have one taxonomy per taxonomy source
-    __table_args__ = (UniqueConstraint('otu_id', 'taxonomy_source_id') ,)
 
     id = Column(Integer, primary_key=True)
-    otu_id = Column(Integer,
-                    ForeignKey(SCHEMA + '.otu.id'), nullable=False, index=True)
+    amplicon_id = ontology_fkey(OTUAmplicon, index=True)
+    amplicon = relationship(OTUAmplicon)
     taxonomy_source_id = ontology_fkey(TaxonomySource, index=True)
     # The taxonomy rank columns are added at runtime - see _setup_taxonomy() below
     traits = Column(ARRAY(String))
 
-    otu = relationship("OTU", back_populates="taxonomies")
+    otus = relationship("OTU",
+                        secondary=taxonomy_otu,
+                        backref="taxonomies")
     taxonomy_source = relationship(TaxonomySource)
 
     def __repr__(self):
-        return "<Taxonomy(%d: %s,%s)>" % (
+        return "<Taxonomy(%d: amp. %d %s,%s)>" % (
             self.id,
+            self.amplicon_id,
             ','.join(getattr(self, a) for a in taxonomy_key_id_names),
             self.traits)
 
@@ -161,15 +168,10 @@ class OTU(SchemaMixin, Base):
     id = Column(Integer, primary_key=True)
     # Think of code as the fingerprint and amplicon as the finger it came from.
     code = Column(String(length=1024), nullable=False)  # long GATTACAt-ype string
-    amplicon_id = ontology_fkey(OTUAmplicon, index=True)
-
-    amplicon = relationship(OTUAmplicon)
-    taxonomies = relationship(Taxonomy)
 
     def __repr__(self):
-        return "<OTU(%d: %s,%s)>" % (
+        return "<OTU(%d: %s)>" % (
             self.id,
-            self.amplicon_id,
             self.code)
 
 
@@ -802,6 +804,7 @@ taxonomy_rank_id_attrs = [getattr(Taxonomy, name) for name in taxonomy_key_id_na
 def _sample_otu_indexes(prefix):
     return [Index(prefix + name + '_idx', name) for name in taxonomy_key_id_names]
 
+
 class OTUSampleOTU(SchemaMixin, Base):
     __table__ = create_materialized_view(
         name='otu_sample_otu',
@@ -810,17 +813,15 @@ class OTUSampleOTU(SchemaMixin, Base):
                 SampleOTU.sample_id,
                 func.count(SampleOTU.otu_id).label("richness"),
                 func.sum(SampleOTU.count).label("count"),
-             ] + taxonomy_rank_id_attrs + [
-                OTU.amplicon_id,
+            ] + taxonomy_rank_id_attrs + [
+                Taxonomy.amplicon_id,
                 Taxonomy.traits
-             ],
+            ],
             from_obj=(
-                SampleOTU.__table__
-                .join(OTU, OTU.id == SampleOTU.otu_id).join(
-                    Taxonomy, OTU.id == Taxonomy.otu_id))
-        ).group_by(SampleOTU.sample_id)
+                SampleOTU.__table__.join(OTU).join(taxonomy_otu).join(Taxonomy)))
+        .group_by(SampleOTU.sample_id)
         .group_by(*taxonomy_rank_id_attrs)
-        .group_by(OTU.amplicon_id)
+        .group_by(Taxonomy.amplicon_id)
         .group_by(Taxonomy.traits),
         metadata=Base.metadata,
         indexes=  _sample_otu_indexes('otu_sample_otu_index_') +   [
@@ -840,16 +841,14 @@ class OTUSampleOTU20K(SchemaMixin, Base):
                 func.count(SampleOTU20K.otu_id).label("richness"),
                 func.sum(SampleOTU20K.count).label("count"),
             ] + taxonomy_rank_id_attrs + [
-                OTU.amplicon_id,
+                Taxonomy.amplicon_id,
                 Taxonomy.traits
             ],
             from_obj=(
-                SampleOTU20K.__table__
-                .join(OTU, OTU.id == SampleOTU20K.otu_id).join(
-                    Taxonomy, OTU.id == Taxonomy.otu_id))
-        ).group_by(SampleOTU20K.sample_id)
+                SampleOTU20K.__table__.join(OTU).join(taxonomy_otu).join(Taxonomy)))
+        .group_by(SampleOTU20K.sample_id)
         .group_by(*taxonomy_rank_id_attrs)
-        .group_by(OTU.amplicon_id)
+        .group_by(Taxonomy.amplicon_id)
         .group_by(Taxonomy.traits),
         metadata=Base.metadata,
         indexes=  _sample_otu_indexes('otu_sample_otu_20k_index_') +   [

@@ -101,7 +101,7 @@ def sample_otu_csv_rows(taxonomy_labels, q):
             format_sample_id(sample_otu.sample_id),
             otu.code,
             sample_otu.count,
-            val_or_empty(otu.amplicon)] +
+            val_or_empty(taxonomy.amplicon)] +
             [val_or_empty(getattr(taxonomy, attr))
              for attr in taxonomy_keys[1:len(taxonomy_labels)+1]] +
             [array_or_empty(taxonomy.traits).replace(",", ";")])
@@ -125,7 +125,8 @@ def tabular_zip_file_generator(params, onlyContextual):
         zf.writestr('info.txt', info_text(params))
         if onlyContextual=='f':
             q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU)
-            taxonomy_lookups = [joinedload(getattr(Taxonomy, rel)) for rel in taxonomy_keys]
+            taxonomy_lookups = [joinedload(getattr(Taxonomy, rel))
+                                for rel in (taxonomy_keys + ['amplicon'])]
             rank1_id_is_value = params.taxonomy_filter.get_rank_equality_value(1)
             taxonomy_labels = taxonomy_labels_by_source[taxonomy_source_id]
             if rank1_id_is_value is None: # not selecting a specific kingdom

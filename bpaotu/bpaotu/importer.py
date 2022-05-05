@@ -20,6 +20,8 @@ from bpaingest.metadata import DownloadMetadata
 from bpaingest.projects.amdb.sqlite_contextual import \
     AustralianMicrobiomeSampleContextualSQLite
 from bpaingest.projects.amdb.ingest import AccessAMDContextualMetadata
+from sqlalchemy import (MetaData, ARRAY, Table, Column, ForeignKey, Integer,
+                        String, select, func, insert, and_)
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema, DropSchema
 from sqlalchemy.sql.expression import text
@@ -37,7 +39,7 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   SampleVegetationType,
                   SampleIntegrityWarnings, SampleVolumeNotes, SampleBioticRelationship,
                   SampleEnvironmentMedium,
-                  SampleHostAssociatedMicrobiomeZone, SampleHostType, Taxonomy,
+                  SampleHostAssociatedMicrobiomeZone, SampleHostType, Taxonomy, taxonomy_otu,
                   make_engine, refresh_otu_sample_otu_mv)
 
 logger = logging.getLogger("rainbow")
@@ -139,7 +141,7 @@ class TaxonomyRowsIterator:
                         if re.search(r'["{}\\]', traits):
                             raise DataImportError('Invalid character in traits "{}" in {}'.format(traits, fname))
                         # Convert String value to PSQL Array Value Input format '{ val1 delim val2 delim ... }'
-                        traits = "{"+",".join('"{}"'.format(i) for i in traits.split(','))+"}"
+                        traits = "{"+",".join('"{}"'.format(i.strip()) for i in traits.split(','))+"}"
                     obj = dict((k, v) for (k, v) in
                                 zip(ranks_for_header, row[1:amplicon_header_index])
                                 if k is not None)
@@ -336,11 +338,11 @@ class DataImporter:
         self._session.add(instance)
         self._session.commit()
 
-    def load_from_csv(self, sql_copy_stmt, fd):
+    def load_from_csv(self, sql_copy_stmt, fd, conn=None):
         try:
             fd.flush()
             fd.seek(0)
-            raw_conn = self._engine.raw_connection()
+            raw_conn = conn.connection if conn else self._engine.raw_connection()
             cur = raw_conn.cursor()
             cur.copy_expert(sql_copy_stmt, fd)
         except:
@@ -354,10 +356,9 @@ class DataImporter:
     def load_taxonomies(self):
         # md5(otu code) -> otu ID, returned
         otu_lookup = {}
-        taxonomy_fields = ( # must match fields in OTU.Taxonomy()
-            ['id', 'otu_id'] +
-            taxonomy_key_id_names + # order here must match `taxonomy_keys' below
-            ['traits'])
+        taxonomy_fields = ( # field names must match field names in tmp_taxonomy_load below
+            ['id', 'amplicon_id', 'otu_id', 'traits'] +
+            taxonomy_key_id_names)
         ontologies = OrderedDict(
             tuple(zip(taxonomy_keys, taxonomy_ontology_classes)) +
             (('amplicon', OTUAmplicon),))
@@ -378,7 +379,7 @@ class DataImporter:
         logger.info("loading taxonomies - pass 2, defining OTUs")
         with tmp_csv_file() as (w, otu_fd), tmp_csv_file() as (w2, tax_fd):
             logger.info("Writing OTUs to temporary CSV file {}".format(otu_fd.name))
-            logger.info("writing taxonomies to temporary CSV file {}".format(tax_fd.name))
+            logger.info("Writing taxonomies to temporary CSV file {}".format(tax_fd.name))
             for (_id, row) in enumerate(taxonomy_rows_iter, 1):
                 ts_id = taxonomy_source_id_by_name[row['taxonomy_source']]
                 otu_key = otu_hash(row['otu'], row['amplicon_code'])
@@ -395,23 +396,69 @@ class DataImporter:
                     taxonomy_source_ids.add(ts_id)
                 else:
                     otu_lookup[otu_key] = otu_lookup_val = (_id, {ts_id})
-                    val = row.get('amplicon', '')
-                    otu_row = [_id, row['otu'], mappings.get('amplicon').get(val, "")]
+                    otu_row = [_id, row['otu']]
                     w.writerow(otu_row)
 
-                taxonomy_row = [_id, otu_lookup_val[0]]
-                for field in taxonomy_keys:
-                    val = row.get(field, '')
-                    taxonomy_row.append(mappings.get(field).get(val, ""))
-                taxonomy_row.append(row['traits'])
-                w2.writerow(taxonomy_row)
+                taxonomy_row = [_id,
+                                mappings.get('amplicon').get(row.get('amplicon', ''), ""),
+                                otu_lookup_val[0],
+                                row['traits']] + [
+                    mappings.get(field).get(row.get(field, ''), "")
+                    for field in taxonomy_keys]
+                w2.writerow(taxonomy_row) # Column order must match taxonomy_fields
 
             logger.info("Loading OTU data from {}".format(otu_fd.name))
-            self.load_from_csv("COPY otu.otu (id, code, amplicon_id) FROM STDIN CSV", otu_fd)
-            logger.info("Loading taxonomy data from {}".format(tax_fd.name))
-            self.load_from_csv("COPY otu.taxonomy (" +
-                               ",".join(taxonomy_fields) +
-                               ") FROM STDIN CSV", tax_fd)
+            self.load_from_csv("COPY otu.otu (id, code) FROM STDIN CSV", otu_fd)
+
+            # Build the OTU-Taxonomy many-to-many relationships by loading the
+            # taxonomy file data into a temporary table, then deriving
+            # Taxonomy() and OTU() from that.
+
+            with self._engine.begin() as conn:
+                # New session to contain temporary table lifetime
+                tmp_metadata = MetaData()
+                rank_columns = [
+                    Column(rank_id, Integer, nullable=False)
+                    for rank_id in taxonomy_key_id_names]
+                temp_table = Table(
+                    "tmp_taxonomy_load", tmp_metadata,
+                    Column("id", Integer, nullable=False, primary_key=True),
+                    Column("amplicon_id", Integer, nullable=False),
+                    Column("otu_id", Integer, nullable=False),
+                    Column('traits', ARRAY(String)),
+                    *rank_columns,
+                    prefixes=['TEMPORARY']
+                )
+                temp_table.create(conn)
+                logger.info("Reading taxonomy data from {}".format(tax_fd.name))
+                self.load_from_csv("COPY tmp_taxonomy_load (" +
+                                ",".join(taxonomy_fields) +
+                                ") FROM STDIN CSV", tax_fd, conn)
+                # Build Taxonomy() from unique taxonomies + amplicon + traits in
+                # tmp_taxonomy_load
+                sel = select(
+                    [func.min(temp_table.c.id), temp_table.c.amplicon_id, temp_table.c.traits] +
+                    [getattr(temp_table.c, name) for name in taxonomy_key_id_names]
+                ).group_by('amplicon_id', 'traits', *taxonomy_key_id_names)
+                logger.info("Creating taxonomies")
+                conn.execute(
+                    insert(Taxonomy).from_select(
+                        ['id', 'amplicon_id','traits'] + taxonomy_key_id_names,
+                        sel)
+                )
+                # Build the association table that links Taxonomy() to OTU()
+                join_clauses = [getattr(temp_table.c, name) == getattr(Taxonomy.__table__.c, name)
+                                for name in (taxonomy_key_id_names + ['amplicon_id'])]
+                traits_clause = ((Taxonomy.__table__.c.traits == temp_table.c.traits) |
+                                 ((Taxonomy.__table__.c.traits == None) &
+                                  (temp_table.c.traits == None)))
+                logger.info("Connecting OTUs to taxonomies")
+                conn.execute(
+                    insert(taxonomy_otu).from_select(
+                        ['taxonomy_id', 'otu_id'],
+                        select([Taxonomy.id, temp_table.c.otu_id]).select_from(
+                            temp_table.join(Taxonomy, and_(traits_clause, *join_clauses)))
+                    ))
 
         for fname, info in taxonomy_rows_iter.taxonomy_file_info.items():
             self.make_file_log(fname, **info)
