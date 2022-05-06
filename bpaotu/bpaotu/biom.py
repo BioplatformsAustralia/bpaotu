@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import zipstream
+from sqlalchemy.orm import joinedload
 
 from .query import (
     SampleOTU,
@@ -76,8 +77,10 @@ def biom_header(comment):
 
 
 def otu_rows(query, otu_to_row):
-    q = query.matching_otus().join(Taxonomy).add_entity(Taxonomy)
     taxonomy_fields = taxonomy_keys[1:]
+    taxonomy_lookups = [joinedload(getattr(Taxonomy, rel))
+                        for rel in (taxonomy_fields + ['amplicon'])]
+    q = query.matching_otus().add_entity(Taxonomy).options(taxonomy_lookups)
 
     for idx, row in enumerate(q.yield_per(50)):
         def get_value(obj, attr):
@@ -87,7 +90,7 @@ def otu_rows(query, otu_to_row):
         taxonomy_array = [get_value(row.Taxonomy, f) for f in taxonomy_fields]
         yield '{"id": "%s","metadata": {%s,%s}}' % (
             row.OTU.code,
-            k_v('amplicon', get_value(row.OTU, 'amplicon')),
+            k_v('amplicon', get_value(row.Taxonomy, 'amplicon')),
             k_v('taxonomy', taxonomy_array))
 
 
