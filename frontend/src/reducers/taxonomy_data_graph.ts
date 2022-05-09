@@ -11,7 +11,7 @@ const { fetchTaxonomyDataForGraphStarted, fetchTaxonomyDataForGraphEnded } = cre
 
 export const fetchTaxonomyDataForGraph = () => (dispatch, getState) => {
   const state = getState();
-  const filters = describeSearch(state.searchPage.filters, state.contextualDataDefinitions)
+  const filters = describeSearch(state)
   const options = {
     ...state.contextualPage.results,
     columns: reject(map(state.contextualPage.selectColumns.columns, c => c.name), name => isEmpty(name))

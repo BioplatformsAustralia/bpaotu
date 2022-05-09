@@ -2,9 +2,11 @@ import { find, get as _get, isEmpty, map, reject, uniq } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
 
 import { executeSearch } from '../../../api'
+import { getAmpliconFilter }  from '../reducers/amplicon'
 import { submitToGalaxyEnded, submitToGalaxyStarted } from './submit_to_galaxy'
 import { ErrorList, searchPageInitialState } from './types'
 import { taxonomy_keys } from '../../../constants'
+
 
 export const { changeTableProperties, searchStarted, searchEnded } = createActions(
   'CHANGE_TABLE_PROPERTIES',
@@ -54,8 +56,10 @@ function marshallContextual(state, contextualDataDefinitions) {
   }
 }
 
-export const describeSearch = (stateFilters, contextualDataDefinitions) => {
-  const selectedAmplicon = stateFilters.selectedAmplicon
+export const describeSearch = (state) => {
+  const stateFilters = state.searchPage.filters
+  const contextualDataDefinitions = state.contextualDataDefinitions
+  const selectedAmplicon = getAmpliconFilter(state)
   const selectedTrait = stateFilters.selectedTrait
   const selectedTaxonomies = map(taxonomy_keys, taxonomy => stateFilters.taxonomy[taxonomy].selected)
 
@@ -72,7 +76,7 @@ export const search = () => (dispatch, getState) => {
 
   dispatch(searchStarted())
 
-  const filters = describeSearch(state.searchPage.filters, state.contextualDataDefinitions)
+  const filters = describeSearch(state)
 
   const options = {
     ...state.searchPage.results,

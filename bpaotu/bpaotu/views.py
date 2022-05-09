@@ -158,6 +158,7 @@ def api_config(request):
             else reverse('dev_only_ckan_check_permissions')),
         'galaxy_integration': settings.GALAXY_INTEGRATION,
         'default_amplicon': settings.DEFAULT_AMPLICON,
+        'metagenome_amplicon': 'metaxa_from_metagenomes'
     }
     return JsonResponse(config)
 

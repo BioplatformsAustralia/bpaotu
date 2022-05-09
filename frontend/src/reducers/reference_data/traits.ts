@@ -2,18 +2,19 @@ import { map } from 'lodash'
 import { createActions, handleAction } from 'redux-actions'
 import { getTraits } from '../../api'
 import { selectTrait } from '../../pages/search_page/reducers/trait'
+import { getAmpliconFilter } from '../../pages/search_page/reducers/amplicon'
 
 export const { fetchTraitsStarted, fetchTraitsEnded } = createActions(
   'FETCH_TRAITS_STARTED',
   'FETCH_TRAITS_ENDED'
 )
 
-export const fetchTraits = (dispatch: any, getState) => {
+export const fetchTraits = () => {
   return (dispatch: any, getState) => {
     dispatch(selectTrait(''))
     dispatch(fetchTraitsStarted())
     const state = getState()
-    return getTraits(state.searchPage.filters.selectedAmplicon)
+    return getTraits(getAmpliconFilter(state))
       .then(data => {
         dispatch(fetchTraitsEnded(data))
       })

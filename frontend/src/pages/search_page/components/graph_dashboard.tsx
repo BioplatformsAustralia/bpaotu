@@ -6,6 +6,15 @@ import { fetchContextualDataForGraph } from '../../../reducers/contextual_data_g
 import { fetchTaxonomyDataForGraph } from '../../../reducers/taxonomy_data_graph'
 import GraphListed from './graph_listed';
 import GraphTabbed from './graph_tabbed';
+import { taxonomy_ranks } from '../../../constants'
+
+const top_level = taxonomy_ranks[0];
+
+function chart_enabled(state) {
+    return ((!state.taxonomyDataForGraph.isLoading) &&
+        (!state.contextualDataForGraph.isLoading) &&
+        (!state.searchPage.filters.taxonomy[top_level].isDisabled))
+}
 
 class GraphDashboard extends React.Component<any> {
 
@@ -32,7 +41,7 @@ class GraphDashboard extends React.Component<any> {
         }
         return false;
     }
-  
+
     render() {
         const loadingstyle= {
             display: 'flex',
@@ -40,11 +49,11 @@ class GraphDashboard extends React.Component<any> {
             justifyContent: 'center',
             alignItems: 'center'
         };
-        
+
         return (
             <>
                 {this.props.contextualIsLoading || this.props.taxonomyIsLoading
-                    ? 
+                    ?
                     <div style={loadingstyle}>
                         <AnimateHelix />
                     </div>
@@ -53,49 +62,39 @@ class GraphDashboard extends React.Component<any> {
                         {
                             (this.props.showTabbedGraph)
                             ?
-                            <GraphTabbed 
+                            <GraphTabbed
                                 selectedEnvironment={this.props.selectedEnvironment}
-                                selectedAmplicon={this.props.selectedAmplicon}
-                                selectedTrait={this.props.selectedTrait}
-                                taxonomy={this.props.taxonomy}
+                                chart_enabled={this.props.chart_enabled}
                                 optionsEnvironment={this.props.optionsEnvironment}
                                 optionscontextualFilter={this.props.optionscontextualFilter}
                                 contextualIsLoading={this.props.contextualIsLoading}
                                 contextualGraphdata={this.props.contextualGraphdata}
                                 taxonomyIsLoading={this.props.taxonomyIsLoading}
                                 taxonomyGraphdata={this.props.taxonomyGraphdata}
-                                fetchContextualDataForGraph={fetchContextualDataForGraph}
-                                fetchTaxonomyDataForGraph={fetchTaxonomyDataForGraph}
-                                tabSelected={this.props.tabSelected} 
+                                tabSelected={this.props.tabSelected}
                                 selectTab={(e) => {this.props.selectTab(e)}}
-                                scrollToSelected={this.props.scrollToSelected} 
-                                selectToScroll={(e) => {this.props.selectToScroll(e)}} 
-                                
+                                scrollToSelected={this.props.scrollToSelected}
+                                selectToScroll={(e) => {this.props.selectToScroll(e)}}
+
                             />
                             :
-                            <GraphListed 
+                            <GraphListed
                                 selectedEnvironment={this.props.selectedEnvironment}
-                                selectedAmplicon={this.props.selectedAmplicon}
-                                selectedTrait={this.props.selectedTrait}
-                                taxonomy={this.props.taxonomy}
-                                optionsEnvironment={this.props.optionsEnvironment}
+                                chart_enabled={this.props.chart_enabled}
                                 optionscontextualFilter={this.props.optionscontextualFilter}
                                 contextualIsLoading={this.props.contextualIsLoading}
                                 contextualGraphdata={this.props.contextualGraphdata}
                                 taxonomyIsLoading={this.props.taxonomyIsLoading}
                                 taxonomyGraphdata={this.props.taxonomyGraphdata}
-                                fetchContextualDataForGraph={fetchContextualDataForGraph}
-                                fetchTaxonomyDataForGraph={fetchTaxonomyDataForGraph}
-                                scrollToSelected={this.props.scrollToSelected} 
+                                scrollToSelected={this.props.scrollToSelected}
                                 selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                tabSelected={this.props.tabSelected} 
                                 selectTab={(e) => {this.props.selectTab(e)}}
                                 data-tut="reactour__graph_listed"
                             />
                         }
                     </div>
                 }
-            </>          
+            </>
         )
     }
 }
@@ -103,9 +102,7 @@ class GraphDashboard extends React.Component<any> {
 function mapStateToProps(state) {
     return {
         selectedEnvironment: state.searchPage.filters.contextual.selectedEnvironment,
-        selectedAmplicon:  state.searchPage.filters.selectedAmplicon,
-        selectedTrait:  state.searchPage.filters.selectedTrait,
-        taxonomy: state.searchPage.filters.taxonomy,
+        chart_enabled: chart_enabled(state),
         optionsEnvironment: state.contextualDataDefinitions.environment,
         optionscontextualFilter: state.contextualDataDefinitions.filters,
         contextualIsLoading: state.contextualDataForGraph.isLoading,

@@ -11,18 +11,20 @@ import HistogramChartContextual from './charts/histogram_chart_contextual'
 import StackChartTaxonomy from './charts/stack_chart_taxonomy'
 import StackChartTraits from './charts/stack_chart_traits'
 import SunBurstChartTaxonomy from './charts/sunburst_chart_taxonomy';
-import {AmpliconFilterInfo, TaxonomyFilterInfo, TaxonomyNoAmpliconInfo, TraitFilterInfo} from './amplicon_taxonomy_filter_card'
+import {AmpliconFilterInfo, TaxonomyFilterInfo, TraitFilterInfo} from './amplicon_taxonomy_filter_card'
 import {EnvironmentInfo} from './environment_filter'
 import {ContextualFilterInfo} from './contextual_filter_card'
 import classnames from 'classnames'
-import { chart_enabled } from './util'
-
 
 class ContextualTab extends React.Component<any>  {
 
     tablist = filter(Object.keys(this.props.contextualGraphdata), val => val !== "am_environment_id")
     state = {
-        activeContextualTab: this.tablist.includes(this.props.scrollToSelected)?"tab_"+this.props.scrollToSelected:(this.props.selectedEnvironment && this.props.selectedEnvironment.value === 1?'tab_sample_type_id':'tab_vegetation_type_id')
+        activeContextualTab: this.tablist.includes(this.props.scrollToSelected) ?
+            "tab_" + this.props.scrollToSelected
+            :
+            (this.props.selectedEnvironment && this.props.selectedEnvironment.value === 1 ?
+                'tab_sample_type_id' : 'tab_vegetation_type_id')
     };
 
     public toggleContextualTab = tab => {
@@ -82,9 +84,21 @@ class ContextualTab extends React.Component<any>  {
                             {
                                 find(this.props.optionscontextualFilter, dd => dd.name === tab && dd.type === "ontology")
                                 ?
-                                <PieChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter={tab} contextualGraphdata={this.props.contextualGraphdata} />
+                                        <PieChartContextual
+                                            width={this.props.chartWidth}
+                                            height={this.props.chartHeight}
+                                            selectTab={(e) => {this.props.selectTab(e)}}
+                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                            filter={tab}
+                                            contextualGraphdata={this.props.contextualGraphdata} />
                                 :
-                                <HistogramChartContextual width={this.props.chartWidth} height={this.props.chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter={tab} contextualGraphdata={this.props.contextualGraphdata} />
+                                        <HistogramChartContextual
+                                            width={this.props.chartWidth}
+                                            height={this.props.chartHeight}
+                                            selectTab={(e) => {this.props.selectTab(e)}}
+                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                            filter={tab}
+                                            contextualGraphdata={this.props.contextualGraphdata} />
                             }
                         </TabPane>
                         ))
@@ -237,15 +251,26 @@ class GraphTabbed extends React.Component<any> {
                         </Nav>
                         <TabContent activeTab={this.props.tabSelected}>
                             <TabPane tabId="tab_amplicon">
-                                <PieChartAmplicon width={chartWidth} height={chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="amplicon" taxonomyGraphdata={this.props.taxonomyGraphdata.amplicon} />
+                                <PieChartAmplicon
+                                    width={chartWidth}
+                                    height={chartHeight}
+                                    selectTab={(e) => {this.props.selectTab(e)}}
+                                    selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                    filter="amplicon"
+                                    taxonomyGraphdata={this.props.taxonomyGraphdata.amplicon} />
                             </TabPane>
                             <TabPane tabId="tab_taxonomy" data-tut="reactour__graph_taxonomy_page">
-                                {(!this.props.selectedAmplicon || this.props.selectedAmplicon.value === '') &&
-                                    <p className="lead">{TaxonomyNoAmpliconInfo}</p>
-                                }
-                                {chart_enabled(this) &&
+                                {this.props.chart_enabled &&
                                     <>
-                                        <SunBurstChartTaxonomy width={chartWidth} height={chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy" taxonomyIsLoading={this.props.taxonomyIsLoading} contextualIsLoading={this.props.contextualIsLoading} taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
+                                    <SunBurstChartTaxonomy
+                                        width={chartWidth} height={chartHeight}
+                                        selectTab={(e) => {this.props.selectTab(e)}}
+                                        selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                        filter="taxonomy"
+                                        taxonomyIsLoading={this.props.taxonomyIsLoading}
+                                        contextualIsLoading={this.props.contextualIsLoading}
+                                        taxonomyGraphdata={this.props.taxonomyGraphdata}
+                                        contextualGraphdata={this.props.contextualGraphdata} />
                                     </>
                                 }
                             </TabPane>
@@ -257,14 +282,26 @@ class GraphTabbed extends React.Component<any> {
                                     </div>
                                     :
                                     <>
-                                        <PieChartTraits width={chartWidth} height={chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="traits" taxonomyGraphdata={this.props.taxonomyGraphdata.traits} />
+                                        <PieChartTraits
+                                            width={chartWidth}
+                                            height={chartHeight}
+                                            selectTab={(e) => {this.props.selectTab(e)}}
+                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                            filter="traits"
+                                            taxonomyGraphdata={this.props.taxonomyGraphdata.traits} />
                                     </>
                                 }
                             </TabPane>
                             <TabPane tabId="tab_am_environment_id">
-                                {chart_enabled(this) &&
+                                {this.props.chart_enabled &&
                                     <>
-                                        <PieChartEnvironment width={chartWidth} height={chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="am_environment_id" contextualGraphdata={this.props.contextualGraphdata} />
+                                        <PieChartEnvironment
+                                            width={chartWidth}
+                                            height={chartHeight}
+                                            selectTab={(e) => {this.props.selectTab(e)}}
+                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                            filter="am_environment_id"
+                                            contextualGraphdata={this.props.contextualGraphdata} />
                                     </>
                                 }
                             </TabPane>
@@ -291,10 +328,17 @@ class GraphTabbed extends React.Component<any> {
                                 </div>
                             </TabPane>
                             <TabPane tabId="tab_taxonomy_am_environment_id">
-                                {(chart_enabled(this))
+                                {this.props.chart_enabled
                                     ?
                                     <>
-                                        <StackChartTaxonomy width={chartWidth} height={chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy_am_environment_id" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
+                                        <StackChartTaxonomy
+                                            width={chartWidth}
+                                            height={chartHeight}
+                                            selectTab={(e) => {this.props.selectTab(e)}}
+                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                            filter="taxonomy_am_environment_id"
+                                            taxonomyGraphdata={this.props.taxonomyGraphdata}
+                                            contextualGraphdata={this.props.contextualGraphdata} />
                                     </>
                                     :
                                     <div style={loadingstyle}>
@@ -303,11 +347,18 @@ class GraphTabbed extends React.Component<any> {
                                 }
                             </TabPane>
                             <TabPane tabId="tab_traits_am_environment_id">
-                                {(chart_enabled(this))
+                                {this.props.chart_enabled
                                     ?
                                     <>
-                                        <StackChartTraits width={chartWidth} height={chartHeight} selectTab={(e) => {this.props.selectTab(e)}} selectToScroll={(e) => {this.props.selectToScroll(e)}} filter="taxonomy_am_environment_id" taxonomyGraphdata={this.props.taxonomyGraphdata} contextualGraphdata={this.props.contextualGraphdata} />
-                                    </>
+                                        <StackChartTraits
+                                            width={chartWidth}
+                                            height={chartHeight}
+                                            selectTab={(e) => {this.props.selectTab(e)}}
+                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
+                                            filter="taxonomy_am_environment_id"
+                                            taxonomyGraphdata={this.props.taxonomyGraphdata}
+                                            contextualGraphdata={this.props.contextualGraphdata} />
+                                    </ >
                                     :
                                     <div style={loadingstyle}>
                                         <AnimateHelix />

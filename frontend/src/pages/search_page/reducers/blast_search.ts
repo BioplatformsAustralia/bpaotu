@@ -50,7 +50,7 @@ export const runBlast = () => (dispatch, getState) => {
 
   dispatch(runBlastStarted())
 
-  const filters = describeSearch(state.searchPage.filters, state.contextualDataDefinitions)
+  const filters = describeSearch(state)
   const searchString = state.searchPage.blastSearch.sequenceValue
 
   executeBlast(searchString, filters)

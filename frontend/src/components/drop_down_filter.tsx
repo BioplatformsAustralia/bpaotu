@@ -15,7 +15,6 @@ interface Props {
   selectValue: (id: string) => void
   selectOperator: (id: string) => void
   onChange: (id: string) => void
-  updateTraits: (id: string) => void
 }
 
 export default class DropDownFilter extends React.Component<any> {
@@ -92,9 +91,6 @@ export default class DropDownFilter extends React.Component<any> {
   public onValueChange(evt) {
     const id = evt.value
     this.props.selectValue(id)
-    if (this.props.updateTraits) {
-      this.props.updateTraits()
-    }
     if (this.props.onChange) {
       this.props.onChange()
     }
