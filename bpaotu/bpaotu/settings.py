@@ -108,35 +108,11 @@ DATE_FORMAT = "d-m-Y"
 SHORT_DATE_FORMAT = "d/m/Y"
 
 # used by maps when plotting sample location
-GIS_SOURCE_RID = 4326
+GIS_SOURCE_RID = 4326 # FIXME GIS_* used?
 GIS_TARGET_RID = 3857
 GIS_CENTER = (134.0, -26.0)
 GIS_POINT_ZOOM = 12
 GIS_OPENLAYERS_URL = "https://cdnjs.cloudflare.com/ajax/libs/openlayers/2.13.1/OpenLayers.js"
-
-LEAFLET_CONFIG = {
-    'DEFAULT_CENTER': (-25.27, 133.775),
-    'DEFAULT_ZOOM': 4,
-    'ATTRIBUTION_PREFIX': '',
-    'TILES': [
-        ('ESRI',
-         '//server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-         {'attribution':
-          '&copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-          }, ),
-        ('OSM B&W',
-         '//{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png',
-         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
-        ('Thunderforest Landscape',
-         '//{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png',
-         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
-        ('ISM Seamark',
-         '//tiles.openseamap.org/seamark/{z}/{x}/{y}.png',
-         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
-    ],
-    'MINIMAP': True,
-    'RESET_VIEW': False
-}
 
 SITE_ID = 1
 
@@ -205,7 +181,7 @@ INSTALLED_APPS = ('django.contrib.auth',
                   'django.contrib.sites',
                   'django.contrib.messages',
                   'django.contrib.staticfiles',
-                  'django.contrib.gis',
+                  'django.contrib.gis', # FIXME used?
                   'django_extensions',
                   'django.contrib.admin',
                   'django.contrib.admindocs',
@@ -391,7 +367,7 @@ CHMOD_GROUP = env.get("repo_group", "apache")
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # ingest all
-DOWNLOADS_CHECKER_USER = env.get('downloads_checker_user', 'downloads_checker')
+DOWNLOADS_CHECKER_USER = env.get('downloads_checker_user', 'downloads_checker') # FIXME used?
 DOWNLOADS_CHECKER_PASS = env.get('downloads_checker_pass', 'ch3ck3r')
 DOWNLOADS_CHECKER_SLEEP = env.get('downloads_checker_sleep', 0.0)
 
@@ -412,4 +388,4 @@ GALAXY_KRONA_WORKFLOW_ID = env.get('galaxy_krona_workflow_id', 'bf002aa8f96f4e7b
 NONDENOISED_REQUEST_EMAIL = env.get('nondenoised_request_email', 'am-data-requests@bioplatforms.com')
 
 # Default amplicon
-DEFAULT_AMPLICON = env.get('DEFAULT_AMPLICON', '27f519r_bacteria')
+DEFAULT_AMPLICON = env.get('DEFAULT_AMPLICON', '27f519r_bacteria') # FIXME DRY frontend/src/pages/search_page/reducers/amplicon.ts
