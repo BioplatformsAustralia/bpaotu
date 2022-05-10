@@ -67,7 +67,6 @@ export const updateTaxonomyDropDowns = taxonomy => () => (dispatch, getState) =>
 }
 
 export const clearAllTaxonomyFilters = createAction('CLEAR_ALL_TAXONOMY_FILTERS')
-export const fetchTaxonomySources = makeTaxonomyFetcher(taxonomyConfigFor('taxonomy_source'))
 
 // Generic taxonomy reducers
 

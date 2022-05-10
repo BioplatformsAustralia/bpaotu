@@ -8,7 +8,7 @@ import { selectTrait } from '../reducers/trait'
 import { preselectAmplicon, getAmpliconFilter } from '../reducers/amplicon'
 import { EmptyOperatorAndValue } from '../reducers/types'
 import { fetchTraits } from '../../../reducers/reference_data/traits'
-import { clearAllTaxonomyFilters, fetchTaxonomySources } from '../reducers/taxonomy'
+import { clearAllTaxonomyFilters, updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import Octicon from '../../../components/octicon'
 import TraitFilter from './trait_filter'
 import AmpliconFilter from './amplicon_filter'
@@ -52,7 +52,7 @@ class TaxonomyFilterCard extends React.Component<any> {
       this.prevAmplicon = { ...this.props.selectedAmplicon }
       this.props.fetchTraits()
       this.props.selectTrait('')
-      this.props.fetchTaxonomySources()
+      this.props.updateTaxonomy()
     }
   }
 
@@ -107,7 +107,7 @@ function mapDispatchToProps(dispatch: any) {
   return bindActionCreators(
     {
       fetchReferenceData,
-      fetchTaxonomySources,
+      updateTaxonomy: updateTaxonomyDropDowns(''),
       fetchTraits,
       preselectAmplicon,
       selectTrait,
