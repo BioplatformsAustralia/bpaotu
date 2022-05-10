@@ -103,6 +103,9 @@ export default class DropDownFilter extends React.Component<any> {
   public onOperatorChange(evt: any) {
     const value = evt.target.value
     this.props.selectOperator(value)
+    if (this.props.updateTraits) {
+      this.props.updateTraits()
+    }
     if (this.props.onChange) {
       this.props.onChange()
     }
