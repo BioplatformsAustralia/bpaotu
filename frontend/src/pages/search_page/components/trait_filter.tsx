@@ -4,6 +4,7 @@ import { bindActionCreators } from 'redux'
 import { selectTrait, selectTraitOperator } from '../reducers/trait'
 
 import DropDownFilter from '../../../components/drop_down_filter'
+import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 
 function mapStateToProps(state) {
   return {
@@ -21,6 +22,7 @@ function mapDispatchToProps(dispatch) {
     {
       selectValue: selectTrait,
       selectOperator: selectTraitOperator,
+      onChange: updateTaxonomyDropDowns('')
     },
     dispatch
   )
