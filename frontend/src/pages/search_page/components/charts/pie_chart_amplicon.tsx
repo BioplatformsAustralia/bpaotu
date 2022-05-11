@@ -2,36 +2,26 @@ import React from 'react';
 import Plot from 'react-plotly.js';
 import {plotly_chart_config} from './plotly_chart'
 import { connect } from 'react-redux'
-import { startCase } from 'lodash'
+import { startCase, fromPairs, unzip } from 'lodash'
 import { getAmpliconFilter } from '../../reducers/amplicon'
 
 class PieChartAmplicon extends React.Component<any> {
   render() {
     let graphData = this.props.taxonomyGraphdata
+    if (!graphData) {
+      return (null)
+    }
     const title = startCase(this.props.filter)  +' Plot'
-    let labels = []
-    let text = []
-    let values = []
+    const ampliconsById = fromPairs(this.props.options.map(kv => [kv.id, kv.value]))
 
-    if(graphData) {
-      for (const [id, sum] of Object.entries(graphData)) {
-        text.push(id)
-        values.push(sum)
-      }
-    }
-
-    for(let option of this.props.options){
-        if(this.props.selected.value === '' || String(this.props.selected.value) === String(option.id)) {
-            labels.push(option.value)
-            text.push(option.id)
-        }
-    }
+    const [labels, values] = unzip(
+      Object.entries(graphData).map(
+        ([id, sum]) => [ampliconsById[id], sum]))
 
     let chart_data = [
       {
         values: values,
         labels: labels,
-        text: text,
         textinfo: 'label+value+percent',
         automargin: true,
         opacity: 0.8,
