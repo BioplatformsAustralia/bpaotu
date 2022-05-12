@@ -5,19 +5,26 @@ import {Alert} from 'reactstrap'
 import ReactTable from 'react-table'
 import 'react-table/react-table.css'
 
+const sample_link = props => (
+  <div>
+    <a href={bpaIDToCKANURL(props.value)} target="_blank" rel="noopener noreferrer">
+      {props.value}
+    </a>
+  </div>
+)
+
 export class SearchResultsTable extends React.Component<any> {
+
+   static defaultProps = {
+    cell_func: sample_link
+  }
+
   public defaultColumns = [
     {
       Header: 'Sample ID',
       accessor: 'sample_id',
       sortable: true,
-      Cell: row => (
-        <div>
-          <a href={bpaIDToCKANURL(row.value)} target="_blank" rel="noopener noreferrer">
-            {row.value}
-          </a>
-        </div>
-      )
+      Cell: this.props.cell_func
     },
     {
       Header: 'Environment',

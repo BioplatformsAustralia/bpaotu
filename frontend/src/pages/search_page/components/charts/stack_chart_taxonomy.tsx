@@ -36,7 +36,7 @@ class StackChartTaxonomy extends React.Component<any> {
           am_environments.push("Non selected "+find(environment, (option) => option.id === parseInt(am_environment)).name)
         }
       }
-      for(const taxa_values of Object.values(taxonomyGraphdata.am_environment_all)) 
+      for(const taxa_values of Object.values(taxonomyGraphdata.am_environment_all))
       {
         const taxa_id = taxa_values[0]
         const taxa_abundance = taxa_values[1]
@@ -103,15 +103,15 @@ class StackChartTaxonomy extends React.Component<any> {
         data={data}
         layout={{
           autosize: true,
-          width: this.props.width, height: this.props.height, 
+          width: this.props.width, height: this.props.height,
           dragmode:'False', //['orbit', 'turntable', 'zoom', 'pan', False]
-          title: {'text':title, 'font':{'size': 20}}, 
-          hovermode: 'closest', 
+          title: {'text':title, 'font':{'size': 20}},
+          hovermode: 'closest',
           barmode:'relative',
           barnorm: 'percent',
-          yaxis: {title: '% Composition', /*tickformat:',e'*/}, 
-          xaxis: {title: 'AM_Environment', 
-          type:"category", 
+          yaxis: {title: '% Composition', /*tickformat:',e'*/},
+          xaxis: {title: 'AM_Environment',
+          type:"category",
           categoryorder:"array",
           categoryarray:{category_order}
         },

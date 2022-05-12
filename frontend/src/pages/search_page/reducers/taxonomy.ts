@@ -5,6 +5,7 @@ import { EmptyOperatorAndValue, EmptySelectableLoadableValues, searchPageInitial
 import { taxonomy_keys } from '../../../constants'
 
 import { getTaxonomy } from '../../../api'
+import { getAmpliconFilter }  from '../reducers/amplicon'
 
 // Generic Taxonomy Actions
 
@@ -29,7 +30,7 @@ const taxonomyConfigFor = target => ({ type: target, taxonomies: taxonomiesBefor
 const makeTaxonomyFetcher = config => () => (dispatch, getState) => {
   const state = getState()
 
-  const selectedAmplicon = state.searchPage.filters.selectedAmplicon
+  const selectedAmplicon = getAmpliconFilter(state)
   const selectedTaxonomies = map(config.taxonomies, taxonomy => state.searchPage.filters.taxonomy[taxonomy].selected)
   const selectedTrait = state.searchPage.filters.selectedTrait
 
@@ -66,7 +67,6 @@ export const updateTaxonomyDropDowns = taxonomy => () => (dispatch, getState) =>
 }
 
 export const clearAllTaxonomyFilters = createAction('CLEAR_ALL_TAXONOMY_FILTERS')
-export const fetchTaxonomySources = makeTaxonomyFetcher(taxonomyConfigFor('taxonomy_source'))
 
 // Generic taxonomy reducers
 

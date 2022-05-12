@@ -25,7 +25,7 @@ export function getReferenceData() {
   return axios.get(window.otu_search_config.reference_data_endpoint)
 }
 
-export function getTraits(selectedAmplicon = { value: '5', operator: 'is' }) {
+export function getTraits(selectedAmplicon) {
   return axios.get(window.otu_search_config.trait_endpoint, {
     params: {
       amplicon: JSON.stringify(selectedAmplicon)
