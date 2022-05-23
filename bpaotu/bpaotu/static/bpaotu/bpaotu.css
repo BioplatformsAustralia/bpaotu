@@ -169,3 +169,50 @@ body {
 .nav-item a {
     cursor: pointer;
 }
+
+
+.bpaotu-map-popup .leaflet-popup-content {
+    border: 0;
+}
+
+.bpaotu-map-popup-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.bpaotu-map-popup-inner__tab-content {
+    min-height: 0;
+    flex-grow: 1;
+}
+
+.bpaotu-map-popup-inner__sample-pane {
+    height: 100%;
+    padding-top: 5px;
+}
+
+.bpaotu-map-popup-inner__image-pane {
+    height: 100%;
+    overflow: auto;
+}
+
+.bpaotu-map-popup-inner__images {
+    margin: 0.5rem;
+}
+
+.bpaotu-samples {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.bpaotu-samples__tabs {
+    flex-shrink: 0;
+    overflow: auto;
+}
+
+.bpaotu-samples__tab-content {
+    overflow: auto;
+}
