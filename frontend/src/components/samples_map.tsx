@@ -1,6 +1,6 @@
 import { first, join, keys, map, find } from 'lodash'
 import * as React from 'react'
-import { Col, Nav, NavItem, NavLink, Row, TabContent, TabPane, UncontrolledTooltip, Alert } from 'reactstrap'
+import { Nav, NavItem, NavLink, TabContent, TabPane, UncontrolledTooltip, Alert } from 'reactstrap'
 
 import * as L from 'leaflet'
 import * as MiniMap from 'leaflet-minimap'
@@ -79,11 +79,11 @@ class BPAImages extends React.Component<any, any> {
     return (
       <div>
         {map(this.props.siteImages || [], ({ package_id, resource_id }, index) => (
-          <Row key={index}>
+          <div key={index} className="bpaotu-map-popup-inner__images">
             <a href={rsUrl(package_id, resource_id)} target="_other">
               <img alt="Australian Microbiome" src={tnUrl(package_id, resource_id)} />
             </a>
-          </Row>
+          </div>
         ))}
       </div>
     )
@@ -114,39 +114,36 @@ class BPASamples extends React.Component<any, any> {
 
   public render() {
     return (
-      <div>
-        <Nav tabs={true}>
-          {map(this.props.bpadata, (data, index) => (
-            <NavItem key={index}>
-              <NavLink
-                className={index}
-                onClick={() => {
-                  this.toggle(index)
-                }}
-              >
-                Sample {index}
-              </NavLink>
-            </NavItem>
-          ))}
-        </Nav>
+      <div className="bpaotu-samples">
+        <div className="bpaotu-samples__tabs">
+          <Nav tabs={true} className="flex-nowrap">
+            {map(this.props.bpadata, (data, index) => (
+              <NavItem key={index}>
+                <NavLink
+                  className={(index === this.state.activeTab)? "active" : ""}
+                  onClick={() => {
+                    this.toggle(index)
+                  }}>
+                  Sample {index}
+                </NavLink>
+              </NavItem>
+            ))}
+          </Nav>
+        </div>
 
-        <TabContent activeTab={this.state.activeTab}>
+        <TabContent activeTab={this.state.activeTab} className="bpaotu-samples__tab-content">
           {map(this.props.bpadata, (data, index) => (
             <TabPane key={index} tabId={index}>
-              <Row>
-                <Col sm="12">
-                  <table>
-                    <tbody>
-                      {map(data, (d, k) => (
-                        <tr key={k}>
-                          <th>{k}:</th>
-                          <td>{d}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </Col>
-              </Row>
+              <table>
+                <tbody>
+                  {map(data, (d, k) => (
+                    <tr key={k}>
+                      <th>{k}:</th>
+                      <td>{d}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </TabPane>
           ))}
         </TabContent>
@@ -154,6 +151,48 @@ class BPASamples extends React.Component<any, any> {
     )
   }
 }
+
+
+function MarkerPopup(props) {
+  const [activeTab, setActiveTab] = React.useState('1');
+  if ((!props.marker.site_images) || props.marker.site_images.length === 0) {
+    return <BPASamples bpadata={props.marker.bpadata} />
+  }
+
+  const toggle = tab => {
+    if(activeTab !== tab) setActiveTab(tab);
+  }
+
+  return (
+    <>
+      <Nav tabs>
+        <NavItem>
+          <NavLink
+            className={(activeTab === '1') ? "active" : ""}
+            onClick={() => { toggle('1'); }}>
+            Samples
+          </NavLink>
+        </NavItem>
+        <NavItem>
+          <NavLink
+            className={(activeTab === '2') ? "active" : ""}
+            onClick={() => { toggle('2'); }}>
+            Images
+          </NavLink>
+        </NavItem>
+      </Nav>
+      <TabContent activeTab={activeTab} className="bpaotu-map-popup-inner__tab-content">
+        <TabPane tabId="1" className="bpaotu-map-popup-inner__sample-pane">
+          <BPASamples bpadata={props.marker.bpadata} />
+        </TabPane>
+        <TabPane tabId="2" className="bpaotu-map-popup-inner__image-pane" >
+          <BPAImages siteImages={props.marker.site_images} />
+        </TabPane>
+      </TabContent>
+    </>
+  )
+}
+
 
 // tslint:disable-next-line:max-classes-per-file
 class SamplesMap extends React.Component<any> {
@@ -186,9 +225,9 @@ class SamplesMap extends React.Component<any> {
       1
     );
   }
-  
+
   shouldComponentUpdate(nextProps, nextState) {
-    
+
     if (nextProps.sample_otus.length > 0 && this.props.sample_otus !== nextProps.sample_otus) {
       this.siteAggregatedData = aggregateSampleOtusBySite(nextProps.sample_otus);
       this.samplePoints = aggregateSamplePointsBySite(this.siteAggregatedData);
@@ -451,10 +490,9 @@ class SamplesMap extends React.Component<any> {
               <MarkerClusterGroup>
                 {this.props.markers.map((marker, index) => (
                   <Marker key={`marker-${index}`} position={marker}>
-                    <Popup minWidth={640} maxHeight={480}>
-                      <div>
-                        <BPAImages siteImages={marker.site_images} />
-                        <BPASamples bpadata={marker.bpadata} />
+                    <Popup minWidth={640} maxHeight={480} className="bpaotu-map-popup">
+                      <div className="bpaotu-map-popup-inner">
+                        <MarkerPopup marker={marker} />
                       </div>
                     </Popup>
                   </Marker>

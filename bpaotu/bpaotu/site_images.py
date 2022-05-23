@@ -1,6 +1,8 @@
 from django.core.cache import caches
 from django.conf import settings
 from collections import defaultdict
+from django.utils.html import escape
+from django.utils.safestring import mark_safe
 
 import ckanapi
 import mimetypes
@@ -95,15 +97,30 @@ def resize_image(content):
             img_data = img_buf.getvalue()
     return img_data
 
+svg_template = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg"
+    baseProfile="full"  width="700" height="80">
+  <rect width="100%" height="100%" fill="red" />
+  <text x="10" y="40" font-size="20" text-anchor="left" fill="white">{}</text>
+</svg>
+"""
+
+def text_to_svg(text):
+    return mark_safe(svg_template.format(escape(text)))
 
 def fetch_image(package_id, resource_id):
     # security: we do not want this API endpoint to be used to retrieve
     # any data that is not a BASE site image.
-    resource = _get_and_verify_resource(package_id, resource_id)
-    if resource is None:
-        raise HttpResponseForbidden()
-    img_url = resource['url']
-    content_type, _ = mimetypes.guess_type(img_url)
-    r = requests.get(img_url, headers={'Authorization': settings.CKAN_SERVER['api_key']})
-    img_data = resize_image(r.content)
+    try:
+        resource = _get_and_verify_resource(package_id, resource_id)
+        if resource is None:
+            raise HttpResponseForbidden()
+        img_url = resource['url']
+        content_type, _ = mimetypes.guess_type(img_url)
+        r = requests.get(img_url, headers={'Authorization': settings.CKAN_SERVER['api_key']})
+        img_data = resize_image(r.content)
+    except Exception as e:
+        logger.error("Can't serve thumbnail image", exc_info=1)
+        img_data = text_to_svg("fetch_image: " + str(e)).encode('utf8')
+        content_type = "image/svg+xml"
     return (BytesIO(img_data), content_type)
