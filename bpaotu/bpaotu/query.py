@@ -628,7 +628,7 @@ class TaxonomyFilter:
                     taxonomy_descriptions.append(descr)
             return amplicon_description, taxonomy_descriptions, trait_description
 
-    def is_empty(self): # FIXME this might always be false
+    def is_empty(self): # See EmptyOTUQuery in frontend/
         return not self.amplicon_filter and self.state_vector[0] is None and not self.trait_filter
 
     def get_rank_equality_value(self, rank_level):

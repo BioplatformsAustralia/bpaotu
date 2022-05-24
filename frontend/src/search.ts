@@ -69,6 +69,10 @@ export const emptyContextualFilters: ContextualFilters = {
 }
 
 export const EmptyOTUQuery: OTUQuery = {
+  // Be careful using this. We are not filtering on taxonomy source, so there's
+  // a risk that you'll get duplicate OTUs. Queries that use this in a taxonomy
+  // subquery (select .. from .. where ... in (taxonomy_subquery)) should be OK,
+  // as the duplicates don't matter in that case.
   taxonomy_filters: times(taxonomy_keys.length, _ => emptyTaxonomyFilter),
   contextual_filters: emptyContextualFilters,
   amplicon_filter: '',
