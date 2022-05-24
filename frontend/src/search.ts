@@ -38,9 +38,9 @@ export enum BooleanOperator {
   OR = 'OR'
 }
 
-export interface TaxonomyFilter {
+export interface OperatorAndValue {
   value: string
-  operator: BooleanOperator
+  operator: 'is' | 'isnot'
 }
 
 export interface ContextualFilters {
@@ -50,16 +50,16 @@ export interface ContextualFilters {
 }
 
 export interface OTUQuery {
-  taxonomy_filters: TaxonomyFilter[]
+  taxonomy_filters: OperatorAndValue[]
   contextual_filters: ContextualFilters
   amplicon_filter: string
   trait_filter: string
   required_headers?: string[]
 }
 
-export const emptyTaxonomyFilter: TaxonomyFilter = {
+export const emptyTaxonomyFilter: OperatorAndValue = {
   value: '',
-  operator: BooleanOperator.AND
+  operator: "isnot"
 }
 
 export const emptyContextualFilters: ContextualFilters = {
