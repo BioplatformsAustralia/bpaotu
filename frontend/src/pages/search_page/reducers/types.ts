@@ -1,9 +1,5 @@
 import { taxonomy_keys } from '../../../constants'
-
-export interface OperatorAndValue {
-  value: string
-  operator: 'is' | 'isnot'
-}
+import { OperatorAndValue } from '../../../search'
 
 export interface LoadableValues {
   isLoading: boolean

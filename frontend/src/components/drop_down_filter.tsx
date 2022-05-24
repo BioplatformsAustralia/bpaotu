@@ -4,7 +4,7 @@ import { Col, FormGroup, Input, Label, UncontrolledTooltip } from 'reactstrap'
 import Octicon from './octicon'
 
 import Select from 'react-select';
-import { OperatorAndValue } from '../pages/search_page/reducers/types'
+import { OperatorAndValue } from '../search'
 
 interface Props {
   label: string
