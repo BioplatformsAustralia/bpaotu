@@ -510,6 +510,9 @@ class SampleQuery:
         q = apply_op_and_array_filter(getattr(OTUSampleOTU20K, 'traits'), q, self._taxonomy_filter.trait_filter)
         for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy,
                                                              self._taxonomy_filter.state_vector):
+            # Note: The richness and abundance sums above will probably be
+            # meaningless if we aren't filtering on taxonomy_source_id.
+            # See https://github.com/BioplatformsAustralia/bpaotu/issues/214
             q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, taxonomy_attr), q, taxonomy)
         q = self._contextual_filter.apply(q)
         # log_query(q)
