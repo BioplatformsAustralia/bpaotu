@@ -12,8 +12,13 @@ BPA-OTU is a web-based portal into Operational Taxonomic Unit (OTU) data, develo
   [Leaflet](https://leafletjs.com/) for maps. It has its own webserver, separate from
   Django, which serves the React assets and also proxies requests from the user
   interface through to Django.
+* In production, the system requires that the browser session be logged in to
+  the configured [CKAN](https://docs.ckan.org/) instance (see settings.py). This
+  is an administrative restriction, and the system doesn't require CKAN
+  authentication for functionality.
 * All data for the system is contained within a Postgres database which is
-  loaded from a set of files by an ingest operation (see below).
+  loaded from a set of files by an ingest operation (see below). Some ancillary
+  data may be fetched using the Python `ckanapi` (e.g. sample site images).
 * It uses a git submodule `bpa-ingest`, maintained externally. It's important to
   update this submodule frequently in order to be able to ingest the latest
   version of the sample context metadata.
