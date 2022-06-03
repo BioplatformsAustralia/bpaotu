@@ -33,7 +33,7 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   SampleAustralianSoilClassification,
                   SampleColor, SampleContext, SampleEcologicalZone,
                   SampleHorizonClassification,
-                  SampleLandUse, SampleOTU, SampleOTU20K, OTUSampleOTU, OTUSampleOTU20K,
+                  SampleLandUse, SampleOTU, OTUSampleOTU,
                   SampleProfilePosition,
                   SampleStorageMethod, SampleTillage, SampleType,
                   SampleVegetationType,
@@ -224,10 +224,8 @@ class DataImporter:
     def run(self):
         self.load_contextual_metadata()
         otu_lookup = self.load_taxonomies()
-        self.load_otu_abundance_20k(otu_lookup)
         self.load_otu_abundance(otu_lookup)
         refresh_otu_sample_otu_mv(self._session, OTUSampleOTU.__table__)
-        refresh_otu_sample_otu_mv(self._session, OTUSampleOTU20K.__table__)
         self.complete()
 
     def ontology_init(self):
@@ -572,18 +570,21 @@ class DataImporter:
     def _otu_abundance_rows(self, fd, amplicon_code, otu_lookup):
         reader = csv.reader(fd, dialect='excel-tab')
         header = [name.lower() for name in next(reader)]
-        if header != ["#otu id", "sample_only", "abundance"]:
+        expected = ["#otu id", "sample_only", "abundance", "abundance_20k"]
+        if header != expected:
             raise DataImportError(
-                "Expected tab-separated \"#otu id sample_only abundance\" header in {}".format(fd.name))
+                "Expected tab-separated \"{}\" header in {}".format(' '.join(expected), fd.name))
 
         integer_re = re.compile(r'^[0-9]+$')
         samn_id_re = re.compile(r"^SAMN(\d+)$")
 
-        for otu_code, sample_id, count in reader:
+        for row in reader:
+            otu_code, sample_id, count, count_20k = ([f.strip() for f in row] + [""])[:4]
             float_count = float(count)
             int_count = int(float_count)
             # make sure that fractional values don't creep in on a future ingest
             assert(int_count - float_count == 0)
+            assert(count_20k == "" or integer_re.match(count_20k))
             if not integer_re.match(sample_id):
                 if not samn_id_re.match(sample_id):
                     if sample_id not in self.sample_non_integer:
@@ -594,21 +595,22 @@ class DataImporter:
             otu_lookup_val = otu_lookup.get(hash)
             if not otu_lookup_val:
                 continue
-            yield otu_lookup_val[0], sample_id, int_count
+            # Note that an unquoted empty string means NULL to psql COPY. See below
+            yield otu_lookup_val[0], sample_id, int_count, count_20k
 
     def load_otu_abundance(self, otu_lookup):
         def _make_sample_otus(fname, amplicon_code, present_sample_ids):
             with gzip.open(fname, 'rt') as fd:
                 tuple_rows = self._otu_abundance_rows(fd, amplicon_code, otu_lookup)
                 rows_skipped = 0
-                for entry, (otu_id, sample_id, count) in enumerate(tuple_rows):
+                for entry, (otu_id, sample_id, count, count_20k) in enumerate(tuple_rows):
                     if sample_id not in present_sample_ids:
                         if sample_id not in self.sample_metadata_incomplete \
                                 and sample_id not in self.sample_non_integer:
                             self.sample_not_in_metadata.add(sample_id)
                         rows_skipped += 1
                         continue
-                    yield (sample_id, otu_id, count)
+                    yield (sample_id, otu_id, count, count_20k)
                 self.make_file_log(
                     fname, file_type='Abundance', rows_imported=(entry + 1), rows_skipped=rows_skipped)
 
@@ -616,7 +618,7 @@ class DataImporter:
 
         present_sample_ids = set([t[0] for t in self._session.query(SampleContext.id)])
 
-        for amplicon_code, sampleotu_fname in self.amplicon_files('*[0-9].txt.gz'):
+        for amplicon_code, sampleotu_fname in self.amplicon_files('*.txt.gz'):
             def log_amplicon(msg):
                 logger.info('[{}] {}'.format(amplicon_code, msg))
 
@@ -625,35 +627,7 @@ class DataImporter:
                 log_amplicon("writing out OTU abundance data to CSV tempfile: {}".format(fd.name))
                 w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
                 log_amplicon("loading OTU abundance data into database")
-                self.load_from_csv("COPY otu.sample_otu (sample_id, otu_id, count) FROM STDIN CSV", fd)
-
-    def load_otu_abundance_20k(self, otu_lookup):
-        def _make_sample_otus(fname, amplicon_code, present_sample_ids):
-            with gzip.open(fname, 'rt') as fd:
-                tuple_rows = self._otu_abundance_rows(fd, amplicon_code, otu_lookup)
-                rows_skipped = 0
-                for entry, (otu_id, sample_id, count) in enumerate(tuple_rows):
-                    if sample_id not in present_sample_ids:
-                        if sample_id not in self.sample_metadata_incomplete \
-                                and sample_id not in self.sample_non_integer:
-                            self.sample_not_in_metadata.add(sample_id)
-                        rows_skipped += 1
-                        continue
-                    yield (sample_id, otu_id, count)
-                self.make_file_log(
-                    fname, file_type='Abundance', rows_imported=(entry + 1), rows_skipped=rows_skipped)
-
-        logger.info('Loading OTU abundance 20k tables')
-
-        present_sample_ids = set([t[0] for t in self._session.query(SampleContext.id)])
-
-        for amplicon_code, sampleotu_fname in self.amplicon_files('*_20K.txt.gz'):
-            def log_amplicon(msg):
-                logger.info('[{}] {}'.format(amplicon_code, msg))
-
-            log_amplicon("reading from: {}".format(sampleotu_fname))
-            with tmp_csv_file() as (w, fd):
-                log_amplicon("writing out OTU abundance 20k data to CSV tempfile: {}".format(fd.name))
-                w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
-                log_amplicon("loading OTU abundance 20k data into database")
-                self.load_from_csv("COPY otu.sample_otu_20k (sample_id, otu_id, count) FROM STDIN CSV", fd)
+                # count_20k may be an unquoted empty string in the CSV file.
+                # COPY will interpret that as NULL by default. See
+                # https://www.postgresql.org/docs/current/sql-copy.html
+                self.load_from_csv("COPY otu.sample_otu (sample_id, otu_id, count, count_20k) FROM STDIN CSV", fd)
