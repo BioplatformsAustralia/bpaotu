@@ -39,6 +39,10 @@ function aggregateSampleOtusBySite(sample_Otus) {
   let siteAggs: Array<SiteAggregate> = [];
   for (let i in sample_Otus) {
     let sampleOtus = new SampleOtus(sample_Otus[i][0], sample_Otus[i][1], sample_Otus[i][2], parseInt(sample_Otus[i][3]), parseInt(sample_Otus[i][4]));
+    if (isNaN(sampleOtus.abundance)) {
+      // No Abundance_20k for sample OTU
+      continue
+    }
     let siteAgg = new SiteAggregate(sampleOtus);
     siteAgg.calculateAbundanceRichness(sampleOtus);
     siteAggs.push(siteAgg)
@@ -74,7 +78,7 @@ class SiteAggregate {
     this.longitude = sampleOtus.longitude;
     this.richness = 0;
     this.abundance = 0;
-    this.siteID = sampleOtus.sampleId; 
+    this.siteID = sampleOtus.sampleId;
   }
 
   calculateAbundanceRichness(sampleOtus: SampleOtus) {
@@ -85,10 +89,13 @@ class SiteAggregate {
 
 function aggregateSamplesByCell(siteAggs, detailLevel) {
   let cellAggs = {};
+  if (siteAggs.length === 0) {
+    return cellAggs
+  }
   let [min, max] = calculateCellBounds(siteAggs)
 
   // Add buffer of detailLevel for bounds
-  max = [max[0]+detailLevel, max[1]+detailLevel] 
+  max = [max[0]+detailLevel, max[1]+detailLevel]
   min = [min[0]-detailLevel,	min[1]-detailLevel]
 
   // calculate width/height of bounding box

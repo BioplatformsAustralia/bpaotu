@@ -25,7 +25,6 @@ from .otu import (
     SampleContext,
     SampleOTU,
     OTUSampleOTU,
-    OTUSampleOTU20K,
     ImportMetadata,
     ImportedFile,
     ExcludedSamples,
@@ -290,7 +289,7 @@ class OntologyInfo:
                 for obj in self._session.query(TaxonomySource).all()}
 
 
-class OTUSampleOTUQuery:
+class SampleQuery:
     """
     find samples IDs which match the given taxonomical and
     contextual filters
@@ -318,7 +317,7 @@ class OTUSampleOTUQuery:
         params = compiled.params
 
         key = make_cache_key(
-            'OTUSampleOTUQuery._q_all_cached',
+            'SampleQuery._q_all_cached',
             topic,
             str(compiled),
             params)
@@ -364,48 +363,6 @@ class OTUSampleOTUQuery:
         vals = self._q_all_cached('import_traits', q)
         vals.sort(key=lambda v: v[0])
         return vals
-
-class SampleQuery:
-    # FIXME DRY OTUSampleOTUQuery
-    """
-    find samples IDs which match the given taxonomical and
-    contextual filters
-    """
-
-    def __init__(self, params):
-        self._session = Session()
-        # amplicon filter is a master filter over the taxonomy; it's not
-        # a strict part of the hierarchy, but affects taxonomy options
-        # available
-        self._taxonomy_filter = params.taxonomy_filter
-        self._contextual_filter = params.contextual_filter
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exec_type, exc_value, traceback):
-        self._session.close()
-
-    def _q_all_cached(self, topic, q, mutate_result=None):
-        cache = caches['search_results']
-
-        stmt = q.with_labels().statement
-        compiled = stmt.compile()
-        params = compiled.params
-
-        key = make_cache_key(
-            'SampleQuery._q_all_cached',
-            topic,
-            str(compiled),
-            params)
-
-        result = cache.get(key)
-        if not result:
-            result = q.all()
-            if mutate_result:
-                result = mutate_result(result)
-            cache.set(key, result, CACHE_7DAYS)
-        return result
 
     def matching_sample_graph_data(self, headers=None):
         query_headers = []
@@ -460,25 +417,14 @@ class SampleQuery:
         # log_query(q)
         return self._q_all_cached('matching_sample_headers', q)
 
+    def matching_selected_samples(self, subq):
+        q = self._session.query(SampleContext)
+        q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
+        # log_query(q)
+        return self._q_all_cached('matching_selected_samples', q)
+
     def matching_samples(self):
-        q = self._session.query(SampleContext)
-        subq = self._build_taxonomy_subquery()
-        q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
-        # log_query(q)
-        return self._q_all_cached('matching_samples', q)
-
-    def matching_samples_20k(self):
-        q = self._session.query(SampleContext)
-        subq = self._build_taxonomy_subquery_20k()
-        q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
-        # log_query(q)
-        return self._q_all_cached('matching_samples_20k', q)
-
-    def matching_selected_samples_20k(self, subq):
-        q = self._session.query(SampleContext)
-        q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
-        # log_query(q)
-        return self._q_all_cached('matching_selected_samples_20k', q)
+        return self.matching_selected_samples(self._build_taxonomy_subquery())
 
     def matching_otus(self):
         q = self._session.query(OTU)
@@ -502,18 +448,23 @@ class SampleQuery:
         # log_query(q)
         return q
 
-    def matching_sample_otus_groupby_lat_lng_id_20k(self, *args):
-        q = self._session.query(*args, func.sum(OTUSampleOTU20K.richness), func.sum(OTUSampleOTU20K.count)) \
-            .filter(SampleContext.id == OTUSampleOTU20K.sample_id) \
-            .group_by(SampleContext.latitude, SampleContext.longitude, SampleContext.id)
-        q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
-        q = apply_op_and_array_filter(getattr(OTUSampleOTU20K, 'traits'), q, self._taxonomy_filter.trait_filter)
+    def matching_sample_otus_groupby_lat_lng_id_20k(self):
+        # Note: sum(OTUSampleOTU.sum_count_20k) can be NULL (Python None)
+        q = self._session.query(
+            SampleContext.latitude,
+            SampleContext.longitude,
+            SampleContext.id,
+            func.sum(OTUSampleOTU.richness_20k), func.sum(OTUSampleOTU.sum_count_20k)) \
+            .filter(SampleContext.id == OTUSampleOTU.sample_id) \
+            .group_by(SampleContext.id)
+        q = apply_op_and_val_filter(getattr(OTUSampleOTU, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
+        q = apply_op_and_array_filter(getattr(OTUSampleOTU, 'traits'), q, self._taxonomy_filter.trait_filter)
         for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy,
                                                              self._taxonomy_filter.state_vector):
             # Note: The richness and abundance sums above will probably be
             # meaningless if we aren't filtering on taxonomy_source_id.
             # See https://github.com/BioplatformsAustralia/bpaotu/issues/214
-            q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, taxonomy_attr), q, taxonomy)
+            q = apply_op_and_val_filter(getattr(OTUSampleOTU, taxonomy_attr), q, taxonomy)
         q = self._contextual_filter.apply(q)
         # log_query(q)
         return q
@@ -532,23 +483,6 @@ class SampleQuery:
         for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy,
                                                              self._taxonomy_filter.state_vector):
             q = apply_op_and_val_filter(getattr(OTUSampleOTU, taxonomy_attr), q, taxonomy)
-        # log_query(q)
-        return q
-
-    def _build_taxonomy_subquery_20k(self):
-        """
-        return the Sample IDs (as ints) which have a non-zero OTU count for OTUs
-        matching the taxonomy filter
-        """
-        if self._taxonomy_filter.is_empty():
-            return None
-        # Use of materialized view
-        q = self._session.query(OTUSampleOTU20K.sample_id).group_by(OTUSampleOTU20K.sample_id)
-        q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
-        q = apply_op_and_array_filter(getattr(OTUSampleOTU20K, 'traits'), q, self._taxonomy_filter.trait_filter)
-        for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy,
-                                                             self._taxonomy_filter.state_vector):
-            q = apply_op_and_val_filter(getattr(OTUSampleOTU20K, taxonomy_attr), q, taxonomy)
         # log_query(q)
         return q
 

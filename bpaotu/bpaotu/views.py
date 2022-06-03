@@ -40,7 +40,6 @@ from .query import (ContextualFilter, ContextualFilterTermDate,
                     ContextualFilterTermFloat, ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
                     MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
-                    OTUSampleOTUQuery,
                     TaxonomyFilter, TaxonomyOptions, get_sample_ids,
                     SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
 from .site_images import fetch_image, get_site_image_lookup_table
@@ -184,7 +183,7 @@ def trait_options(request):
     """
     private API: return the possible traits
     """
-    with OTUSampleOTUQuery(OTUQueryParams(
+    with SampleQuery(OTUQueryParams(
             None,
             TaxonomyFilter(None, [], None))) as query:
         amplicon_filter = clean_amplicon_filter(json.loads(request.GET['amplicon']))
@@ -332,7 +331,7 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
             'graphdata': {}
         })
 
-    with OTUSampleOTUQuery(params_all) as query:
+    with SampleQuery(params_all) as query:
         results_all = query.matching_taxonomy_graph_data()
 
     params_selected, errors_selected = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
@@ -342,7 +341,7 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
             'graphdata': {}
         })
 
-    with OTUSampleOTUQuery(params_selected) as query:
+    with SampleQuery(params_selected) as query:
         results_selected = query.matching_taxonomy_graph_data()
 
     df_results_all = pd.DataFrame(results_all, columns=['amplicon', 'taxonomy', 'am_environment', 'traits', 'sum'])

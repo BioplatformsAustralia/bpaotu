@@ -784,19 +784,10 @@ class SampleOTU(SchemaMixin, Base):
     sample_id = Column(String, ForeignKey(SCHEMA + '.sample_context.id'), nullable=False, primary_key=True, index=True)
     otu_id = Column(Integer, ForeignKey(SCHEMA + '.otu.id'), nullable=False, primary_key=True, index=True)
     count = Column(Integer, nullable=False)
+    count_20k = Column(Integer, nullable=True)
 
     def __repr__(self):
         return "<SampleOTU(%d,%d,%d)>" % (self.sample_id, self.otu_id, self.count)
-
-
-class SampleOTU20K(SchemaMixin, Base):
-    __tablename__ = 'sample_otu_20k'
-    sample_id = Column(String, ForeignKey(SCHEMA + '.sample_context.id'), nullable=False, primary_key=True, index=True)
-    otu_id = Column(Integer, ForeignKey(SCHEMA + '.otu.id'), nullable=False, primary_key=True, index=True)
-    count = Column(Integer, nullable=False)
-
-    def __repr__(self):
-        return "<SampleOTU20K(%d,%d,%d)>" % (self.sample_id, self.otu_id, self.count)
 
 
 taxonomy_rank_id_attrs = [getattr(Taxonomy, name) for name in taxonomy_key_id_names]
@@ -813,6 +804,8 @@ class OTUSampleOTU(SchemaMixin, Base):
                 SampleOTU.sample_id,
                 func.count(SampleOTU.otu_id).label("richness"),
                 func.sum(SampleOTU.count).label("count"),
+                func.count(SampleOTU.count_20k).label("richness_20k"), # Will be 0 if all null
+                func.sum(SampleOTU.count_20k).label("sum_count_20k"), # Will be null if all null
             ] + taxonomy_rank_id_attrs + [
                 Taxonomy.amplicon_id,
                 Taxonomy.traits
@@ -828,33 +821,6 @@ class OTUSampleOTU(SchemaMixin, Base):
             Index('otu_sample_otu_index_sample_id_idx', 'sample_id'),
             Index('otu_sample_otu_index_amplicon_id_idx', 'amplicon_id'),
             Index('otu_sample_otu_index_traits_idx', 'traits', postgresql_using='gin'),
-        ]
-    )
-
-
-class OTUSampleOTU20K(SchemaMixin, Base):
-    __table__ = create_materialized_view(
-        name='otu_sample_otu_20k',
-        selectable=select(
-            [
-                SampleOTU20K.sample_id,
-                func.count(SampleOTU20K.otu_id).label("richness"),
-                func.sum(SampleOTU20K.count).label("count"),
-            ] + taxonomy_rank_id_attrs + [
-                Taxonomy.amplicon_id,
-                Taxonomy.traits
-            ],
-            from_obj=(
-                SampleOTU20K.__table__.join(OTU).join(taxonomy_otu).join(Taxonomy)))
-        .group_by(SampleOTU20K.sample_id)
-        .group_by(*taxonomy_rank_id_attrs)
-        .group_by(Taxonomy.amplicon_id)
-        .group_by(Taxonomy.traits),
-        metadata=Base.metadata,
-        indexes=  _sample_otu_indexes('otu_sample_otu_20k_index_') +   [
-            Index('otu_sample_otu_20k_index_sample_id_idx', 'sample_id'),
-            Index('otu_sample_otu_20k_index_amplicon_id_idx', 'amplicon_id'),
-            Index('otu_sample_otu_20k_index_traits_idx', 'traits', postgresql_using='gin'),
         ]
     )
 
