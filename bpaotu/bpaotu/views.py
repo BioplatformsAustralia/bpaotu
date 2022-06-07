@@ -1,4 +1,5 @@
 import csv
+import math
 import numpy as np
 import pandas as pd
 import hmac
@@ -15,6 +16,7 @@ from io import BytesIO
 from xhtml2pdf import pisa
 import requests as requests
 
+from sqlalchemy import Float, Integer
 
 from bpaingest.projects.amdb.contextual import \
     AustralianMicrobiomeSampleContextual
@@ -285,7 +287,9 @@ def contextual_fields(request):
 @require_POST
 def contextual_graph_fields(request, contextual_filtering=True):
     additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
-    all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph', 'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id', 'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
+    all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
+                   'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
+                   'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
     params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
     if errors:
         return JsonResponse({
@@ -298,15 +302,15 @@ def contextual_graph_fields(request, contextual_filtering=True):
         results = query.matching_sample_graph_data(all_headers)
 
     if results:
-        data = np.array(results)
-        tdata = data.T
-
-        for i in range(len(all_headers)):
-            ll = []
-            cleaned_data = [x for x in tdata[i] if (x != None)]
-            for test in np.unique(cleaned_data, return_counts=True):
-                ll.append(test.tolist())
-            graph_results[all_headers[i]] = ll
+        tdata = np.array(results).T
+        for i, h in enumerate(all_headers):
+            column = SampleContext.__table__.columns[h]
+            # skip sentinel values but not for ontologies, strings etc.
+            skip_sentinels = isinstance(column.type, (Integer, Float)) and not column.foreign_keys
+            cleaned_data = [x for x in tdata[i]
+                            if (x != None and not
+                            (skip_sentinels and math.isclose(x, settings.BPAOTU_MISSING_VALUE_SENTINEL)))]
+            graph_results[h] = [xy.tolist() for xy in np.unique(cleaned_data, return_counts=True)]
 
     return JsonResponse({
         'graphdata': graph_results

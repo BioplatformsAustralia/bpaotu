@@ -364,15 +364,8 @@ class SampleQuery:
         vals.sort(key=lambda v: v[0])
         return vals
 
-    def matching_sample_graph_data(self, headers=None):
-        query_headers = []
-        if headers:
-            for h in headers:
-                if not h:
-                    continue
-                col = getattr(SampleContext, h)
-                query_headers.append(col)
-
+    def matching_sample_graph_data(self, headers):
+        query_headers = [getattr(SampleContext, h) for h in headers if h]
         q = self._session.query(*query_headers)
         subq = self._build_taxonomy_subquery()
         q = self._assemble_sample_query(q, subq)
