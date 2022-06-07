@@ -23,6 +23,10 @@ WEBAPP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WRITABLE_DIRECTORY = env.get("writable_directory", "/tmp") # FIXME used?
 BPAOTU_TMP_DIR = '/var/tmp' # For large temporary files
 
+BPAOTU_MISSING_VALUE_SENTINEL = -9999  # Missing values in sample contextual data.
+# See "Confirmed missing value" in
+# https://github.com/AusMicrobiome/contextualdb_doc/blob/main/db_schema_definitions/db_schema_definitions.xlsx
+
 SECRET_KEY = env.get("secret_key", "change-it")
 
 # Default SSL on and forced, turn off if necessary

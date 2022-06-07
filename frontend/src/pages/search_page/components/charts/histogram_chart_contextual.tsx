@@ -1,7 +1,7 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
 import {plotly_chart_config} from './plotly_chart'
-import { find } from 'lodash'
+import { find, isString } from 'lodash'
 import { search } from '../../reducers/search'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
@@ -51,7 +51,7 @@ class HistogramChartContextual extends React.Component<any> {
     if(graphData && graphData.length>1) {
       text = graphData[0]
       values = graphData[1]
-      xaxisCategory = graphData[0].length<5 ?'category':''
+      xaxisCategory = (text.length<5 || isString(text[0])) ?'category':''
     }
 
     let chart_data = [
@@ -77,7 +77,8 @@ class HistogramChartContextual extends React.Component<any> {
           dragmode:'select',
           title: {'text':title, 'font':{'size': 20}},
           hovermode: 'closest',
-          yaxis: {title: 'Frequency', 'exponentformat': 'e'}, xaxis: {title: xaxisTitle, type: xaxisCategory, 'exponentformat': 'e'},
+          yaxis: {title: 'Frequency', 'exponentformat': 'e'},
+          xaxis: {title: xaxisTitle, type: xaxisCategory, 'exponentformat': 'e'},
        }}
         config={plotly_chart_config(title)}
         onSelected={e => {
