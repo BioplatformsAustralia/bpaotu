@@ -447,7 +447,8 @@ class SampleQuery:
             SampleContext.latitude,
             SampleContext.longitude,
             SampleContext.id,
-            func.sum(OTUSampleOTU.richness_20k), func.sum(OTUSampleOTU.sum_count_20k)) \
+            func.sum(OTUSampleOTU.richness_20k),
+            func.sum(OTUSampleOTU.sum_count_20k)) \
             .filter(SampleContext.id == OTUSampleOTU.sample_id) \
             .group_by(SampleContext.id)
         q = apply_op_and_val_filter(getattr(OTUSampleOTU, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
@@ -675,6 +676,15 @@ class ContextualFilterTermFloat(ContextualFilterTermBetween):
 
     def __repr__(self):
         return '<TermFloat(%s,%s,%s,%s)>' % (self.field_name, self.operator, self.val_from, self.val_to)
+
+
+class ContextualFilterTermLongitude(ContextualFilterTermFloat):
+    def get_conditions(self):
+        return [
+            (self.field.between(self.val_from, self.val_to)) |
+            (self.field.between(self.val_from + 360, self.val_to + 360)) |
+            (self.field.between(self.val_from - 360, self.val_to - 360))
+        ]
 
 
 class ContextualFilterTermDate(ContextualFilterTermBetween):

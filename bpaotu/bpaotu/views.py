@@ -39,7 +39,8 @@ from .importer import DataImporter
 from .models import NonDenoisedDataRequest
 from .otu import (Environment, OTUAmplicon, SampleContext, TaxonomySource)
 from .query import (ContextualFilter, ContextualFilterTermDate,
-                    ContextualFilterTermFloat, ContextualFilterTermOntology,
+                    ContextualFilterTermFloat, ContextualFilterTermLongitude,
+                    ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
                     MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
                     TaxonomyFilter, TaxonomyOptions, get_sample_ids,
@@ -462,7 +463,9 @@ def _parse_contextual_term(filter_spec):
         return ContextualFilterTermDate(
             field_name, operator, parse_date(filter_spec['from']), parse_date(filter_spec['to']))
     elif typ == 'FLOAT':
-        return ContextualFilterTermFloat(
+        return (ContextualFilterTermLongitude
+                if field_name == 'longitude'
+                else ContextualFilterTermFloat)(
             field_name, operator, parse_float(filter_spec['from']), parse_float(filter_spec['to']))
     elif typ == 'CITEXT':
         value = str(filter_spec['contains'])

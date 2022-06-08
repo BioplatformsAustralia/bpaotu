@@ -27,6 +27,8 @@ BPAOTU_MISSING_VALUE_SENTINEL = -9999  # Missing values in sample contextual dat
 # See "Confirmed missing value" in
 # https://github.com/AusMicrobiome/contextualdb_doc/blob/main/db_schema_definitions/db_schema_definitions.xlsx
 
+BPAOTU_MAP_CENTRE_LONGITUDE = 133.775
+
 SECRET_KEY = env.get("secret_key", "change-it")
 
 # Default SSL on and forced, turn off if necessary
