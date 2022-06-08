@@ -1,6 +1,8 @@
 from collections import defaultdict
 
 from django.core.cache import caches
+from django.conf import settings
+
 from .query import (
     OntologyInfo,
     log_query,
@@ -18,6 +20,9 @@ from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContext
 
 logger = logging.getLogger("rainbow")
 
+def rewrap_longitude(longitude):
+    d = settings.BPAOTU_MAP_CENTRE_LONGITUDE - longitude
+    return longitude + (360 if d > 180 else -360 if d < -180 else 0)
 
 def _spatial_query(params):
     """
@@ -59,21 +64,27 @@ def _spatial_query(params):
         with SampleQuery(params) as query:
             sample_otus_all = []
             sample_id_selected = []
-            for sample_otu in query.matching_sample_otus_groupby_lat_lng_id_20k().yield_per(50):
-                sample_otus_all.append(sample_otu)
-                sample_id_selected.append(sample_otu[2])
+            for latitude, longitude, sample_id, richness, count_20k in (
+                    query.matching_sample_otus_groupby_lat_lng_id_20k().yield_per(50)):
+                sample_otus_all.append(
+                    [latitude,
+                     rewrap_longitude(longitude),
+                     sample_id,
+                     richness,
+                     count_20k])
+                sample_id_selected.append(sample_id)
 
-        with SampleQuery(params) as query:
-            samples = query.matching_selected_samples(sample_id_selected)
+            result = defaultdict(lambda: defaultdict(dict))
+            # It's typically faster to accumulate the sample_ids above and then
+            # fetch the actual samples here.
+            for sample in query.matching_selected_samples(sample_id_selected):
+                longitude = rewrap_longitude(sample.longitude)
+                latlng = result[(sample.latitude, longitude)]
+                latlng['latitude'] = sample.latitude
+                latlng['longitude'] = longitude
+                latlng['bpa_data'][sample.id] = samples_contextual_data(sample)
 
-        result = defaultdict(lambda: defaultdict(dict))
-        for sample in samples:
-            latlng = result[(sample.latitude, sample.longitude)]
-            latlng['latitude'] = sample.latitude
-            latlng['longitude'] = sample.longitude
-            latlng['bpa_data'][sample.id] = samples_contextual_data(sample)
-
-    return list(result.values()), sample_otus_all
+            return list(result.values()), sample_otus_all
 
 
 def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=False):
