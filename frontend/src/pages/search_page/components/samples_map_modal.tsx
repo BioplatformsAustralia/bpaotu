@@ -17,7 +17,7 @@ class SamplesMapModal extends React.Component<any> {
         <SamplesMap fetchSamples={this.props.fetchSampleMapModalSamples} isLoading={this.props.isLoading} isOpen={this.props.isOpen}  markers={this.props.markers} sample_otus={this.props.sample_otus} />
       </ModalBody>
       <ModalFooter>
-        <SearchFilters selectToScroll={this.props.fetchSampleMapModalSamples} />
+        <SearchFilters handleSearchFilterClick={this.props.fetchSampleMapModalSamples} />
       </ModalFooter>
     </Modal>
     );
