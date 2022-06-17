@@ -3,6 +3,8 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { Modal, ModalBody, ModalHeader, ModalFooter, ButtonGroup, Button, UncontrolledTooltip} from 'reactstrap'
 import SearchFilters from './search_filters'
+import { fetchContextualDataForGraph } from '../../../reducers/contextual_data_graph'
+import { fetchTaxonomyDataForGraph } from '../../../reducers/taxonomy_data_graph'
 import GraphDashboard from './graph_dashboard';
 import { closeSamplesGraphModal } from '../reducers/samples_graph_modal'
 import Octicon from '../../../components/octicon'
@@ -17,10 +19,15 @@ class SamplesGraphModal extends React.Component<any> {
     showTabbedGraph: true
   }
 
+  constructor(props) {
+    super(props)
+    this.handleSearchFilterClick = this.handleSearchFilterClick.bind(this)
+  }
+
   public setTourStep(step) {
-    if(step)
-        this.setState({ tourStep: step })
-}
+    if (step)
+      this.setState({ tourStep: step })
+  }
 
   public selectToScroll(selectedElement) {
       if(selectedElement)
@@ -34,6 +41,12 @@ class SamplesGraphModal extends React.Component<any> {
 
   public selectGraph(showTabbed) {
     this.setState({ showTabbedGraph: showTabbed })
+  }
+
+  public handleSearchFilterClick(selectedElement) {
+    this.props.fetchContextualDataForGraph()
+    this.props.fetchTaxonomyDataForGraph()
+    this.selectToScroll(selectedElement)
   }
 
   componentDidMount() {
@@ -71,16 +84,16 @@ class SamplesGraphModal extends React.Component<any> {
         </div>
       </ModalHeader>
       <ModalBody data-tut="reactour__graph_view" id="reactour__graph_view">
-        <GraphDashboard 
-          showTabbedGraph={this.state.showTabbedGraph} 
-          scrollToSelected={this.state.scrollToSelected} 
-          selectToScroll={(e) => {this.selectToScroll(e)}}  
-          tabSelected={this.state.tabSelected} 
-          selectTab={(e) => {this.selectTab(e)}} 
+        <GraphDashboard
+          showTabbedGraph={this.state.showTabbedGraph}
+          scrollToSelected={this.state.scrollToSelected}
+          selectToScroll={(e) => {this.selectToScroll(e)}}
+          tabSelected={this.state.tabSelected}
+          selectTab={(e) => {this.selectTab(e)}}
         />
       </ModalBody>
       <ModalFooter data-tut="reactour__graph_filter" id="reactour__graph_filter">
-        <SearchFilters selectToScroll={(e) => {this.selectToScroll(e)}} />
+        <SearchFilters handleSearchFilterClick={this.handleSearchFilterClick} />
       </ModalFooter>
     </Modal>
     );
@@ -101,6 +114,8 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
       closeSamplesGraphModal,
+      fetchContextualDataForGraph,
+      fetchTaxonomyDataForGraph
     },
     dispatch
   )

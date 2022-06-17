@@ -16,7 +16,6 @@ import AnimateHelix from './animate_helix'
 
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { fetchContextualDataForGraph } from '../reducers/contextual_data_graph'
 import {
   addContextualFilter,
   removeContextualFilter,
@@ -659,8 +658,7 @@ function mapDispatchToProps(dispatch) {
       changeContextualFilterValue,
       changeContextualFilterValue2,
       changeContextualFilterValues,
-      search,
-      fetchContextualDataForGraph,
+      search
     },
     dispatch
   )

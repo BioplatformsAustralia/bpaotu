@@ -10,8 +10,6 @@ import { fetchTraits } from '../../../reducers/reference_data/traits'
 import { selectAmplicon, getDefaultAmplicon } from '../reducers/amplicon'
 import { selectTrait } from '../reducers/trait'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
-import { fetchContextualDataForGraph } from '../../../reducers/contextual_data_graph'
-import { fetchTaxonomyDataForGraph } from '../../../reducers/taxonomy_data_graph'
 import { createAction } from 'redux-actions'
 import { taxonomy_ranks } from '../../../constants'
 
@@ -86,9 +84,7 @@ class SearchFilters extends React.Component<any> {
   onSelectTrait = () => {
     this.props.selectTrait('')
     this.props.updateTaxonomyDropDown('')
-    this.props.fetchContextualDataForGraph()
-    this.props.fetchTaxonomyDataForGraph()
-    this.props.selectToScroll('amplicon_id')
+    this.props.handleSearchFilterClick('amplicon_id')
   }
 
   onSelectAmplicon = () => {
@@ -98,38 +94,31 @@ class SearchFilters extends React.Component<any> {
     this.props.fetchTraits()
     this.props.selectTrait('')
     this.props.updateTaxonomyDropDown('')
-    this.props.fetchContextualDataForGraph()
-    this.props.fetchTaxonomyDataForGraph()
-    this.props.selectToScroll('amplicon_id')
+    this.props.handleSearchFilterClick('amplicon_id')
   }
 
   onSelectTaxonomy = (taxa) => {
     this.props.clearTaxonomyValue(taxa)
     this.props.updateTaxonomyDropDown(taxa)
-    this.props.fetchContextualDataForGraph()
-    this.props.fetchTaxonomyDataForGraph()
-    this.props.selectToScroll('taxonomy_id')
+    this.props.handleSearchFilterClick('taxonomy_id')
+
   }
 
   onSelectEnvironment = () => {
     this.props.selectEnvironment('')
-    this.props.fetchContextualDataForGraph()
-    this.props.fetchTaxonomyDataForGraph()
-    this.props.selectToScroll('am_environment_id')
+    this.props.handleSearchFilterClick('am_environment_id')
+
   }
 
   onSelectFilter = (index, filter) => {
     this.props.removeContextualFilter(index)
-    this.props.fetchContextualDataForGraph()
-    this.props.fetchTaxonomyDataForGraph()
-    this.props.selectToScroll(filter)
+    this.props.handleSearchFilterClick(filter)
+
   }
 
   onSelectFilterType = (mode) => {
     this.props.selectContextualFiltersMode(mode)
-    this.props.selectToScroll('')
-    this.props.fetchContextualDataForGraph()
-    this.props.fetchTaxonomyDataForGraph()
+    this.props.handleSearchFilterClick('')
   }
 
   render() {
@@ -260,9 +249,7 @@ function mapDispatchToProps(dispatch: any, props) {
       updateTaxonomyDropDown: (taxonomy) => (updateTaxonomyDropDowns(taxonomy)()),
       selectEnvironment,
       removeContextualFilter,
-      selectContextualFiltersMode,
-      fetchContextualDataForGraph,
-      fetchTaxonomyDataForGraph
+      selectContextualFiltersMode
     },
     dispatch
   )
