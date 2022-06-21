@@ -550,13 +550,19 @@ class TaxonomyFilter:
 
     def describe(self):
         with OntologyInfo() as info:
-            amplicon_description = describe_op_and_val(info, 'amplicon_id', OTUAmplicon, self.amplicon_filter)
+            amplicon_description = describe_op_and_val(info, 'amplicon', OTUAmplicon, self.amplicon_filter)
             trait_description = describe_op_and_val_only('trait', self.trait_filter)
-            taxonomy_descriptions = []
-            for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self.state_vector):
-                descr = describe_op_and_val(info, taxonomy_attr, ontology_class, taxonomy)
-                if descr:
-                    taxonomy_descriptions.append(descr)
+            try:
+                ts = int(self.state_vector[0]['value'])
+            except (KeyError, IndexError, TypeError, ValueError):
+                labels_for_taxonomy = []
+            else:
+                labels_for_taxonomy = ['Taxonomy', *info.get_taxonomy_labels().get(ts, [])]
+            taxonomy_descriptions = [
+                describe_op_and_val(info, taxonomy_label, ontology_class, taxonomy)
+                for (taxonomy_attr, ontology_class), taxonomy_label, taxonomy in
+                zip(TaxonomyOptions.hierarchy, labels_for_taxonomy, self.state_vector)
+                if taxonomy]
             return amplicon_description, taxonomy_descriptions, trait_description
 
     def is_empty(self): # See EmptyOTUQuery in frontend/
@@ -604,7 +610,7 @@ class ContextualFilter:
     def describe(self):
         descr = []
         with OntologyInfo() as info:
-            env_descr = describe_op_and_val(info, 'am_environment_id', Environment, self.environment_filter)
+            env_descr = describe_op_and_val(info, 'am_environment', Environment, self.environment_filter)
             descr.append(env_descr)
             descr += [term.describe() for term in self.terms]
         return [t for t in descr if t]
@@ -791,7 +797,7 @@ OP_DESCR = {
 def describe_op_and_val(ontology_info, attr, cls, q):
     if q is None:
         return None
-    return ''.join(([attr[:-3], OP_DESCR[q.get('operator')], repr(ontology_info.id_to_value(cls, q.get('value')))]))
+    return ''.join([attr, OP_DESCR[q.get('operator')], repr(ontology_info.id_to_value(cls, q.get('value')))])
 
 
 def describe_op_and_val_only(attr, q):
