@@ -7,7 +7,6 @@ import Octicon from '../../../components/octicon'
 import { selectEnvironment, removeContextualFilter, selectContextualFiltersMode } from '../reducers/contextual'
 import { clearAllTaxonomyFilters } from '../reducers/taxonomy'
 import { fetchTraits } from '../../../reducers/reference_data/traits'
-import { selectAmplicon, getDefaultAmplicon } from '../reducers/amplicon'
 import { selectTrait } from '../reducers/trait'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import { createAction } from 'redux-actions'
@@ -87,16 +86,6 @@ class SearchFilters extends React.Component<any> {
     this.props.handleSearchFilterClick('amplicon_id')
   }
 
-  onSelectAmplicon = () => {
-    const defaultAmplicon =  getDefaultAmplicon(this.props.amplicons)
-    this.props.clearAllTaxonomyFilters()
-    this.props.selectAmplicon(defaultAmplicon?defaultAmplicon.id:"")
-    this.props.fetchTraits()
-    this.props.selectTrait('')
-    this.props.updateTaxonomyDropDown('')
-    this.props.handleSearchFilterClick('amplicon_id')
-  }
-
   onSelectTaxonomy = (taxa) => {
     this.props.clearTaxonomyValue(taxa)
     this.props.updateTaxonomyDropDown(taxa)
@@ -127,12 +116,11 @@ class SearchFilters extends React.Component<any> {
       switch(key) {
         case "selectedAmplicon":
           if (value['value']) {
-            let searchFilter = <SearchFilterButton
-              onClick={() => this.onSelectAmplicon()}
-              color="primary" key={key} octicon="x"
-              text={"Amplicon <" + value['operator'] + "> " +
-                this.getSelectedFilter(this.props.amplicons, value['value'], 'value')} />
-            searchFilters.push(searchFilter)
+            searchFilters.push(
+              <span>
+                {"Amplicon <" + value['operator'] + "> " +
+                  this.getSelectedFilter(this.props.amplicons, value['value'], 'value')}
+              </span>)
           }
           break
         case "selectedTrait":
@@ -241,7 +229,6 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch: any, props) {
   return bindActionCreators(
     {
-      selectAmplicon,
       selectTrait,
       fetchTraits,
       clearAllTaxonomyFilters,
