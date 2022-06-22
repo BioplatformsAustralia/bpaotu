@@ -43,6 +43,11 @@ const SearchFilterButton = props => {
   )
 }
 
+const InfoBox = (props) => (
+  <div className="alert-secondary btn-sm" style={{ borderWidth: '1px', borderStyle: 'solid' }}>
+    {props.children}
+  </div>)
+
 class SearchFilters extends React.Component<any> {
 
   getSelectedFilter = (filters, filter_id, filter_name) => {
@@ -117,10 +122,11 @@ class SearchFilters extends React.Component<any> {
         case "selectedAmplicon":
           if (value['value']) {
             searchFilters.push(
-              <span>
+              <InfoBox key={'selectedAmplicon'}>
                 {"Amplicon <" + value['operator'] + "> " +
                   this.getSelectedFilter(this.props.amplicons, value['value'], 'value')}
-              </span>)
+              </InfoBox>
+            )
           }
           break
         case "selectedTrait":
@@ -136,17 +142,18 @@ class SearchFilters extends React.Component<any> {
         case "taxonomy":
           for (const [taxoType, taxoValue] of Object.entries(value)) {
             let selectedTaxo = taxoValue['selected']
-            if (selectedTaxo && selectedTaxo['value'] &&
-              // Doesn't make sense to include taxonomy_source
-              taxonomy_ranks.indexOf(taxoType) > -1) {
-              let searchFilter = <SearchFilterButton
-                id={taxoType}
-                onClick={() => this.onSelectTaxonomy(taxoType)}
-                color="secondary" key={taxoType} octicon="x"
-                text={this.props.rankLabels[taxoType] +
-                  " <" + selectedTaxo['operator'] + "> " +
-                  this.getSelectedFilter(taxoValue['options'], selectedTaxo['value'], 'value')} />
-              searchFilters.push(searchFilter)
+            if (selectedTaxo && selectedTaxo['value']) {
+              const text = (this.props.rankLabels[taxoType] + " <" + selectedTaxo['operator'] + "> " +
+                this.getSelectedFilter(taxoValue['options'], selectedTaxo['value'], 'value'))
+              if (taxonomy_ranks.indexOf(taxoType) < 0) {
+                searchFilters.push(<InfoBox key={taxoType}>{text}</InfoBox>)
+              } else {
+                searchFilters.push(<SearchFilterButton
+                  id={taxoType}
+                  onClick={() => this.onSelectTaxonomy(taxoType)}
+                  color="secondary" key={taxoType} octicon="x"
+                  text={text} />)
+              }
             }
           }
           break
