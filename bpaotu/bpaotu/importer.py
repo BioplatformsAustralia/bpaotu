@@ -29,7 +29,7 @@ from sqlalchemy.sql.expression import text
 from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon,
                   taxonomy_keys, taxonomy_key_id_names, rank_labels_lookup,
-                  TaxonomySource, taxonomy_ontology_classes,
+                  TaxonomySource, taxonomy_ontology_classes, format_taxonomy_name,
                   SampleAustralianSoilClassification,
                   SampleColor, SampleContext, SampleEcologicalZone,
                   SampleHorizonClassification,
@@ -98,7 +98,7 @@ class TaxonomyRowsIterator:
         for amplicon_code, fname in self.taxonomy_files:
             logger.info('reading taxonomy file: {}'.format(fname))
             taxonomy_db, taxonomy_method = fname.split('.')[-4:-2]
-            taxonomy_source = "{} {}".format(taxonomy_db, taxonomy_method)
+            taxonomy_source = format_taxonomy_name(taxonomy_db, taxonomy_method)
             with gzip.open(fname, 'rt') as fd:
                 reader = csv.reader(fd, dialect='excel-tab')
                 header = [name.lower() for name in next(reader)]

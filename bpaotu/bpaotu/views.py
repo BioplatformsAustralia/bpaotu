@@ -37,7 +37,7 @@ from .ckan_auth import require_CKAN_auth
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .importer import DataImporter
 from .models import NonDenoisedDataRequest
-from .otu import (Environment, OTUAmplicon, SampleContext, TaxonomySource)
+from .otu import (Environment, OTUAmplicon, SampleContext, TaxonomySource, format_taxonomy_name)
 from .query import (ContextualFilter, ContextualFilterTermDate,
                     ContextualFilterTermFloat, ContextualFilterTermLongitude,
                     ContextualFilterTermOntology,
@@ -160,7 +160,9 @@ def api_config(request):
             else reverse('dev_only_ckan_check_permissions')),
         'galaxy_integration': settings.GALAXY_INTEGRATION,
         'default_amplicon': settings.DEFAULT_AMPLICON,
-        'metagenome_amplicon': 'metaxa_from_metagenomes'
+        'default_taxonomies': [format_taxonomy_name(db, method)
+                               for db, method in settings.DEFAULT_TAXONOMIES],
+        'metagenome_amplicon': 'metaxa_from_metagenomes',
     }
     return JsonResponse(config)
 

@@ -15,9 +15,13 @@ export default class DropDownSelector extends React.Component<any> {
 
     componentDidUpdate() {
         if (this.props.selected.value === '' && this.props.options.length) {
-            this.props.selectValue(this.props.options[0].id)
+            this.props.selectValue(this.getDefaultOption())
             this.props.onChange()
         }
+    }
+
+    public getDefaultOption() {
+        return this.props.options[0].id
     }
 
     public onValueChange(evt) {
