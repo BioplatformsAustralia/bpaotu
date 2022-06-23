@@ -1,3 +1,4 @@
+import { find } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
@@ -7,6 +8,21 @@ import DropDownFilter from '../../../components/drop_down_filter'
 import DropDownSelector from './taxonomy_selector'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import { taxonomy_ranks } from '../../../constants'
+
+
+class TaxonomySourceSelector extends DropDownSelector {
+  public getDefaultOption() {
+    for (const default_ts of window.otu_search_config.default_taxonomies) {
+      const d = find(this.props.options,
+        opt => opt.value.toLowerCase() === default_ts.toLowerCase())
+      if (d) {
+        return d.id
+      }
+    }
+    return this.props.options[0].id
+  }
+}
+
 
 const taxonomyFilterStateToProps = (rank, label : any = "") => state => {
   const { options, isDisabled, isLoading, selected } = state.searchPage.filters.taxonomy[rank]
@@ -40,7 +56,7 @@ const connectUpTaxonomyDropDownFilter = (rank) =>
 export const TaxonomySelector = connect(
   taxonomyFilterStateToProps('taxonomy_source', 'Taxonomy'),
   taxonomyDispatchToProps('taxonomy_source')
-)(DropDownSelector)
+)(TaxonomySourceSelector)
 
 export const TaxonomyDropDowns = taxonomy_ranks.map(
   (rank) => {

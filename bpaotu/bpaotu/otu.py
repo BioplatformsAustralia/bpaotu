@@ -92,6 +92,9 @@ taxonomy_ontology_classes = [type(name, (OntologyMixin, Base), {}) for name in (
     'TaxonomySource',
     'OTUr1', 'OTUr2', 'OTUr3', 'OTUr4', 'OTUr5', 'OTUr6', 'OTUr7', 'OTUr8')]
 
+def format_taxonomy_name(taxonomy_db, taxonomy_method):
+    return "{} {}".format(taxonomy_db, taxonomy_method)
+
 # Different taxonomies have different rank names. See importer.DataImporter()
 TaxonomySource = taxonomy_ontology_classes[0]
 TaxonomySource.hierarchy_type = Column(Integer) # Index into rank_labels_lookup
