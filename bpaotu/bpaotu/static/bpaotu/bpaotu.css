@@ -216,3 +216,8 @@ body {
 .bpaotu-samples__tab-content {
     overflow: auto;
 }
+
+body .tooltip-inner {
+    max-width: 350px;
+    text-align: left;
+}

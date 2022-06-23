@@ -18,11 +18,17 @@ import {
 } from './taxonomy_filters'
 
 export const AmpliconFilterInfo =
-  'Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, Eukaryotes (v4 and v9) and Fungi. To filter data from a single amplicon select that amplicon here. Note that selecting an amplicon with no further taxonomy selection will return all sequences resulting from that assay, including non-target. Selecting, for example, "Kingdom = Bacteria" will remove non-target sequences.'
+  'Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, ' +
+  'Eukaryotes (v4 and v9) and Fungi. To filter data from a single amplicon select that amplicon here. ' +
+  'Note that selecting an amplicon with no further taxonomy selection will return all sequences ' +
+  'resulting from that assay, including non-target. Selecting, for example, "Kingdom = Bacteria" will ' +
+  'remove non-target sequences.'
 export const TaxonomyFilterInfo =
-  'Taxonomy is assigned according to the currently selected taxonomy database and method'
+  'Taxonomy is assigned according to the currently selected taxonomy database and method. ' +
+  'NN=nearest neighbour (without consensus), Sklearn=sklearn bayesian, wang = rdp_bayesian.'
   export const TraitFilterInfo =
-  'Traits are assigned using FAPROTAX [v1.2.4] based on SILVA [v132] taxonomy for Bacteria and Archaea 16S. Traits are assigned based on Guild field from FUNGuild [v1.2] using UNITE_SH [v8] taxonomy for ITS regions.'
+  'Traits are assigned using FAPROTAX [v1.2.4] based on SILVA [v132] taxonomy for Bacteria and Archaea 16S. ' +
+  'Traits are assigned based on Guild field from FUNGuild [v1.2] using UNITE_SH [v8] taxonomy for ITS regions.'
 export const TaxonomyNoAmpliconInfo =
   'Select Amplicon to filter taxonomy'
 const TaxonomySourceInfo = "Selects the database and method used for taxonomy classification"
