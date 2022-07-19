@@ -2,7 +2,6 @@ import React from 'react';
 import { find, filter } from 'lodash';
 import { TabContent, TabPane, Nav, NavItem, NavLink, UncontrolledTooltip} from 'reactstrap'
 import Octicon from '../../../components/octicon'
-import AnimateHelix from '../../../components/animate_helix'
 import PieChartContextual from './charts/pie_chart_contextual'
 import PieChartEnvironment from './charts/pie_chart_environment'
 import PieChartAmplicon from './charts/pie_chart_amplicon'
@@ -113,261 +112,219 @@ class ContextualTab extends React.Component<any>  {
 class GraphTabbed extends React.Component<any> {
 
     render() {
-        const loadingstyle= {
-            display: 'flex',
-            height: '100%',
-            justifyContent: 'center',
-            alignItems: 'center'
-        };
         const chartWidth = window.innerWidth*.90
         const chartHeight = window.innerHeight*.70
         return (
             <>
-                {this.props.contextualIsLoading || this.props.taxonomyIsLoading
-                    ?
-                    <div style={loadingstyle}>
-                        <AnimateHelix />
-                    </div>
-                    :
-                    <div style={{margin: '0px -15px'}}>
-                        <Nav tabs>
-                            <NavItem>
-                                <NavLink>
-                                    {'      '}
-                                </NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink
-                                    data-tut="reactour__graph_amplicon"
-                                    id="reactour__graph_amplicon"
-                                    className={classnames({ active: this.props.tabSelected === 'tab_amplicon' })}
-                                    onClick={() => { this.props.selectTab('tab_amplicon') }}
-                                >
-                                    {'Amplicon '}
-                                    <span id="ampliconTipGraphTab">
-                                        <Octicon name="info" align="top" />
-                                    </span>
-                                    <UncontrolledTooltip target="ampliconTipGraphTab" placement="auto">
-                                        {AmpliconFilterInfo}
-                                    </UncontrolledTooltip>
-                                </NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink
-                                    data-tut="reactour__graph_taxonomy"
-                                    id="reactour__graph_taxonomy"
-                                    className={classnames({ active: this.props.tabSelected === 'tab_taxonomy' })}
-                                    onClick={() => { this.props.selectTab('tab_taxonomy') }}
-                                >
-                                    {'Taxonomy '}
-                                    <span id="taxonomyTipGraphTab">
-                                        <Octicon name="info" align="top" />
-                                    </span>
-                                    <UncontrolledTooltip target="taxonomyTipGraphTab" placement="auto">
-                                        {TaxonomyFilterInfo}
-                                    </UncontrolledTooltip>
-                                </NavLink>
-                            </NavItem>
-                            <NavItem >
-                                <NavLink
-                                    data-tut="reactour__graph_traits"
-                                    id="reactour__graph_traits"
-                                    className={classnames({ active: this.props.tabSelected === 'tab_traits' })}
-                                    onClick={() => { this.props.selectTab('tab_traits') }}
-                                >
-                                    {'Traits '}
-                                    <span id="traitsTipGraphTab">
-                                        <Octicon name="info" align="top" />
-                                    </span>
-                                    <UncontrolledTooltip target="traitsTipGraphTab" placement="auto">
-                                        {TraitFilterInfo}
-                                    </UncontrolledTooltip>
-                                </NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink
-                                    data-tut="reactour__graph_environment"
-                                    id="reactour__graph_environment"
-                                    className={classnames({ active: this.props.tabSelected === 'tab_am_environment_id' })}
-                                    onClick={() => { this.props.selectTab('tab_am_environment_id') }}
-                                >
-                                    {'Environment '}
-                                    <span id="environmentTipGraphTab">
-                                        <Octicon name="info" align="top" />
-                                    </span>
-                                    <UncontrolledTooltip target="environmentTipGraphTab" placement="auto">
-                                        {EnvironmentInfo}
-                                    </UncontrolledTooltip>
-                                </NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink
-                                    data-tut="reactour__graph_contextual"
-                                    id="reactour__graph_contextual"
-                                    className={classnames({ active: this.props.tabSelected === 'tab_contextual' })}
-                                    onClick={() => { this.props.selectTab('tab_contextual') }}
-                                >
-                                    {'Contextual Filters '}
-                                    <span id="contextualFiltersTipGraphTab">
-                                        <Octicon name="info" align="top" />
-                                    </span>
-                                    <UncontrolledTooltip target="contextualFiltersTipGraphTab" placement="auto">
-                                        {ContextualFilterInfo}
-                                    </UncontrolledTooltip>
-                                </NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink
-                                    data-tut="reactour__graph_taxonomy_am_environment"
-                                    id="reactour__graph_taxonomy_am_environment"
-                                    className={classnames({ active: this.props.tabSelected === 'tab_taxonomy_am_environment_id' })}
-                                    onClick={() => { this.props.selectTab('tab_taxonomy_am_environment_id') }}
-                                >
-                                    {'Taxonomy vs Environment '}
-                                    <span id="taxonomyEnvironmentTipGraphTab">
-                                        <Octicon name="info" align="top" />
-                                    </span>
-                                    <UncontrolledTooltip target="taxonomyEnvironmentTipGraphTab" placement="auto">
-                                        {'Relative abundance of taxonomy for AM environment '}
-                                    </UncontrolledTooltip>
-                                </NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink
-                                    data-tut="reactour__graph_traits_am_environment"
-                                    id="reactour__graph_traits_am_environment"
-                                    className={classnames({ active: this.props.tabSelected === 'tab_traits_am_environment_id' })}
-                                    onClick={() => { this.props.selectTab('tab_traits_am_environment_id') }}
-                                >
-                                    {'Traits vs Environment '}
-                                    <span id="traitsEnvironmentTipGraphTab">
-                                        <Octicon name="info" align="top" />
-                                    </span>
-                                    <UncontrolledTooltip target="traitsEnvironmentTipGraphTab" placement="auto">
-                                        {'Relative abundance of traits for AM environment '}
-                                    </UncontrolledTooltip>
-                                </NavLink>
-                            </NavItem>
-                        </Nav>
-                        <TabContent activeTab={this.props.tabSelected}>
-                            <TabPane tabId="tab_amplicon">
-                                <PieChartAmplicon
+                <div style={{ margin: '0px -15px' }}>
+                    <Nav tabs>
+                        <NavItem>
+                            <NavLink>
+                                {'      '}
+                            </NavLink>
+                        </NavItem>
+                        <NavItem>
+                            <NavLink
+                                data-tut="reactour__graph_amplicon"
+                                id="reactour__graph_amplicon"
+                                className={classnames({ active: this.props.tabSelected === 'tab_amplicon' })}
+                                onClick={() => { this.props.selectTab('tab_amplicon') }}
+                            >
+                                {'Amplicon '}
+                                <span id="ampliconTipGraphTab">
+                                    <Octicon name="info" align="top" />
+                                </span>
+                                <UncontrolledTooltip target="ampliconTipGraphTab" placement="auto">
+                                    {AmpliconFilterInfo}
+                                </UncontrolledTooltip>
+                            </NavLink>
+                        </NavItem>
+                        <NavItem>
+                            <NavLink
+                                data-tut="reactour__graph_taxonomy"
+                                id="reactour__graph_taxonomy"
+                                className={classnames({ active: this.props.tabSelected === 'tab_taxonomy' })}
+                                onClick={() => { this.props.selectTab('tab_taxonomy') }}
+                            >
+                                {'Taxonomy '}
+                                <span id="taxonomyTipGraphTab">
+                                    <Octicon name="info" align="top" />
+                                </span>
+                                <UncontrolledTooltip target="taxonomyTipGraphTab" placement="auto">
+                                    {TaxonomyFilterInfo}
+                                </UncontrolledTooltip>
+                            </NavLink>
+                        </NavItem>
+                        <NavItem >
+                            <NavLink
+                                data-tut="reactour__graph_traits"
+                                id="reactour__graph_traits"
+                                className={classnames({ active: this.props.tabSelected === 'tab_traits' })}
+                                onClick={() => { this.props.selectTab('tab_traits') }}
+                            >
+                                {'Traits '}
+                                <span id="traitsTipGraphTab">
+                                    <Octicon name="info" align="top" />
+                                </span>
+                                <UncontrolledTooltip target="traitsTipGraphTab" placement="auto">
+                                    {TraitFilterInfo}
+                                </UncontrolledTooltip>
+                            </NavLink>
+                        </NavItem>
+                        <NavItem>
+                            <NavLink
+                                data-tut="reactour__graph_environment"
+                                id="reactour__graph_environment"
+                                className={classnames({ active: this.props.tabSelected === 'tab_am_environment_id' })}
+                                onClick={() => { this.props.selectTab('tab_am_environment_id') }}
+                            >
+                                {'Environment '}
+                                <span id="environmentTipGraphTab">
+                                    <Octicon name="info" align="top" />
+                                </span>
+                                <UncontrolledTooltip target="environmentTipGraphTab" placement="auto">
+                                    {EnvironmentInfo}
+                                </UncontrolledTooltip>
+                            </NavLink>
+                        </NavItem>
+                        <NavItem>
+                            <NavLink
+                                data-tut="reactour__graph_contextual"
+                                id="reactour__graph_contextual"
+                                className={classnames({ active: this.props.tabSelected === 'tab_contextual' })}
+                                onClick={() => { this.props.selectTab('tab_contextual') }}
+                            >
+                                {'Contextual Filters '}
+                                <span id="contextualFiltersTipGraphTab">
+                                    <Octicon name="info" align="top" />
+                                </span>
+                                <UncontrolledTooltip target="contextualFiltersTipGraphTab" placement="auto">
+                                    {ContextualFilterInfo}
+                                </UncontrolledTooltip>
+                            </NavLink>
+                        </NavItem>
+                        <NavItem>
+                            <NavLink
+                                data-tut="reactour__graph_taxonomy_am_environment"
+                                id="reactour__graph_taxonomy_am_environment"
+                                className={classnames({ active: this.props.tabSelected === 'tab_taxonomy_am_environment_id' })}
+                                onClick={() => { this.props.selectTab('tab_taxonomy_am_environment_id') }}
+                            >
+                                {'Taxonomy vs Environment '}
+                                <span id="taxonomyEnvironmentTipGraphTab">
+                                    <Octicon name="info" align="top" />
+                                </span>
+                                <UncontrolledTooltip target="taxonomyEnvironmentTipGraphTab" placement="auto">
+                                    {'Relative abundance of taxonomy for AM environment '}
+                                </UncontrolledTooltip>
+                            </NavLink>
+                        </NavItem>
+                        <NavItem>
+                            <NavLink
+                                data-tut="reactour__graph_traits_am_environment"
+                                id="reactour__graph_traits_am_environment"
+                                className={classnames({ active: this.props.tabSelected === 'tab_traits_am_environment_id' })}
+                                onClick={() => { this.props.selectTab('tab_traits_am_environment_id') }}
+                            >
+                                {'Traits vs Environment '}
+                                <span id="traitsEnvironmentTipGraphTab">
+                                    <Octicon name="info" align="top" />
+                                </span>
+                                <UncontrolledTooltip target="traitsEnvironmentTipGraphTab" placement="auto">
+                                    {'Relative abundance of traits for AM environment '}
+                                </UncontrolledTooltip>
+                            </NavLink>
+                        </NavItem>
+                    </Nav>
+                    <TabContent activeTab={this.props.tabSelected}>
+                        <TabPane tabId="tab_amplicon">
+                            <PieChartAmplicon
+                                width={chartWidth}
+                                height={chartHeight}
+                                selectTab={(e) => { this.props.selectTab(e) }}
+                                selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                filter="amplicon"
+                                taxonomyGraphdata={this.props.taxonomyGraphdata.amplicon} />
+                        </TabPane>
+                        <TabPane tabId="tab_taxonomy" data-tut="reactour__graph_taxonomy_page">
+                            <>
+                                <SunBurstChartTaxonomy
+                                    width={chartWidth} height={chartHeight}
+                                    selectTab={(e) => { this.props.selectTab(e) }}
+                                    selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                    filter="taxonomy"
+                                    taxonomyGraphdata={this.props.taxonomyGraphdata}
+                                    contextualGraphdata={this.props.contextualGraphdata} />
+                            </>
+                        </TabPane>
+                        <TabPane tabId="tab_traits">
+                            <>
+                                <PieChartTraits
                                     width={chartWidth}
                                     height={chartHeight}
-                                    selectTab={(e) => {this.props.selectTab(e)}}
-                                    selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                    filter="amplicon"
-                                    taxonomyGraphdata={this.props.taxonomyGraphdata.amplicon} />
-                            </TabPane>
-                            <TabPane tabId="tab_taxonomy" data-tut="reactour__graph_taxonomy_page">
-                                {this.props.chart_enabled &&
-                                    <>
-                                    <SunBurstChartTaxonomy
-                                        width={chartWidth} height={chartHeight}
-                                        selectTab={(e) => {this.props.selectTab(e)}}
-                                        selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                        filter="taxonomy"
-                                        taxonomyIsLoading={this.props.taxonomyIsLoading}
-                                        contextualIsLoading={this.props.contextualIsLoading}
-                                        taxonomyGraphdata={this.props.taxonomyGraphdata}
-                                        contextualGraphdata={this.props.contextualGraphdata} />
-                                    </>
-                                }
-                            </TabPane>
-                            <TabPane tabId="tab_traits">
-                                {(this.props.taxonomyIsLoading)
-                                    ?
-                                    <div style={loadingstyle}>
-                                        <AnimateHelix />
-                                    </div>
-                                    :
-                                    <>
-                                        <PieChartTraits
-                                            width={chartWidth}
-                                            height={chartHeight}
-                                            selectTab={(e) => {this.props.selectTab(e)}}
-                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                            filter="traits"
-                                            taxonomyGraphdata={this.props.taxonomyGraphdata.traits} />
-                                    </>
-                                }
-                            </TabPane>
-                            <TabPane tabId="tab_am_environment_id">
-                                {this.props.chart_enabled &&
-                                    <>
-                                        <PieChartEnvironment
-                                            width={chartWidth}
-                                            height={chartHeight}
-                                            selectTab={(e) => {this.props.selectTab(e)}}
-                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                            filter="am_environment_id"
-                                            contextualGraphdata={this.props.contextualGraphdata} />
-                                    </>
-                                }
-                            </TabPane>
-                            <TabPane tabId="tab_contextual">
-                                <div style={{margin: '10px 0px'}}>
-                                {(!this.props.contextualIsLoading)
-                                    ?
-                                    <ContextualTab
-                                        chartWidth={chartWidth}
-                                        chartHeight={chartHeight}
-                                        selectTab={(e) => {this.props.selectTab(e)}}
-                                        scrollToSelected={this.props.scrollToSelected}
-                                        selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                        contextualGraphdata={this.props.contextualGraphdata}
-                                        selectedEnvironment={this.props.selectedEnvironment}
-                                        optionscontextualFilter={this.props.optionscontextualFilter}
-                                        optionsEnvironment={this.props.optionsEnvironment}
-                                    />
-                                    :
-                                    <div style={loadingstyle}>
-                                        <AnimateHelix />
-                                    </div>
-                                }
-                                </div>
-                            </TabPane>
-                            <TabPane tabId="tab_taxonomy_am_environment_id">
-                                {this.props.chart_enabled
-                                    ?
-                                    <>
-                                        <StackChartTaxonomy
-                                            width={chartWidth}
-                                            height={chartHeight}
-                                            selectTab={(e) => {this.props.selectTab(e)}}
-                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                            filter="taxonomy_am_environment_id"
-                                            taxonomyGraphdata={this.props.taxonomyGraphdata}
-                                            contextualGraphdata={this.props.contextualGraphdata} />
-                                    </>
-                                    :
-                                    <div style={loadingstyle}>
-                                        <AnimateHelix />
-                                    </div>
-                                }
-                            </TabPane>
-                            <TabPane tabId="tab_traits_am_environment_id">
-                                {this.props.chart_enabled
-                                    ?
-                                    <>
-                                        <StackChartTraits
-                                            width={chartWidth}
-                                            height={chartHeight}
-                                            selectTab={(e) => {this.props.selectTab(e)}}
-                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                            filter="taxonomy_am_environment_id"
-                                            taxonomyGraphdata={this.props.taxonomyGraphdata}
-                                            contextualGraphdata={this.props.contextualGraphdata} />
-                                    </ >
-                                    :
-                                    <div style={loadingstyle}>
-                                        <AnimateHelix />
-                                    </div>
-                                }
-                            </TabPane>
-                        </TabContent>
-                   </div>
-                }
+                                    selectTab={(e) => { this.props.selectTab(e) }}
+                                    selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                    filter="traits"
+                                    taxonomyGraphdata={this.props.taxonomyGraphdata.traits} />
+                            </>
+                        </TabPane>
+                        <TabPane tabId="tab_am_environment_id">
+                            <>
+                                <PieChartEnvironment
+                                    width={chartWidth}
+                                    height={chartHeight}
+                                    selectTab={(e) => { this.props.selectTab(e) }}
+                                    selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                    filter="am_environment_id"
+                                    contextualGraphdata={this.props.contextualGraphdata} />
+                            </>
+                        </TabPane>
+                        <TabPane tabId="tab_contextual">
+                            <div style={{ margin: '10px 0px' }}>
+
+                                <ContextualTab
+                                    chartWidth={chartWidth}
+                                    chartHeight={chartHeight}
+                                    selectTab={(e) => { this.props.selectTab(e) }}
+                                    scrollToSelected={this.props.scrollToSelected}
+                                    selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                    contextualGraphdata={this.props.contextualGraphdata}
+                                    selectedEnvironment={this.props.selectedEnvironment}
+                                    optionscontextualFilter={this.props.optionscontextualFilter}
+                                    optionsEnvironment={this.props.optionsEnvironment}
+                                />
+
+
+                            </div>
+                        </TabPane>
+                        <TabPane tabId="tab_taxonomy_am_environment_id">
+                            <>
+                                <StackChartTaxonomy
+                                    width={chartWidth}
+                                    height={chartHeight}
+                                    selectTab={(e) => { this.props.selectTab(e) }}
+                                    selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                    filter="taxonomy_am_environment_id"
+                                    taxonomyGraphdata={this.props.taxonomyGraphdata}
+                                    contextualGraphdata={this.props.contextualGraphdata} />
+                            </>
+
+                        </TabPane>
+                        <TabPane tabId="tab_traits_am_environment_id">
+                            <>
+                                <StackChartTraits
+                                    width={chartWidth}
+                                    height={chartHeight}
+                                    selectTab={(e) => { this.props.selectTab(e) }}
+                                    selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                    filter="taxonomy_am_environment_id"
+                                    taxonomyGraphdata={this.props.taxonomyGraphdata}
+                                    contextualGraphdata={this.props.contextualGraphdata} />
+                            </ >
+
+                        </TabPane>
+                    </TabContent>
+                </div>
             </>
         )
     }

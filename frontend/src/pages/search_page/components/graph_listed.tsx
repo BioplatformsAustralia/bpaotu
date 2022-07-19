@@ -2,7 +2,6 @@ import React from 'react';
 import { find, filter } from 'lodash';
 import { Container, Card, CardHeader, CardBody, Row, Col, UncontrolledTooltip} from 'reactstrap'
 import Octicon from '../../../components/octicon'
-import AnimateHelix from '../../../components/animate_helix'
 import PieChartContextual from './charts/pie_chart_contextual'
 import PieChartEnvironment from './charts/pie_chart_environment'
 import PieChartAmplicon from './charts/pie_chart_amplicon'
@@ -37,183 +36,159 @@ class GraphListed extends React.Component<any> {
     }
 
     render() {
-        const loadingstyle= {
-            display: 'flex',
-            height: '100%',
-            justifyContent: 'center',
-            alignItems: 'center'
-        };
-
         return (
             <>
-                {this.props.contextualIsLoading || this.props.taxonomyIsLoading
-                    ?
-                    <div style={loadingstyle}>
-                        <AnimateHelix />
-                    </div>
-                    :
-                    <Container fluid={true}>
-                        <Row style={{marginBottom: '10px'}}>
-                            <Col>
-                                <Card>
-                                    <CardHeader tag="h3">
-                                        Amplicon
-                                        <span id="ampliconTipGraph">
-                                            <Octicon name="info" />
-                                        </span>
-                                        <UncontrolledTooltip target="ampliconTipGraph" placement="auto">
-                                            {AmpliconFilterInfo}
-                                        </UncontrolledTooltip>
-                                    </CardHeader>
-                                    <CardBody>
-                                        <PieChartAmplicon
-                                            selectTab={(e) => {this.props.selectTab(e)}}
-                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                            filter="amplicon"
-                                            taxonomyGraphdata={this.props.taxonomyGraphdata.amplicon} />
-                                    </CardBody>
-                                </Card>
-                            </Col>
-                        </Row>
-                        <Row style={{marginBottom: '10px'}}>
-                            <Col>
-                                <Card>
-                                    <CardHeader tag="h3">
-                                        Taxonomy
-                                        <span id="taxonomyTipGraph">
-                                            <Octicon name="info" />
-                                        </span>
-                                        <UncontrolledTooltip target="taxonomyTipGraph" placement="auto">
-                                            {TaxonomyFilterInfo}
-                                        </UncontrolledTooltip>
-                                    </CardHeader>
-                                    <CardBody>
-                                        {this.props.chart_enabled &&
-                                            <>
-                                                <SunBurstChartTaxonomy
-                                                    selectTab={(e) => {this.props.selectTab(e)}}
-                                                    selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                                    filter="taxonomy"
-                                                    taxonomyIsLoading={this.props.taxonomyIsLoading}
-                                                    contextualIsLoading={this.props.contextualIsLoading}
-                                                    taxonomyGraphdata={this.props.taxonomyGraphdata}
-                                                    contextualGraphdata={this.props.contextualGraphdata} />
-                                                <StackChartTaxonomy
-                                                    selectTab={(e) => {this.props.selectTab(e)}}
-                                                    selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                                    filter="taxonomy_am_environment_id"
-                                                    taxonomyGraphdata={this.props.taxonomyGraphdata}
-                                                    contextualGraphdata={this.props.contextualGraphdata} />
-                                            </ >
-                                        }
-                                    </CardBody>
-                                </Card>
-                            </Col>
-                        </Row>
-                        <Row style={{marginBottom: '10px'}}>
-                            <Col>
-                                <Card>
-                                    <CardHeader tag="h3">
-                                        Traits
-                                        <span id="traitsTipGraphTab">
-                                            <Octicon name="info" />
-                                        </span>
-                                        <UncontrolledTooltip target="traitsTipGraphTab" placement="auto">
-                                            {TraitFilterInfo}
-                                        </UncontrolledTooltip>
-                                    </CardHeader>
-                                    <CardBody>
-                                        {this.props.chart_enabled &&
-                                            <>
-                                                <PieChartTraits
-                                                    selectTab={(e) => {this.props.selectTab(e)}}
-                                                    selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                                    filter="traits"
-                                                    taxonomyGraphdata={this.props.taxonomyGraphdata.traits} />
-                                                <StackChartTraits
-                                                    selectTab={(e) => {this.props.selectTab(e)}}
-                                                    selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                                    filter="taxonomy_am_environment_id"
-                                                    taxonomyGraphdata={this.props.taxonomyGraphdata}
-                                                    contextualGraphdata={this.props.contextualGraphdata} />
-                                            </>
-                                        }
-                                    </CardBody>
-                                </Card>
-                            </Col>
-                        </Row>
-                        <Row style={{marginBottom: '10px'}}>
-                            <Col>
-                                <Card>
-                                    <CardHeader tag="h3">
-                                        Environment
-                                        <span id="environmentTipGraphTab">
-                                            <Octicon name="info" />
-                                        </span>
-                                        <UncontrolledTooltip target="environmentTipGraphTab" placement="auto">
-                                            {EnvironmentInfo}
-                                        </UncontrolledTooltip>
-                                    </CardHeader>
-                                    <CardBody>
-                                    {this.props.chart_enabled &&
-                                            <>
-                                                <PieChartEnvironment
-                                                    selectTab={(e) => {this.props.selectTab(e)}}
-                                                    selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                                    filter="am_environment_id"
-                                                    contextualGraphdata={this.props.contextualGraphdata} />
-                                            </>
-                                    }
-                                    </CardBody>
-                                </Card>
-                            </Col>
-                        </Row>
-                        <Row style={{marginBottom: '10px'}}>
-                            <Col>
-                                <Card>
-                                    <CardHeader tag="h3">
-                                        Contextual Filters
-                                        <span id="contextualFiltersTipGraphTab">
-                                            <Octicon name="info" />
-                                        </span>
-                                        <UncontrolledTooltip target="contextualFiltersTipGraphTab" placement="auto">
-                                            {ContextualFilterInfo}
-                                        </UncontrolledTooltip>
-                                    </CardHeader>
-                                    <CardBody>
-                                        {
-                                            this.graphlist.map(graphName =>
-                                                this.applyEnvironmentFilter(graphName)
+                <Container fluid={true}>
+                    <Row style={{ marginBottom: '10px' }}>
+                        <Col>
+                            <Card>
+                                <CardHeader tag="h3">
+                                    Amplicon
+                                    <span id="ampliconTipGraph">
+                                        <Octicon name="info" />
+                                    </span>
+                                    <UncontrolledTooltip target="ampliconTipGraph" placement="auto">
+                                        {AmpliconFilterInfo}
+                                    </UncontrolledTooltip>
+                                </CardHeader>
+                                <CardBody>
+                                    <PieChartAmplicon
+                                        selectTab={(e) => { this.props.selectTab(e) }}
+                                        selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                        filter="amplicon"
+                                        taxonomyGraphdata={this.props.taxonomyGraphdata.amplicon} />
+                                </CardBody>
+                            </Card>
+                        </Col>
+                    </Row>
+                    <Row style={{ marginBottom: '10px' }}>
+                        <Col>
+                            <Card>
+                                <CardHeader tag="h3">
+                                    Taxonomy
+                                    <span id="taxonomyTipGraph">
+                                        <Octicon name="info" />
+                                    </span>
+                                    <UncontrolledTooltip target="taxonomyTipGraph" placement="auto">
+                                        {TaxonomyFilterInfo}
+                                    </UncontrolledTooltip>
+                                </CardHeader>
+                                <CardBody>
+                                    <>
+                                        <SunBurstChartTaxonomy
+                                            selectTab={(e) => { this.props.selectTab(e) }}
+                                            selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                            filter="taxonomy"
+                                            taxonomyGraphdata={this.props.taxonomyGraphdata} />
+                                        <StackChartTaxonomy
+                                            selectTab={(e) => { this.props.selectTab(e) }}
+                                            selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                            filter="taxonomy_am_environment_id"
+                                            taxonomyGraphdata={this.props.taxonomyGraphdata} />
+                                    </ >
+                                </CardBody>
+                            </Card>
+                        </Col>
+                    </Row>
+                    <Row style={{ marginBottom: '10px' }}>
+                        <Col>
+                            <Card>
+                                <CardHeader tag="h3">
+                                    Traits
+                                    <span id="traitsTipGraphTab">
+                                        <Octicon name="info" />
+                                    </span>
+                                    <UncontrolledTooltip target="traitsTipGraphTab" placement="auto">
+                                        {TraitFilterInfo}
+                                    </UncontrolledTooltip>
+                                </CardHeader>
+                                <CardBody>
+                                    <>
+                                        <PieChartTraits
+                                            selectTab={(e) => { this.props.selectTab(e) }}
+                                            selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                            filter="traits"
+                                            taxonomyGraphdata={this.props.taxonomyGraphdata.traits} />
+                                        <StackChartTraits
+                                            selectTab={(e) => { this.props.selectTab(e) }}
+                                            selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                            filter="taxonomy_am_environment_id"
+                                            taxonomyGraphdata={this.props.taxonomyGraphdata}
+                                        />
+                                    </>
+                                </CardBody>
+                            </Card>
+                        </Col>
+                    </Row>
+                    <Row style={{ marginBottom: '10px' }}>
+                        <Col>
+                            <Card>
+                                <CardHeader tag="h3">
+                                    Environment
+                                    <span id="environmentTipGraphTab">
+                                        <Octicon name="info" />
+                                    </span>
+                                    <UncontrolledTooltip target="environmentTipGraphTab" placement="auto">
+                                        {EnvironmentInfo}
+                                    </UncontrolledTooltip>
+                                </CardHeader>
+                                <CardBody>
+                                    <>
+                                        <PieChartEnvironment
+                                            selectTab={(e) => { this.props.selectTab(e) }}
+                                            selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                            filter="am_environment_id"
+                                            contextualGraphdata={this.props.contextualGraphdata} />
+                                    </>
+                                </CardBody>
+                            </Card>
+                        </Col>
+                    </Row>
+                    <Row style={{ marginBottom: '10px' }}>
+                        <Col>
+                            <Card>
+                                <CardHeader tag="h3">
+                                    Contextual Filters
+                                    <span id="contextualFiltersTipGraphTab">
+                                        <Octicon name="info" />
+                                    </span>
+                                    <UncontrolledTooltip target="contextualFiltersTipGraphTab" placement="auto">
+                                        {ContextualFilterInfo}
+                                    </UncontrolledTooltip>
+                                </CardHeader>
+                                <CardBody>
+                                    {
+                                        this.graphlist.map(graphName =>
+                                            this.applyEnvironmentFilter(graphName)
                                                 ?
-                                                    find(this.props.optionscontextualFilter, dd => dd.name === graphName && dd.type === "ontology")
+                                                find(this.props.optionscontextualFilter, dd => dd.name === graphName && dd.type === "ontology")
                                                     ?
-                                                        <PieChartContextual
-                                                            key={"pie" + graphName}
-                                                            width={this.props.chartWidth}
-                                                            height={this.props.chartHeight}
-                                                            selectTab={(e) => {this.props.selectTab(e)}}
-                                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                                            filter={graphName}
-                                                            contextualGraphdata={this.props.contextualGraphdata} />
+                                                    <PieChartContextual
+                                                        key={"pie" + graphName}
+                                                        width={this.props.chartWidth}
+                                                        height={this.props.chartHeight}
+                                                        selectTab={(e) => { this.props.selectTab(e) }}
+                                                        selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                                        filter={graphName}
+                                                        contextualGraphdata={this.props.contextualGraphdata} />
                                                     :
-                                                        <HistogramChartContextual
-                                                            key={"hist" + graphName}
-                                                            width={this.props.chartWidth}
-                                                            height={this.props.chartHeight}
-                                                            selectTab={(e) => {this.props.selectTab(e)}}
-                                                            selectToScroll={(e) => {this.props.selectToScroll(e)}}
-                                                            filter={graphName}
-                                                            contextualGraphdata={this.props.contextualGraphdata} />
+                                                    <HistogramChartContextual
+                                                        key={"hist" + graphName}
+                                                        width={this.props.chartWidth}
+                                                        height={this.props.chartHeight}
+                                                        selectTab={(e) => { this.props.selectTab(e) }}
+                                                        selectToScroll={(e) => { this.props.selectToScroll(e) }}
+                                                        filter={graphName}
+                                                        contextualGraphdata={this.props.contextualGraphdata} />
                                                 :
                                                 ""
-                                            )
-                                        }
-                                    </CardBody>
-                                </Card>
-                            </Col>
-                        </Row>
-                    </Container>
-                }
+                                        )
+                                    }
+                                </CardBody>
+                            </Card>
+                        </Col>
+                    </Row>
+                </Container>
             </>
         )
     }

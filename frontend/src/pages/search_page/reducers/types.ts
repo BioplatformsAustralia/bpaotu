@@ -49,9 +49,6 @@ export interface PageState {
   }
   samplesGraphModal: {
     isOpen: boolean
-    isLoading: boolean
-    markers: SampleMarker[], // FIXME used?
-    sample_otus: any[]
   }
   metagenomeModal: {
     sample_id: any
@@ -109,10 +106,7 @@ export const searchPageInitialState: PageState = {
     sample_otus: []
   },
   samplesGraphModal: {
-    isOpen: false,
-    isLoading: false,
-    markers: [],
-    sample_otus: []
+    isOpen: false
   },
   metagenomeModal: {
     sample_id: null

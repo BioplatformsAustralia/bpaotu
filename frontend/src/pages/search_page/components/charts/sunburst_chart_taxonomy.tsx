@@ -60,16 +60,9 @@ class SunBurstChartTaxonomy extends React.Component<any> {
   }
 
   shouldComponentUpdate(nextProps, nextState) {
-    if (this.props.contextualGraphdata !== nextProps.contextualGraphdata) {
-      return true;
-    }
-    if (this.props.taxonomyGraphdata !== nextProps.taxonomyGraphdata) {
-      return true;
-    }
-    if (this.props.taxonomy !== nextProps.taxonomy) {
-      return true;
-    }
-    return false;
+    return (
+      (this.props.taxonomyGraphdata !== nextProps.taxonomyGraphdata) ||
+      (this.props.taxonomy !== nextProps.taxonomy))
   }
 
   render() {
@@ -163,7 +156,7 @@ class SunBurstChartTaxonomy extends React.Component<any> {
 
   public generateGraphData() {
     let sunburst_data = {"labels":[], "parents":[], "text":[], "ids":[], "values":[], "customdata":[]}
-    if(!this.props.taxonomyIsLoading && this.props.taxonomyGraphdata.taxonomy) {
+    if (this.props.taxonomyGraphdata.taxonomy) {
       let parentId = "";
       for (const taxa of taxonomy_ranks) {
         const taxa_label = this.props.rankLabels[taxa]
