@@ -49,9 +49,6 @@ export interface PageState {
   }
   samplesGraphModal: {
     isOpen: boolean
-    isLoading: boolean
-    markers: SampleMarker[],
-    sample_otus: any[]
   }
   galaxy: {
     isSubmitting: boolean
@@ -106,10 +103,7 @@ export const searchPageInitialState: PageState = {
     sample_otus: []
   },
   samplesGraphModal: {
-    isOpen: false,
-    isLoading: false,
-    markers: [],
-    sample_otus: []
+    isOpen: false
   },
   galaxy: {
     alerts: [],

@@ -84,13 +84,15 @@ class SamplesGraphModal extends React.Component<any> {
         </div>
       </ModalHeader>
       <ModalBody data-tut="reactour__graph_view" id="reactour__graph_view">
-        <GraphDashboard
-          showTabbedGraph={this.state.showTabbedGraph}
-          scrollToSelected={this.state.scrollToSelected}
-          selectToScroll={(e) => {this.selectToScroll(e)}}
-          tabSelected={this.state.tabSelected}
-          selectTab={(e) => {this.selectTab(e)}}
-        />
+          {this.props.isOpen &&
+            <GraphDashboard
+              showTabbedGraph={this.state.showTabbedGraph}
+              scrollToSelected={this.state.scrollToSelected}
+              selectToScroll={(e) => { this.selectToScroll(e) }}
+              tabSelected={this.state.tabSelected}
+              selectTab={(e) => { this.selectTab(e) }}
+            />
+          }
       </ModalBody>
       <ModalFooter data-tut="reactour__graph_filter" id="reactour__graph_filter">
         <SearchFilters handleSearchFilterClick={this.handleSearchFilterClick} />
@@ -101,13 +103,8 @@ class SamplesGraphModal extends React.Component<any> {
 }
 
 function mapStateToProps(state) {
-  const { isLoading, isOpen, markers, sample_otus } = state.searchPage.samplesGraphModal
-  return {
-    isLoading,
-    isOpen,
-    markers,
-    sample_otus,
-  }
+  const { isOpen } = state.searchPage.samplesGraphModal
+  return { isOpen }
 }
 
 function mapDispatchToProps(dispatch) {

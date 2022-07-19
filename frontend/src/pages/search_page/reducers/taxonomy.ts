@@ -22,6 +22,9 @@ const fetchTaxonomyOptionsEnded = type => data => ({
   payload: data
 })
 
+
+export const taxonomyOptionsLoading = createAction('TAXONOMY_OPTIONS_LOADING')
+
 const clearTaxonomyFilter = type => () => ({ type: `CLEAR_${type.toUpperCase()}` })
 const disableTaxonomyFilter = type => () => ({ type: `DISABLE_${type.toUpperCase()}` })
 
@@ -49,21 +52,27 @@ const makeTaxonomyFetcher = config => () => (dispatch, getState) => {
     })
 }
 
+export const updateTaxonomyDropDownsInner = taxonomy => () => (dispatch, getState) => {
+  const rest = taxonomy === '' ? taxonomy_keys : taxonomiesAfter(taxonomy)
+  if (isEmpty(rest)) {
+    dispatch(taxonomyOptionsLoading(false))
+    return Promise.resolve()
+  }
+  const nextTaxonomy = first(rest)
+  const fetcher = makeTaxonomyFetcher(taxonomyConfigFor(nextTaxonomy))
+  dispatch(fetcher()).then(() => {
+    return dispatch(updateTaxonomyDropDownsInner(nextTaxonomy)())
+  })
+}
+
 export const updateTaxonomyDropDowns = taxonomy => () => (dispatch, getState) => {
   const rest = taxonomy === '' ? taxonomy_keys : taxonomiesAfter(taxonomy)
-
   if (isEmpty(rest)) {
     return Promise.resolve()
   }
-
+  dispatch(taxonomyOptionsLoading(true))
   rest.forEach(t => dispatch(disableTaxonomyFilter(t)()))
-
-  const nextTaxonomy = first(rest)
-
-  const fetcher = makeTaxonomyFetcher(taxonomyConfigFor(nextTaxonomy))
-  dispatch(fetcher()).then(() => {
-    return dispatch(updateTaxonomyDropDowns(nextTaxonomy)())
-  })
+  return updateTaxonomyDropDownsInner(taxonomy)()(dispatch, getState)
 }
 
 export const clearAllTaxonomyFilters = createAction('CLEAR_ALL_TAXONOMY_FILTERS')
@@ -100,7 +109,7 @@ function makeTaxonomyReducer(taxonomyName) {
         }
 
       case actionTypes.fetchEnded:
-        const possibilites = action.payload.data.possibilities.new_options.possibilities
+        const possibilites = action.payload.data? action.payload.data.possibilities.new_options.possibilities : []
         const options = map(possibilites, (option: any) => ({ id: option[0], value: option[1] }))
 
         const isSelectedStillInOptions = selectedOption => {

@@ -1,4 +1,5 @@
 import { combineReducers } from 'redux'
+import { handleActions } from 'redux-actions'
 
 import { selectedAmpliconReducer } from './amplicon'
 import selectedTraitReducer from './trait'
@@ -8,12 +9,18 @@ import samplesMapModalReducer from './samples_map_modal'
 import samplesGraphModalReducer from './samples_graph_modal'
 import searchResultsReducer from './search'
 import submitToGalaxyReducer from './submit_to_galaxy'
-import taxonomyReducer from './taxonomy'
+import taxonomyReducer,  {taxonomyOptionsLoading}    from './taxonomy'
 import tipsReducer from './tips'
+
+const taxonomyLoadingReducer = handleActions(
+  { [taxonomyOptionsLoading as any]: (state, action: any) => {
+    return (action.payload)
+  }}, false)
 
 const filtersReducer = combineReducers({
   selectedAmplicon: selectedAmpliconReducer,
   selectedTrait: selectedTraitReducer,
+  taxonomyLoading: taxonomyLoadingReducer,
   taxonomy: taxonomyReducer,
   contextual: contextualReducer
 })
