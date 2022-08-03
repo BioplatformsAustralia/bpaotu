@@ -56,8 +56,8 @@ const AlertBoxes = props => (
   </div>
 )
 
-const cell_button = (props, action) => (
-   <Button onClick={() => {action(props)}}>{props.value}</Button>
+const cell_button = (cell_props, openMetagenomeModal) => (
+  <Button onClick={() => {openMetagenomeModal(cell_props.row.sample_id)}}>{cell_props.value}</Button>
 )
 
 class _SearchResultsCard extends React.Component<any, any> {
@@ -213,7 +213,7 @@ function mapMgDispatchToProps(dispatch) {
     {
       clearTips,
       showPhinchTip,
-      openMetagenomeModal,
+      openMetagenomeModal: (sample_id) => (openMetagenomeModal(sample_id)),
       openBulkMetagenomeModal
     },
     dispatch

@@ -22,7 +22,7 @@ from bpaingest.projects.amdb.contextual import \
     AustralianMicrobiomeSampleContextual
 from django.conf import settings
 from django.core.mail import send_mail
-from django.http import (Http404, HttpResponse, JsonResponse,
+from django.http import (Http404, HttpResponse, JsonResponse, HttpResponseServerError,
                          StreamingHttpResponse)
 from django.template import loader
 from django.urls import reverse
@@ -45,10 +45,10 @@ from .query import (ContextualFilter, ContextualFilterTermDate,
                     MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
                     TaxonomyFilter, TaxonomyOptions, get_sample_ids,
                     SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
-from .site_images import fetch_image, get_site_image_lookup_table
+from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
 from .spatial import spatial_query
 from .tabular import tabular_zip_file_generator
-from .util import make_timestamp, parse_date, parse_float
+from .util import make_timestamp, parse_date, parse_float, format_sample_id
 
 logger = logging.getLogger("rainbow")
 
@@ -1046,3 +1046,28 @@ def site_image_thumbnail(request, package_id, resource_id):
 
     buf, content_type = fetch_image(package_id, resource_id)
     return HttpResponse(buf.getvalue(), content_type=content_type)
+
+
+@require_CKAN_auth
+@require_GET
+def metagenome_search(request, sample_id):
+    def urls_by_name(resources):
+        names = [res['name'] for res in resources]
+        n = len(os.path.commonprefix(names))
+        short_names = [s[n:].lstrip('._-') for s in names]
+        return {k: (res['url'], res['size']) for k, res in zip(short_names, resources)}
+    try:
+        remote = make_ckan_remote()
+        r = remote.action.package_search(
+            q='type:amdb-metagenomics-analysed AND sample_id:{}'.format(
+                format_sample_id(
+                    re.sub('[^0-9]', '', sample_id))),
+            rows=50000,
+            include_private=True)
+        results = r['results']
+        n = r['count']
+        return JsonResponse(
+            {package['sample_id'].split('/')[-1]: urls_by_name(package['resources'])
+             for package in results})
+    except Exception as e:
+        return HttpResponseServerError(str(e), content_type="text/plain")

@@ -1,6 +1,13 @@
 import React, { Component } from "react";
 import styled, { keyframes, css } from "styled-components";
 
+export const loadingstyle= {
+  display: 'flex',
+  height: '100%',
+  justifyContent: 'center',
+  alignItems: 'center'
+};
+
 const size = 2
 const time = 2.1
 const timedelay = -0.89
@@ -315,7 +322,7 @@ const Helix = styled.div`
     vertical-align: middle;
 
     &:not(:last-child){
-      margin-right: ${size * 1.62}vh;  
+      margin-right: ${size * 1.62}vh;
     }
 
     &:before, &:after {
@@ -323,7 +330,7 @@ const Helix = styled.div`
       display: inline-block;
       width: ${size}vh;
       height: ${size}vh;
-      border-radius: 50%; 
+      border-radius: 50%;
       position: absolute;
     }
     ${props => getAnimations(time, timedelay, ease_circ, size, props.color1 ? props.color1 : color1, props.color2 ? props.color2 : color2)}

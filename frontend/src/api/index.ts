@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { get as _get, map, partial } from 'lodash'
+import { get as _get, map, partial, join } from 'lodash'
 
 import { store } from '../index'
 import '../interfaces'
@@ -191,4 +191,12 @@ export function getBlastSubmission(submissionId) {
       submission_id: submissionId
     }
   })
+}
+
+export function executeMetagenomeSearch(sample_id) {
+  const url = join(
+    [window.otu_search_config.base_url,
+    'private/metagenome-search',
+    encodeURIComponent(sample_id)], '/')
+  return axios.get(url)
 }

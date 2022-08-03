@@ -55,4 +55,8 @@ urlpatterns = [
         r'^private/site-image-thumbnail/(?P<package_id>[\w-]+)/(?P<resource_id>[\w-]+)/$',
         views.site_image_thumbnail,
         name="site_image_thumbnail"),
+    url(
+        r'^private/metagenome-search/(?P<sample_id>.+)',
+        views.metagenome_search,
+        name="metagenome_search"),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
