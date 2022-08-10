@@ -76,13 +76,12 @@ class MetagenomeModal extends React.Component<any> {
             // Note: key={index} is OK here as metagenome_rows is a constant
             if (isString(row)) {
                 return <tr className="table-secondary" key={"r" + index}>
-                    <th colSpan={5}>{row}</th>
+                    <th colSpan={4}>{row}</th>
                 </tr>
             }
             return <tr key={"r" + index} >
                 <td>{row[0]}</td>
                 <td>{row[1]}</td>
-                <td>{row[2]}</td>
                 {callback(row, index)
                 }
             </tr>
@@ -95,10 +94,10 @@ class MetagenomeModal extends React.Component<any> {
                 <FormGroup check>
                     <Label>
                         <Input type='checkbox'
-                            name={row[3].toString()}
+                            name={row[2].toString()}
                             onChange={this.handleChecboxChange}
-                            checked={this.state.selected[row[3].toString()] || false} />
-                        {row[3]}
+                            checked={this.state.selected[row[2].toString()] || false} />
+                        {row[2]}
                     </Label>
                 </FormGroup>
             </td>
@@ -108,7 +107,7 @@ class MetagenomeModal extends React.Component<any> {
     get_sample_rows() {
         var mg_data = Object.assign(this.props.metagenome_data[this.props.sample_id] || {})
         const rows = this.get_rows((row, index) => {
-            const fileType = row[3].toString()
+            const fileType = row[2].toString()
             try {
                 const [url, size] = mg_data[fileType]
                 delete mg_data[fileType]
@@ -129,7 +128,7 @@ class MetagenomeModal extends React.Component<any> {
         if (remaining.length) {
             return [...rows,
             <tr className="table-secondary" key='unknown-mg-data'>
-                <th colSpan={5}>Other metagenome data</th>
+                <th colSpan={4}>Other metagenome data</th>
             </tr>,
             ...remaining]
         } else {
@@ -170,8 +169,7 @@ class MetagenomeModal extends React.Component<any> {
                                         <thead>
                                             <tr className="table-primary">
                                                 <th>Data object type</th>
-                                                <th>Data object description</th>
-                                                <th>Data object methodology</th>
+                                                <th>Description</th>
                                                 <th>Download</th>
                                                 {(!bulk) && <th>Size</th>}
                                             </tr>
