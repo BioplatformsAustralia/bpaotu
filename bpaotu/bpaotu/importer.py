@@ -580,6 +580,7 @@ class DataImporter:
 
         for row in reader:
             otu_code, sample_id, count, count_20k = ([f.strip() for f in row] + [""])[:4]
+            count_20k = re.sub(r'[.]0*$', '', count_20k) # Should be integer but we can cope with .0
             float_count = float(count)
             int_count = int(float_count)
             # make sure that fractional values don't creep in on a future ingest

@@ -916,7 +916,7 @@ def contextual_schema_definition_query():
         df_definition = pd.read_excel(download_url)
         df_definition = df_definition.fillna(value="")
     except Exception as e:
-        logger.error(f"Link {download_url} doesn't exists. {e}")
+        logger.error(f"Link {download_url} doesn't exist. {e}")
         download_url = ""
         df_definition = pd.DataFrame()
     return {
