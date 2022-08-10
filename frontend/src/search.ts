@@ -56,6 +56,7 @@ export interface OTUQuery {
   amplicon_filter: string
   trait_filter: string
   required_headers?: string[]
+  metagenome_only: boolean
 }
 
 export const emptyTaxonomyFilter: OperatorAndValue = {
@@ -77,5 +78,6 @@ export const EmptyOTUQuery: OTUQuery = {
   taxonomy_filters: times(taxonomy_keys.length, _ => emptyTaxonomyFilter),
   contextual_filters: emptyContextualFilters,
   amplicon_filter: '',
-  trait_filter: ''
+  trait_filter: '',
+  metagenome_only: false
 }

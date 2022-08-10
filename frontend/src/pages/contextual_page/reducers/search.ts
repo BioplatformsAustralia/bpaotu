@@ -38,6 +38,7 @@ export const search = () => (dispatch, getState) => {
 }
 
 const resultsInitialState = {
+  cleared: false,
   isLoading: false,
   errors: [],
   data: [],

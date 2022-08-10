@@ -13,15 +13,19 @@ export function getDefaultAmplicon(values) {
 }
 
 export function getAmpliconFilter(state) {
-  const { selectedAmplicon, preselectedAmplicon } = state.searchPage.filters
-  if (preselectedAmplicon) {
-    const amplicon = find(state.referenceData.amplicons.values, amplicon => amplicon.value === preselectedAmplicon)
+  const { selectedAmplicon, metagenomeAmplicon } = state.searchPage.filters
+  if (metagenomeAmplicon) {
+    const amplicon = find(state.referenceData.amplicons.values, amplicon => amplicon.value === metagenomeAmplicon)
     return {value: amplicon === undefined? '': amplicon.id, operator: 'is' }
   }
   return selectedAmplicon
 }
 
-export const preselectedAmpliconReducer = handleAction(
+export function isMetagenomeSearch(state) {
+  return Boolean(state.searchPage.filters.metagenomeAmplicon)
+}
+
+export const metagenomeAmpliconReducer = handleAction(
   preselectAmplicon,
   (state, action: any) => (action.payload),
   ''

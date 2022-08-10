@@ -6,6 +6,7 @@ import { Button, Card, CardBody, CardFooter, CardHeader, Row, Col, UncontrolledT
 import { fetchReferenceData } from '../../../reducers/reference_data/reference_data'
 import { selectTrait } from '../reducers/trait'
 import { preselectAmplicon, getAmpliconFilter } from '../reducers/amplicon'
+import { clearSearchResults } from  '../reducers/search'
 import { EmptyOperatorAndValue } from '../reducers/types'
 import { fetchTraits } from '../../../reducers/reference_data/traits'
 import { clearAllTaxonomyFilters, updateTaxonomyDropDowns } from '../reducers/taxonomy'
@@ -45,7 +46,8 @@ class TaxonomyFilterCard extends React.Component<any> {
 
   componentDidMount() {
     this.prevAmplicon = {...EmptyOperatorAndValue}
-    this.props.preselectAmplicon(this.props.preselectedAmplicon)
+    this.props.preselectAmplicon(this.props.metagenomeAmplicon)
+    this.props.clearSearchResults()
     this.props.fetchReferenceData()
   }
 
@@ -116,6 +118,7 @@ function mapDispatchToProps(dispatch: any) {
       updateTaxonomy: updateTaxonomyDropDowns(''),
       fetchTraits,
       preselectAmplicon,
+      clearSearchResults,
       selectTrait,
       clearAllTaxonomyFilters
     },
@@ -132,7 +135,7 @@ const ConnectedTaxonomyFilterCard =  connect(
 export function AmpliconTaxonomyFilterCard() {
   return (
     <ConnectedTaxonomyFilterCard
-      preselectedAmplicon=''
+      metagenomeAmplicon=''
       cardHeader='Filter by amplicon, taxonomy and traits'>
 
       <React.Fragment>
@@ -154,7 +157,7 @@ export function AmpliconTaxonomyFilterCard() {
 export function MetagenomeTaxonomyFilterCard() {
   return (
     <ConnectedTaxonomyFilterCard
-      preselectedAmplicon={window.otu_search_config.metagenome_amplicon}
+      metagenomeAmplicon={window.otu_search_config.metagenome_amplicon}
       cardHeader='Filter by taxonomy and traits' />
   )
 }

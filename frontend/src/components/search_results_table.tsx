@@ -40,12 +40,6 @@ export class SearchResultsTable extends React.Component<any> {
     this.onPageSizeChange = this.onPageSizeChange.bind(this)
   }
 
-  public componentDidMount() {
-    if (isEmpty(this.props.results.data)) {
-      this.props.search()
-    }
-  }
-
   public getColumns() {
     const extraColumns = map(this.props.extraColumns, field => ({
       Header: _get(field, 'displayName', field.name),
@@ -60,20 +54,27 @@ export class SearchResultsTable extends React.Component<any> {
     return (
       <>
         <Alert color="secondary" className="text-center">
-          <h6 className="alert-heading">{this.props.results.isLoading ? `Searching samples...` : `Found ${this.props.results.rowsCount} samples`}</h6>
+          <h6 className="alert-heading">
+            {
+              this.props.results.cleared ?
+                "Please use the search button to start your search" :
+                this.props.results.isLoading ? `Searching samples...` :
+                  `Found ${this.props.results.rowsCount} samples`
+            }
+            </h6>
         </Alert>
         <ReactTable
           columns={this.getColumns()}
           manual={true}
           loading={this.props.results.isLoading}
           data={this.props.results.data}
-          page={this.props.results.page}
           pageSize={this.props.results.pageSize}
           pages={this.props.results.pages}
           className="-striped -highlight"
           onSortedChange={this.onSortedChange}
           onPageChange={this.onPageChange}
           onPageSizeChange={this.onPageSizeChange}
+          noDataText={this.props.results.cleared ? 'No search performed yet' : 'No rows found'}
         />
       </>
     )

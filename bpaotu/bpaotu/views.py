@@ -489,9 +489,10 @@ def param_to_filters(query_str, contextual_filtering=True):
         otu_query['amplicon_filter'],
         otu_query['taxonomy_filters'],
         otu_query['trait_filter'])
-
     context_spec = otu_query['contextual_filters']
-    contextual_filter = ContextualFilter(context_spec['mode'], context_spec['environment'])
+    contextual_filter = ContextualFilter(context_spec['mode'],
+                                         context_spec['environment'],
+                                         otu_query['metagenome_only'])
 
     errors = []
 

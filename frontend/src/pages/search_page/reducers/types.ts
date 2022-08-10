@@ -66,10 +66,12 @@ export interface PageState {
     alerts: Alert[]
   }
   results: {
+    cleared: boolean
     isLoading: boolean
     errors: string[]
     data: any[]
     page: number
+    pages: number
     pageSize: number
     rowsCount: number
     sorted: any[]
@@ -128,10 +130,12 @@ export const searchPageInitialState: PageState = {
     alerts: [],
   },
   results: {
+    cleared: true,
     isLoading: false,
     errors: [],
     data: [],
     page: 0,
+    pages: 0,
     pageSize: 10,
     rowsCount: 0,
     sorted: []

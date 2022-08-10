@@ -596,16 +596,17 @@ class ContextualFilter:
         'and': sqlalchemy.and_,
     }
 
-    def __init__(self, mode, environment_filter):
+    def __init__(self, mode, environment_filter, metagenome_only=False):
         self.mode = mode
         self.mode_func = ContextualFilter.mode_operators[self.mode]
         self.environment_filter = environment_filter
         self.terms = []
+        self.metagenome_only = metagenome_only
 
     def __repr__(self):
-        return '<ContextualFilter(%s,env[%s],[%s]>' % (
+        return '<ContextualFilter(%s,env[%s],mg[%s],[%s]>' % (
             self.mode,
-            repr(self.environment_filter), ','.join(repr(t) for t in self.terms))
+            repr(self.environment_filter), repr(self.metagenome_only), ','.join(repr(t) for t in self.terms))
 
     def describe(self):
         descr = []
@@ -616,10 +617,16 @@ class ContextualFilter:
         return [t for t in descr if t]
 
     def is_empty(self):
-        return len(self.terms) == 0 and not self.environment_filter
+        return len(self.terms) == 0 and not self.environment_filter and not self.metagenome_only
 
     def add_term(self, term):
         self.terms.append(term)
+
+    def restrict_metagenome_only(self, q):
+        # FIXME STUB. Work in progress. This needs to limit the samples to those that have metagenome data in CKAN
+        ## e.g.
+        # q = q.filter(SampleContext.id == MetagenomeSamples.sample_id)
+        return q
 
     def apply(self, q):
         """
@@ -628,6 +635,8 @@ class ContextualFilter:
         # if there's an environment filter, it applies prior to the filters
         # below, so it's outside of the application of mode_func
         q = apply_environment_filter(q, self.environment_filter)
+        if self.metagenome_only:
+            q = self.restrict_metagenome_only(q)
         # chain together the conditions provided by each term,
         # combine into a single expression using our mode,
         # then filter the query

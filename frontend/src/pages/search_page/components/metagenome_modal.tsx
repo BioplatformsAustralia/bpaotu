@@ -190,6 +190,7 @@ class MetagenomeModal extends React.Component<any> {
                     {(bulk) ?
                         <Button
                         type="submit"
+                        onClick={()=> {alert("Bulk download not implemented yet")}} // FIXME STUB
                         form='metagenome-download-form'
                         color="primary"
                         disabled={n_selected < 1}>
