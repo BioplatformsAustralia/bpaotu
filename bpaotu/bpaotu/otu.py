@@ -4,7 +4,7 @@ import os
 from citext import CIText
 from django.conf import settings
 from sqlalchemy import (MetaData, ARRAY, Table, Column, Date, Time, Float, ForeignKey, Integer,
-                        String, create_engine, select, Index)
+                        String, create_engine, select, Index, Boolean)
 from sqlalchemy.sql import func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
@@ -298,6 +298,8 @@ class SampleContext(SchemaMixin, Base):
     beta_beta_car_meth = Column(CIText)
     beta_epi_car = Column(Float)
     beta_epi_car_meth = Column(CIText)
+    bicarbonate = Column(Float)
+    bicarbonate_meth = Column(CIText)
     bleaching = Column(Float)
     bleaching_meth = Column(CIText)
     boron_hot_cacl2 = Column(Float)
@@ -308,8 +310,8 @@ class SampleContext(SchemaMixin, Base):
     cadmium_meth = Column(CIText)
     cantha = Column(Float)
     cantha_meth = Column(CIText)
-    carbonate_bicarbonate = Column(Float)
-    carbonate_bicarbonate_meth = Column(CIText)
+    carbonate = Column(Float)
+    carbonate_meth = Column(CIText)
     cast_id = Column(CIText)
     cation_exchange_capacity = Column(CIText)
     cation_exchange_capacity_meth = Column(CIText)
@@ -658,8 +660,8 @@ class SampleContext(SchemaMixin, Base):
     strontium_meth = Column(CIText)
     sulphur = Column(Float)
     sulphur_meth = Column(CIText)
-    synecochoccus = Column(Float)
-    synecochoccus_meth = Column(CIText)
+    synechococcus = Column(Float)
+    synechococcus_meth = Column(CIText)
     synonyms = Column(CIText)
     tantalum = Column(Float)
     tantalum_meth = Column(CIText)
@@ -781,6 +783,11 @@ class SampleContext(SchemaMixin, Base):
             display_name = ' '.join(((t[0].upper() + t[1:]) for t in field_name.split('_')))
         return display_name
 
+
+class SampleMeta(SchemaMixin, Base):
+    __tablename__ = 'sample_meta'
+    sample_id = Column(String, ForeignKey(SCHEMA + '.sample_context.id'), nullable=False, primary_key=True, index=True)
+    has_metagenome = Column(Boolean, default=False)
 
 class SampleOTU(SchemaMixin, Base):
     __tablename__ = 'sample_otu'
