@@ -622,11 +622,21 @@ class ContextualFilter:
     def add_term(self, term):
         self.terms.append(term)
 
+    ############
+    # FIXME STUB. Hardcoded list of sample IDs just for demonstration purposes
+    _demo_sample_ids = (
+        "139727", "139728", "139729", "139730", "139731", "139732", "139733", "139734", "139735", "139736",
+        "139737", "139738", "139739", "139740", "139741", "139742", "139743", "139745", "139746", "139747",
+        "139748", "139749", "139750", "139751", "141133", "141134", "141135", "141136", "141137", "141138",
+        "141139", "141248", "141251", "141252", "21644", "21645", "21646", "21647", "21648", "21649", "21650",
+        "21651", "21652", "21653", "21654", "21655")
+
     def restrict_metagenome_only(self, q):
         # FIXME STUB. Work in progress. This needs to limit the samples to those that have metagenome data in CKAN
         ## e.g.
-        # q = q.filter(SampleContext.id == MetagenomeSamples.sample_id)
-        return q
+        # return q.filter(SampleContext.id == MetagenomeSamples.sample_id)
+        return q.filter(SampleContext.id.in_(self._demo_sample_ids))
+    ############
 
     def apply(self, q):
         """
