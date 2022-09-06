@@ -5,6 +5,7 @@ import { bindActionCreators } from 'redux'
 import { Button, Input,  UncontrolledTooltip } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 import { selectEnvironment, removeContextualFilter, selectContextualFiltersMode } from '../reducers/contextual'
+import {isMetagenomeSearch }  from '../reducers/amplicon'
 import { clearAllTaxonomyFilters } from '../reducers/taxonomy'
 import { fetchTraits } from '../../../reducers/reference_data/traits'
 import { selectTrait } from '../reducers/trait'
@@ -120,7 +121,7 @@ class SearchFilters extends React.Component<any> {
     for (const [key, value] of Object.entries(this.props.filters)) {
       switch(key) {
         case "selectedAmplicon":
-          if (value['value']) {
+          if (value['value'] && !this.props.isMetagenomeSearch) {
             searchFilters.push(
               <InfoBox key={'selectedAmplicon'}>
                 {"Amplicon <" + value['operator'] + "> " +
@@ -226,6 +227,7 @@ function mapStateToProps(state) {
     traits: state.referenceData.traits.values,
     rankLabels: state.referenceData.ranks.rankLabels,
     filters: state.searchPage.filters,
+    isMetagenomeSearch: isMetagenomeSearch(state),
     environment: state.contextualDataDefinitions.environment,
     contextualFilters: state.contextualDataDefinitions.filters,
     contextualFiltersMode: state.searchPage.filters.contextual.filtersMode,
