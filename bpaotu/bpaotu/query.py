@@ -323,7 +323,7 @@ class SampleQuery:
             params)
 
         result = cache.get(key)
-        if not result:
+        if result is None:
             result = q.all()
             if mutate_result:
                 result = mutate_result(result)
