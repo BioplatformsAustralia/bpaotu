@@ -23,16 +23,26 @@ export const AmpliconFilterInfo =
   'Note that selecting an amplicon with no further taxonomy selection will return all sequences ' +
   'resulting from that assay, including non-target. Selecting, for example, "Kingdom = Bacteria" will ' +
   'remove non-target sequences.'
+
 export const TaxonomyFilterInfo =
-  'Taxonomy is assigned according to the currently selected taxonomy database and method. ' +
-  'NN=nearest neighbour (without consensus), Sklearn=sklearn bayesian, wang = rdp_bayesian.'
-  export const TraitFilterInfo =
+   'Taxonomy is assigned according to the currently selected taxonomy database ' +
+   'and method. Methods may include: NN=nearest neighbour (without consensus), ' +
+   'SKlearn=sklearn bayesian, wang=rdp_bayesian. Further information on ' +
+   'taxonomy assignment can be found at: ' +
+   'https://github.com/AusMicrobiome/amplicon/tree/master/docs'
+
+export const TraitFilterInfo =
   'Traits are assigned using FAPROTAX [v1.2.4] based on SILVA [v132] taxonomy for Bacteria and Archaea 16S. ' +
   'Traits are assigned based on Guild field from FUNGuild [v1.2] using UNITE_SH [v8] taxonomy for ITS regions.'
+
 export const TaxonomyNoAmpliconInfo =
   'Select Amplicon to filter taxonomy'
-const TaxonomySourceInfo = "Selects the database and method used for taxonomy classification"
 
+const TaxonomySourceInfo =
+  'Selects the database and method used for taxonomy classification. Methods may ' +
+  'include: NN=nearest neighbour (without consensus), SKlearn=sklearn bayesian, ' +
+  'wang=rdp_bayesian. Further information on taxonomy assignment can be found ' +
+  'at: https://github.com/AusMicrobiome/amplicon/tree/master/docs'
 
 class TaxonomyFilterCard extends React.Component<any> {
 
