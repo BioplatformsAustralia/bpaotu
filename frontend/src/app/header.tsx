@@ -35,7 +35,7 @@ export default class Header extends React.Component<any, any> {
 
             <NavItem>
               <NavLink exact={true} to="/" activeClassName="active" tag={RRNavLink}>
-                Search
+                Amplicon
               </NavLink>
             </NavItem>
 
