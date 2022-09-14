@@ -24,7 +24,7 @@ const steps = (props) =>
             <span>
             <h4>Welcome to Australian Microbiome Data Barcode Products Portal</h4><br/>
               For more information about the portal{' '}<a rel="noopener noreferrer" target="_bpaotu" href={window.otu_search_config.ckan_base_url+"organization/pages/australian-microbiome/processed"}>go here.</a>.<br/><br/>
-              Let's start with a brief introduction and example to the portal.  <br/>For this example, we'll find all ASV's classified as Verrucomicrobia, from grassland soils.<br/> 
+              Let's start with a brief introduction and example to the portal.  <br/>For this example, we'll find all ASV's classified as Verrucomicrobia, from grassland soils.<br/>
           </span>
           </div>
         )
@@ -66,9 +66,9 @@ const steps = (props) =>
               <p><i>Note: Matching filters will be suggested after typing few characters on the dropdown list</i></p>
               <ul>
                 <li>For metadata field search click 'Download metadata description' button or <a rel="noopener noreferrer" target="_bpaotuSchema" href={props.definitions_url}>go here.</a></li>
-                <li>For methods manual click 'Download methods manual' button or <a rel="noopener noreferrer" target="_bpaotuMethod" href="https://www.australianmicrobiome.com/wp-content/uploads/2021/01/AM_Methods_for_metadata_fields_18012021_V1.2.3.pdf">go here.</a></li>
+                <li>For methods manual click 'Download methods manual' button or <a rel="noopener noreferrer" target="_bpaotuMethod" href={props.scientific_manual_url}>go here.</a></li>
               </ul>
-              
+
           </span>
           </div>
         )
@@ -127,7 +127,7 @@ const steps = (props) =>
             <span>
             <h4>View results map</h4><br/>
             Click the 'Interactive map search' button<br/><br/>
-            This will load a map of the location of the selected samples<br/> 
+            This will load a map of the location of the selected samples<br/>
           </span>
           </div>
         )
@@ -196,13 +196,13 @@ const steps = (props) =>
                 goTo(9)
               }, 10)
           })
-        }  
+        }
         return (
           <div>
             <span>
             <h4>Show interactive graphical search</h4><br/>
-            We can also explore the data visually.<br/><br/> 
-            Click the 'Interactive graph search' button.<br/> 
+            We can also explore the data visually.<br/><br/>
+            Click the 'Interactive graph search' button.<br/>
           </span>
           </div>
         )
@@ -289,7 +289,7 @@ const steps = (props) =>
       },
       style: stepsStyle,
     },
-    
+
     {
       selector: '[data-tut="Download BIOM format (Phinch compatible)"]',
       content:() => {
@@ -373,8 +373,8 @@ class BPAOTUTour extends React.Component<any> {
       <>
         <Tour
           steps={steps(this.props)}
-          prevButton={'<< Prev'} 
-          nextButton={'Next >>'} 
+          prevButton={'<< Prev'}
+          nextButton={'Next >>'}
           disableFocusLock={true}
           badgeContent={(curr, tot) => `${curr} of ${tot}`}
           accentColor={'#007bff'}
@@ -388,7 +388,7 @@ class BPAOTUTour extends React.Component<any> {
         <Badge id="tipTutorial" style={{cursor:'pointer', fontSize: '14px', marginTop:"-10px", padding: '10px 25px', color: '#041e48', backgroundColor: '#17c496' }} onClick={() => {
         this.setIsTourOpen(true)
         this.props.history.push('/')
-        }} pill ><Octicon name="book" />{'   '}Tutorial 
+        }} pill ><Octicon name="book" />{'   '}Tutorial
           </Badge>
         <UncontrolledTooltip target="tipTutorial" placement="auto">
             {'This tutorial helps to use available features in the BPA-OTU data portal'}
@@ -400,7 +400,8 @@ class BPAOTUTour extends React.Component<any> {
 
 function mapStateToProps(state) {
   return {
-    definitions_url: state.contextualDataDefinitions.definitions_url
+    definitions_url: state.contextualDataDefinitions.definitions_url,
+    scientific_manual_url: state.contextualDataDefinitions.scientific_manual_url
   }
 }
 

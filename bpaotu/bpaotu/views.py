@@ -936,17 +936,7 @@ def get_contextual_schema_definition(cache_duration=CACHE_7DAYS, force_cache=Fal
     return result
 
 def get_scientific_manual_url():
-    repo_name = "scientific_manual"
-    request_url = f"https://api.github.com/repos/AusMicrobiome/{repo_name}/releases/latest"
-    try:
-        response = requests.get(request_url).json()
-        defs_version = response['tag_name']
-    except:
-        logger.error("Failed to get %s", request_url, exc_info=True)
-        # This is probably a reasonable fallback under these conditions
-        defs_version = "main"
-    defs_url = f"https://github.com/AusMicrobiome/{repo_name}/raw/{defs_version}/docs/AM_Scientific_Manual.docx"
-    return defs_url
+    return settings.BPAOTU_SCIENTIFIC_MANUAL_URL
 
 @require_CKAN_auth
 @require_GET
