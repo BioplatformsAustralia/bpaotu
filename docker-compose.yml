@@ -6,7 +6,7 @@ services:
       environment:
         - POSTGRES_USER=webapp
         - POSTGRES_PASSWORD=webapp
-      command: 
+      command:
         - "postgres"
         - "-c"
         - "wal_level=minimal"
@@ -52,6 +52,8 @@ services:
       environment:
         - WAIT_FOR_DB=1
         - WAIT_FOR_CACHE=1
+      volumes:
+        - .:/app
       depends_on:
         - db
         - cache

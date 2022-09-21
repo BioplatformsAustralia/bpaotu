@@ -41,6 +41,7 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   SampleEnvironmentMedium,
                   SampleHostAssociatedMicrobiomeZone, SampleHostType, Taxonomy, taxonomy_otu,
                   make_engine, refresh_otu_sample_otu_mv)
+from .sample_meta import update_from_ckan
 
 logger = logging.getLogger("rainbow")
 
@@ -226,6 +227,7 @@ class DataImporter:
         otu_lookup = self.load_taxonomies()
         self.load_otu_abundance(otu_lookup)
         refresh_otu_sample_otu_mv(self._session, OTUSampleOTU.__table__)
+        update_from_ckan()
         self.complete()
 
     def ontology_init(self):

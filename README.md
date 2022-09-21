@@ -19,7 +19,10 @@ developed to access data from the Australian Microbiome.
   authentication for functionality.
 * All data for the system is contained within a Postgres database which is
   loaded from a set of files by an ingest operation (see below). Some ancillary
-  data may be fetched using the Python `ckanapi` (e.g. sample site images).
+  data is fetched using the Python `ckanapi` (e.g. sample site images and sample
+  metagenome data). For this reason the docker containers (at least `runserver`
+  and `caleryworker`) need to run with a valid CCKAN_API_KEY environment
+  variable (see ./.env_local and ./docker-compose.yml).
 * It uses a git submodule `bpa-ingest`, maintained externally. It's important to
   update this submodule frequently in order to be able to ingest the latest
   version of the sample context metadata.
@@ -37,7 +40,10 @@ developed to access data from the Australian Microbiome.
 * [Install docker and compose](https://docs.docker.com/compose/install/)
 * `git clone --recurse-submodules` [https://github.com/BioplatformsAustralia/bpaotu.git](https://github.com/BioplatformsAustralia/bpaotu.git)
 * Generate `./.env_local`. This should contain `KEY=value` lines. See `./.env`
-  for keys. The values are beyond the scope of this README.
+  for keys. This must have a valid `CKAN_API_KEY` so that site images and sample
+  metagenome data can be fetched during development. You can use your personal
+  `CKAN_API_KEY` in the development environment. This key can be found on the
+  profile page after logging on to the bioplatforms.com data portal.
 * `docker-compose -f docker-compose-build.yml build base dev`
 
 ## Input data

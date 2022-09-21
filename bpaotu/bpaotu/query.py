@@ -24,6 +24,7 @@ from .otu import (
     rank_labels_lookup,
     SampleContext,
     SampleOTU,
+    SampleMeta,
     OTUSampleOTU,
     ImportMetadata,
     ImportedFile,
@@ -623,10 +624,8 @@ class ContextualFilter:
         self.terms.append(term)
 
     def restrict_metagenome_only(self, q):
-        # FIXME STUB. Work in progress. This needs to limit the samples to those that have metagenome data in CKAN
-        ## e.g.
-        # q = q.filter(SampleContext.id == MetagenomeSamples.sample_id)
-        return q
+        return q.filter(SampleContext.id == SampleMeta.sample_id).filter(
+            SampleMeta.has_metagenome == True)
 
     def apply(self, q):
         """
