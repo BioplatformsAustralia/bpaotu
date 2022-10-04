@@ -14,7 +14,6 @@ from functools import wraps
 from operator import itemgetter
 from io import BytesIO
 from xhtml2pdf import pisa
-import requests as requests
 
 from sqlalchemy import Float, Integer
 
@@ -48,7 +47,10 @@ from .query import (ContextualFilter, ContextualFilterTermDate,
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
 from .spatial import spatial_query
 from .tabular import tabular_zip_file_generator
-from .util import make_timestamp, parse_date, parse_float, format_sample_id
+from .util import make_timestamp, parse_date, parse_float
+
+from .bpaotu_bulk import generate_bulk_zip
+from .metagenome import ckan_query_sample, ckan_query_multiple_samples, get_package_sample_id
 
 logger = logging.getLogger("rainbow")
 
@@ -1039,26 +1041,52 @@ def site_image_thumbnail(request, package_id, resource_id):
     return HttpResponse(buf.getvalue(), content_type=content_type)
 
 
+def metagenome_file_type(resource_name):
+    """
+    Resource names are like 41133_MGSD_CSIRO.sqm.07.fun3.kegg,
+    141133_MGSD_CSIRO.qc.fastq.zip etc.
+    """
+    return resource_name.split('.', 1)[-1]
+
 @require_CKAN_auth
 @require_GET
 def metagenome_search(request, sample_id):
     def urls_by_name(resources):
         names = [res['name'] for res in resources]
-        n = len(os.path.commonprefix(names))
-        short_names = [s[n:].lstrip('._-') for s in names]
+        short_names = [metagenome_file_type(s) for s in names]
         return {k: (res['url'], res['size']) for k, res in zip(short_names, resources)}
     try:
         remote = make_ckan_remote()
-        r = remote.action.package_search(
-            q='type:amdb-metagenomics-analysed AND sample_id:{}'.format(
-                format_sample_id(
-                    re.sub('[^0-9]', '', sample_id))),
-            rows=50000,
-            include_private=True)
-        results = r['results']
-        n = r['count']
+        results = ckan_query_sample(remote, sample_id)
         return JsonResponse(
-            {package['sample_id'].split('/')[-1]: urls_by_name(package['resources'])
+            {get_package_sample_id(package): urls_by_name(package['resources'])
              for package in results})
     except Exception as e:
+        logger.critical("Error in metagenome_search", exc_info=True)
+        return HttpResponseServerError(str(e), content_type="text/plain")
+
+@require_CKAN_auth
+@require_GET
+def metagenome_download(request):
+    try:
+        params, errors = param_to_filters(request.GET['q'])
+        if errors:
+            raise OTUError(*errors)
+        with SampleQuery(params) as query:
+            sample_ids = [sample.id for sample in query.matching_samples()]
+        selected = json.loads(request.GET['selected'])
+        remote = make_ckan_remote()
+        packages = list(ckan_query_multiple_samples(remote, sample_ids))
+        resources = [r for pkg in packages for r in pkg['resources']
+                    if  metagenome_file_type(r['name']) in selected]
+        dirname = params.filename(make_timestamp(), '-metagenome-download')
+        user_page = settings.CKAN_SERVER['base_url'].rstrip('/') + '/user/$your_username'
+        # TODO Get actual username from CKAN api. See https://github.com/ckan/ckan/issues/5490
+        zf = generate_bulk_zip(dirname, 'Metagenome data for selected samples',
+                               '', user_page, packages, resources)
+        response = HttpResponse(zf, content_type='application/zip')
+        response['Content-Disposition'] = 'attachment; filename="%s.zip"' % dirname
+        return response
+    except Exception as e:
+        logger.critical("Error in metagenome_download", exc_info=True)
         return HttpResponseServerError(str(e), content_type="text/plain")

@@ -59,4 +59,8 @@ urlpatterns = [
         r'^private/metagenome-search/(?P<sample_id>.+)',
         views.metagenome_search,
         name="metagenome_search"),
+    url(
+        r'^private/metagenome-download$',
+        views.metagenome_download,
+        name="metagenome_download")
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

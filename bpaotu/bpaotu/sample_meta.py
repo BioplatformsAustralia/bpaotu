@@ -12,20 +12,17 @@ from sqlalchemy import (update, select, insert)
 
 from .otu import SampleMeta, SampleContext, make_engine
 from .site_images import make_ckan_remote
+from .metagenome import ckan_query_all, get_package_sample_id
 
 logger = logging.getLogger(__name__)
 
+# We can only fetch a limited number of rows at a time. See
+# https://docs.ckan.org/en/2.9/api/#ckan.logic.action.get.package_search
 chunk_size = 100
 
 def _load_chunk(conn, remote, start):
-    r = remote.action.package_search(
-                    q='type:amdb-metagenomics-analysed',
-                    sort='sample_id asc',
-                    rows=chunk_size,
-                    start=start,
-                    include_private=True)
-    sample_ids = [package['sample_id'].split('/')[-1]
-                  for package in r['results']]
+    r = ckan_query_all(remote, chunk_size, start)
+    sample_ids = [get_package_sample_id(package) for package in r['results']]
     stmt = update(SampleMeta).where(
         SampleMeta.sample_id.in_(sample_ids)).values(has_metagenome=True).returning(
             SampleMeta.sample_id)

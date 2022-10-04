@@ -1,4 +1,5 @@
 from celery import Celery
+from django.conf import settings
 from . import sample_meta
 
 # set the default Django settings module for the 'celery' program.
@@ -23,8 +24,8 @@ def debug_task(self):
 
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-    # Calls periodic_task every hour
-    sender.add_periodic_task(3600.0, periodic_task.s(), ignore_result=True)
+    sender.add_periodic_task(settings.BPAOTU_CKAN_POLL_INTERVAL,
+                             periodic_task.s(), ignore_result=True)
 
 @app.task(ignore_result=True)
 def periodic_task():

@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { Modal, ModalBody, ModalHeader, ModalFooter, Button, Input, Label, FormGroup, Form, Alert} from 'reactstrap'
-import { isString } from 'lodash'
+import { isString, join, pickBy, keys } from 'lodash'
 import { closeMetagenomeModal } from '../reducers/metagenome_modal'
 import { describeSearch } from '../reducers/search'
 import { metagenome_rows } from './metagenome_rows'
@@ -64,11 +64,16 @@ class MetagenomeModal extends React.Component<any> {
 
     handleSubmit(event) {
         event.preventDefault();
-        const formData = new FormData(event.target)
-        const queryString = new URLSearchParams(formData as any).toString();
-        const searchParams = JSON.stringify(this.props.describeSearch())
-        // FIXME STUB. Download zip file containing fetcher scripts as per bioplatforms.com.au.
-        console.log("MetagenomeModal.handleSubmit stub", searchParams, queryString)
+        const params = new URLSearchParams()
+        params.set('token', this.props.ckanAuthToken)
+        params.set('selected', JSON.stringify(
+            keys(pickBy(this.state.selected))))
+        params.set('q', JSON.stringify(this.props.describeSearch()))
+        const baseURL = join(
+            [window.otu_search_config.base_url,
+                'private/metagenome-download'], '/')
+        const url = `${baseURL}?${params.toString()}`
+        window.open(url)
       }
 
     get_rows(callback) {
@@ -190,11 +195,11 @@ class MetagenomeModal extends React.Component<any> {
                     {(bulk) ?
                         <Button
                         type="submit"
-                        onClick={()=> {alert("Bulk download not implemented yet")}} // FIXME STUB
+                        onClick={this.handleSubmit}
                         form='metagenome-download-form'
                         color="primary"
                         disabled={n_selected < 1}>
-                            Download fetcher for {n_selected} metagenome files for each of {this.props.rowsCount} samples
+                            Download fetcher for {n_selected} metagenome files for selected samples
                         </Button>
                         :
                         ''}
@@ -207,12 +212,12 @@ class MetagenomeModal extends React.Component<any> {
 function mapStateToProps(state) {
     const { isOpen, isLoading, sample_id, metagenome_data, error} = state.searchPage.metagenomeModal
     return {
-        rowsCount: state.searchPage.results.rowsCount,
         isOpen,
         sample_id,
         isLoading,
         metagenome_data,
         error,
+        ckanAuthToken: state.auth.ckanAuthToken,
         describeSearch: () => describeSearch(state)
     }
 }

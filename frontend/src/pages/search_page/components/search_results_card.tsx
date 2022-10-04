@@ -154,11 +154,7 @@ const _MetagenomeSearchResultsCard = (props) => (
       <CardHeader>
         <div className="text-center">
           <HeaderButton octicon="desktop-download"
-            disabled={props.rowsCount < 1}
-            text={(props.rowsCount < 1) ?
-              'Metagenome download unavailable: no samples.'
-              :
-              `Download ZIP archive of selected metagenome files for ${props.rowsCount} samples`}
+            text={`Download ZIP archive of selected metagenome files for selected samples`}
             onClick={() => { props.openBulkMetagenomeModal() }} />
         </div>
       </CardHeader>
@@ -203,8 +199,7 @@ export const SearchResultsCard =  connect(
 
 function mapMgStateToProps(state) {
   return {
-    rowsCount: state.searchPage.results.rowsCount,
-    tips: state.searchPage.tips,
+    tips: state.searchPage.tips
   }
 }
 

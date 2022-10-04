@@ -31,6 +31,8 @@ BPAOTU_SCIENTIFIC_MANUAL_URL = "https://confluence.csiro.au/display/ASM/Ausmicro
 
 BPAOTU_MAP_CENTRE_LONGITUDE = 133.775
 
+BPAOTU_CKAN_POLL_INTERVAL = 3600 # Seconds between CKAN queries for new resources
+
 SECRET_KEY = env.get("secret_key", "change-it")
 
 # Default SSL on and forced, turn off if necessary
