@@ -44,7 +44,7 @@ def _otu_endpoint_verification(data):
 
     secret_key = bytes(os.environ.get('BPAOTU_AUTH_SECRET_KEY'), encoding='utf-8')
 
-    digest_maker = hmac.new(secret_key)
+    digest_maker = hmac.new(secret_key, digestmod='md5')
     digest_maker.update(data_portion.encode('utf8'))
     digest = digest_maker.hexdigest()
 
