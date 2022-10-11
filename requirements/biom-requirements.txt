@@ -1,1 +1,1 @@
-https://github.com/BioplatformsAustralia/biom-format/archive/1.1.2bioplatforms1.tar.gz
+biom-format==2.1.12
