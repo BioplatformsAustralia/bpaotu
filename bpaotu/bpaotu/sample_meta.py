@@ -7,8 +7,10 @@ to CKAN by calling update_from_ckan()
 """
 
 import logging
+import hashlib
 
 from sqlalchemy import (update, select, insert)
+from django.core.cache import caches
 
 from .otu import SampleMeta, SampleContext, make_engine
 from .site_images import make_ckan_remote
@@ -39,11 +41,20 @@ def _load_chunk(conn, remote, start):
                     SampleContext.id.in_(remaining))))
     return r['count'], len(sample_ids)
 
+def get_hash(conn):
+    m = hashlib.md5()
+    for row in conn.execute(
+        select([SampleMeta.sample_id]).where(
+            SampleMeta.has_metagenome == True).order_by("sample_id")):
+        m.update(row[0].encode('utf-8'))
+    return m.digest()
+
 def update_from_ckan():
     remote = make_ckan_remote()
     engine = make_engine()
 
     with engine.begin() as conn:
+        h1 = get_hash(conn)
         conn.execute(
             update(SampleMeta).where(
                 SampleMeta.has_metagenome == True).values(has_metagenome=False))
@@ -67,3 +78,6 @@ def update_from_ckan():
                 "Inconsistent total result count from CKAN package searches. Got {}, should be {}".format(
                     n_done, n_total))
         logger.info("Found %d samples on CKAN with metagenome data", n_total)
+        h2 = get_hash(conn)
+        if h2 != h1:
+            caches['search_results'].clear()
