@@ -226,17 +226,13 @@ class SamplesMap extends React.Component<any> {
   }
 
   shouldComponentUpdate(nextProps, nextState) {
-
     if (nextProps.sample_otus.length > 0 && this.props.sample_otus !== nextProps.sample_otus) {
-      this.siteAggregatedData = aggregateSampleOtusBySite(nextProps.sample_otus);
-      this.samplePoints = aggregateSamplePointsBySite(this.siteAggregatedData);
-      let cellAggregatedData = aggregateSamplesByCell(this.siteAggregatedData, nextState.gridcellSize);
-      this.featureCollectionData = this.makeFeatureCollection(cellAggregatedData)
+      this.samplePoints = null;
+      this.featureCollectionData = null;
       return true;
     }
     if (this.state.gridcellSize !== nextState.gridcellSize) {
-      let cellAggregatedData = aggregateSamplesByCell(this.siteAggregatedData, nextState.gridcellSize);
-      this.featureCollectionData = this.makeFeatureCollection(cellAggregatedData)
+      this.featureCollectionData = null;
       return true;
     }
     if (this.state.isLoading !== nextState.isLoading) {
@@ -345,6 +341,14 @@ class SamplesMap extends React.Component<any> {
   }
 
   public render() {
+    if (this.props.sample_otus.length > 0 && !this.samplePoints) {
+      this.siteAggregatedData = aggregateSampleOtusBySite(this.props.sample_otus);
+      this.samplePoints = aggregateSamplePointsBySite(this.siteAggregatedData);
+    }
+    if (this.samplePoints && !this.featureCollectionData) {
+      let cellAggregatedData = aggregateSamplesByCell(this.siteAggregatedData, this.state.gridcellSize);
+      this.featureCollectionData = this.makeFeatureCollection(cellAggregatedData)
+    }
     const PrintControl: any = withLeaflet(PrintControlDefault);
     const loadingstyle = {
       display: 'flex',
