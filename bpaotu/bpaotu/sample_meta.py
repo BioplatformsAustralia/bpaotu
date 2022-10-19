@@ -14,7 +14,7 @@ from django.core.cache import caches
 
 from .otu import SampleMeta, SampleContext, make_engine
 from .site_images import make_ckan_remote
-from .metagenome import ckan_query_all, get_package_sample_id
+from .metagenome import ckan_query_mg, get_package_sample_id
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 chunk_size = 100
 
 def _load_chunk(conn, remote, start):
-    r = ckan_query_all(remote, chunk_size, start)
+    r = ckan_query_mg(remote, chunk_size, start)
     sample_ids = [get_package_sample_id(package) for package in r['results']]
     stmt = update(SampleMeta).where(
         SampleMeta.sample_id.in_(sample_ids)).values(has_metagenome=True).returning(

@@ -41,8 +41,15 @@ def ckan_query_multiple_samples(remote, sample_ids):
         for package in r['results']:
             yield package
 
-def ckan_query_all(remote, rows, start):
-    return _ckan_query(remote, type_q, rows, start)
+def ckan_query_mg(remote, rows, start):
+    """
+    Return the datasets that either have been, or can be, processed to form
+    type:amdb-metagenomics-analysed datasets.
+    """
+    return _ckan_query(
+        remote,
+        '(tags:metagenomics) AND (res_format:FASTQ) AND NOT (type:amdb-metagenomics-analysed)',
+        rows, start)
 
 def get_package_sample_id(package):
     return package['sample_id'].split('/')[-1]
