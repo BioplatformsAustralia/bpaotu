@@ -442,22 +442,25 @@ class SampleQuery:
         return q
 
     def matching_sample_otus_groupby_lat_lng_id_20k(self):
-        # Note: sum(OTUSampleOTU.sum_count_20k) can be NULL (Python None)
-        q = self._session.query(
+        # Richness and abundance sums will be meaningless if we aren't
+        # filtering on taxonomy_source_id, so use NULL in these cases.
+        aggregates = (
+            (sqlalchemy.null(), sqlalchemy.null())
+            if self._taxonomy_filter.state_vector[0] is None else (
+                func.sum(OTUSampleOTU.richness_20k),
+                # Note: sum(OTUSampleOTU.sum_count_20k) can be NULL (Python None)
+                func.sum(OTUSampleOTU.sum_count_20k)))
+        q = (self._session.query(
             SampleContext.latitude,
             SampleContext.longitude,
             SampleContext.id,
-            func.sum(OTUSampleOTU.richness_20k),
-            func.sum(OTUSampleOTU.sum_count_20k)) \
-            .filter(SampleContext.id == OTUSampleOTU.sample_id) \
-            .group_by(SampleContext.id)
+            *aggregates)
+            .filter(SampleContext.id == OTUSampleOTU.sample_id)
+            .group_by(SampleContext.id))
         q = apply_op_and_val_filter(getattr(OTUSampleOTU, 'amplicon_id'), q, self._taxonomy_filter.amplicon_filter)
         q = apply_op_and_array_filter(getattr(OTUSampleOTU, 'traits'), q, self._taxonomy_filter.trait_filter)
         for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy,
                                                              self._taxonomy_filter.state_vector):
-            # Note: The richness and abundance sums above will probably be
-            # meaningless if we aren't filtering on taxonomy_source_id.
-            # See https://github.com/BioplatformsAustralia/bpaotu/issues/214
             q = apply_op_and_val_filter(getattr(OTUSampleOTU, taxonomy_attr), q, taxonomy)
         q = self._contextual_filter.apply(q)
         # log_query(q)
