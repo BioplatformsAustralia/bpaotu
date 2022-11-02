@@ -60,6 +60,16 @@ const cell_button = (cell_props, openMetagenomeModal) => (
   <Button onClick={() => {openMetagenomeModal(cell_props.row.sample_id)}}>{cell_props.value}</Button>
 )
 
+const download = (baseURL, props, onlyContextual=false) => {
+  const params = new URLSearchParams()
+  params.set('token', props.ckanAuthToken)
+  params.set('q', JSON.stringify(props.describeSearch()))
+  params.set('only_contextual', onlyContextual?'t':'f')
+
+  const url = `${baseURL}?${params.toString()}`
+  window.open(url)
+}
+
 class _SearchResultsCard extends React.Component<any, any> {
 
   constructor(props) {
@@ -124,27 +134,17 @@ class _SearchResultsCard extends React.Component<any, any> {
     return lastSubmission && !lastSubmission.finished
   }
 
-  public export(baseURL, onlyContextual=false) {
-    const params = new URLSearchParams()
-    params.set('token', this.props.ckanAuthToken)
-    params.set('q', JSON.stringify(this.props.describeSearch()))
-    params.set('only_contextual', onlyContextual?'t':'f')
-
-    const url = `${baseURL}?${params.toString()}`
-    window.open(url)
-  }
-
   public exportBIOM() {
     this.props.showPhinchTip();
-    this.export(window.otu_search_config.export_biom_endpoint)
+    download(window.otu_search_config.export_biom_endpoint, this.props)
   }
 
   public exportCSV() {
-    this.export(window.otu_search_config.export_endpoint)
+    download(window.otu_search_config.export_endpoint, this.props)
   }
 
   public exportCSVOnlyContextual() {
-    this.export(window.otu_search_config.export_endpoint, true)
+    download(window.otu_search_config.export_endpoint, this.props, true)
   }
 }
 
@@ -156,6 +156,9 @@ const _MetagenomeSearchResultsCard = (props) => (
           <HeaderButton octicon="desktop-download"
             text={`Download ZIP archive of selected metagenome files for selected samples`}
             onClick={() => { props.openBulkMetagenomeModal() }} />
+          <HeaderButton octicon="desktop-download"
+            text="Download Contextual Data only (CSV)"
+            onClick={() => { download(window.otu_search_config.export_endpoint, props, true)}} />
         </div>
       </CardHeader>
       <CardBody>
@@ -197,12 +200,6 @@ export const SearchResultsCard =  connect(
   mapDispatchToProps
 )(_SearchResultsCard)
 
-function mapMgStateToProps(state) {
-  return {
-    tips: state.searchPage.tips
-  }
-}
-
 function mapMgDispatchToProps(dispatch) {
   return bindActionCreators(
     {
@@ -216,6 +213,6 @@ function mapMgDispatchToProps(dispatch) {
 }
 
 export const MetagenomeSearchResultsCard = connect(
-  mapMgStateToProps,
+  mapStateToProps,
   mapMgDispatchToProps
 )(_MetagenomeSearchResultsCard)
