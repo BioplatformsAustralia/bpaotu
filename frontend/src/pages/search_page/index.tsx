@@ -14,8 +14,13 @@ import { SearchResultsCard, MetagenomeSearchResultsCard } from './components/sea
 import { openSamplesMapModal } from './reducers/samples_map_modal'
 import { openSamplesGraphModal } from './reducers/samples_graph_modal'
 import { search } from './reducers/search'
+import { clearSearchResults } from  './reducers/search'
 
 const SearchPage = props => {
+  const newSearch = () => {
+    props.clearSearchResults()
+    props.search()
+  }
   const children = React.Children.toArray(props.children)
   return (
     <Container fluid={true}>
@@ -45,7 +50,7 @@ const SearchPage = props => {
         ) : (
           <>
             <Col sm={{ size: 2, offset: 3 }} >
-              <SearchButton octicon="search" text="Sample search" onClick={props.search} />
+              <SearchButton octicon="search" text="Sample search" onClick={newSearch} />
             </Col>
             <Col sm={{ size: 2 }} >
               <SearchButton octicon="globe" text="Interactive map search" onClick={props.openSamplesMapModal} />
@@ -76,7 +81,8 @@ function mapDispatchToProps(dispatch) {
     {
       openSamplesMapModal,
       openSamplesGraphModal,
-      search
+      search,
+      clearSearchResults
     },
     dispatch
   )

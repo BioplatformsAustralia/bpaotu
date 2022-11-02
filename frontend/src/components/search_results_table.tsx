@@ -64,10 +64,15 @@ export class SearchResultsTable extends React.Component<any> {
             </h6>
         </Alert>
         <ReactTable
+          // We use key= to force ReactTable to respect the page= prop. Without
+          // this it won't reset to page 1 for new searches. This is a
+          // workaround for what is probably a bug in react-table 6.10.0
+          key={this.props.results.page}
           columns={this.getColumns()}
           manual={true}
           loading={this.props.results.isLoading}
           data={this.props.results.data}
+          page={this.props.results.page }
           pageSize={this.props.results.pageSize}
           pages={this.props.results.pages}
           className="-striped -highlight"
