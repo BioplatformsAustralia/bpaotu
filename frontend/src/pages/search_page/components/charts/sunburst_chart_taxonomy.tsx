@@ -5,7 +5,6 @@ import { find, isUndefined, sum, startCase } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { selectEnvironment } from '../../reducers/contextual'
-import { search } from '../../reducers/search'
 import { updateTaxonomyDropDowns } from '../../reducers/taxonomy'
 import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
@@ -190,7 +189,6 @@ function mapDispatchToProps(dispatch: any) {
       selectEnvironment,
       selectTaxonomyValue: (taxa, id) => (createAction('SELECT_' + taxa.toUpperCase())(id)),
       updateTaxonomyDropDown: (taxa) => (updateTaxonomyDropDowns(taxa)()),
-      search,
       fetchContextualDataForGraph,
       fetchTaxonomyDataForGraph
     },

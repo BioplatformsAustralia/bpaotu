@@ -4,7 +4,6 @@ import { connect } from 'react-redux'
 import {plotly_chart_config} from './plotly_chart'
 import { bindActionCreators } from 'redux'
 import { selectEnvironment } from '../../reducers/contextual'
-import { search } from '../../reducers/search'
 import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 
@@ -30,7 +29,7 @@ class PieChartEnvironment extends React.Component<any> {
           labels.push(option.name)
       }
     }
-    
+
     let chart_data = [
       {
         values: values,
@@ -55,12 +54,12 @@ class PieChartEnvironment extends React.Component<any> {
 
     return (
       <>
-      <Plot 
+      <Plot
         data={chart_data}
-        layout={{ 
+        layout={{
           autosize: true,
-          width: this.props.width, height: this.props.height, 
-          title: {'text':title, 'font':{'size': 20}}, 
+          width: this.props.width, height: this.props.height,
+          title: {'text':title, 'font':{'size': 20}},
           hovermode: 'closest' }}
         config={plotly_chart_config(title)}
         onClick={e => {
@@ -95,7 +94,6 @@ function mapDispatchToProps(dispatch: any) {
   return bindActionCreators(
     {
       selectEnvironment,
-      search,
       fetchContextualDataForGraph,
       fetchTaxonomyDataForGraph
     },

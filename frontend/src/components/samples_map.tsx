@@ -17,15 +17,12 @@ import AnimateHelix from './animate_helix'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import {
-  addContextualFilter,
   removeContextualFilter,
   changeContextualFilterOperator,
   changeContextualFilterValue,
   changeContextualFilterValue2,
-  changeContextualFilterValues,
   selectContextualFilter
 } from '../pages/search_page/reducers/contextual'
-import { search } from '../pages/search_page/reducers/search'
 
 import FullscreenControl from 'react-leaflet-fullscreen'
 import MarkerClusterGroup from 'react-leaflet-markercluster'
@@ -655,14 +652,11 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
-      addContextualFilter,
       selectContextualFilter,
       removeContextualFilter,
       changeContextualFilterOperator,
       changeContextualFilterValue,
       changeContextualFilterValue2,
-      changeContextualFilterValues,
-      search
     },
     dispatch
   )

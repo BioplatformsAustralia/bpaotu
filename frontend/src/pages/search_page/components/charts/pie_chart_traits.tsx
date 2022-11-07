@@ -6,7 +6,6 @@ import { bindActionCreators } from 'redux'
 import { startCase } from 'lodash'
 import { selectTrait } from '../../reducers/trait'
 import { updateTaxonomyDropDowns } from '../../reducers/taxonomy'
-import { search } from '../../reducers/search'
 import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 
@@ -89,7 +88,6 @@ function mapDispatchToProps(dispatch: any) {
     {
       selectTrait,
       updateTaxonomy: updateTaxonomyDropDowns(''),
-      search,
       fetchContextualDataForGraph,
       fetchTaxonomyDataForGraph
     },

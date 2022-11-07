@@ -5,14 +5,11 @@ import { find } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import {
-    addContextualFilter,
     changeContextualFilterOperator,
     changeContextualFilterValue,
     changeContextualFilterValue2,
-    changeContextualFilterValues,
     selectContextualFilter
   } from '../../reducers/contextual'
-  import { search } from '../../reducers/search'
   import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
   import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 
@@ -113,13 +110,10 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch: any) {
   return bindActionCreators(
     {
-      addContextualFilter,
       selectContextualFilter,
       changeContextualFilterOperator,
       changeContextualFilterValue,
       changeContextualFilterValue2,
-      changeContextualFilterValues,
-      search,
       fetchContextualDataForGraph,
       fetchTaxonomyDataForGraph
     },

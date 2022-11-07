@@ -2,18 +2,15 @@ import React from 'react';
 import Plot from 'react-plotly.js';
 import {plotly_chart_config} from './plotly_chart'
 import { find, isString } from 'lodash'
-import { search } from '../../reducers/search'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 
 import {
-  addContextualFilter,
   changeContextualFilterOperator,
   changeContextualFilterValue,
   changeContextualFilterValue2,
-  changeContextualFilterValues,
   selectContextualFilter
 } from '../../reducers/contextual'
 
@@ -121,13 +118,10 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch: any) {
   return bindActionCreators(
     {
-      addContextualFilter,
       selectContextualFilter,
       changeContextualFilterOperator,
       changeContextualFilterValue,
       changeContextualFilterValue2,
-      changeContextualFilterValues,
-      search,
       fetchContextualDataForGraph,
       fetchTaxonomyDataForGraph
     },
