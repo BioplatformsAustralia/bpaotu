@@ -37,7 +37,18 @@ developed to access data from the Australian Microbiome.
 * [Install docker and compose](https://docs.docker.com/compose/install/)
 * `git clone --recurse-submodules` [https://github.com/BioplatformsAustralia/bpaotu.git](https://github.com/BioplatformsAustralia/bpaotu.git)
 * Generate `./.env_local`. This should contain `KEY=value` lines. See `./.env`
-  for keys. The values are beyond the scope of this README.
+  for keys. This must have a valid `CKAN_API_KEY` so that site images can be
+  fetched during development. You can use your personal `CKAN_API_KEY` in the
+  development environment. This key can be found on the profile page after
+  logging on to the bioplatforms.com data portal.
+
+  Note that `.env_local` is used to supply environment variables to the backend
+  running in a docker container. Don't confuse this with the various `.env.*`
+  files that can be used by React to supply environment variables to the
+  frontend (see
+  https://create-react-app.dev/docs/adding-custom-environment-variables/#what-other-env-files-can-be-used).
+  In particular, the only purpose of `./.env` is to document the available keys
+  for manual generation of `./.env_local`.
 * `docker-compose -f docker-compose-build.yml build base dev`
 
 ## Input data
