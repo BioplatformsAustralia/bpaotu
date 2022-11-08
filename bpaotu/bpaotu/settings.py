@@ -142,8 +142,18 @@ STATIC_SERVER_PATH = STATIC_ROOT
 BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
 BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
 STATICFILES_DIRS = [
+    # FIXME. This is almost certainly wrong, and should be handled by MEDIA_ROOT
+    # and MEDIA_URL instead. In particular, `django-admin collectstatic` will
+    # copy anything in BLAST_RESULTS_PATH to STATIC_ROOT during the docker
+    # container startup, which is probably not what is intended, and even
+    # requires a mkdir() in bpaotu.apps.BpaotuConfig() to prevent collectstatic
+    # from crashing. It's probably here as an easy way to serve the blast output
+    # during development without having to add a special case to urlpatterns.
+    # See
+    # https://docs.djangoproject.com/en/2.2/ref/contrib/staticfiles/#static-file-development-view
+    # Since it's not obviously breaking anything in production, I'm leaving it
+    # alone for now. (DH, Nov 2022)
     BLAST_RESULTS_PATH,
-    # FIXME missing dir causes crash in collectstatic. This should probably go in MEDIA_ROOT instead. https://docs.djangoproject.com/en/4.0/howto/static-files/#serving-files-uploaded-by-a-user-during-development
 ]
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
