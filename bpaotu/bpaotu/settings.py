@@ -59,6 +59,7 @@ DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'Bioplaforms Data Port
 EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU] ')
 SERVER_EMAIL = env.get('DJANGO_SERVER_EMAIL', DEFAULT_FROM_EMAIL)
 EMAIL_BACKEND = env.get('bpaotu_email_backend', "anymail.backends.amazon_ses.EmailBackend")
+EMAIL_HOST = env.get('bpaotu_email_host', 'localhost')
 
 ANYMAIL = {
     "AMAZON_SES_MESSAGE_TAG_NAME": "Type",
