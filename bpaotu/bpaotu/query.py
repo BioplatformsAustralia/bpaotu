@@ -181,7 +181,7 @@ class TaxonomyOptions:
 
     def _possibilities(self, taxonomy_filter):
         """
-        state should be a list of integer IDs for the relevent model, in the order of
+        state should be a list of integer IDs for the relevant model, in the order of
         TaxonomyOptions.hierarchy. a value of None indicates there is no selection.
         """
 
@@ -411,14 +411,16 @@ class SampleQuery:
         # log_query(q)
         return self._q_all_cached('matching_sample_headers', q)
 
-    def matching_selected_samples(self, subq):
-        q = self._session.query(SampleContext)
+    def matching_selected_samples(self, subq, *query_entities):
+        q = self._session.query(*query_entities)
         q = self._assemble_sample_query(q, subq).order_by(SampleContext.id)
         # log_query(q)
         return self._q_all_cached('matching_selected_samples', q)
 
-    def matching_samples(self):
-        return self.matching_selected_samples(self._build_taxonomy_subquery())
+    def matching_samples(self, entity=SampleContext):
+        return self.matching_selected_samples(
+            self._build_taxonomy_subquery(),
+            entity)
 
     def matching_otus(self):
         q = self._session.query(OTU)

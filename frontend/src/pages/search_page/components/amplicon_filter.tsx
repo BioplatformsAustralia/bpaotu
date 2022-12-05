@@ -2,15 +2,39 @@ import * as React from 'react'
 import { get as _get } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { selectAmplicon, selectAmpliconOperator, getDefaultAmplicon } from '../reducers/amplicon'
+import {
+  selectAmplicon, selectAmpliconOperator, getDefaultAmplicon,
+  getDefaultMetagenomeAmplicon
+} from '../reducers/amplicon'
 import DropDownFilter from '../../../components/drop_down_filter'
 
 class AmpliconFilter extends React.Component<any> {
 
+  defaultAmplicon: any
+
+  setDefaultAmplicon() {
+    if (this.defaultAmplicon || this.props.options.length === 0) {
+      return
+    }
+    this.defaultAmplicon = (this.props.metagenomeMode ?
+      getDefaultMetagenomeAmplicon :
+      getDefaultAmplicon)(this.props.options)
+    if (this.defaultAmplicon) {
+      this.props.selectValue(this.defaultAmplicon.id)
+    }
+  }
+
+  componentDidMount() {
+    this.defaultAmplicon = null
+    this.setDefaultAmplicon()
+  }
+
   componentDidUpdate() {
-    const defaultAmplicon = getDefaultAmplicon(this.props.options)
-    if (this.props.selected.value === '' && defaultAmplicon) {
-      this.props.selectValue(defaultAmplicon.id)
+    this.setDefaultAmplicon()
+    if (this.props.selected.value === '' && !this.props.metagenomeMode) {
+      if (this.defaultAmplicon) {
+        this.props.selectValue(this.defaultAmplicon.id)
+      }
     }
   }
 

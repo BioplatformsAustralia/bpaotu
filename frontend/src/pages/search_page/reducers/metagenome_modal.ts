@@ -3,64 +3,75 @@ import { createActions, handleActions } from 'redux-actions'
 import { searchPageInitialState } from './types'
 import { executeMetagenomeSearch } from '../../../api'
 import { handleSimpleAPIResponse } from '../../../reducers/utils'
+import { describeSearch } from './search'
 
-export const {
-  openBulkMetagenomeModal,
-  closeMetagenomeModal,
-  fetchMetagenomeStarted,
-  fetchMetagenomeEnded,
-} = createActions(
-    'OPEN_BULK_METAGENOME_MODAL',
-    'CLOSE_METAGENOME_MODAL',
-    'FETCH_METAGENOME_STARTED',
-    'FETCH_METAGENOME_ENDED'
-)
+export const { openMetagenomeModal, closeMetagenomeModal, fetchMetagenomeStarted,
+    fetchMetagenomeEnded, } = createActions(
+        'OPEN_METAGENOME_MODAL',
+        'CLOSE_METAGENOME_MODAL',
+        'FETCH_METAGENOME_STARTED',
+        'FETCH_METAGENOME_ENDED'
+    )
 
-export const openMetagenomeModal = (sample_id) => (dispatch, getState) => {
-    dispatch(fetchMetagenomeStarted(sample_id))
-    handleSimpleAPIResponse(dispatch, partial(executeMetagenomeSearch, sample_id), fetchMetagenomeEnded)
-  }
+export const openMetagenomeModalSearch = () => (dispatch, getState) => {
+    const state = getState();
+    const filters = describeSearch(state)
+    dispatch(fetchMetagenomeStarted())
+    handleSimpleAPIResponse(dispatch,
+        partial(executeMetagenomeSearch, filters),
+        fetchMetagenomeEnded)
+}
 
 export default handleActions(
     {
         [fetchMetagenomeStarted as any]: (state, action) => ({
             ...state,
             isOpen: true,
-            isLoading: true,
-            metagenome_data: [],
-            sample_id: action.payload
+            sample_ids: [],
+            isLoading: true
         }),
 
         [fetchMetagenomeEnded as any]: (state, action) => {
-            if (action.error) {
-                const response = action.payload.response
+            try {
+                if (action.error) {
+                    const response = action.payload.response
+                    return {
+                        ...state,
+                        isLoading: false,
+                        error: `${response.status}: ${response.statusText}. ${response.data}`,
+                        sample_ids: []
+                    }
+                }
                 return {
                     ...state,
                     isLoading: false,
-                    error: `${response.status}: ${response.statusText}. ${response.data}`,
-                    metagenome_data: {}
+                    error: "",
+                    sample_ids: action.payload.data.sample_ids
+                }
+            } catch(e) {
+                return {
+                    ...state,
+                    isLoading: false,
+                    error: e.toString(),
+                    sample_ids: []
                 }
             }
-            return {
-                     ...state,
-                     isLoading: false,
-                     error: "",
-                     metagenome_data: action.payload.data
-                 }
-
         },
 
-
-        [openBulkMetagenomeModal as any]: (state, action) => ({
+        [openMetagenomeModal as any]: (state, action) => ({
             ...state,
             isOpen: true,
-            sample_id: '*'
+            sample_ids: [action.payload],
+            isLoading: false,
+            error: ""
         }),
 
         [closeMetagenomeModal as any]: (state, action) => ({
             ...state,
             isOpen: false,
-            sample_id: null
+            isLoading: false,
+            sample_ids: [],
+            error: ""
         })
     },
     searchPageInitialState.metagenomeModal

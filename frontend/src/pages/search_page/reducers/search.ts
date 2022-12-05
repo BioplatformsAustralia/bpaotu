@@ -4,7 +4,7 @@ import { createActions, handleActions, createAction } from 'redux-actions'
 import { executeSearch } from '../../../api'
 import { getAmpliconFilter, isMetagenomeSearch }  from '../reducers/amplicon'
 import { submitToGalaxyEnded, submitToGalaxyStarted } from './submit_to_galaxy'
-import { ErrorList, searchPageInitialState } from './types'
+import { ErrorList, searchPageInitialState, EmptyOperatorAndValue } from './types'
 import { taxonomy_keys } from '../../../constants'
 
 
@@ -61,8 +61,11 @@ export const describeSearch = (state) => {
   const stateFilters = state.searchPage.filters
   const contextualDataDefinitions = state.contextualDataDefinitions
   const selectedAmplicon = getAmpliconFilter(state)
-  const selectedTrait = stateFilters.selectedTrait
-  const selectedTaxonomies = map(taxonomy_keys, taxonomy => stateFilters.taxonomy[taxonomy].selected)
+  const haveAmplicon = selectedAmplicon.value !== ''
+  const selectedTrait = haveAmplicon? stateFilters.selectedTrait: EmptyOperatorAndValue
+  const selectedTaxonomies = map(
+    taxonomy_keys,
+    taxonomy => haveAmplicon? stateFilters.taxonomy[taxonomy].selected: EmptyOperatorAndValue)
 
   return {
     amplicon_filter: selectedAmplicon,

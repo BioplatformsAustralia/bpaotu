@@ -121,7 +121,7 @@ class SearchFilters extends React.Component<any> {
     for (const [key, value] of Object.entries(this.props.filters)) {
       switch(key) {
         case "selectedAmplicon":
-          if (value['value'] && !this.props.isMetagenomeSearch) {
+          if (value['value']) {
             searchFilters.push(
               <InfoBox key={'selectedAmplicon'}>
                 {"Amplicon <" + value['operator'] + "> " +

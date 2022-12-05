@@ -58,7 +58,8 @@ MANAGERS = ADMINS
 DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'Bioplaforms Data Portal <help@bioplatforms.com>')
 EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU] ')
 SERVER_EMAIL = env.get('DJANGO_SERVER_EMAIL', DEFAULT_FROM_EMAIL)
-EMAIL_BACKEND = "anymail.backends.amazon_ses.EmailBackend"
+EMAIL_BACKEND = env.get('bpaotu_email_backend', "anymail.backends.amazon_ses.EmailBackend")
+
 ANYMAIL = {
     "AMAZON_SES_MESSAGE_TAG_NAME": "Type",
     "AMAZON_SES_CLIENT_PARAMS": {
@@ -68,7 +69,6 @@ ANYMAIL = {
         "region_name": env.get("AWS_REGION_FOR_ANYMAIL_SES"),
     },
 }
-
 
 ALLOWED_HOSTS = env.getlist("allowed_hosts", ["*"])
 
@@ -189,6 +189,17 @@ TEMPLATES = [
             ]
         },
     },
+
+    {
+        "BACKEND":"django.template.backends.jinja2.Jinja2",
+        "DIRS": [os.path.join(WEBAPP_ROOT, 'bpaotu', 'jinja2')],
+        "APP_DIRS": False,
+        "OPTIONS": {
+            "trim_blocks": True,
+            "lstrip_blocks": True
+        }
+     }
+
 ]
 
 
@@ -406,6 +417,7 @@ GALAXY_ADMIN_USER_API_KEY = env.get('galaxy_admin_user_api_key', '')
 GALAXY_INTEGRATION = GALAXY_ADMIN_USER_API_KEY != ''
 GALAXY_KRONA_WORKFLOW_ID = env.get('galaxy_krona_workflow_id', 'bf002aa8f96f4e7b')
 NONDENOISED_REQUEST_EMAIL = env.get('nondenoised_request_email', 'am-data-requests@bioplatforms.com')
+METAGENOME_REQUEST_EMAIL = env.get('metagenome_request_email', 'am-data-requests@bioplatforms.com')
 
 DEFAULT_AMPLICON = env.get('DEFAULT_AMPLICON', '27f519r_bacteria')
 DEFAULT_TAXONOMIES = [

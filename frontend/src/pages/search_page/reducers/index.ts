@@ -1,7 +1,7 @@
 import { combineReducers } from 'redux'
 import { handleActions } from 'redux-actions'
 
-import { metagenomeAmpliconReducer, selectedAmpliconReducer } from './amplicon'
+import { metagenomeModeReducer, selectedAmpliconReducer } from './amplicon'
 import selectedTraitReducer from './trait'
 import blastSearchReducer from './blast_search'
 import contextualReducer from './contextual'
@@ -19,7 +19,7 @@ const taxonomyLoadingReducer = handleActions(
   }}, false)
 
 const filtersReducer = combineReducers({
-  metagenomeAmplicon: metagenomeAmpliconReducer,
+  metagenomeMode: metagenomeModeReducer,
   selectedAmplicon: selectedAmpliconReducer,
   selectedTrait: selectedTraitReducer,
   taxonomyLoading: taxonomyLoadingReducer,

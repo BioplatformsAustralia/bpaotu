@@ -10,7 +10,7 @@ export interface SearchConfig {
   ckan_base_url: string
   ckan_check_permissions: string
   default_amplicon: string
-  metagenome_amplicon: string
+  metaxa_amplicon: string
   default_taxonomies: string[]
 
   reference_data_endpoint: string

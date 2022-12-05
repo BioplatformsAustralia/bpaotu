@@ -57,7 +57,7 @@ const StyledLabel = styled.div`
 class GridCellSizer extends MapControl<any> {
 
     createLeafletElement(props) {
-        
+
         const content = (
             <>
             <Container fluid={true} >
@@ -69,7 +69,7 @@ class GridCellSizer extends MapControl<any> {
                         <StyledSlider
                             defaultValue={props.gridcellSize}
                             min={0.25}
-                            max={10} 
+                            max={10}
                             step={0.25}
                             renderTrack={Track}
                             renderThumb={Thumb}
@@ -81,9 +81,9 @@ class GridCellSizer extends MapControl<any> {
                 </Row>
             </Container>
             <UncontrolledTooltip target="GridCellResizeTip" trigger="hover" placement="auto">
-                Grid size refers to degrees lat X degrees lon (i.e., a size of one will produce a grid of 1 degree x 1 degree).  
+                Grid size refers to degrees lat X degrees lon (i.e., a size of one will produce a grid of 1 degree x 1 degree).
                 Small grid sizes ({'<1'}) will take some time to resolve at the global scale (up to 3 min) , and are likely not required at this scale.
-                Small grid sizes will resolve much more quickly when a region of interest is chosen before selecting the grid size.  
+                Small grid sizes will resolve much more quickly when a region of interest is chosen before selecting the grid size.
                 A region of interest may be selected using the region selection tool ('Draw a rectangle') on the top right end of the map page.
             </UncontrolledTooltip>
             </>

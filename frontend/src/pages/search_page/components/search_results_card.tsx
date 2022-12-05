@@ -8,7 +8,7 @@ import Octicon from '../../../components/octicon'
 import { describeSearch } from '../reducers/search'
 import { clearGalaxyAlert, submitToGalaxy, workflowOnGalaxy } from '../reducers/submit_to_galaxy'
 import { clearTips, showPhinchTip } from '../reducers/tips'
-import { openMetagenomeModal, openBulkMetagenomeModal } from '../reducers/metagenome_modal'
+import { openMetagenomeModal, openMetagenomeModalSearch } from '../reducers/metagenome_modal'
 import { GalaxySubmission } from '../reducers/types'
 import SamplesMapModal from './samples_map_modal'
 import SamplesGraphModal from './samples_graph_modal'
@@ -154,8 +154,8 @@ const _MetagenomeSearchResultsCard = (props) => (
       <CardHeader>
         <div className="text-center">
           <HeaderButton octicon="desktop-download"
-            text={`Download ZIP archive of selected metagenome files for selected samples`}
-            onClick={() => { props.openBulkMetagenomeModal() }} />
+            text={`Request metagenome files for all selected samples`}
+            onClick={ props.openMetagenomeModalSearch } />
           <HeaderButton octicon="desktop-download"
             text="Download Contextual Data only (CSV)"
             onClick={() => { download(window.otu_search_config.export_endpoint, props, true)}} />
@@ -205,8 +205,8 @@ function mapMgDispatchToProps(dispatch) {
     {
       clearTips,
       showPhinchTip,
-      openMetagenomeModal: (sample_id) => (openMetagenomeModal(sample_id)),
-      openBulkMetagenomeModal
+      openMetagenomeModalSearch,
+      openMetagenomeModal
     },
     dispatch
   )

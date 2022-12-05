@@ -77,7 +77,7 @@ def _spatial_query(params):
             result = defaultdict(lambda: defaultdict(dict))
             # It's typically faster to accumulate the sample_ids above and then
             # fetch the actual samples here.
-            for sample in query.matching_selected_samples(sample_id_selected):
+            for sample in query.matching_selected_samples(sample_id_selected, SampleContext):
                 longitude = rewrap_longitude(sample.longitude)
                 latlng = result[(sample.latitude, longitude)]
                 latlng['latitude'] = sample.latitude

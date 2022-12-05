@@ -114,22 +114,50 @@ export function nondenoisedDataRequest(selectedAmplicon, selectedSamples, matchS
     })
 }
 
-export const executeSearch = partial(doSearch, window.otu_search_config.search_endpoint)
-export const executeContextualSearch = partial(doSearch, window.otu_search_config.required_table_headers_endpoint)
 
-export function executeSampleSitesSearch(filters) {
+export function metagenomeRequest(sample_ids, fileTypes) {
   const formData = new FormData()
-  formData.append('otu_query', JSON.stringify(filters))
+  formData.append('sample_ids', JSON.stringify(sample_ids))
+  formData.append('selected_files', JSON.stringify(fileTypes))
 
+  const url = join(
+    [window.otu_search_config.base_url,
+    'private/metagenome-request'], '/')
   return axios({
     method: 'post',
-    url: window.otu_search_config.search_sample_sites_endpoint,
+    url: url,
     data: formData,
     headers: {
       'Content-Type': 'multipart/form-data'
     }
   })
 }
+
+export const executeSearch = partial(doSearch, window.otu_search_config.search_endpoint)
+export const executeContextualSearch = partial(doSearch, window.otu_search_config.required_table_headers_endpoint)
+
+function executeOtuSearch(url, filters) {
+  const formData = new FormData()
+  formData.append('otu_query', JSON.stringify(filters))
+  return axios({
+    method: 'post',
+    url: url,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+export const executeSampleSitesSearch = partial(
+  executeOtuSearch,
+  window.otu_search_config.search_sample_sites_endpoint)
+
+export const executeMetagenomeSearch = partial(
+  executeOtuSearch,
+  join(
+    [window.otu_search_config.base_url,
+      'private/metagenome-search'], '/'))
 
 export function executeSubmitToGalaxy(filters) {
   const formData = new FormData()
@@ -193,10 +221,3 @@ export function getBlastSubmission(submissionId) {
   })
 }
 
-export function executeMetagenomeSearch(sample_id) {
-  const url = join(
-    [window.otu_search_config.base_url,
-    'private/metagenome-search',
-    encodeURIComponent(sample_id)], '/')
-  return axios.get(url)
-}

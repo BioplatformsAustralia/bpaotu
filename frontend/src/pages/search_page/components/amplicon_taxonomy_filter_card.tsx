@@ -5,7 +5,7 @@ import { Button, Card, CardBody, CardFooter, CardHeader, Row, Col, UncontrolledT
 
 import { fetchReferenceData } from '../../../reducers/reference_data/reference_data'
 import { selectTrait } from '../reducers/trait'
-import { preselectAmplicon, getAmpliconFilter } from '../reducers/amplicon'
+import { setMetagenomeMode, getAmpliconFilter } from '../reducers/amplicon'
 import { clearSearchResults } from  '../reducers/search'
 import { EmptyOperatorAndValue } from '../reducers/types'
 import { fetchTraits } from '../../../reducers/reference_data/traits'
@@ -56,7 +56,7 @@ class TaxonomyFilterCard extends React.Component<any> {
 
   componentDidMount() {
     this.prevAmplicon = {...EmptyOperatorAndValue}
-    this.props.preselectAmplicon(this.props.metagenomeAmplicon)
+    this.props.setMetagenomeMode(this.props.metagenomeMode)
     this.props.clearSearchResults()
     this.props.fetchReferenceData()
   }
@@ -75,27 +75,37 @@ class TaxonomyFilterCard extends React.Component<any> {
   }
 
   public render() {
-    const children = React.Children.toArray(this.props.children)
     return (
       <Card>
         <CardHeader tag="h5">
-          { this.props.cardHeader }
+          Filter by amplicon, taxonomy and traits
         </CardHeader>
         <CardBody className="filters">
-          { children.length? children[0] : null }
+          <AmpliconFilter
+            info={AmpliconFilterInfo}
+            metagenomeMode={this.props.metagenomeMode}
+          />
+          <hr />
           <h5 className="text-center">Taxonomy <span id="taxonomyTip1">
             <Octicon name="info" />
           </span></h5>
           <UncontrolledTooltip target="taxonomyTip1" placement="auto">
             {TaxonomyFilterInfo}
           </UncontrolledTooltip>
-
-          { children.length? children[1] : null}
-
-          <TaxonomySelector info={TaxonomySourceInfo} placeholder="Select database and method&hellip;" />
-          {TaxonomyDropDowns}
-          <hr />
-          <TraitFilter info={TraitFilterInfo} />
+          <Row>
+            <Col>
+              <p className="text-center">
+                {TaxonomyNoAmpliconInfo}
+              </p>
+            </Col>
+          </Row>
+          {(this.props.selectedAmplicon.value !== '') &&
+            <>
+              <TaxonomySelector info={TaxonomySourceInfo} placeholder="Select database and method&hellip;" />
+              {TaxonomyDropDowns}
+              <hr />
+              <TraitFilter info={TraitFilterInfo} />
+            </>}
         </CardBody>
         <CardFooter className="text-center">
           <Button color="warning" onClick={this.clearFilters}>
@@ -127,7 +137,7 @@ function mapDispatchToProps(dispatch: any) {
       fetchReferenceData,
       updateTaxonomy: updateTaxonomyDropDowns(''),
       fetchTraits,
-      preselectAmplicon,
+      setMetagenomeMode,
       clearSearchResults,
       selectTrait,
       clearAllTaxonomyFilters
@@ -136,38 +146,7 @@ function mapDispatchToProps(dispatch: any) {
   )
 }
 
-const ConnectedTaxonomyFilterCard =  connect(
+export const AmpliconTaxonomyFilterCard =  connect(
   mapStateToProps,
   mapDispatchToProps
 )(TaxonomyFilterCard)
-
-
-export function AmpliconTaxonomyFilterCard() {
-  return (
-    <ConnectedTaxonomyFilterCard
-      metagenomeAmplicon=''
-      cardHeader='Filter by amplicon, taxonomy and traits'>
-
-      <React.Fragment>
-        <AmpliconFilter info={AmpliconFilterInfo} />
-        <hr />
-      </React.Fragment>
-
-      <Row>
-        <Col>
-          <p className="text-center">
-            {TaxonomyNoAmpliconInfo}
-          </p>
-        </Col>
-      </Row>
-    </ConnectedTaxonomyFilterCard>
-  )
-}
-
-export function MetagenomeTaxonomyFilterCard() {
-  return (
-    <ConnectedTaxonomyFilterCard
-      metagenomeAmplicon={window.otu_search_config.metagenome_amplicon}
-      cardHeader='Filter by taxonomy and traits' />
-  )
-}

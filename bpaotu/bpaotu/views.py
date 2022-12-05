@@ -35,7 +35,7 @@ from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .importer import DataImporter
-from .models import NonDenoisedDataRequest
+from .models import NonDenoisedDataRequest, MetagenomeRequest
 from .otu import (Environment, OTUAmplicon, SampleContext, TaxonomySource, format_taxonomy_name)
 from .query import (ContextualFilter, ContextualFilterTermDate,
                     ContextualFilterTermFloat, ContextualFilterTermLongitude,
@@ -48,9 +48,6 @@ from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_rem
 from .spatial import spatial_query
 from .tabular import tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_float
-
-from .bpaotu_bulk import generate_bulk_zip
-from .metagenome import ckan_query_sample, ckan_query_multiple_samples, get_package_sample_id
 
 logger = logging.getLogger("rainbow")
 
@@ -164,7 +161,7 @@ def api_config(request):
         'default_amplicon': settings.DEFAULT_AMPLICON,
         'default_taxonomies': [format_taxonomy_name(db, method)
                                for db, method in settings.DEFAULT_TAXONOMIES],
-        'metagenome_amplicon': 'metaxa_from_metagenomes',
+        'metaxa_amplicon': 'metaxa_from_metagenomes',
     }
     return JsonResponse(config)
 
@@ -1040,53 +1037,67 @@ def site_image_thumbnail(request, package_id, resource_id):
     buf, content_type = fetch_image(package_id, resource_id)
     return HttpResponse(buf.getvalue(), content_type=content_type)
 
-
-def metagenome_file_type(resource_name):
-    """
-    Resource names are like 41133_MGSD_CSIRO.sqm.07.fun3.kegg,
-    141133_MGSD_CSIRO.qc.fastq.zip etc.
-    """
-    return resource_name.split('.', 1)[-1]
-
 @require_CKAN_auth
-@require_GET
-def metagenome_search(request, sample_id):
-    def urls_by_name(resources):
-        names = [res['name'] for res in resources]
-        short_names = [metagenome_file_type(s) for s in names]
-        return {k: (res['url'], res['size']) for k, res in zip(short_names, resources)}
+@require_POST
+def metagenome_search(request):
     try:
-        remote = make_ckan_remote()
-        results = ckan_query_sample(remote, sample_id)
+        params, errors = param_to_filters(request.POST.get('otu_query'))
+        if errors:
+            raise OTUError(*errors)
+        with SampleQuery(params) as query:
+            sample_ids = [r[0] for r in query.matching_samples(SampleContext.id)]
+            sample_ids.sort(
+                key=lambda v: (0, int(v)) if v.isdecimal() else (1, v))
         return JsonResponse(
-            {get_package_sample_id(package): urls_by_name(package['resources'])
-             for package in results})
+            dict(sample_ids=sample_ids))
     except Exception as e:
         logger.critical("Error in metagenome_search", exc_info=True)
         return HttpResponseServerError(str(e), content_type="text/plain")
 
 @require_CKAN_auth
-@require_GET
-def metagenome_download(request):
+@require_POST
+def metagenome_request(request):
     try:
-        params, errors = param_to_filters(request.GET['q'])
-        if errors:
-            raise OTUError(*errors)
-        with SampleQuery(params) as query:
-            sample_ids = [sample.id for sample in query.matching_samples()]
-        selected = json.loads(request.GET['selected'])
-        remote = make_ckan_remote()
-        packages = list(ckan_query_multiple_samples(remote, sample_ids))
-        resources = [r for pkg in packages for r in pkg['resources']
-                    if  metagenome_file_type(r['name']) in selected]
-        dirname = params.filename(make_timestamp(), '-metagenome-download')
-        user_page = settings.CKAN_SERVER['base_url'].rstrip('/') + '/user/$your_username'
-        # TODO Get actual username from CKAN api. See https://github.com/ckan/ckan/issues/5490
-        zf = generate_bulk_zip(dirname, 'Metagenome data for selected samples',
-                               '', user_page, packages, resources)
-        response = HttpResponse(zf, content_type='application/zip')
-        response['Content-Disposition'] = 'attachment; filename="%s.zip"' % dirname
-        return response
+        sample_ids = json.loads(request.POST['sample_ids'])
+        file_types=json.loads(request.POST['selected_files'])
+        to_email = settings.METAGENOME_REQUEST_EMAIL
+        user_email=request.ckan_data.get('email')
+
+        mg_request = MetagenomeRequest.objects.create(
+            sample_ids='\n'.join(sample_ids),
+            file_types='\n'.join(file_types),
+            email=user_email)
+        request_id = mg_request.id
+        template_vars = dict(
+            user_email=user_email,
+            file_types=file_types,
+            timestamp=mg_request.created,
+            selected_samples=sample_ids,
+            request_id=request_id
+        )
+
+        am_email ="Australian Microbiome Data Requests <{}>".format(to_email)
+
+        template = loader.get_template('mg-ack-email.txt')
+        body = template.render(template_vars, request)
+        send_mail(
+            "[MG#{}] Australian Microbiome: Metagenome data request received".format(request_id),
+             body,
+            am_email, [user_email])
+
+        template = loader.get_template('mg-request-email.txt')
+        body = template.render(template_vars, request)
+        send_mail(
+            "[MG#{}] Australian Microbiome: Metagenome data request".format(request_id),
+            body,
+            am_email, [to_email])
+
+        return JsonResponse({
+            'request_id': request_id,
+             'timestamp': mg_request.created,
+             'contact': to_email
+            })
+
     except Exception as e:
-        logger.critical("Error in metagenome_download", exc_info=True)
+        logger.critical("Error in metagenome_request", exc_info=True)
         return HttpResponseServerError(str(e), content_type="text/plain")

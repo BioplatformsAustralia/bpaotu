@@ -154,7 +154,7 @@ function mapStateToProps(state) {
     return {
         sample_ids: state.contextualDataDefinitions.sample_ids,
         amplicons: state.referenceData.amplicons.values.filter(
-            amplicon => amplicon.value !== window.otu_search_config.metagenome_amplicon)
+            amplicon => amplicon.value !== window.otu_search_config.metaxa_amplicon)
     }
 }
 

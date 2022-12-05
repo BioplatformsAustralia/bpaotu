@@ -5,7 +5,7 @@ import { bindActionCreators } from 'redux'
 import { Col, Container, Row} from 'reactstrap'
 import SearchButton from '../../components/search_button'
 import AnimateHelix from '../../components/animate_helix'
-import {AmpliconTaxonomyFilterCard, MetagenomeTaxonomyFilterCard } from './components/amplicon_taxonomy_filter_card'
+import {AmpliconTaxonomyFilterCard } from './components/amplicon_taxonomy_filter_card'
 import BlastSearchCard from './components/blast_search_card'
 import ContextualFilterCard from './components/contextual_filter_card'
 import SearchErrors from './components/search_errors'
@@ -97,7 +97,7 @@ export function SampleSearchPage() {
   return (
     <ConnectedSearchPage>
       <Col data-tut="reactour__AmpliconTaxonomyFilterCard">
-        <AmpliconTaxonomyFilterCard />
+        <AmpliconTaxonomyFilterCard metagenomeMode={false} />
       </Col>
 
       <Row className="space-above">
@@ -117,7 +117,7 @@ export function MetaGenomeSearchPage() {
   return (
     <ConnectedSearchPage>
       <Col>
-        <MetagenomeTaxonomyFilterCard />
+        <AmpliconTaxonomyFilterCard metagenomeMode={true} />
       </Col>
 
       <></>

@@ -53,8 +53,7 @@ export interface PageState {
   metagenomeModal: {
     isLoading: boolean
     isOpen: boolean
-    sample_id: any,
-    metagenome_data: any
+    sample_ids: any,
     error: string
   }
   galaxy: {
@@ -117,8 +116,7 @@ export const searchPageInitialState: PageState = {
   metagenomeModal: {
     isOpen: false,
     isLoading: false,
-    sample_id: null,
-    metagenome_data: [],
+    sample_ids: [],
     error: ""
   },
   galaxy: {

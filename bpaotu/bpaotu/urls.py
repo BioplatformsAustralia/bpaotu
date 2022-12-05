@@ -56,11 +56,13 @@ urlpatterns = [
         views.site_image_thumbnail,
         name="site_image_thumbnail"),
     url(
-        r'^private/metagenome-search/(?P<sample_id>.+)',
+        r'^private/metagenome-request$',
+        views.metagenome_request,
+        name="metagenome_request"),
+    url(
+        r'^private/metagenome-search$',
         views.metagenome_search,
         name="metagenome_search"),
-    url(
-        r'^private/metagenome-download$',
-        views.metagenome_download,
-        name="metagenome_download")
+
+
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
