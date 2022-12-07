@@ -77,10 +77,13 @@ def contextual_csv(samples):
     csv_fd = io.StringIO()
     w = csv.writer(csv_fd)
     w.writerow(headings[t] for t in fields)
+    yield csv_fd.getvalue().encode('utf8')
 
     for sample in samples:
+        csv_fd.truncate(0)
+        csv_fd.seek(0)
         w.writerow(get_context_value(sample, field) for field in fields)
-    return csv_fd.getvalue()
+        yield csv_fd.getvalue().encode('utf8')
 
 def sample_otu_csv_rows(taxonomy_labels, q):
     fd = io.StringIO()
@@ -121,7 +124,7 @@ def tabular_zip_file_generator(params, onlyContextual):
     rank1_ontology_class = taxonomy_ontology_classes[1]
     with SampleQuery(params) as query, OntologyInfo() as info:
         taxonomy_labels_by_source = info.get_taxonomy_labels()
-        zf.writestr('contextual.csv', contextual_csv(query.matching_samples()).encode('utf8'))
+        zf.write_iter('contextual.csv', contextual_csv(query.matching_samples()))
         zf.writestr('info.txt', info_text(params))
         if onlyContextual=='f':
             q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU)
@@ -135,12 +138,10 @@ def tabular_zip_file_generator(params, onlyContextual):
                     # zf.write_iter() just stores the query iterator and evaluates
                     # it later
                     rank1_query = q.filter(taxonomy_rank1_id_attr == rank1_id)
-                    if rank1_query.first() is None:
-                        continue
                     zf.write_iter("{}.csv".format(sanitise(rank1_name)),
                                   sample_otu_csv_rows(taxonomy_labels,
                                                       rank1_query.options(taxonomy_lookups)))
-            elif q.first():
+            else:
                 zf.write_iter(
                     "{}.csv".format(sanitise(info.id_to_value(rank1_ontology_class,
                                                               rank1_id_is_value))),
