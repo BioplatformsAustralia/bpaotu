@@ -131,7 +131,7 @@ or
 
 Each column value is an arbitrary character string, with the following restrictions:
 
-* #OTU ID: a string describing the OTU (GATC string)
+* #OTU ID: a string describing the OTU (GATC string, md5sum or string prefixed with mxa_)
 * kingdom...species: taxon as a text string, e.g., d_Bacteria
 * amplicon: text string (e.g. 16S, A16S, 18S, ITS, ...)
 * traits: text string (multiple traits are comma separated)

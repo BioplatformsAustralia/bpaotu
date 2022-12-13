@@ -83,7 +83,7 @@ def tmp_csv_file():
 class TaxonomyRowsIterator:
     hierarchy_type_by_source = {}
     taxonomy_file_info = {}
-    code_re = re.compile(r'^[GATC]+')
+    code_re = re.compile(r'^([GATC]+)|([a-z0-9]{32}$)') # GATC string or md5sum
     otu_header = '#otu id'
     amplicon_header = 'amplicon'
     traits_header = 'traits'
