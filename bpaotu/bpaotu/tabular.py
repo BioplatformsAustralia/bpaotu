@@ -1,8 +1,6 @@
 import zipstream
 import re
-from sqlalchemy.orm import joinedload
 from .otu import (
-    taxonomy_keys,
     taxonomy_key_id_names,
     taxonomy_ontology_classes,
     SampleOTU,
@@ -12,7 +10,6 @@ from .otu import (
 from .util import (
     format_sample_id,
     str_none_blank,
-    val_or_empty,
     array_or_empty)
 from .query import (
     OntologyInfo,
@@ -85,7 +82,7 @@ def contextual_csv(samples):
         w.writerow(get_context_value(sample, field) for field in fields)
         yield csv_fd.getvalue().encode('utf8')
 
-def sample_otu_csv_rows(taxonomy_labels, q):
+def sample_otu_csv_rows(taxonomy_labels, ids_to_names, q):
     fd = io.StringIO()
     w = csv.writer(fd)
     w.writerow((
@@ -103,10 +100,8 @@ def sample_otu_csv_rows(taxonomy_labels, q):
         w.writerow([
             format_sample_id(sample_otu.sample_id),
             otu.code,
-            sample_otu.count,
-            val_or_empty(taxonomy.amplicon)] +
-            [val_or_empty(getattr(taxonomy, attr))
-             for attr in taxonomy_keys[1:len(taxonomy_labels)+1]] +
+            sample_otu.count] +
+            ids_to_names(taxonomy) +
             [array_or_empty(taxonomy.traits).replace(",", ";")])
         yield fd.getvalue().encode('utf8')
         fd.seek(0)
@@ -128,10 +123,16 @@ def tabular_zip_file_generator(params, onlyContextual):
         zf.writestr('info.txt', info_text(params))
         if onlyContextual=='f':
             q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU)
-            taxonomy_lookups = [joinedload(getattr(Taxonomy, rel))
-                                for rel in (taxonomy_keys + ['amplicon'])]
             rank1_id_is_value = params.taxonomy_filter.get_rank_equality_value(1)
             taxonomy_labels = taxonomy_labels_by_source[taxonomy_source_id]
+
+            ontology_attrs = ['amplicon_id'] + taxonomy_key_id_names[1:len(taxonomy_labels) +1]
+            ontology_lookup_fns = {name: _csv_write_function(getattr(Taxonomy, name))
+                                   for name in ontology_attrs}
+            def ids_to_names(taxonomy):
+                return [ontology_lookup_fns[name](getattr(taxonomy, name))
+                        for name in ontology_attrs]
+
             if rank1_id_is_value is None: # not selecting a specific kingdom
                 for rank1_id, rank1_name in info.get_values(rank1_ontology_class):
                     # We have to do this as separate queries because
@@ -139,14 +140,14 @@ def tabular_zip_file_generator(params, onlyContextual):
                     # it later
                     rank1_query = q.filter(taxonomy_rank1_id_attr == rank1_id)
                     zf.write_iter("{}.csv".format(sanitise(rank1_name)),
-                                  sample_otu_csv_rows(taxonomy_labels,
-                                                      rank1_query.options(taxonomy_lookups)))
+                                  sample_otu_csv_rows(taxonomy_labels, ids_to_names,
+                                                      rank1_query))
             else:
                 zf.write_iter(
                     "{}.csv".format(sanitise(info.id_to_value(rank1_ontology_class,
                                                               rank1_id_is_value))),
-                    sample_otu_csv_rows(taxonomy_labels,
-                                        q.options(taxonomy_lookups)))
+                    sample_otu_csv_rows(taxonomy_labels, ids_to_names,
+                                        q))
         return zf
 
 
