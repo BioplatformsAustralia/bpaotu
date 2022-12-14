@@ -170,7 +170,7 @@ class OTU(SchemaMixin, Base):
     __tablename__ = 'otu'
     id = Column(Integer, primary_key=True)
     # Think of code as the fingerprint and amplicon as the finger it came from.
-    code = Column(String(length=1024), nullable=False)  # long GATTACAt-ype string
+    code = Column(String(length=1024), nullable=False)  # long GATTACAt-ype string or hash
 
     def __repr__(self):
         return "<OTU(%d: %s)>" % (
