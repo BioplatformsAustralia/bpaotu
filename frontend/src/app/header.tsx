@@ -7,7 +7,7 @@ import Octicon from '../components/octicon'
 import BPAOTUTour from '../components/bpaotu_tour'
 
 const Motd = () =>(
-  <div style={{margin: '0 1rem', border: '1px solid #ddd', padding: '1rem', fontSize: '75%'}}>
+  <div className="btn-warning" style={{margin: '0 1rem', border: '1px solid #ddd', padding: '1rem', fontSize: '75%'}}>
     We are experiencing a few issues that may affect the performance of Australian Microbiome OTU database. We are in the process of addressing these issues and expect them to be resolved in early January 2023.  If you experience problems, or require assistance accessing data while we investigate these issues please email us at help@bioplatforms.com
   </div>)
 
