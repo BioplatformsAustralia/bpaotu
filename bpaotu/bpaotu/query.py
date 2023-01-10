@@ -432,11 +432,11 @@ class SampleQuery:
         # we do a cross-join, but convert to an inner-join with
         # filters. as SampleContext is in the main query, the
         # machinery for filtering above will just work
-        q = self._session.query(*args) \
-            .filter(OTU.id == SampleOTU.otu_id) \
-            .filter(SampleContext.id == SampleOTU.sample_id)
+        q = self._session.query(*args).filter(OTU.id == SampleOTU.otu_id)
         q = self._taxonomy_filter.apply(q)
-        q = self._contextual_filter.apply(q)
+        if not self._contextual_filter.is_empty():
+            q = self._contextual_filter.apply(
+                q.filter(SampleContext.id == SampleOTU.sample_id))
         # we don't cache this query: the result size is enormous,
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
