@@ -6,7 +6,9 @@ from .otu import (
     SampleOTU,
     Taxonomy,
     OTU,
-    SampleContext)
+    SampleContext,
+    TaxonomySampleOTU)
+
 from .util import (
     format_sample_id,
     str_none_blank,
@@ -96,13 +98,13 @@ def sample_otu_csv_rows(taxonomy_labels, ids_to_names, q):
     fd.seek(0)
     fd.truncate(0)
 
-    for taxonomy, otu, sample_otu in q.yield_per(50):
+    for row in q.yield_per(50):
         w.writerow([
-            format_sample_id(sample_otu.sample_id),
-            otu.code,
-            sample_otu.count] +
-            ids_to_names(taxonomy) +
-            [array_or_empty(taxonomy.traits).replace(",", ";")])
+            format_sample_id(row.sample_id),
+            row.code,
+            row.count] +
+            ids_to_names(row) +
+            [array_or_empty(row.traits).replace(",", ";")])
         yield fd.getvalue().encode('utf8')
         fd.seek(0)
         fd.truncate(0)
@@ -114,15 +116,15 @@ def tabular_zip_file_generator(params, onlyContextual):
     taxonomy_source_id = params.taxonomy_filter.get_rank_equality_value(0)
     assert taxonomy_source_id != None
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
-    # Rank 1 is top level below taxonomy source, e.g. kingdom
-    taxonomy_rank1_id_attr = getattr(Taxonomy, taxonomy_key_id_names[1])
     rank1_ontology_class = taxonomy_ontology_classes[1]
     with SampleQuery(params) as query, OntologyInfo() as info:
         taxonomy_labels_by_source = info.get_taxonomy_labels()
         zf.write_iter('contextual.csv', contextual_csv(query.matching_samples()))
         zf.writestr('info.txt', info_text(params))
         if onlyContextual=='f':
-            q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU)
+            q = query.otu_export()
+            # Rank 1 is top level below taxonomy source, e.g. kingdom
+            taxonomy_rank1_id_attr = getattr(TaxonomySampleOTU, taxonomy_key_id_names[1])
             rank1_id_is_value = params.taxonomy_filter.get_rank_equality_value(1)
             taxonomy_labels = taxonomy_labels_by_source[taxonomy_source_id]
 

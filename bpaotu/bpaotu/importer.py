@@ -26,6 +26,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema, DropSchema
 from sqlalchemy.sql.expression import text
 
+from sqlalchemy_utils import refresh_materialized_view
+
 from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon,
                   taxonomy_keys, taxonomy_key_id_names, rank_labels_lookup,
@@ -39,8 +41,9 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   SampleVegetationType,
                   SampleIntegrityWarnings, SampleVolumeNotes, SampleBioticRelationship,
                   SampleEnvironmentMedium,
-                  SampleHostAssociatedMicrobiomeZone, SampleHostType, Taxonomy, taxonomy_otu,
-                  make_engine, refresh_otu_sample_otu_mv)
+                  SampleHostAssociatedMicrobiomeZone, SampleHostType,
+                  Taxonomy, taxonomy_otu, TaxonomySampleOTU,
+                  make_engine)
 from .sample_meta import update_from_ckan
 
 logger = logging.getLogger("rainbow")
@@ -226,7 +229,8 @@ class DataImporter:
         self.load_contextual_metadata()
         otu_lookup = self.load_taxonomies()
         self.load_otu_abundance(otu_lookup)
-        refresh_otu_sample_otu_mv(self._session, OTUSampleOTU.__table__)
+        refresh_materialized_view(self._session, OTUSampleOTU.__table__)
+        refresh_materialized_view(self._session, TaxonomySampleOTU.__table__)
         update_from_ckan()
         self.complete()
 

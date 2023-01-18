@@ -31,6 +31,7 @@ from .otu import (
     ExcludedSamples,
     OntologyErrors,
     Taxonomy,
+    TaxonomySampleOTU,
     make_engine)
 
 
@@ -428,19 +429,25 @@ class SampleQuery:
         q = self._assemble_otu_query(q, subq).order_by(OTU.id)
         return q
 
-    def matching_sample_otus(self, *args):
-        # we do a cross-join, but convert to an inner-join with
-        # filters. as SampleContext is in the main query, the
-        # machinery for filtering above will just work
-        q = self._session.query(*args).filter(OTU.id == SampleOTU.otu_id)
-        q = self._taxonomy_filter.apply(q)
+    def otu_export(self):
+        q = self._session.query(TaxonomySampleOTU)
+        q = self._taxonomy_filter.apply(q, TaxonomySampleOTU)
         if not self._contextual_filter.is_empty():
             q = self._contextual_filter.apply(
-                q.filter(SampleContext.id == SampleOTU.sample_id))
+                q.filter(SampleContext.id == TaxonomySampleOTU.sample_id))
         # we don't cache this query: the result size is enormous,
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
         # it can be iterated over
+        # log_query(q)
+        return q
+
+    def matching_sample_otus(self, *args):
+        q = self._session.query(*args).filter(OTU.id == SampleOTU.otu_id).join(Taxonomy.otus)
+        q = self._taxonomy_filter.apply(q, Taxonomy)
+        if not self._contextual_filter.is_empty():
+            q = self._contextual_filter.apply(
+                q.filter(SampleContext.id == SampleOTU.sample_id))
         # log_query(q)
         return q
 
@@ -527,7 +534,7 @@ class SampleQuery:
         if contextual_subquery is not None:
             q = q.filter(OTU.id.in_(contextual_subquery))
         # apply taxonomic filter terms
-        q = self._taxonomy_filter.apply(q)
+        q = self._taxonomy_filter.apply(q.join(Taxonomy.otus), Taxonomy)
         # log_query(q)
         return q
 
@@ -577,16 +584,14 @@ class TaxonomyFilter:
     def get_rank_equality_value(self, rank_level):
         return get_op_is_value(self.state_vector[rank_level])
 
-    def apply(self, q):
-        """
-        q: sqlalchemy query object selecting from or joined with OTU()
-        """
-        q = apply_amplicon_filter(
-            q.join(Taxonomy.otus),
-            self.amplicon_filter)
-        q = apply_trait_filter(q, self.trait_filter)
-        for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy, self.state_vector):
-            q = apply_taxonomy_filter(taxonomy_attr, q, taxonomy)
+    def apply(self, q, TaxonomyClass):
+        q = apply_op_and_val_filter(
+            TaxonomyClass.amplicon_id,
+            q, self.amplicon_filter)
+        q = apply_op_and_array_filter(TaxonomyClass.traits, q, self.trait_filter)
+        for (taxonomy_attr, ontology_class), op_and_val in zip(TaxonomyOptions.hierarchy, self.state_vector):
+            q = apply_op_and_val_filter(getattr(TaxonomyClass, taxonomy_attr),
+                                        q, op_and_val)
         return q
 
     def __repr__(self):

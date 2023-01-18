@@ -9,10 +9,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship
-from sqlalchemy_utils import (
-    create_materialized_view,
-    refresh_materialized_view
-)
+from sqlalchemy_utils import create_materialized_view
 
 logger = logging.getLogger("rainbow")
 # Base = declarative_base()
@@ -805,6 +802,28 @@ taxonomy_rank_id_attrs = [getattr(Taxonomy, name) for name in taxonomy_key_id_na
 def _sample_otu_indexes(prefix):
     return [Index(prefix + name + '_idx', name) for name in taxonomy_key_id_names]
 
+class TaxonomySampleOTU(SchemaMixin, Base):
+    __table__ = create_materialized_view(
+        name='taxonomy_sample_otu',
+        selectable=select(
+            [
+                SampleOTU.sample_id,
+                SampleOTU.otu_id,
+                SampleOTU.count,
+                OTU.code,
+            ] + taxonomy_rank_id_attrs + [
+                Taxonomy.amplicon_id,
+                Taxonomy.traits
+            ],
+            from_obj=(
+                SampleOTU.__table__.join(OTU).join(taxonomy_otu).join(Taxonomy))),
+        metadata=Base.metadata,
+        indexes=  _sample_otu_indexes('taxonomy_sample_otu_index_') +   [
+            Index('taxonomy_sample_otu_index_sample_id_idx', 'sample_id'),
+            Index('taxonomy_sample_otu_index_amplicon_id_idx', 'amplicon_id'),
+            Index('taxonomy_sample_otu_index_traits_idx', 'traits', postgresql_using='gin'),
+        ]
+    )
 
 class OTUSampleOTU(SchemaMixin, Base):
     __table__ = create_materialized_view(
@@ -882,7 +901,3 @@ def make_engine():
     engine_string = 'postgres://%(USER)s:%(PASSWORD)s@%(HOST)s:%(PORT)s/%(NAME)s' % (conf)
     echo = os.environ.get('BPAOTU_ECHO') == '1'
     return create_engine(engine_string, echo=echo, connect_args={'options': '-csearch_path={}'.format(dbschema)})
-
-
-def refresh_otu_sample_otu_mv(session, mv):
-    refresh_materialized_view(session, mv)
