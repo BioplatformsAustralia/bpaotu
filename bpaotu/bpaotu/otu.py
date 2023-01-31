@@ -4,7 +4,7 @@ import os
 from citext import CIText
 from django.conf import settings
 from sqlalchemy import (MetaData, ARRAY, Table, Column, Date, Time, Float, ForeignKey, Integer,
-                        String, create_engine, select, Index, Boolean)
+                        String, create_engine, select, Index, Boolean, DDL)
 from sqlalchemy.sql import func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
@@ -159,6 +159,39 @@ class Taxonomy(SchemaMixin, Base):
 
 Taxonomy._add_taxonomy_attrs()
 
+taxonomy_otu_export = Table(
+    # Denormalised and partitioned join of Taxonomy and taxonomy_otu for
+    # performance. Ideally this would be a materialized view but they can't be
+    # partitioned. Also in psql 10, we can't have primary keys or foreign key
+    # references.
+    'taxonomy_otu_export',
+    Base.metadata,
+
+    Column('amplicon_id', Integer),
+    Column('traits', ARRAY(String)),
+    Column('otu_id', Integer),
+    *[Column(rank_id, Integer) for rank_id in taxonomy_key_id_names],
+    postgresql_partition_by='LIST(taxonomy_source_id)'
+)
+
+def create_partitions(connection, tablename, ids):
+    """
+    All taxonomy-based queries are done with a specific taxonomy_source_id. In
+    order to get decent performance for data downloads, we want to partition on
+    taxonomy_source_id.
+
+    Call this before adding data to the table.
+
+    See https://www.postgresql.org/docs/10/ddl-partitioning.html
+    """
+    for i in ids:
+        connection.execute(DDL(
+            "CREATE TABLE otu.{1}_{0} PARTITION OF otu.{1} FOR VALUES IN ({0});".format(
+                i, tablename)))
+        for col in ['amplicon_id', 'otu_id'] + taxonomy_key_id_names:
+            connection.execute(DDL(
+                "CREATE INDEX ON otu.{1}_{0} ({2});".format(
+                    i, tablename, col)))
 
 class OTU(SchemaMixin, Base):
     """
@@ -794,36 +827,13 @@ class SampleOTU(SchemaMixin, Base):
     count_20k = Column(Integer, nullable=True)
 
     def __repr__(self):
-        return "<SampleOTU(%d,%d,%d)>" % (self.sample_id, self.otu_id, self.count)
+        return "<SampleOTU(%s,%d,%d)>" % (self.sample_id, self.otu_id, self.count)
 
 
 taxonomy_rank_id_attrs = [getattr(Taxonomy, name) for name in taxonomy_key_id_names]
 
 def _sample_otu_indexes(prefix):
     return [Index(prefix + name + '_idx', name) for name in taxonomy_key_id_names]
-
-class TaxonomySampleOTU(SchemaMixin, Base):
-    __table__ = create_materialized_view(
-        name='taxonomy_sample_otu',
-        selectable=select(
-            [
-                SampleOTU.sample_id,
-                SampleOTU.otu_id,
-                SampleOTU.count,
-                OTU.code,
-            ] + taxonomy_rank_id_attrs + [
-                Taxonomy.amplicon_id,
-                Taxonomy.traits
-            ],
-            from_obj=(
-                SampleOTU.__table__.join(OTU).join(taxonomy_otu).join(Taxonomy))),
-        metadata=Base.metadata,
-        indexes=  _sample_otu_indexes('taxonomy_sample_otu_index_') +   [
-            Index('taxonomy_sample_otu_index_sample_id_idx', 'sample_id'),
-            Index('taxonomy_sample_otu_index_amplicon_id_idx', 'amplicon_id'),
-            Index('taxonomy_sample_otu_index_traits_idx', 'traits', postgresql_using='gin'),
-        ]
-    )
 
 class OTUSampleOTU(SchemaMixin, Base):
     __table__ = create_materialized_view(

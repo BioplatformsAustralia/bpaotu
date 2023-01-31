@@ -7,7 +7,7 @@ from .otu import (
     Taxonomy,
     OTU,
     SampleContext,
-    TaxonomySampleOTU)
+    taxonomy_otu_export)
 
 from .util import (
     format_sample_id,
@@ -100,9 +100,9 @@ def sample_otu_csv_rows(taxonomy_labels, ids_to_names, q):
 
     for row in q.yield_per(50):
         w.writerow([
-            format_sample_id(row.sample_id),
-            row.code,
-            row.count] +
+            format_sample_id(row.SampleOTU.sample_id),
+            row.OTU.code,
+            row.SampleOTU.count] +
             ids_to_names(row) +
             [array_or_empty(row.traits).replace(",", ";")])
         yield fd.getvalue().encode('utf8')
@@ -124,7 +124,7 @@ def tabular_zip_file_generator(params, onlyContextual):
         if onlyContextual=='f':
             q = query.otu_export()
             # Rank 1 is top level below taxonomy source, e.g. kingdom
-            taxonomy_rank1_id_attr = getattr(TaxonomySampleOTU, taxonomy_key_id_names[1])
+            taxonomy_rank1_id_attr = getattr(taxonomy_otu_export.c, taxonomy_key_id_names[1])
             rank1_id_is_value = params.taxonomy_filter.get_rank_equality_value(1)
             taxonomy_labels = taxonomy_labels_by_source[taxonomy_source_id]
 

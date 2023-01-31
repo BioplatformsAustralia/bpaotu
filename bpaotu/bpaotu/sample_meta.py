@@ -28,6 +28,7 @@ def get_hash(conn):
     return m.digest()
 
 def update_from_ckan():
+    logger.info("Searching CKAN for metagenome data")
     remote = make_ckan_remote()
     engine = make_engine()
 

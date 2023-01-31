@@ -42,7 +42,7 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   SampleIntegrityWarnings, SampleVolumeNotes, SampleBioticRelationship,
                   SampleEnvironmentMedium,
                   SampleHostAssociatedMicrobiomeZone, SampleHostType,
-                  Taxonomy, taxonomy_otu, TaxonomySampleOTU,
+                  Taxonomy, taxonomy_otu, taxonomy_otu_export, create_partitions,
                   make_engine)
 from .sample_meta import update_from_ckan
 
@@ -229,8 +229,9 @@ class DataImporter:
         self.load_contextual_metadata()
         otu_lookup = self.load_taxonomies()
         self.load_otu_abundance(otu_lookup)
+        self.load_taxonomy_otu()
+        logger.info('Refreshing OTUSampleOTU')
         refresh_materialized_view(self._session, OTUSampleOTU.__table__)
-        refresh_materialized_view(self._session, TaxonomySampleOTU.__table__)
         update_from_ckan()
         self.complete()
 
@@ -378,6 +379,11 @@ class DataImporter:
         for obj in self._session.query(TaxonomySource).all():
             obj.hierarchy_type = taxonomy_rows_iter.hierarchy_type_by_source[obj.value]
         self._session.commit()
+
+        with self._engine.begin() as conn:
+            create_partitions(conn,
+                taxonomy_otu_export.name,
+                taxonomy_source_id_by_name.values())
 
         # TODO need nicer taxonomy source names via some kind of lookup (maybe a yaml file)?
         logger.info("loading taxonomies - pass 2, defining OTUs")
@@ -638,3 +644,15 @@ class DataImporter:
                 # COPY will interpret that as NULL by default. See
                 # https://www.postgresql.org/docs/current/sql-copy.html
                 self.load_from_csv("COPY otu.sample_otu (sample_id, otu_id, count, count_20k) FROM STDIN CSV", fd)
+
+    def load_taxonomy_otu(self):
+        logger.info('Building taxonomy_otu_export')
+        with self._engine.begin() as conn:
+            conn.execute(
+                insert(taxonomy_otu_export).from_select(
+                    ['otu_id', 'amplicon_id', 'traits'] + taxonomy_key_id_names,
+                    select(
+                        [OTU.id, Taxonomy.amplicon_id, Taxonomy.traits] +
+                        [getattr(Taxonomy, name) for name in taxonomy_key_id_names]
+                    ).select_from(
+                        Taxonomy.__table__.join(taxonomy_otu).join(OTU))))

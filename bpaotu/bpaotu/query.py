@@ -31,7 +31,7 @@ from .otu import (
     ExcludedSamples,
     OntologyErrors,
     Taxonomy,
-    TaxonomySampleOTU,
+    taxonomy_otu_export,
     make_engine)
 
 
@@ -430,11 +430,13 @@ class SampleQuery:
         return q
 
     def otu_export(self):
-        q = self._session.query(TaxonomySampleOTU)
-        q = self._taxonomy_filter.apply(q, TaxonomySampleOTU)
+        q = self._session.query(taxonomy_otu_export, SampleOTU, OTU).filter(
+            taxonomy_otu_export.c.otu_id == SampleOTU.otu_id). filter(
+                SampleOTU.otu_id == OTU.id)
+        q = self._taxonomy_filter.apply(q, taxonomy_otu_export.c)
         if not self._contextual_filter.is_empty():
             q = self._contextual_filter.apply(
-                q.filter(SampleContext.id == TaxonomySampleOTU.sample_id))
+                q.filter(SampleContext.id == SampleOTU.sample_id))
         # we don't cache this query: the result size is enormous,
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
