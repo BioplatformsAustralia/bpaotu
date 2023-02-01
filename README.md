@@ -233,6 +233,13 @@ NB: In example above,
 * /data/2019-02: location of the data folder
 * 2021-08-02: today's date
 
+### Database visualisation
+To generate an SVG diagram of the database schema, install the
+`postgresql-autodoc` and `graphviz` packages (Ubuntu), and then
+```
+PGPASSWORD=$db_password postgresql_autodoc -d webapp -h localhost -u webapp -s otu
+dot  -Tsvg webapp.dot  > webapp.svg
+```
 
 ## Deployments
 
