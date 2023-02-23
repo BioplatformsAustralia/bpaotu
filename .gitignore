@@ -28,3 +28,4 @@ yarn_cache/
 .idea/
 rds/
 temp/
+.nvmrc
