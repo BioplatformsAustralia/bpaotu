@@ -23,10 +23,29 @@ import { fetchContextualDataDefinitions } from '../../../reducers/contextual_dat
 
 import ContextualFilter from '../../../components/contextual_filter'
 import EnvironmentFilter from './environment_filter'
+import { v4 as uuid } from 'uuid'
 
 export const ContextualFilterInfo =
   'Contextual filters allow data to be filtered on site specific chemical and physical data. '
 
+const ContextualFilterLinkButton = ({ title, url, tooltip }) => {
+  const id = `id-${uuid()}`;
+
+  return (
+    <>
+      <Button size="sm" color="secondary" style={{cursor:'pointer', margin: '-15px 2px', padding: '3px 10px'}} onClick={() => {
+          window.open(url)
+        }}>
+        <Octicon name="link" />
+        <span style={{ paddingLeft: 4, paddingRight: 4 }}>{title}</span>
+        <Badge color="secondary" id={id}><Octicon name="info" /></Badge>
+      </Button>
+      <UncontrolledTooltip target={id} placement="auto">
+        {tooltip}
+      </UncontrolledTooltip>
+    </>
+  )
+}
 
 class ContextualFilterCard extends React.Component<any> {
   public componentDidMount() {
@@ -40,44 +59,33 @@ class ContextualFilterCard extends React.Component<any> {
         <CardHeader tag="h5">
           <Row>
             <Col>
-                Contextual Filters
+              Contextual Filters
             </Col>
             <Col className="text-right" xs="auto">
-                <Button size="sm" color="secondary" style={{cursor:'pointer', margin: '-15px 0px', padding: '3px 10px'}} onClick={() => {
-                    window.open(this.props.definitions_url)
-                  }}>
-                  <Octicon name="link" />
-                  <span>{' '}Download metadata description{' '}</span>
-                  <Badge color="secondary" id="downloadContextualTip"><Octicon name="info" /></Badge>
-                </Button>
-                <Button size="sm" color="secondary" style={{cursor:'pointer', margin: '-15px 0px', padding: '3px 10px'}} onClick={() => {
-                    window.open(this.props.scientific_manual_url)
-                  }}>
-                  <Octicon name="link" />
-                  <span>{' '}Download methods manual{' '}</span>
-                  <Badge color="secondary" id="downloadMethodlTip"><Octicon name="info" /></Badge>
-                </Button>
-              <UncontrolledTooltip target="downloadContextualTip" placement="auto">
-                {"Download Metadata for Contextual Data fields including units, field descriptions and controlled vocabularies"}
-              </UncontrolledTooltip>
-              <UncontrolledTooltip target="downloadMethodlTip" placement="auto">
-                {"Download the manual containing scientific methods used in sample collection and processing"}
-              </UncontrolledTooltip>
+              <ContextualFilterLinkButton
+                title="Download metadata description"
+                url={this.props.definitions_url}
+                tooltip="Download Metadata for Contextual Data fields including units, field descriptions and controlled vocabularies"
+              />
+              <ContextualFilterLinkButton
+                title="Download methods manual"
+                url={this.props.scientific_manual_url}
+                tooltip="Download the manual containing scientific methods used in sample collection and processing"
+              />
             </Col>
           </Row>
         </CardHeader>
         <CardBody className="filters">
           <EnvironmentFilter />
-
           <hr />
-          <h5 className="text-center">Contextual Filters{' '}
-          <span id="contextualFilterTip">
-            <Octicon name="info" />
-          </span>
+          <h5 className="text-center">Contextual Filters
+            <span id="contextualFilterTip" style={{ marginLeft: 8 }}>
+              <Octicon name="info" />
+            </span>
+          </h5>
           <UncontrolledTooltip target="contextualFilterTip" placement="auto">
             {ContextualFilterInfo}
           </UncontrolledTooltip>
-          </h5>
           <Row>
             <Col>
               <p className="text-center">
@@ -92,12 +100,15 @@ class ContextualFilterCard extends React.Component<any> {
                 <FormGroup check>
                   <Label sm={12} check color="primary">
                     <Input
-                        type="checkbox"
-                        checked={this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?false:true}
-                        onChange={evt => evt.target.checked? this.props.removeWarningContextualFilter():this.props.addWarningContextualFilter() }
-                      />
-                      
-                        {this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?"Check to show all data including samples with integrity warnings.":"Uncheck to remove samples with integrity warnings."}
+                      type="checkbox"
+                      checked={this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?false:true}
+                      onChange={evt => evt.target.checked? this.props.removeWarningContextualFilter():this.props.addWarningContextualFilter() }
+                    />
+                    {
+                      this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")
+                      ? "Check to show all data including samples with integrity warnings."
+                      : "Uncheck to remove samples with integrity warnings."
+                    }
                   </Label>
                 </FormGroup>
                 </Alert>

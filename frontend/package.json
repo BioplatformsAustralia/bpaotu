@@ -58,7 +58,8 @@
     "redux-actions": "2.6.5",
     "redux-thunk": "2.3.0",
     "styled-components": "^4.0.0",
-    "typescript": "3.5.3"
+    "typescript": "3.5.3",
+    "uuid": "^9.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
