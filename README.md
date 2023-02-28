@@ -273,6 +273,20 @@ PGPASSWORD=$db_password postgresql_autodoc -d webapp -h localhost -u webapp -s o
 dot  -Tsvg webapp.dot  > webapp.svg
 ```
 
+### Database login
+
+Start a bash terminal on the db container and run log into pgql with the webapp role:
+
+```
+psql -U webapp
+```
+
+Then set the search path to the "otu" schema at the psql prompt
+
+```
+SET search_path TO otu;
+```
+
 ## Deployments
 
 [Bioplatforms Australia - Australian Microbiome Search Facility](https://data.bioplatforms.com/bpa/otu/)
