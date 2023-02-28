@@ -913,7 +913,7 @@ def contextual_schema_definition_query():
         with SampleSchemaDefinition() as query:
             for path in query.get_schema_definition_url():
                 download_url = str(path)
-        df_definition = pd.read_excel(download_url)
+        df_definition = pd.read_excel(download_url, sheet_name=1)
         df_definition = df_definition.fillna(value="")
     except Exception as e:
         logger.error(f"Link {download_url} doesn't exist. {e}")
