@@ -8,9 +8,11 @@ import { changeTableProperties, search } from '../reducers/search'
 
 function mapStateToProps(state) {
   const nonEmptyFilters = uniqBy(reject(state.searchPage.filters.contextual.filters, f => isEmpty(f.name)), 'name')
+  const nonEmptySIWFilters = uniqBy(reject(state.searchPage.filters.sampleIntegrityWarning.filters, f => isEmpty(f.name)), 'name')
+  
   return {
     results: state.searchPage.results,
-    extraColumns: fieldsToColumns(nonEmptyFilters)
+    extraColumns: fieldsToColumns([...nonEmptyFilters, ...nonEmptySIWFilters])
   }
 }
 

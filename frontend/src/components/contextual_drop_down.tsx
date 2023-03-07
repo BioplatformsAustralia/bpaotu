@@ -3,6 +3,7 @@ import * as React from 'react'
 import { Button, Col, Row } from 'reactstrap'
 import Octicon from './octicon'
 import Select from 'react-select';
+
 export class ContextualDropDown extends React.Component<any> {
   protected dropDownSize = 11
 
