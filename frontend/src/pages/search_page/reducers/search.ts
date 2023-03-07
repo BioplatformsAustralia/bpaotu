@@ -47,7 +47,49 @@ function marshallContextualFilters(filtersState, dataDefinitions) {
   return filters
 }
 
+function marshallSampleIntegrityWarningFilters(filtersState, dataDefinitions) {
+  const filterDataDefinition = name => find(dataDefinitions.filters, dd => dd.name === name)
+  const filters = map(reject(filtersState, filter => filter.name === ''), filter => {
+    const dataDefinition = filterDataDefinition(filter.name)
+
+    const values: any = {}
+    switch (dataDefinition.type) {
+      case 'string':
+        values.contains = filter.value
+        break
+      case 'float':
+      case 'date':
+        values.from = filter.value
+        values.to = filter.value2
+        break
+      case 'ontology':
+        values.is = filter.value
+        break
+      case 'sample_id':
+        values.is = filter.values
+        break
+    }
+    return {
+      field: filter.name,
+      operator: filter.operator,
+      ...values
+    }
+  })
+
+  return filters
+}
+
 function marshallContextual(state, contextualDataDefinitions) {
+  const { selectedEnvironment, filtersMode } = state
+
+  return {
+    environment: selectedEnvironment.value === '' ? null : selectedEnvironment,
+    mode: filtersMode,
+    filters: marshallContextualFilters(state.filters, contextualDataDefinitions)
+  }
+}
+
+function marshallSampleIntegrityWarning(state, contextualDataDefinitions) {
   const { selectedEnvironment, filtersMode } = state
 
   return {
@@ -72,6 +114,7 @@ export const describeSearch = (state) => {
     trait_filter: selectedTrait,
     taxonomy_filters: selectedTaxonomies,
     contextual_filters: marshallContextual(stateFilters.contextual, contextualDataDefinitions),
+    sample_integrity_warnings_filter: marshallContextual(stateFilters.sampleIntegrityWarning, contextualDataDefinitions), // 'hello', // marshallSampleIntegrityWarning(stateFilters.sample_integrity_warning, contextualDataDefinitions),
     metagenome_only: isMetagenomeSearch(state)
   }
 }
@@ -83,9 +126,12 @@ export const search = () => (dispatch, getState) => {
 
   const filters = describeSearch(state)
 
+  const contextualColumns = reject(map(filters.contextual_filters.filters, f => f.field), name => isEmpty(name))
+  const sampleIntegrityWarningsColumns = reject(map(filters.sample_integrity_warnings_filter.filters, f => f.field), name => isEmpty(name))
+
   const options = {
     ...state.searchPage.results,
-    columns: uniq(reject(map(filters.contextual_filters.filters, f => f.field), name => isEmpty(name)))
+    columns: uniq([...contextualColumns, ...sampleIntegrityWarningsColumns])
   }
 
   executeSearch(filters, options)

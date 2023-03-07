@@ -229,8 +229,10 @@ function mapStateToProps(state) {
     filters: state.searchPage.filters,
     isMetagenomeSearch: isMetagenomeSearch(state),
     environment: state.contextualDataDefinitions.environment,
-    contextualFilters: state.contextualDataDefinitions.filters,
-    contextualFiltersMode: state.searchPage.filters.contextual.filtersMode,
+    contextualFilters: state.contextualDataDefinitions.filters, // what are these?
+    contextualFiltersMode: state.searchPage.filters.contextual.filtersMode,  // what are these?
+    sampleIntegrityWarningFilters: state.contextualDataDefinitions.warningFilters,  // what are these?
+    sampleIntegrityWarningFiltersMode: state.searchPage.filters.sampleIntegrityWarning.filtersMode,  // what are these?
     selectedContextualFilters: state.searchPage.filters.contextual.filters
   }
 }

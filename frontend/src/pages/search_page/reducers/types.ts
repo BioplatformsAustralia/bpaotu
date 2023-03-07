@@ -40,6 +40,7 @@ export interface PageState {
     }
     selectedTrait: OperatorAndValue
     contextual: any // TODO
+    sampleIntegrityWarning: any
   }
   samplesMapModal: {
     isOpen: boolean
@@ -99,6 +100,11 @@ export const searchPageInitialState: PageState = {
       taxonomy_keys.map(k => [k, EmptySelectableLoadableValues])),
     selectedTrait: EmptyOperatorAndValue,
     contextual: {
+      selectedEnvironment: EmptyOperatorAndValue,
+      filtersMode: 'and',
+      filters: []
+    },
+    sampleIntegrityWarning: {
       selectedEnvironment: EmptyOperatorAndValue,
       filtersMode: 'and',
       filters: []

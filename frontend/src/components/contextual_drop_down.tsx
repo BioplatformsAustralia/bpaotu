@@ -15,7 +15,9 @@ export class ContextualDropDown extends React.Component<any> {
             color="warning"
             size="sm"
             className="form-control"
-            onClick={() => this.props.remove(this.props.index)}
+            onClick={() => {
+              this.props.remove(this.props.index)
+            }}
           >
             <Octicon name="dash" size="small" />
           </Button>

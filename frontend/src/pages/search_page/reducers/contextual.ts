@@ -47,13 +47,6 @@ const EmptyContextualFilter = {
   values: []
 }
 
-const WarningContextualFilter = {
-  name: 'sample_integrity_warnings_id',
-  operator: 'is',
-  value: '0',
-  value2: '',
-  values: []
-}
 export const {
   selectContextualFilter,
   changeContextualFilterOperator,
@@ -61,8 +54,6 @@ export const {
   changeContextualFilterValue2,
   changeContextualFilterValues,
 
-  addWarningContextualFilter,
-  removeWarningContextualFilter,
   addContextualFilter,
   removeContextualFilter,
   clearContextualFilters
@@ -92,15 +83,6 @@ export const doesFilterMatchEnvironment = environment => filter => {
 
 const contextualFiltersReducer = handleActions(
   {
-    [addWarningContextualFilter as any]: (state: any, action) => ({
-      ...state,
-      filters: [...state.filters, WarningContextualFilter]
-    }),
-    [removeWarningContextualFilter as any]: (state: any, action) => ({
-      ...state,
-      filters: removeElementWithValue(state.filters, WarningContextualFilter)
-
-    }),
     [addContextualFilter as any]: (state: any, action) => ({
       ...state,
       filters: [...state.filters, EmptyContextualFilter]

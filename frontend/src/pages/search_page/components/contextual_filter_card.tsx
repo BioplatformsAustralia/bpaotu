@@ -6,8 +6,6 @@ import Octicon from '../../../components/octicon'
 
 import { bindActionCreators } from 'redux'
 import {
-  addWarningContextualFilter,
-  removeWarningContextualFilter,
   addContextualFilter,
   changeContextualFilterOperator,
   changeContextualFilterValue,
@@ -19,6 +17,20 @@ import {
   selectContextualFilter,
   selectContextualFiltersMode
 } from '../reducers/contextual'
+import {
+  checkSampleIntegrityWarningFilter,
+  uncheckSampleIntegrityWarningFilter,
+  addSampleIntegrityWarningFilter,
+  removeSampleIntegrityWarningFilter,
+  changeSampleIntegrityWarningFilterOperator,
+  changeSampleIntegrityWarningFilterValue,
+  changeSampleIntegrityWarningFilterValue2,
+  changeSampleIntegrityWarningFilterValues,
+  clearSampleIntegrityWarningFilters,
+  doesFilterMatchEnvironment as doesSampleIntegrityWarningFilterMatchEnvironment,
+  selectSampleIntegrityWarningFilter,
+  selectSampleIntegrityWarningFiltersMode
+} from '../reducers/sample_integrity_warning'
 import { fetchContextualDataDefinitions } from '../../../reducers/contextual_data_definitions'
 
 import ContextualFilter from '../../../components/contextual_filter'
@@ -49,8 +61,9 @@ const ContextualFilterLinkButton = ({ title, url, tooltip }) => {
 
 class ContextualFilterCard extends React.Component<any> {
   public componentDidMount() {
-    if(this.props.fetchContextualDataDefinitions())
-      this.props.addWarningContextualFilter()
+    if(this.props.fetchContextualDataDefinitions()) {
+      // this.props.addWarningContextualFilter()
+    }
   }
 
   public render() {
@@ -101,17 +114,34 @@ class ContextualFilterCard extends React.Component<any> {
                   <Label sm={12} check color="primary">
                     <Input
                       type="checkbox"
-                      checked={this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")?false:true}
-                      onChange={evt => evt.target.checked? this.props.removeWarningContextualFilter():this.props.addWarningContextualFilter() }
+                      checked={this.props.sampleIntegrityWarningFilters.find(fltr => fltr.name === "sample_integrity_warnings_id") ? false : true}
+                      onChange={evt => evt.target.checked ? this.props.uncheckSampleIntegrityWarningFilter() : this.props.checkSampleIntegrityWarningFilter() }
                     />
                     {
-                      this.props.contextualFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")
-                      ? "Check to show all data including samples with integrity warnings."
-                      : "Uncheck to remove samples with integrity warnings."
+                      this.props.sampleIntegrityWarningFilters.find(fltr => fltr.name === "sample_integrity_warnings_id")
+                      ? "Check to show all data including samples with integrity warnings"
+                      : "Uncheck to remove samples with integrity warnings"
                     }
                   </Label>
                 </FormGroup>
-                </Alert>
+                {this.props.sampleIntegrityWarningFilters.map((fltr, index) => (
+                  <ContextualFilter
+                    key={`${fltr.name}-${index}`}
+                    index={index}
+                    filter={fltr}
+                    dataDefinition={find(this.props.dataDefinitions, dd => dd.name === fltr.name)}
+                    options={this.props.sampleIntegrityWarningFilterOptions}
+                    optionsLoading={this.props.optionsLoading}
+                    remove={this.props.removeSampleIntegrityWarningFilter}
+                    select={this.props.selectSampleIntegrityWarningFilter}
+                    changeOperator={this.props.changeSampleIntegrityWarningFilterOperator}
+                    changeValue={this.props.changeSampleIntegrityWarningFilterValue}
+                    changeValue2={this.props.changeSampleIntegrityWarningFilterValue2}
+                    changeValues={this.props.changeSampleIntegrityWarningFilterValues}
+                    definitions={this.props.definitions}
+                  />
+                ))}
+              </Alert>
             </Col>
           </Row>
 
@@ -175,9 +205,15 @@ function mapStateToProps(state) {
   return {
     contextualFilters: state.searchPage.filters.contextual.filters,
     contextualFiltersMode: state.searchPage.filters.contextual.filtersMode,
+    sampleIntegrityWarningFilters: state.searchPage.filters.sampleIntegrityWarning.filters,
+    sampleIntegrityWarningFiltersMode: state.searchPage.filters.sampleIntegrityWarning.filtersMode,
     dataDefinitions: state.contextualDataDefinitions.filters,
     contextualFilterOptions: getFilterOptions(
-      state.contextualDataDefinitions.filters,
+      state.contextualDataDefinitions.filters.filter((x) => x.name !== 'sample_integrity_warnings_id'),
+      state.searchPage.filters.contextual.selectedEnvironment
+    ),
+    sampleIntegrityWarningFilterOptions: getFilterOptions(
+      state.contextualDataDefinitions.filters.filter((x) => x.name === 'sample_integrity_warnings_id'),
       state.searchPage.filters.contextual.selectedEnvironment
     ),
     optionsLoading: state.contextualDataDefinitions.isLoading,
@@ -191,9 +227,8 @@ function mapDispatchToProps(dispatch: any) {
   return bindActionCreators(
     {
       fetchContextualDataDefinitions,
+
       selectContextualFiltersMode,
-      addWarningContextualFilter,
-      removeWarningContextualFilter,
       addContextualFilter,
       removeContextualFilter,
       selectContextualFilter,
@@ -201,7 +236,19 @@ function mapDispatchToProps(dispatch: any) {
       changeContextualFilterValue,
       changeContextualFilterValue2,
       changeContextualFilterValues,
-      clearContextualFilters
+      clearContextualFilters,
+
+      selectSampleIntegrityWarningFiltersMode,
+      checkSampleIntegrityWarningFilter,
+      uncheckSampleIntegrityWarningFilter,
+      addSampleIntegrityWarningFilter,
+      removeSampleIntegrityWarningFilter,
+      selectSampleIntegrityWarningFilter,
+      changeSampleIntegrityWarningFilterOperator,
+      changeSampleIntegrityWarningFilterValue,
+      changeSampleIntegrityWarningFilterValue2,
+      changeSampleIntegrityWarningFilterValues,
+      clearSampleIntegrityWarningFilters,
     },
     dispatch
   )

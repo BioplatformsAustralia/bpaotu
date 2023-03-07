@@ -36,15 +36,17 @@ export default class ContextualFilter extends ContextualDropDown {
     const type = _get(this.props, 'dataDefinition.type')
     const TypeBasedOperatorAndValue = TypeToOperatorAndValue[type]
 
+    const filterTipId = "FilterTip-" + this.props.index + "-" + this.props.filter.name
+
     return (
       <>
         {TypeBasedOperatorAndValue ? (
           <>
           <Col sm={{size:'auto'}} className="text-center">
-          <span id={"FilterTip"+this.props.index}>
+          <span id={filterTipId}>
             <Octicon name="info" />
           </span>
-          <UncontrolledTooltip target={"FilterTip"+this.props.index} placement="auto">
+          <UncontrolledTooltip target={filterTipId} placement="auto">
             {find(this.props.definitions, def => def.name === this.props.filter.name).definition}
           </UncontrolledTooltip>
           </Col>
