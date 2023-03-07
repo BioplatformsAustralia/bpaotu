@@ -489,9 +489,13 @@ def param_to_filters(query_str, contextual_filtering=True):
         otu_query['taxonomy_filters'],
         otu_query['trait_filter'])
     context_spec = otu_query['contextual_filters']
+    sample_integrity_spec = otu_query['sample_integrity_warnings_filter']
     contextual_filter = ContextualFilter(context_spec['mode'],
                                          context_spec['environment'],
                                          otu_query['metagenome_only'])
+    sample_integrity_warnings_filter = ContextualFilter(sample_integrity_spec['mode'],
+                                                        sample_integrity_spec['environment'],
+                                                        otu_query['metagenome_only'])
 
     errors = []
 
@@ -508,9 +512,24 @@ def param_to_filters(query_str, contextual_filtering=True):
                 errors.append("Invalid value provided for contextual field `%s'" % field_name)
                 logger.critical("Exception parsing field: `%s'", field_name, exc_info=True)
 
+    # process sample integrity separately
+    if contextual_filtering:
+        for filter_spec in sample_integrity_spec['filters']:
+            field_name = filter_spec['field']
+            if field_name not in SampleContext.__table__.columns:
+                errors.append("Please select a sample integrity warning data field to filter upon.")
+                continue
+
+            try:
+                sample_integrity_warnings_filter.add_term(_parse_contextual_term(filter_spec))
+            except Exception:
+                errors.append("Invalid value provided for sample integrity warning field `%s'" % field_name)
+                logger.critical("Exception parsing field: `%s'", field_name, exc_info=True)
+
     return (OTUQueryParams(
         contextual_filter=contextual_filter,
-        taxonomy_filter=taxonomy_filter), errors)
+        taxonomy_filter=taxonomy_filter,
+        sample_integrity_warnings_filter=sample_integrity_warnings_filter), errors)
 
 def selected_contextual_filters(query_str, contextual_filtering=True):
 

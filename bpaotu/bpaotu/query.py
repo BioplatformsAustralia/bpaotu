@@ -65,9 +65,11 @@ def make_cache_key(*args):
 
 
 class OTUQueryParams:
-    def __init__(self, contextual_filter, taxonomy_filter):
+    def __init__(self, contextual_filter, taxonomy_filter, sample_integrity_warnings_filter):
         self.contextual_filter = contextual_filter
         self.taxonomy_filter = taxonomy_filter
+        self.sample_integrity_warnings_filter = sample_integrity_warnings_filter
+
         # for use by caching, should be a stable state summary
         self.state_key = make_cache_key(repr(self))
 
@@ -86,6 +88,7 @@ class OTUQueryParams:
         if trait_descr is not None:
             parts.append(trait_descr)
         parts += self.contextual_filter.describe()
+        parts += self.sample_integrity_warnings_filter.describe()
         return pfx + '; '.join(parts)
 
     def describe(self, max_chars=100):
@@ -128,6 +131,12 @@ class OTUQueryParams:
                 p.append(indent + entry)
             return p
 
+        def sample_integrity_warnings_section():
+            p = ['Sample Integrity Warnings filter:']
+            for entry in self.sample_integrity_warnings_filter.describe():
+                p.append(indent + entry)
+            return p
+
         def metadata_section():
             session = Session()
             metadata = session.query(ImportMetadata).one()
@@ -143,6 +152,7 @@ class OTUQueryParams:
         add_section(taxonomy_section())
         add_section(trait_section())
         add_section(contextual_section())
+        add_section(sample_integrity_warnings_section())
         add_section(metadata_section())
 
         return '\n\n'.join(parts)
@@ -304,6 +314,7 @@ class SampleQuery:
         # available
         self._taxonomy_filter = params.taxonomy_filter
         self._contextual_filter = params.contextual_filter
+        self._sample_integrity_warnings_filter = params.sample_integrity_warnings_filter
 
     def __enter__(self):
         return self
@@ -520,8 +531,37 @@ class SampleQuery:
         q = sample_query
         if taxonomy_subquery is not None:
             q = q.filter(SampleContext.id.in_(taxonomy_subquery))
-        # apply contextual filter terms
+
+        # apply the sample integrity warnings filters separately to the contextual filters
+        # so that the contextual results are always a subset of the sample integrity warnings results
+        #
+        # i.e. now the WHERE clause with an "any" type filter will be of the form:
+        # 
+        # WHERE
+        #     otu.sample_context.id IN (<subquery>)
+        #     AND otu.sample_context.sample_integrity_warnings_id = 3
+        #     AND (otu.sample_context.sample_type_id = 1 OR otu.sample_context.sample_type_id = 4)
+        # 
+        # and the WHERE clause with an "all" type filter will be of the form:
+        # 
+        # WHERE
+        #     otu.sample_context.id IN (<subquery>)
+        #     AND otu.sample_context.sample_integrity_warnings_id = 3
+        #     AND otu.sample_context.sample_type_id = 1
+        #     AND otu.sample_context.sample_type_id = 4
+        #
+        # rather than the "any" filter being of the form:
+        # which returns unintended results
+        #
+        # WHERE
+        #     otu.sample_context.id IN (<subquery>)
+        #     AND (otu.sample_context.sample_integrity_warnings_id = 3
+        #          OR otu.sample_context.sample_type_id = 1
+        #          OR otu.sample_context.sample_type_id = 4)
+
+        q = self._sample_integrity_warnings_filter.apply(q)
         q = self._contextual_filter.apply(q)
+
         return q
 
     def _assemble_otu_query(self, otu_query, contextual_subquery):
