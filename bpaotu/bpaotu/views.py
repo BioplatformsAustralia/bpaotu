@@ -933,8 +933,20 @@ def contextual_schema_definition_query():
         with SampleSchemaDefinition() as query:
             for path in query.get_schema_definition_url():
                 download_url = str(path)
-        df_definition = pd.read_excel(download_url, sheet_name=1)
+
+        # search the file for the "Schema_" sheet with the highest version number
+        schema_prefix = 'Schema_'
+        sheet_names = pd.ExcelFile(download_url).sheet_names
+        schema_sheet_names = list(filter(lambda k: schema_prefix in k, sheet_names))
+        sort_fn = lambda s: list(map(int, s.replace(schema_prefix, '').split('.')))
+        schema_sheet_names.sort(key=sort_fn, reverse=True)
+
+        df_definition = pd.read_excel(download_url, sheet_name=schema_sheet_names[0])
         df_definition = df_definition.fillna(value="")
+    except IndexError as e:
+        logger.error(f"No sheet names match '{schema_prefix}'; sheet_names={sheet_names}; ({e})")
+        download_url = ""
+        df_definition = pd.DataFrame()
     except Exception as e:
         logger.error(f"Link {download_url} doesn't exist. {e}")
         download_url = ""
