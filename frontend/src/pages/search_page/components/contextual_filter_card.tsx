@@ -27,7 +27,6 @@ import {
   changeSampleIntegrityWarningFilterValue2,
   changeSampleIntegrityWarningFilterValues,
   clearSampleIntegrityWarningFilters,
-  doesFilterMatchEnvironment as doesSampleIntegrityWarningFilterMatchEnvironment,
   selectSampleIntegrityWarningFilter,
   selectSampleIntegrityWarningFiltersMode
 } from '../reducers/sample_integrity_warning'
