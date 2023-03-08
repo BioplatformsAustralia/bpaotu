@@ -53,7 +53,7 @@ export interface ContextualFilters {
 export interface OTUQuery {
   taxonomy_filters: OperatorAndValue[]
   contextual_filters: ContextualFilters
-  sample_integrity_warnings_filter: string
+  sample_integrity_warnings_filter: ContextualFilters
   amplicon_filter: string
   trait_filter: string
   required_headers?: string[]
@@ -78,7 +78,7 @@ export const EmptyOTUQuery: OTUQuery = {
   // as the duplicates don't matter in that case.
   taxonomy_filters: times(taxonomy_keys.length, _ => emptyTaxonomyFilter),
   contextual_filters: emptyContextualFilters,
-  sample_integrity_warnings_filter: '',
+  sample_integrity_warnings_filter: emptyContextualFilters,
   amplicon_filter: '',
   trait_filter: '',
   metagenome_only: false
