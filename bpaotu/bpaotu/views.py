@@ -189,7 +189,8 @@ def trait_options(request):
     """
     with SampleQuery(OTUQueryParams(
             None,
-            TaxonomyFilter(None, [], None))) as query:
+            TaxonomyFilter(None, [], None),
+            None)) as query:
         amplicon_filter = clean_amplicon_filter(json.loads(request.GET['amplicon']))
         vals = [[x[0], x[0]] for x in query.import_traits(amplicon_filter)]
     return JsonResponse({

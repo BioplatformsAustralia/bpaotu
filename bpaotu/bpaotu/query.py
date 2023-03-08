@@ -160,9 +160,10 @@ class OTUQueryParams:
     def __repr__(self):
         # Note: used for caching, so make sure all components have a defined
         # representation that's stable over time
-        return 'OTUQueryParams<{},{}>'.format(
+        return 'OTUQueryParams<{},{},{}>'.format(
             self.contextual_filter,
-            self.taxonomy_filter)
+            self.taxonomy_filter,
+            self.sample_integrity_warnings_filter)
 
 
 class TaxonomyOptions:
