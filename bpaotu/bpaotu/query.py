@@ -366,6 +366,7 @@ class SampleQuery:
             for otu_attr, taxonomy in taxolistall.items():
                 q = apply_op_and_val_filter(getattr(OTUSampleOTU, otu_attr), q, taxonomy)
             q = q.filter(SampleContext.id == OTUSampleOTU.sample_id)
+            q = self._sample_integrity_warnings_filter.apply(q)
             q = self._contextual_filter.apply(q)
             # log_query(q)
         return self._q_all_cached('matching_taxonomy_graph_data', q)
@@ -463,6 +464,9 @@ class SampleQuery:
     def matching_sample_otus(self, *args):
         q = self._session.query(*args).filter(OTU.id == SampleOTU.otu_id).join(Taxonomy.otus)
         q = self._taxonomy_filter.apply(q, Taxonomy)
+        if not self._sample_integrity_warnings_filter.is_empty():
+            q = self._sample_integrity_warnings_filter.apply(
+                q.filter(SampleContext.id == SampleOTU.sample_id))
         if not self._contextual_filter.is_empty():
             q = self._contextual_filter.apply(
                 q.filter(SampleContext.id == SampleOTU.sample_id))
@@ -490,6 +494,7 @@ class SampleQuery:
         for (taxonomy_attr, ontology_class), taxonomy in zip(TaxonomyOptions.hierarchy,
                                                              self._taxonomy_filter.state_vector):
             q = apply_op_and_val_filter(getattr(OTUSampleOTU, taxonomy_attr), q, taxonomy)
+        q = self._sample_integrity_warnings_filter.apply(q)
         q = self._contextual_filter.apply(q)
         # log_query(q)
         return q
@@ -517,13 +522,16 @@ class SampleQuery:
         matching the contextual filter
         """
         # shortcut: if we don't have any filters, don't produce a subquery
-        if self._contextual_filter.is_empty():
+        if self._contextual_filter.is_empty() and self._sample_integrity_warnings_filter.is_empty():
             return None
         q = (self._session.query(SampleOTU.otu_id)
                           .join(SampleContext)
                           .filter(SampleContext.id == SampleOTU.sample_id)
                           .group_by(SampleOTU.otu_id))
-        return self._contextual_filter.apply(q)
+        q = self._sample_integrity_warnings_filter.apply(q)
+        q = self._contextual_filter.apply(q)
+
+        return q
 
     def _assemble_sample_query(self, sample_query, taxonomy_subquery):
         """
