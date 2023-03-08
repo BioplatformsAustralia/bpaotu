@@ -446,9 +446,13 @@ class SampleQuery:
             taxonomy_otu_export.c.otu_id == SampleOTU.otu_id). filter(
                 SampleOTU.otu_id == OTU.id)
         q = self._taxonomy_filter.apply(q, taxonomy_otu_export.c)
+        if not self._sample_integrity_warnings_filter.is_empty():
+            q = self._sample_integrity_warnings_filter.apply(
+                q.filter(SampleContext.id == SampleOTU.sample_id))
         if not self._contextual_filter.is_empty():
             q = self._contextual_filter.apply(
                 q.filter(SampleContext.id == SampleOTU.sample_id))
+
         # we don't cache this query: the result size is enormous,
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
