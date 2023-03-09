@@ -131,7 +131,7 @@ class ContextualFilterCard extends React.Component<any> {
                     dataDefinition={find(this.props.dataDefinitions, dd => dd.name === fltr.name)}
                     options={this.props.sampleIntegrityWarningFilterOptions}
                     optionsLoading={this.props.optionsLoading}
-                    remove={this.props.removeSampleIntegrityWarningFilter}
+                    remove={null}
                     select={this.props.selectSampleIntegrityWarningFilter}
                     changeOperator={this.props.changeSampleIntegrityWarningFilterOperator}
                     changeValue={this.props.changeSampleIntegrityWarningFilterValue}

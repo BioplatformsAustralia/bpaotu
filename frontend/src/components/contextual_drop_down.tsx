@@ -5,25 +5,31 @@ import Octicon from './octicon'
 import Select from 'react-select';
 
 export class ContextualDropDown extends React.Component<any> {
+  // for contextual tab
   protected dropDownSize = 11
+  protected dropDownSizeNoRemove = 11
 
   public render() {
+    const size = this.props.remove ? this.dropDownSize : this.dropDownSizeNoRemove
+
     return (
       <Row>
-        <Col sm={1} className="no-padding-right">
-          <Button
-            outline={true}
-            color="warning"
-            size="sm"
-            className="form-control"
-            onClick={() => {
-              this.props.remove(this.props.index)
-            }}
-          >
-            <Octicon name="dash" size="small" />
-          </Button>
-        </Col>
-        <Col sm={this.dropDownSize} className="no-padding-right">
+        {this.props.remove &&
+          <Col sm={1} className="no-padding-right">
+            <Button
+              outline={true}
+              color="warning"
+              size="sm"
+              className="form-control"
+              onClick={() => {
+                this.props.remove(this.props.index)
+              }}
+            >
+              <Octicon name="dash" size="small" />
+            </Button>
+          </Col>
+        }
+        <Col sm={size} className="no-padding-right">
           <Select
             placeholder="Select filter"
             isSearchable={true}

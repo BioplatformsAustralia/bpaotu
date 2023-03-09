@@ -93,7 +93,7 @@ const sampleIntegrityWarningFiltersReducer = handleActions(
     }),
     [uncheckSampleIntegrityWarningFilter as any]: (state: any, action) => ({
       ...state,
-      filters: removeElementWithValue(state.filters, SampleIntegrityWarningsSampleIntegrityWarning)
+      filters: []
     }),
     [addSampleIntegrityWarningFilter as any]: (state: any, action) => ({
       ...state,

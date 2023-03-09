@@ -14,7 +14,9 @@ const TypeToOperatorAndValue = {
 }
 
 export default class ContextualFilter extends ContextualDropDown {
+  // for contextual filter search
   protected dropDownSize = 3
+  protected dropDownSizeNoRemove = 4
 
   public selectRef: any
 
