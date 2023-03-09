@@ -101,7 +101,8 @@ class ContextualFilterCard extends React.Component<any> {
           <Row>
             <Col>
               <p className="text-center">
-                More than one filter may be used and combined with "all/any" functions.
+                More than one filter may be used and combined with "all/any" functions.<br />
+                The sample integrity warnings filter will be applied in addition to other contextual filters.
               </p>
             </Col>
           </Row>
