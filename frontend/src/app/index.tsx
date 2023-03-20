@@ -41,6 +41,7 @@ class App extends React.Component<any> {
     if (!this.props.auth.organisations.includes('australian-microbiome')) {
       return <AustralianMicrobiomeAccessRequiredPage />
     }
+
     return <Routes />
   }
 }

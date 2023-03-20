@@ -66,6 +66,7 @@ export const runBlast = () => (dispatch, getState) => {
       dispatch(runBlastEnded(new ErrorList('Unhandled server-side error!')))
     })
 }
+
 export const autoUpdateBlastSubmission = () => (dispatch, getState) => {
   const getLastSubmission: (() => BlastSubmission) = () => last(getState().searchPage.blastSearch.submissions)
   const lastSubmission = getLastSubmission()

@@ -22,6 +22,7 @@ const SearchPage = props => {
     props.search()
   }
   const children = React.Children.toArray(props.children)
+
   return (
     <Container fluid={true}>
       <Row>

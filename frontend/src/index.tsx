@@ -16,14 +16,19 @@ const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose
 
 export const store = createStore(reducers, composeEnhancers(applyMiddleware(thunk)))
 
-axios.get(window.otu_search_config.base_url + '/private/api/v1/config').then(function(response) {
+axios
+  .get(window.otu_search_config.base_url + '/private/api/v1/config')
+  .then(function(response) {
     window.otu_search_config = response.data;
     ReactDOM.render(
-    <Provider store={store}>
+      <Provider store={store}>
         <Router basename={window.otu_search_config.base_url}>
-        <App />
+          <App />
         </Router>
-    </Provider>,
-    document.getElementById('root')
+      </Provider>,
+      document.getElementById('root')
     )
-});
+  })
+  .catch((error) => {
+    console.log("Error fetching app config")
+  });
