@@ -1,5 +1,6 @@
 import Analytics from "analytics";
 import mixpanelPlugin from "@analytics/mixpanel";
+import { Sha256 } from '@aws-crypto/sha256-js';
 import CookieConsent, { Cookies, getCookieConsentValue } from "react-cookie-consent";
 
 const analyticsConfig =
@@ -34,32 +35,31 @@ const analytics = Analytics({
 // this needs to be kept in sync with the plugins defined for Analytics
 export const pluginsList = ['mixpanel'];
 
+// convert the email to a sha256 hash and use this as the analytics userId so as to not send PII to GA
+// we don't retain a record of this to examine for our own purposes since we don't care who the user is
+// just that their interactions are associated with them across different devices and sessions
 export const triggerHashedIdentify = async (email) => {
   let hashSalt = 'd260c5eb-055b-4640-966d-1f657aec34b4';
 
-  // convert the email to a sha256 hash and use this as the analytics userId so as to not send PII to GA
-  // we don't retain a record of this to examine for our own purposes since we don't care who the user is
-  // just that their interactions are associated with them across different devices and sessions
-  if (email && window.crypto && window.crypto.subtle) {
-    window.crypto.subtle.digest(
-      'SHA-256',
-      new TextEncoder().encode(email.toLowerCase() + hashSalt)
-    ).then(hashed => {
-      const hashedEmail = [].map.call(
-        new Uint8Array(hashed),
-        b => ('00' + b.toString(16)).slice(-2)
-      ).join('');
+  console.log('email', email)
 
-      // rather than awaiting the promise elsewhere and then firing an identify just send it here
-      analytics.identify(hashedEmail, {
-        uid: hashedEmail
-      })
-    })
+  const hash = new Sha256();
+  hash.update(email.toLowerCase() + hashSalt);
+  const hashed = await hash.digest();
 
-    return true;
-  } else {
-    return null
-  }
+  console.log('hashed', hashed)
+
+  const hashedEmail = [].map.call(
+    new Uint8Array(hashed),
+    b => ('00' + b.toString(16)).slice(-2)
+  ).join('');
+
+  console.log('hashedEmail', hashedEmail)
+
+  // rather than awaiting the promise elsewhere and then firing an identify just send it here
+  analytics.identify(hashedEmail, {
+    uid: hashedEmail
+  })
 }
 
 export default analytics;
