@@ -4,7 +4,7 @@ import { Link, withRouter } from 'react-router-dom'
 import { bindActionCreators } from 'redux'
 
 import CookieConsent, { getCookieConsentValue } from "react-cookie-consent";
-import analytics, { pluginsList } from 'app/analytics'
+import analytics, { pluginsList, triggerHashedIdentify } from 'app/analytics'
 
 import Header from './header'
 import Footer from './footer'
@@ -29,6 +29,14 @@ class App extends React.Component<any> {
 
   public enableCookies() {
     analytics.plugins.enable(pluginsList)
+
+    // trigger an identify when cookies are enabled (new user sessions)
+    // need to check if email has been loaded from the auth headers since on page load it might not yet be available
+    // this primarily is to send an identify after user first clicks Accept to cookie consent banner
+    // (for which the email will have been retrieved)
+    if (this.props.auth.email) {
+      triggerHashedIdentify(this.props.auth.email)
+    }
   }
 
   public render() {
