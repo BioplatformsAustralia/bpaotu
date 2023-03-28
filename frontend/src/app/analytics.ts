@@ -41,20 +41,13 @@ export const pluginsList = ['mixpanel'];
 export const triggerHashedIdentify = async (email) => {
   let hashSalt = 'd260c5eb-055b-4640-966d-1f657aec34b4';
 
-  console.log('email', email)
-
   const hash = new Sha256();
   hash.update(email.toLowerCase() + hashSalt);
   const hashed = await hash.digest();
-
-  console.log('hashed', hashed)
-
   const hashedEmail = [].map.call(
     new Uint8Array(hashed),
     b => ('00' + b.toString(16)).slice(-2)
   ).join('');
-
-  console.log('hashedEmail', hashedEmail)
 
   // rather than awaiting the promise elsewhere and then firing an identify just send it here
   analytics.identify(hashedEmail, {
