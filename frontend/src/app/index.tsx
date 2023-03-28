@@ -7,6 +7,7 @@ import CookieConsent, { getCookieConsentValue } from "react-cookie-consent";
 import analytics, { pluginsList } from 'app/analytics'
 
 import Header from './header'
+import Footer from './footer'
 import Routes from './routes'
 
 import AustralianMicrobiomeAccessRequiredPage from '../pages/australian_microbiome_access_required_page'
@@ -35,6 +36,7 @@ class App extends React.Component<any> {
       <div>
         <Header userEmailAddress={this.props.auth.email} />
         {this.renderContents()}
+        <Footer />
 
         {/* TODO
         Port the footer into React as well. Currently it is provided by the base.html Django template.
