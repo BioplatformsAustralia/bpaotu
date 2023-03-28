@@ -93,10 +93,17 @@ export const search = () => (dispatch, getState) => {
     columns: uniq([...contextualColumns, ...sampleIntegrityWarningsColumns])
   }
 
-  analytics.track('otu_sample_search', {
-    columns: options.columns.sort(),
-    isMetagenomeSearch
-  })
+  // only send event once per search
+  // (i.e. only after clicking 'Sample search', not when using pagination controls)
+  if (options.cleared) {
+    const params = { columns: options.columns.sort() }
+
+    if (isMetagenomeSearch(state)) {
+      analytics.track('otu_sample_search_metagenome', params)
+    } else {
+      analytics.track('otu_sample_search', params)
+    }
+  }
 
   executeSearch(filters, options)
     .then(data => {
