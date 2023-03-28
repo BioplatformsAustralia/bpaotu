@@ -2,6 +2,8 @@ import React from 'react';
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { Modal, ModalBody, ModalHeader, ModalFooter, Button, Input, Label, FormGroup, Alert} from 'reactstrap'
+
+import analytics from 'app/analytics'
 import { isString, pickBy, keys, join } from 'lodash'
 import { closeMetagenomeModal } from '../reducers/metagenome_modal'
 import { describeSearch } from '../reducers/search'
@@ -61,6 +63,8 @@ class MetagenomeModal extends React.Component<any> {
     handleSubmit(event) {
         event.preventDefault();
         if (this.state.requestState === 1) {
+            analytics.track('otu_request_metagenome_files')
+
             metagenomeRequest(
                 this.props.sample_ids,
                 keys(pickBy(this.state.selected))).then(response => {

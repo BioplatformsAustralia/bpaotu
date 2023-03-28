@@ -5,6 +5,7 @@ import { bindActionCreators } from 'redux'
 import { fetchContextualDataDefinitions } from '../reducers/contextual_data_definitions'
 import { fetchReferenceData } from '../reducers/reference_data/reference_data'
 
+import analytics from 'app/analytics'
 import { Form, FormGroup, FormFeedback, Col, Container, Row, Input, Label, Button } from 'reactstrap'
 import { nondenoisedDataRequest } from '../api'
 
@@ -28,6 +29,8 @@ class NonDenoisedPage extends React.Component<any> {
     }
 
     submit() {
+        analytics.track('otu_nondenoised_data_request')
+
         nondenoisedDataRequest(
             this.state.selectedAmplicon,
             this.state.selectedSamples,
@@ -47,6 +50,8 @@ class NonDenoisedPage extends React.Component<any> {
     }
 
     public render() {
+        analytics.page();
+
         const sampleIDs = (this.props.sample_ids || []).map(
             (sample_id, idx) => <option value={sample_id} key={idx}>102.100.100/{sample_id}</option>
         );
@@ -86,65 +91,67 @@ class NonDenoisedPage extends React.Component<any> {
                 </Container>
         }
 
-        return <Container>
-            <Row className="space-above">
-                <Col>
-                    <h2>Non-denoised data request</h2>
-                </Col>
-            </Row>
+        return (
+            <Container>
+                <Row className="space-above">
+                    <Col>
+                        <h2>Non-denoised data request</h2>
+                    </Col>
+                </Row>
 
-            <Form>
-                <FormGroup>
-                    <Label for="sample_ids">Amplicon</Label>
-                    <Input
-                        name="sample_ids"
-                        id="amplicon"
-                        type="select"
-                        value={this.state['selectedAmplicon']}
-                        onChange={onAmpliconChange}
-                    >
-                        <option value="">--</option>
-                        {amplicons}
-                    </Input>
-                </FormGroup>
-                <FormGroup>
-                    <Label for="sample_ids">Sample IDs for export</Label>
-                    <Input
-                        name="sample_ids"
-                        id="sample_ids"
-                        type="select"
-                        multiple={true}
-                        value={this.state['selectedSamples']}
-                        onChange={onSampleIDChange}
-                    >
-                        {sampleIDs}
-                    </Input>
-                </FormGroup>
-                <FormGroup>
-                    <Label for="matchSequence">Match sequence (unwrapped FASTA format):</Label>
-                    <Input
-                        name="matchSequence"
-                        type="textarea"
-                        value={this.state['matchSequence']}
-                        onChange={onMatchSequenceChange}
-                        invalid={!validateMatchSequenceTaxonomy()}
-                    />
-                    <FormFeedback>Either add a sequence OR a taxonomy to search for, but not both!</FormFeedback>
-                </FormGroup>
-                <FormGroup>
-                    <Label for="taxonomyString">Match taxonomy (Use the following taxonomy: 16S and 18S: SILVA132, ITS: UNITE SH v8.. Use only at level of interest [e.g. a family name]):</Label>
-                    <Input
-                        name="taxonomyString"
-                        type="textarea"
-                        value={this.state['taxonomyString']}
-                        onChange={onTaxonomyStringChange}
-                        invalid={!validateMatchSequenceTaxonomy()}
-                    />
-                    <FormFeedback>Either add a sequence OR a taxonomy to search for, but not both!</FormFeedback>
-                </FormGroup>
-            </Form>
-            <Button disabled={!this.disabled()} onClick={this.submit} type="submit" color="primary">Submit request</Button>
-        </Container>
+                <Form>
+                    <FormGroup>
+                        <Label for="sample_ids">Amplicon</Label>
+                        <Input
+                            name="sample_ids"
+                            id="amplicon"
+                            type="select"
+                            value={this.state['selectedAmplicon']}
+                            onChange={onAmpliconChange}
+                        >
+                            <option value="">--</option>
+                            {amplicons}
+                        </Input>
+                    </FormGroup>
+                    <FormGroup>
+                        <Label for="sample_ids">Sample IDs for export</Label>
+                        <Input
+                            name="sample_ids"
+                            id="sample_ids"
+                            type="select"
+                            multiple={true}
+                            value={this.state['selectedSamples']}
+                            onChange={onSampleIDChange}
+                        >
+                            {sampleIDs}
+                        </Input>
+                    </FormGroup>
+                    <FormGroup>
+                        <Label for="matchSequence">Match sequence (unwrapped FASTA format):</Label>
+                        <Input
+                            name="matchSequence"
+                            type="textarea"
+                            value={this.state['matchSequence']}
+                            onChange={onMatchSequenceChange}
+                            invalid={!validateMatchSequenceTaxonomy()}
+                        />
+                        <FormFeedback>Either add a sequence OR a taxonomy to search for, but not both!</FormFeedback>
+                    </FormGroup>
+                    <FormGroup>
+                        <Label for="taxonomyString">Match taxonomy (Use the following taxonomy: 16S and 18S: SILVA132, ITS: UNITE SH v8.. Use only at level of interest [e.g. a family name]):</Label>
+                        <Input
+                            name="taxonomyString"
+                            type="textarea"
+                            value={this.state['taxonomyString']}
+                            onChange={onTaxonomyStringChange}
+                            invalid={!validateMatchSequenceTaxonomy()}
+                        />
+                        <FormFeedback>Either add a sequence OR a taxonomy to search for, but not both!</FormFeedback>
+                    </FormGroup>
+                </Form>
+                <Button disabled={!this.disabled()} onClick={this.submit} type="submit" color="primary">Submit request</Button>
+            </Container>
+        )
     }
 }
 

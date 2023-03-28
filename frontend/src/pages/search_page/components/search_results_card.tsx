@@ -3,6 +3,7 @@ import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
+import analytics from 'app/analytics'
 import { Alert, Button, Card, CardBody, CardHeader  } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 import { describeSearch } from '../reducers/search'
@@ -135,15 +136,19 @@ class _SearchResultsCard extends React.Component<any, any> {
   }
 
   public exportBIOM() {
+    analytics.track('otu_export_BIOM')
+
     this.props.showPhinchTip();
     download(window.otu_search_config.export_biom_endpoint, this.props)
   }
 
   public exportCSV() {
+    analytics.track('otu_export_CSV')
     download(window.otu_search_config.export_endpoint, this.props)
   }
 
   public exportCSVOnlyContextual() {
+    analytics.track('otu_export_CSV_only_contextual')
     download(window.otu_search_config.export_endpoint, this.props, true)
   }
 }

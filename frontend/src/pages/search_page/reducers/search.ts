@@ -1,6 +1,7 @@
 import { find, get as _get, isEmpty, map, reject, uniq } from 'lodash'
 import { createActions, handleActions, createAction } from 'redux-actions'
 
+import analytics from 'app/analytics'
 import { executeSearch } from '../../../api'
 import { getAmpliconFilter, isMetagenomeSearch }  from '../reducers/amplicon'
 import { submitToGalaxyEnded, submitToGalaxyStarted } from './submit_to_galaxy'
@@ -91,6 +92,11 @@ export const search = () => (dispatch, getState) => {
     ...state.searchPage.results,
     columns: uniq([...contextualColumns, ...sampleIntegrityWarningsColumns])
   }
+
+  analytics.track('otu_sample_search', {
+    columns: options.columns.sort(),
+    isMetagenomeSearch
+  })
 
   executeSearch(filters, options)
     .then(data => {
