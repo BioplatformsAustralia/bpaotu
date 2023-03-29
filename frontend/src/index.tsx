@@ -31,4 +31,9 @@ axios
   })
   .catch((error) => {
     console.log("Error fetching app config")
+
+    if (process.env.NODE_ENV === 'development') {
+      const message = '<h1>NODE_ENV === development only message</h1><p>perhaps taxonomy or spatial cache is still warming</p>'
+      document.write(message)
+    }
   });

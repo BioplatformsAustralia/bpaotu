@@ -4,6 +4,7 @@ import { connect } from 'react-redux'
 
 import { Button, Card, CardBody, CardHeader } from 'reactstrap'
 
+import analytics from 'app/analytics'
 import Octicon from '../../../components/octicon'
 
 import { EmptyOTUQuery } from '../../../search'
@@ -52,6 +53,10 @@ class SearchResultsCard extends React.Component<any, any> {
     params.set('otu_query', JSON.stringify(EmptyOTUQuery))
     params.set('columns', JSON.stringify(this.props.extraColumns))
     params.set('sorting', JSON.stringify(this.props.sorting))
+
+    analytics.track('otu_export_contextual_CSV', {
+      columns: this.props.extraColumns.sort()
+    })
 
     const baseURL = window.otu_search_config.contextual_csv_download_endpoint
     const url = `${baseURL}?${params.toString()}`

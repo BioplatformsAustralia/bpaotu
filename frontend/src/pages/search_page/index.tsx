@@ -2,6 +2,7 @@ import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
+import analytics, { triggerHashedIdentify } from 'app/analytics'
 import { Col, Container, Row} from 'reactstrap'
 import SearchButton from '../../components/search_button'
 import AnimateHelix from '../../components/animate_helix'
@@ -21,7 +22,21 @@ const SearchPage = props => {
     props.clearSearchResults()
     props.search()
   }
+  const interactiveMapSearch = () => {
+    analytics.track('otu_interactive_map_search')
+    props.openSamplesMapModal()
+  }
+  const interactiveGraphSearch = () => {
+    analytics.track('otu_interactive_graph_search')
+    props.openSamplesGraphModal()
+  }
+
   const children = React.Children.toArray(props.children)
+
+  // this is here so we can access the auth state
+  // it will trigger on both Amplicon and Metagenome search pages
+  // but that is not an issue
+  triggerHashedIdentify(props.auth.email)
 
   return (
     <Container fluid={true}>
@@ -54,10 +69,10 @@ const SearchPage = props => {
               <SearchButton octicon="search" text="Sample search" onClick={newSearch} />
             </Col>
             <Col sm={{ size: 2 }} >
-              <SearchButton octicon="globe" text="Interactive map search" onClick={props.openSamplesMapModal} />
+              <SearchButton octicon="globe" text="Interactive map search" onClick={interactiveMapSearch} />
             </Col>
             <Col sm={{ size: 2 }} >
-              <SearchButton octicon="graph" text="Interactive graph search" onClick={props.openSamplesGraphModal} />
+              <SearchButton octicon="graph" text="Interactive graph search" onClick={interactiveGraphSearch} />
             </Col>
           </>
         )}
@@ -73,7 +88,8 @@ const SearchPage = props => {
 function mapStateToProps(state) {
   return {
     isSearchInProgress: state.searchPage.results.isLoading,
-    errors: state.searchPage.results.errors
+    errors: state.searchPage.results.errors,
+    auth: state.auth
   }
 }
 
@@ -83,7 +99,7 @@ function mapDispatchToProps(dispatch) {
       openSamplesMapModal,
       openSamplesGraphModal,
       search,
-      clearSearchResults
+      clearSearchResults,
     },
     dispatch
   )
@@ -95,6 +111,8 @@ const ConnectedSearchPage = connect(
 )(SearchPage)
 
 export function SampleSearchPage() {
+  analytics.page()
+
   return (
     <ConnectedSearchPage>
       <Col data-tut="reactour__AmpliconTaxonomyFilterCard">
@@ -115,6 +133,8 @@ export function SampleSearchPage() {
 }
 
 export function MetaGenomeSearchPage() {
+  analytics.page()
+
   return (
     <ConnectedSearchPage>
       <Col>
