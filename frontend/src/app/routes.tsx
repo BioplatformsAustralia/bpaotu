@@ -10,7 +10,7 @@ import PrivacyPolicy from 'pages/privacy_policy_page'
 export default _ => (
   <div>
     <Switch>
-      <Route exact={true} path="/" component={SampleSearchPage} />
+      <Route path="/" component={SampleSearchPage} exact={true} />
       <Route path="/map" component={MapPage} />
       <Route path="/contextual" component={ContextualPage} />
       <Route path="/metagenome" component={MetaGenomeSearchPage} />

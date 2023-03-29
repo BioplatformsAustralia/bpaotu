@@ -18,18 +18,27 @@ const analyticsConfig =
         mixpanelToken: process.env.REACT_APP_MIXPANEL_TOKEN_DEV,
       };
 
-const analytics = Analytics({
-  app: analyticsConfig.app,
-  plugins: [
-    // disable all plugins by default; they will be enabled in App component if:
-    // - user agrees to cookie consent
-    // - user has previously agreed to cookie consent
-    mixpanelPlugin({
-      token: analyticsConfig.mixpanelToken,
-      enabled: false,
-    })
-  ],
-});
+const initAnalytics = () => {
+  if (!analyticsConfig.mixpanelToken) {
+    console.warn('Analytics token not found')
+    analyticsConfig.mixpanelToken = 'none'
+  }
+
+  return Analytics({
+    app: analyticsConfig.app,
+    plugins: [
+      // disable all plugins by default; they will be enabled in App component if:
+      // - user agrees to cookie consent
+      // - user has previously agreed to cookie consent
+      mixpanelPlugin({
+        token: analyticsConfig.mixpanelToken,
+        enabled: false,
+      })
+    ],
+  });
+}
+
+const analytics = initAnalytics();
 
 // this needs to be kept in sync with the plugins defined for Analytics
 export const pluginsList = ['mixpanel'];
