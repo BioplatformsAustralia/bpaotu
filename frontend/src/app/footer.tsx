@@ -35,7 +35,7 @@ export default class Footer extends React.Component<any, any> {
           </span>
           <span style={{ paddingLeft: 30 }}>
             <a href="https://www.education.gov.au/national-collaborative-research-infrastructure-strategy-ncris">
-              <img className="footer-logos" src={logoPNG("ncris-footer.png")} />
+              <img className="footer-logos" src={logoPNG("ncris-footer.png")} alt="National Research Infrastructure for Australia" />
             </a>
           </span>
         </div>

@@ -1,7 +1,6 @@
 import Analytics from "analytics";
 import mixpanelPlugin from "@analytics/mixpanel";
 import { Sha256 } from '@aws-crypto/sha256-js';
-import CookieConsent, { Cookies, getCookieConsentValue } from "react-cookie-consent";
 
 const analyticsConfig =
   process.env.NODE_ENV === "production"
