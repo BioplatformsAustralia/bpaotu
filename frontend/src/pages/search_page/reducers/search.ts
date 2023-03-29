@@ -72,6 +72,7 @@ export const describeSearch = (state) => {
     trait_filter: selectedTrait,
     taxonomy_filters: selectedTaxonomies,
     contextual_filters: marshallContextual(stateFilters.contextual, contextualDataDefinitions),
+    sample_integrity_warnings_filter: marshallContextual(stateFilters.sampleIntegrityWarning, contextualDataDefinitions),
     metagenome_only: isMetagenomeSearch(state)
   }
 }
@@ -83,9 +84,12 @@ export const search = () => (dispatch, getState) => {
 
   const filters = describeSearch(state)
 
+  const contextualColumns = reject(map(filters.contextual_filters.filters, f => f.field), name => isEmpty(name))
+  const sampleIntegrityWarningsColumns = reject(map(filters.sample_integrity_warnings_filter.filters, f => f.field), name => isEmpty(name))
+
   const options = {
     ...state.searchPage.results,
-    columns: uniq(reject(map(filters.contextual_filters.filters, f => f.field), name => isEmpty(name)))
+    columns: uniq([...contextualColumns, ...sampleIntegrityWarningsColumns])
   }
 
   executeSearch(filters, options)

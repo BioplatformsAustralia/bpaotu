@@ -5,6 +5,7 @@ import { metagenomeModeReducer, selectedAmpliconReducer } from './amplicon'
 import selectedTraitReducer from './trait'
 import blastSearchReducer from './blast_search'
 import contextualReducer from './contextual'
+import sampleIntegrityWarningReducer from './sample_integrity_warning'
 import samplesMapModalReducer from './samples_map_modal'
 import samplesGraphModalReducer from './samples_graph_modal'
 import metagenomeModalReducer from './metagenome_modal'
@@ -24,7 +25,8 @@ const filtersReducer = combineReducers({
   selectedTrait: selectedTraitReducer,
   taxonomyLoading: taxonomyLoadingReducer,
   taxonomy: taxonomyReducer,
-  contextual: contextualReducer
+  contextual: contextualReducer,
+  sampleIntegrityWarning: sampleIntegrityWarningReducer,
 })
 
 const pageReducer = combineReducers({

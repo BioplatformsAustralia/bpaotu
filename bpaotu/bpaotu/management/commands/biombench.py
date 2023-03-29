@@ -34,7 +34,8 @@ class Command(BaseCommand):
                  self.onto_is(taxonomy_ontology_classes[1], 'Bacteria'),
                  self.onto_is(taxonomy_ontology_classes[2], 'Bacteroidetes'),
                  self.onto_is(taxonomy_ontology_classes[3], 'Ignavibacteria')],
-                None))
+                None),
+            sample_integrity_warnings_filter=ContextualFilter('and', self.onto_is(Environment, 'Soil')))
 
         with SampleQuery(params) as query:
             size = 0

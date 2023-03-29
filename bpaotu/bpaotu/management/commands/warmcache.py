@@ -38,7 +38,8 @@ class Command(BaseCommand):
                     taxonomy_filter=TaxonomyFilter(
                         self.make_is(amplicon_id),
                         [self.make_is(taxonomy_source_id)],
-                        None))
+                        None),
+                    sample_integrity_warnings_filter=ContextualFilter('and', None))
                 spatial_query(params, cache_duration=CACHE_FOREVER, force_cache=True)
         print("Complete")
 

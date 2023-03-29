@@ -5,6 +5,7 @@ import { bindActionCreators } from 'redux'
 import { Button, Input,  UncontrolledTooltip } from 'reactstrap'
 import Octicon from '../../../components/octicon'
 import { selectEnvironment, removeContextualFilter, selectContextualFiltersMode } from '../reducers/contextual'
+import { removeSampleIntegrityWarningFilter } from '../reducers/sample_integrity_warning'
 import {isMetagenomeSearch }  from '../reducers/amplicon'
 import { clearAllTaxonomyFilters } from '../reducers/taxonomy'
 import { fetchTraits } from '../../../reducers/reference_data/traits'
@@ -54,33 +55,35 @@ class SearchFilters extends React.Component<any> {
   getSelectedFilter = (filters, filter_id, filter_name) => {
     for (let i in filters) {
       let filter = filters[i]
-      if (String(filter.id) === String(filter_id))
+      if (String(filter.id) === String(filter_id)) {
         return filter[filter_name]
+      }
     }
     return filter_id
   }
 
-  getSelectedFilterDisplayName = (contextualFilters, selectedFilter) => {
-    for (let x in contextualFilters) {
-      let contextualFilter = contextualFilters[x]
-      if (contextualFilter['name'] === selectedFilter) {
-          return contextualFilter['display_name']
+  getSelectedFilterDisplayName = (allFilters, selectedFilter) => {
+    for (let x in allFilters) {
+      let filter = allFilters[x]
+      if (filter['name'] === selectedFilter) {
+        return filter['display_name']
       }
     }
     return selectedFilter
   }
 
-  getSelectedFilterValue = (contextualFilters, selectedFilter, selectedFilterValue) => {
-    for (let x in contextualFilters) {
-      let contextualFilter = contextualFilters[x]
-      if (contextualFilter['name'] === selectedFilter) {
-        let contextualFilterValues = contextualFilter['values']
-        const selectedValue = find(contextualFilterValues, (option) => String(option[0]) === String(selectedFilterValue))
+  getSelectedFilterValue = (allFilters, selectedFilter, selectedFilterValue) => {
+    for (let x in allFilters) {
+      let filter = allFilters[x]
+      if (filter['name'] === selectedFilter) {
+        let filterValues = filter['values']
+        const selectedValue = find(filterValues, (option) => String(option[0]) === String(selectedFilterValue))
         if(selectedValue) {
-            return selectedValue[1]
+          return selectedValue[1]
         }
-        else
+        else {
           return selectedFilterValue
+        }
       }
     }
     return selectedFilterValue
@@ -105,10 +108,15 @@ class SearchFilters extends React.Component<any> {
 
   }
 
-  onSelectFilter = (index, filter) => {
-    this.props.removeContextualFilter(index)
-    this.props.handleSearchFilterClick(filter)
+  onSelectFilter = (index, filter, key) => {
+    if (key === 'contextual') {
+      this.props.removeContextualFilter(index)
+    }
+    if (key === 'sampleIntegrityWarning') {
+      this.props.removeSampleIntegrityWarningFilter(index)
+    }
 
+    this.props.handleSearchFilterClick(filter)
   }
 
   onSelectFilterType = (mode) => {
@@ -159,17 +167,23 @@ class SearchFilters extends React.Component<any> {
           }
           break
         case "contextual":
+        case "sampleIntegrityWarning":
           let selectedEnvironmentValue = value['selectedEnvironment']
           if (selectedEnvironmentValue && selectedEnvironmentValue['value']) {
-            let searchFilter = <SearchFilterButton
-              onClick={() => this.onSelectEnvironment()}
-              color="info"
-              key={'selectedEnvironment'}
-              octicon="x"
-              text={"AM Environment <" + selectedEnvironmentValue['operator'] +
-                "> " + this.getSelectedFilter(this.props.environment, selectedEnvironmentValue['value'], 'name')} />
+            const searchFilterText = "AM Environment <" + selectedEnvironmentValue['operator'] +
+                "> " + this.getSelectedFilter(this.props.environment, selectedEnvironmentValue['value'], 'name')
+
+            let searchFilter =
+              <SearchFilterButton
+                onClick={() => this.onSelectEnvironment()}
+                color="info"
+                key={'selectedEnvironment'}
+                octicon="x"
+                text={searchFilterText}
+              />
             searchFilters.push(searchFilter)
           }
+
           let selectedFilters = value['filters']
           for (let selectedFilterIndex in selectedFilters) {
             let selectedFilter = selectedFilters[selectedFilterIndex]
@@ -178,7 +192,10 @@ class SearchFilters extends React.Component<any> {
               let value = selectedFilter['value']
               let value2 = selectedFilter['value2']
               let values = selectedFilter['values']
+
               let text = this.getSelectedFilterDisplayName(this.props.contextualFilters, name)
+              let selectedFilterValue = this.getSelectedFilterValue(this.props.contextualFilters, name, value)
+
               if (values.length>0) {
                 text += " <"+(selectedFilter['operator']?"isn't":"is")+"> "+values.join(", ")
               }
@@ -186,12 +203,19 @@ class SearchFilters extends React.Component<any> {
                 text += " <"+(selectedFilter['operator']?"not between":"between")+"> "+value+" and "+value2
               }
               else if (!isNull(value)) {
-                text += " <" + (selectedFilter['operator'] ? "doesn't contain" : "contains") + "> " +
-                  this.getSelectedFilterValue(this.props.contextualFilters, name, value)
+                text += " <" + (selectedFilter['operator'] ? "doesn't contain" : "contains") + "> " + selectedFilterValue
+                  
               }
-              let searchFilter = <SearchFilterButton index={selectedFilterIndex}
-              onClick={() => this.onSelectFilter(selectedFilterIndex, name)}
-              color="success" key={`${selectedFilterIndex}-${key}`} octicon="x" text={text} />
+              let searchFilter =
+                <SearchFilterButton
+                  index={selectedFilterIndex}
+                  onClick={() => this.onSelectFilter(selectedFilterIndex, name, key)}
+                  color="success"
+                  key={`${selectedFilterIndex}-${key}`}
+                  octicon="x"
+                  text={text}
+                />
+
               searchFilters.push(searchFilter)
             }
           }
@@ -245,7 +269,8 @@ function mapDispatchToProps(dispatch: any, props) {
       updateTaxonomyDropDown: (taxonomy) => (updateTaxonomyDropDowns(taxonomy)()),
       selectEnvironment,
       removeContextualFilter,
-      selectContextualFiltersMode
+      selectContextualFiltersMode,
+      removeSampleIntegrityWarningFilter,
     },
     dispatch
   )
