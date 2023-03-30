@@ -24,7 +24,7 @@ ENV DEBUG 1
 # However let's make it explicit that we don't want /app from the build image
 RUN rm -rf /app && mkdir -p /app
 
-# # For dev we use root so we can shell in and do evil things
+# For dev we use root so we can shell in and do evil things
 USER root
 WORKDIR /app
 
@@ -45,16 +45,13 @@ RUN pip install --upgrade -r bpaotu/biom-requirements.txt
 COPY . /app
 RUN pip ${PIP_OPTS} install --upgrade -e bpaotu
 WORKDIR /app/bpa-ingest
-RUN pip install --no-cache-dir --upgrade pip \
- && pip install --no-cache-dir poetry \
- && poetry config virtualenvs.create false \
- && poetry build --format sdist \
- && tar -xvf dist/*-`poetry version -s`.tar.gz \
-    -O bpaingest-`poetry version -s`/setup.py > setup.py \
- && mv pyproject.toml pyproject.toml.bkup \
- && pip ${PIP_OPTS} install --upgrade -e . \
- && mv pyproject.toml.bkup pyproject.toml \
- && pip uninstall --yes poetry
+
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir poetry
+RUN poetry config virtualenvs.create false
+RUN poetry build -f wheel
+RUN pip install `ls dist/bpaingest-*.whl`
+# RUN pip uninstall --yes poetry
 
 EXPOSE 8000 9000 9001 9100 9101
 VOLUME ["/app", "/data"]
