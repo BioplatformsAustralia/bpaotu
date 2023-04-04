@@ -5,5 +5,5 @@ import traitsReducer from './traits'
 export default combineReducers({
   amplicons: ampliconsReducer,
   ranks: ranksReducer,
-  traits: traitsReducer
+  traits: traitsReducer,
 })

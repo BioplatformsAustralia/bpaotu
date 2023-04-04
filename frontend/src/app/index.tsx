@@ -3,18 +3,18 @@ import { connect } from 'react-redux'
 import { Link, withRouter } from 'react-router-dom'
 import { bindActionCreators } from 'redux'
 
-import CookieConsent, { getCookieConsentValue } from "react-cookie-consent";
+import CookieConsent, { getCookieConsentValue } from 'react-cookie-consent'
 import analytics, { pluginsList, triggerHashedIdentify } from 'app/analytics'
 
 import Header from './header'
 import Footer from './footer'
 import Routes from './routes'
 
-import AustralianMicrobiomeAccessRequiredPage from '../pages/australian_microbiome_access_required_page'
-import LoginInProgressPage from '../pages/login_in_progress_page'
-import LoginRequiredPage from '../pages/login_required_page'
+import AustralianMicrobiomeAccessRequiredPage from 'pages/australian_microbiome_access_required_page'
+import LoginInProgressPage from 'pages/login_in_progress_page'
+import LoginRequiredPage from 'pages/login_required_page'
 
-import { getCKANAuthInfo } from '../reducers/auth'
+import { getCKANAuthInfo } from 'reducers/auth'
 
 class App extends React.Component<any> {
   public componentDidMount() {
@@ -54,19 +54,22 @@ class App extends React.Component<any> {
         <CookieConsent
           location="bottom"
           cookieName="CookieConsent"
-          style={{ background: "#2B373B" }}
+          style={{ background: '#2B373B' }}
           buttonText="Accept"
           declineButtonText="Decline"
           enableDeclineButton
           onAccept={() => {
-            this.enableCookies();
+            this.enableCookies()
           }}
         >
           <div>
-            This website uses cookies to enhance the user experience and provide us with analytics on the usage of the features we provide.<br />
-            <span style={{ fontSize: "10px", marginLeft: '4px' }}>
-              We <strong>do not</strong> send any personally identifyable information to external services.
-              Please see our <Link to={'privacy-policy'}>privacy policy</Link> for more details.
+            This website uses cookies to enhance the user experience and provide us with analytics
+            on the usage of the features we provide.
+            <br />
+            <span style={{ fontSize: '10px', marginLeft: '4px' }}>
+              We <strong>do not</strong> send any personally identifyable information to external
+              services. Please see our <Link to={'privacy-policy'}>privacy policy</Link> for more
+              details.
             </span>
           </div>
         </CookieConsent>
@@ -91,22 +94,17 @@ class App extends React.Component<any> {
 
 function mapStateToProps(state) {
   return {
-    auth: state.auth
+    auth: state.auth,
   }
 }
 
 function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
-      getCKANAuthInfo
+      getCKANAuthInfo,
     },
     dispatch
   )
 }
 
-export default (
-  withRouter(connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )(App) as any)
-)
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(App) as any)

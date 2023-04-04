@@ -1,5 +1,5 @@
 import { times } from 'lodash'
-import { taxonomy_keys } from './constants'
+import { taxonomy_keys } from 'app/constants'
 
 export interface SearchConfig {
   base_url: string
@@ -36,7 +36,7 @@ export interface SearchConfig {
 
 export enum BooleanOperator {
   AND = 'and',
-  OR = 'OR'
+  OR = 'OR',
 }
 
 export interface OperatorAndValue {
@@ -62,13 +62,13 @@ export interface OTUQuery {
 
 export const emptyTaxonomyFilter: OperatorAndValue = {
   value: '',
-  operator: "isnot"
+  operator: 'isnot',
 }
 
 export const emptyContextualFilters: ContextualFilters = {
   filters: {},
   environment: null,
-  mode: BooleanOperator.AND
+  mode: BooleanOperator.AND,
 }
 
 export const EmptyOTUQuery: OTUQuery = {
@@ -76,10 +76,10 @@ export const EmptyOTUQuery: OTUQuery = {
   // a risk that you'll get duplicate OTUs. Queries that use this in a taxonomy
   // subquery (select .. from .. where ... in (taxonomy_subquery)) should be OK,
   // as the duplicates don't matter in that case.
-  taxonomy_filters: times(taxonomy_keys.length, _ => emptyTaxonomyFilter),
+  taxonomy_filters: times(taxonomy_keys.length, (_) => emptyTaxonomyFilter),
   contextual_filters: emptyContextualFilters,
   sample_integrity_warnings_filter: emptyContextualFilters,
   amplicon_filter: '',
   trait_filter: '',
-  metagenome_only: false
+  metagenome_only: false,
 }

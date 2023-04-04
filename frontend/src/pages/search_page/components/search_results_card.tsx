@@ -2,21 +2,23 @@ import { last } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
+import { Alert, Button, Card, CardBody, CardHeader } from 'reactstrap'
 
 import analytics from 'app/analytics'
-import { Alert, Button, Card, CardBody, CardHeader  } from 'reactstrap'
-import Octicon from '../../../components/octicon'
+import Octicon from 'components/octicon'
+
 import { describeSearch } from '../reducers/search'
 import { clearGalaxyAlert, submitToGalaxy, workflowOnGalaxy } from '../reducers/submit_to_galaxy'
 import { clearTips, showPhinchTip } from '../reducers/tips'
 import { openMetagenomeModal, openMetagenomeModalSearch } from '../reducers/metagenome_modal'
 import { GalaxySubmission } from '../reducers/types'
+
 import SamplesMapModal from './samples_map_modal'
 import SamplesGraphModal from './samples_graph_modal'
 import MetagenomeModal from './metagenome_modal'
 import SearchResultsTable from './search_results_table'
 
-const HeaderButton = props => (
+const HeaderButton = (props) => (
   <Button
     id={props.text}
     size="sm"
@@ -26,7 +28,7 @@ const HeaderButton = props => (
     disabled={props.disabled}
     onClick={props.onClick}
     data-tut={props.text}
-    title={props.disabled?'Select Amplicon to '+props.text:''}
+    title={props.disabled ? 'Select Amplicon to ' + props.text : ''}
   >
     {props.octicon ? (
       <span>
@@ -40,9 +42,9 @@ const HeaderButton = props => (
   </Button>
 )
 
-const wrapText = text => ({ __html: text })
+const wrapText = (text) => ({ __html: text })
 
-const AlertBoxes = props => (
+const AlertBoxes = (props) => (
   <div>
     {props.alerts.map((alert, idx) => (
       <Alert
@@ -58,21 +60,26 @@ const AlertBoxes = props => (
 )
 
 const cell_button = (cell_props, openMetagenomeModal) => (
-  <Button onClick={() => {openMetagenomeModal(cell_props.row.sample_id)}}>{cell_props.value}</Button>
+  <Button
+    onClick={() => {
+      openMetagenomeModal(cell_props.row.sample_id)
+    }}
+  >
+    {cell_props.value}
+  </Button>
 )
 
-const download = (baseURL, props, onlyContextual=false) => {
+const download = (baseURL, props, onlyContextual = false) => {
   const params = new URLSearchParams()
   params.set('token', props.ckanAuthToken)
   params.set('q', JSON.stringify(props.describeSearch()))
-  params.set('only_contextual', onlyContextual?'t':'f')
+  params.set('only_contextual', onlyContextual ? 't' : 'f')
 
   const url = `${baseURL}?${params.toString()}`
   window.open(url)
 }
 
 class _SearchResultsCard extends React.Component<any, any> {
-
   constructor(props) {
     super(props)
     this.exportCSV = this.exportCSV.bind(this)
@@ -93,9 +100,21 @@ class _SearchResultsCard extends React.Component<any, any> {
         <Card>
           <CardHeader>
             <div className="text-center">
-              <HeaderButton octicon="desktop-download" text="Download OTU and Contextual Data (CSV)" onClick={this.exportCSV} />
-              <HeaderButton octicon="desktop-download" text="Download Contextual Data only (CSV)" onClick={this.exportCSVOnlyContextual} />
-              <HeaderButton octicon="desktop-download" text="Download BIOM format (Phinch compatible)" onClick={this.exportBIOM} />
+              <HeaderButton
+                octicon="desktop-download"
+                text="Download OTU and Contextual Data (CSV)"
+                onClick={this.exportCSV}
+              />
+              <HeaderButton
+                octicon="desktop-download"
+                text="Download Contextual Data only (CSV)"
+                onClick={this.exportCSVOnlyContextual}
+              />
+              <HeaderButton
+                octicon="desktop-download"
+                text="Download BIOM format (Phinch compatible)"
+                onClick={this.exportBIOM}
+              />
               {window.otu_search_config.galaxy_integration && (
                 <HeaderButton
                   octicon="clippy"
@@ -115,7 +134,10 @@ class _SearchResultsCard extends React.Component<any, any> {
             </div>
           </CardHeader>
           <CardBody>
-            <AlertBoxes alerts={this.props.galaxy.alerts} clearAlerts={this.props.clearGalaxyAlert} />
+            <AlertBoxes
+              alerts={this.props.galaxy.alerts}
+              clearAlerts={this.props.clearGalaxyAlert}
+            />
             <AlertBoxes alerts={this.props.tips.alerts} clearAlerts={this.props.clearTips} />
             <SearchResultsTable />
           </CardBody>
@@ -138,7 +160,7 @@ class _SearchResultsCard extends React.Component<any, any> {
   public exportBIOM() {
     analytics.track('otu_export_BIOM')
 
-    this.props.showPhinchTip();
+    this.props.showPhinchTip()
     download(window.otu_search_config.export_biom_endpoint, this.props)
   }
 
@@ -158,17 +180,25 @@ const _MetagenomeSearchResultsCard = (props) => (
     <Card>
       <CardHeader>
         <div className="text-center">
-          <HeaderButton octicon="desktop-download"
+          <HeaderButton
+            octicon="desktop-download"
             text={`Request metagenome files for all selected samples`}
-            onClick={ props.openMetagenomeModalSearch } />
-          <HeaderButton octicon="desktop-download"
+            onClick={props.openMetagenomeModalSearch}
+          />
+          <HeaderButton
+            octicon="desktop-download"
             text="Download Contextual Data only (CSV)"
-            onClick={() => { download(window.otu_search_config.export_endpoint, props, true)}} />
+            onClick={() => {
+              download(window.otu_search_config.export_endpoint, props, true)
+            }}
+          />
         </div>
       </CardHeader>
       <CardBody>
         <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
-        <SearchResultsTable cell_func={(cell_props) => cell_button(cell_props, props.openMetagenomeModal)} />
+        <SearchResultsTable
+          cell_func={(cell_props) => cell_button(cell_props, props.openMetagenomeModal)}
+        />
       </CardBody>
     </Card>
 
@@ -183,7 +213,7 @@ function mapStateToProps(state) {
     ckanAuthToken: state.auth.ckanAuthToken,
     galaxy: state.searchPage.galaxy,
     tips: state.searchPage.tips,
-    describeSearch: () => describeSearch(state)
+    describeSearch: () => describeSearch(state),
   }
 }
 
@@ -194,16 +224,13 @@ function mapDispatchToProps(dispatch) {
       workflowOnGalaxy,
       clearGalaxyAlert,
       clearTips,
-      showPhinchTip
+      showPhinchTip,
     },
     dispatch
   )
 }
 
-export const SearchResultsCard =  connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(_SearchResultsCard)
+export const SearchResultsCard = connect(mapStateToProps, mapDispatchToProps)(_SearchResultsCard)
 
 function mapMgDispatchToProps(dispatch) {
   return bindActionCreators(
@@ -211,7 +238,7 @@ function mapMgDispatchToProps(dispatch) {
       clearTips,
       showPhinchTip,
       openMetagenomeModalSearch,
-      openMetagenomeModal
+      openMetagenomeModal,
     },
     dispatch
   )

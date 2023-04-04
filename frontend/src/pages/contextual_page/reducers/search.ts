@@ -1,16 +1,16 @@
 import { get as _get, isEmpty, map, reject } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
 
-import { executeContextualSearch } from '../../../api'
-import { ErrorList } from '../../../pages/search_page/reducers/types'
-import { EmptyOTUQuery } from '../../../search'
+import { executeContextualSearch } from 'api'
+import { ErrorList } from 'pages/search_page/reducers/types'
+import { EmptyOTUQuery } from 'search'
 
 export const { changeTableProperties, searchStarted, searchEnded } = createActions({
   CONTEXTUAL_PAGE: {
     CHANGE_TABLE_PROPERTIES: undefined,
     SEARCH_STARTED: undefined,
-    SEARCH_ENDED: undefined
-  }
+    SEARCH_ENDED: undefined,
+  },
 }).contextualPage as any
 
 export const search = () => (dispatch, getState) => {
@@ -21,18 +21,21 @@ export const search = () => (dispatch, getState) => {
   const filters = EmptyOTUQuery
   const options = {
     ...state.contextualPage.results,
-    columns: reject(map(state.contextualPage.selectColumns.columns, c => c.name), name => isEmpty(name))
+    columns: reject(
+      map(state.contextualPage.selectColumns.columns, (c) => c.name),
+      (name) => isEmpty(name)
+    ),
   }
 
   executeContextualSearch(filters, options)
-    .then(data => {
+    .then((data) => {
       if (_get(data, 'data.errors', []).length > 0) {
         dispatch(searchEnded(new ErrorList(...data.data.errors)))
         return
       }
       dispatch(searchEnded(data))
     })
-    .catch(error => {
+    .catch((error) => {
       dispatch(searchEnded(new ErrorList('Unhandled server-side error!')))
     })
 }
@@ -45,7 +48,7 @@ const resultsInitialState = {
   page: 0,
   pageSize: 10,
   rowsCount: 0,
-  sorted: []
+  sorted: [],
 }
 
 export default handleActions(
@@ -56,13 +59,13 @@ export default handleActions(
         ...state,
         page,
         pageSize,
-        sorted
+        sorted,
       }
     },
     [searchStarted as any]: (state, action: any) => ({
       ...state,
       errors: [],
-      isLoading: true
+      isLoading: true,
     }),
     [searchEnded as any]: {
       next: (state, action: any) => {
@@ -75,15 +78,15 @@ export default handleActions(
           data: action.payload.data.data,
           rowsCount,
           pages,
-          page: newPage
+          page: newPage,
         }
       },
       throw: (state, action: any) => ({
         ...state,
         isLoading: false,
-        errors: action.payload.msgs
-      })
-    }
+        errors: action.payload.msgs,
+      }),
+    },
   },
   resultsInitialState
 )

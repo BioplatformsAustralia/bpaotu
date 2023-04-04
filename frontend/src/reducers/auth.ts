@@ -1,11 +1,14 @@
 import axios from 'axios'
 import { createActions, handleActions } from 'redux-actions'
 
-import { ckanAuthInfo } from '../api'
+import { ckanAuthInfo } from 'api'
 
-import { handleSimpleAPIResponse } from './utils'
+import { handleSimpleAPIResponse } from 'reducers/utils'
 
-const { ckanAuthInfoStarted, ckanAuthInfoEnded } = createActions('CKAN_AUTH_INFO_STARTED', 'CKAN_AUTH_INFO_ENDED')
+const { ckanAuthInfoStarted, ckanAuthInfoEnded } = createActions(
+  'CKAN_AUTH_INFO_STARTED',
+  'CKAN_AUTH_INFO_ENDED'
+)
 
 export { ckanAuthInfoStarted, ckanAuthInfoEnded }
 
@@ -18,7 +21,7 @@ const initialState: any = {
   ckanAuthToken: null,
   isLoginInProgress: false,
   isLoggedIn: false,
-  email: null
+  email: null,
 }
 
 export default handleActions(
@@ -26,7 +29,7 @@ export default handleActions(
     [ckanAuthInfoStarted as any]: (state: any, action: any) => {
       return {
         ...state,
-        isLoginInProgress: true
+        isLoginInProgress: true,
       }
     },
     [ckanAuthInfoEnded as any]: {
@@ -35,20 +38,20 @@ export default handleActions(
         const [, data] = ckanAuthToken.split('||')
         const { email, organisations } = JSON.parse(data)
         axios.defaults.headers = {
-          'X-BPAOTU-CKAN-Token': ckanAuthToken
+          'X-BPAOTU-CKAN-Token': ckanAuthToken,
         }
         return {
           isLoginInProgess: false,
           isLoggedIn: true,
           ckanAuthToken,
           email,
-          organisations
+          organisations,
         }
       },
       throw: (state, action) => {
         return initialState
-      }
-    }
+      },
+    },
   },
   initialState
 )

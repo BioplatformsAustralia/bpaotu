@@ -1,15 +1,15 @@
 import axios from 'axios'
 import { get as _get, map, partial, join } from 'lodash'
 
-import { store } from '../index'
-import '../interfaces'
-import { ckanAuthInfoEnded } from '../reducers/auth'
-import { taxonomy_keys } from '../constants'
+import { store } from 'index'
+import 'interfaces'
+import { ckanAuthInfoEnded } from 'reducers/auth'
+import { taxonomy_keys } from 'app/constants'
 
 axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN'
 axios.defaults.xsrfCookieName = 'csrftoken'
 
-axios.interceptors.response.use(null, err => {
+axios.interceptors.response.use(null, (err) => {
   if (err.status === 403) {
     store.dispatch(ckanAuthInfoEnded(new Error(err)))
     return
@@ -28,8 +28,8 @@ export function getReferenceData() {
 export function getTraits(selectedAmplicon) {
   return axios.get(window.otu_search_config.trait_endpoint, {
     params: {
-      amplicon: JSON.stringify(selectedAmplicon)
-    }
+      amplicon: JSON.stringify(selectedAmplicon),
+    },
   })
 }
 
@@ -47,8 +47,8 @@ export function getContextualDataForGraph(filters, options) {
     url: window.otu_search_config.contextual_graph_endpoint,
     data: formData,
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   })
 }
 
@@ -62,8 +62,8 @@ export function getTaxonomyDataForGraph(filters, options) {
     url: window.otu_search_config.taxonomy_graph_endpoint,
     data: formData,
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   })
 }
 
@@ -74,8 +74,8 @@ export function getTaxonomy(selectedAmplicon = { value: '' }, selectedTaxonomies
     params: {
       amplicon: JSON.stringify(selectedAmplicon),
       selected: JSON.stringify(taxonomies),
-      trait: JSON.stringify(selectedTrait)
-    }
+      trait: JSON.stringify(selectedTrait),
+    },
   })
 }
 
@@ -92,49 +92,54 @@ function doSearch(url, filters, options) {
     url,
     data: formData,
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   })
 }
 
-export function nondenoisedDataRequest(selectedAmplicon, selectedSamples, matchSequence, taxonomyString) {
-    const formData = new FormData()
-    formData.append('selected_amplicon', selectedAmplicon)
-    formData.append('selected_samples', JSON.stringify(selectedSamples))
-    formData.append('match_sequence', matchSequence)
-    formData.append('taxonomy_string', taxonomyString)
+export function nondenoisedDataRequest(
+  selectedAmplicon,
+  selectedSamples,
+  matchSequence,
+  taxonomyString
+) {
+  const formData = new FormData()
+  formData.append('selected_amplicon', selectedAmplicon)
+  formData.append('selected_samples', JSON.stringify(selectedSamples))
+  formData.append('match_sequence', matchSequence)
+  formData.append('taxonomy_string', taxonomyString)
 
-    return axios({
-      method: 'post',
-      url: window.otu_search_config.nondenoised_request_endpoint,
-      data: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.nondenoised_request_endpoint,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
 }
-
 
 export function metagenomeRequest(sample_ids, fileTypes) {
   const formData = new FormData()
   formData.append('sample_ids', JSON.stringify(sample_ids))
   formData.append('selected_files', JSON.stringify(fileTypes))
 
-  const url = join(
-    [window.otu_search_config.base_url,
-    'private/metagenome-request'], '/')
+  const url = join([window.otu_search_config.base_url, 'private/metagenome-request'], '/')
   return axios({
     method: 'post',
     url: url,
     data: formData,
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   })
 }
 
 export const executeSearch = partial(doSearch, window.otu_search_config.search_endpoint)
-export const executeContextualSearch = partial(doSearch, window.otu_search_config.required_table_headers_endpoint)
+export const executeContextualSearch = partial(
+  doSearch,
+  window.otu_search_config.required_table_headers_endpoint
+)
 
 function executeOtuSearch(url, filters) {
   const formData = new FormData()
@@ -144,20 +149,20 @@ function executeOtuSearch(url, filters) {
     url: url,
     data: formData,
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   })
 }
 
 export const executeSampleSitesSearch = partial(
   executeOtuSearch,
-  window.otu_search_config.search_sample_sites_endpoint)
+  window.otu_search_config.search_sample_sites_endpoint
+)
 
 export const executeMetagenomeSearch = partial(
   executeOtuSearch,
-  join(
-    [window.otu_search_config.base_url,
-      'private/metagenome-search'], '/'))
+  join([window.otu_search_config.base_url, 'private/metagenome-search'], '/')
+)
 
 export function executeSubmitToGalaxy(filters) {
   const formData = new FormData()
@@ -168,8 +173,8 @@ export function executeSubmitToGalaxy(filters) {
     url: window.otu_search_config.submit_to_galaxy_endpoint,
     data: formData,
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   })
 }
 
@@ -182,21 +187,22 @@ export function executeWorkflowOnGalaxy(filters) {
     url: window.otu_search_config.execute_workflow_on_galaxy_endpoint,
     data: formData,
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   })
 }
 
 export function getGalaxySubmission(submissionId) {
   return axios.get(window.otu_search_config.galaxy_submission_endpoint, {
     params: {
-      submission_id: submissionId
-    }
+      submission_id: submissionId,
+    },
   })
 }
 
 const makeArray = (length, fillValue) => map(Array(length), () => fillValue)
-const completeArray = (arr, length, fillValue) => arr.concat(makeArray(length - arr.length, fillValue))
+const completeArray = (arr, length, fillValue) =>
+  arr.concat(makeArray(length - arr.length, fillValue))
 
 export function executeBlast(searchString, filters) {
   const formData = new FormData()
@@ -208,16 +214,15 @@ export function executeBlast(searchString, filters) {
     url: window.otu_search_config.submit_blast_endpoint,
     data: formData,
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   })
 }
 
 export function getBlastSubmission(submissionId) {
   return axios.get(window.otu_search_config.blast_submission_endpoint, {
     params: {
-      submission_id: submissionId
-    }
+      submission_id: submissionId,
+    },
   })
 }
-

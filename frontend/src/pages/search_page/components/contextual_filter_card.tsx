@@ -1,6 +1,7 @@
-import * as React from "react";
-import { filter, find } from "lodash";
-import { connect } from "react-redux";
+import * as React from 'react'
+import { filter, find } from 'lodash'
+import { connect } from 'react-redux'
+import { bindActionCreators } from 'redux'
 import {
   Button,
   Card,
@@ -16,10 +17,13 @@ import {
   UncontrolledTooltip,
   Badge,
   Alert,
-} from "reactstrap";
-import Octicon from "../../../components/octicon";
+} from 'reactstrap'
+import { v4 as uuid } from 'uuid'
 
-import { bindActionCreators } from "redux";
+import Octicon from 'components/octicon'
+import ContextualFilter from 'components/contextual_filter'
+import { fetchContextualDataDefinitions } from 'reducers/contextual_data_definitions'
+
 import {
   addContextualFilter,
   changeContextualFilterOperator,
@@ -31,7 +35,7 @@ import {
   removeContextualFilter,
   selectContextualFilter,
   selectContextualFiltersMode,
-} from "../reducers/contextual";
+} from '../reducers/contextual'
 import {
   checkSampleIntegrityWarningFilter,
   uncheckSampleIntegrityWarningFilter,
@@ -44,27 +48,24 @@ import {
   clearSampleIntegrityWarningFilters,
   selectSampleIntegrityWarningFilter,
   selectSampleIntegrityWarningFiltersMode,
-} from "../reducers/sample_integrity_warning";
-import { fetchContextualDataDefinitions } from "../../../reducers/contextual_data_definitions";
+} from '../reducers/sample_integrity_warning'
 
-import ContextualFilter from "../../../components/contextual_filter";
-import EnvironmentFilter from "./environment_filter";
-import { v4 as uuid } from "uuid";
+import EnvironmentFilter from './environment_filter'
 
 export const ContextualFilterInfo =
-  "Contextual filters allow data to be filtered on site specific chemical and physical data. ";
+  'Contextual filters allow data to be filtered on site specific chemical and physical data. '
 
 const ContextualFilterLinkButton = ({ title, url, tooltip }) => {
-  const id = `id-${uuid()}`;
+  const id = `id-${uuid()}`
 
   return (
     <>
       <Button
         size="sm"
         color="secondary"
-        style={{ cursor: "pointer", margin: "-15px 2px", padding: "3px 10px" }}
+        style={{ cursor: 'pointer', margin: '-15px 2px', padding: '3px 10px' }}
         onClick={() => {
-          window.open(url);
+          window.open(url)
         }}
       >
         <Octicon name="link" />
@@ -77,8 +78,8 @@ const ContextualFilterLinkButton = ({ title, url, tooltip }) => {
         {tooltip}
       </UncontrolledTooltip>
     </>
-  );
-};
+  )
+}
 
 class ContextualFilterCard extends React.Component<any> {
   public componentDidMount() {
@@ -122,11 +123,10 @@ class ContextualFilterCard extends React.Component<any> {
           <Row>
             <Col>
               <p className="text-center">
-                More than one filter may be used and combined with "all/any"
-                functions.
+                More than one filter may be used and combined with "all/any" functions.
                 <br />
-                The sample integrity warnings filter will be applied in addition
-                to other contextual filters.
+                The sample integrity warnings filter will be applied in addition to other contextual
+                filters.
               </p>
             </Col>
           </Row>
@@ -140,7 +140,7 @@ class ContextualFilterCard extends React.Component<any> {
                       type="checkbox"
                       checked={
                         this.props.sampleIntegrityWarningFilters.find(
-                          (fltr) => fltr.name === "sample_integrity_warnings_id"
+                          (fltr) => fltr.name === 'sample_integrity_warnings_id'
                         )
                           ? false
                           : true
@@ -152,10 +152,10 @@ class ContextualFilterCard extends React.Component<any> {
                       }
                     />
                     {this.props.sampleIntegrityWarningFilters.find(
-                      (fltr) => fltr.name === "sample_integrity_warnings_id"
+                      (fltr) => fltr.name === 'sample_integrity_warnings_id'
                     )
-                      ? "Check to show all data including samples with integrity warnings"
-                      : "Uncheck to remove samples with integrity warnings"}
+                      ? 'Check to show all data including samples with integrity warnings'
+                      : 'Uncheck to remove samples with integrity warnings'}
                   </Label>
                 </FormGroup>
                 {this.props.sampleIntegrityWarningFilters.map((fltr, index) => (
@@ -163,26 +163,15 @@ class ContextualFilterCard extends React.Component<any> {
                     key={`${fltr.name}-${index}`}
                     index={index}
                     filter={fltr}
-                    dataDefinition={find(
-                      this.props.dataDefinitions,
-                      (dd) => dd.name === fltr.name
-                    )}
+                    dataDefinition={find(this.props.dataDefinitions, (dd) => dd.name === fltr.name)}
                     options={this.props.sampleIntegrityWarningFilterOptions}
                     optionsLoading={this.props.optionsLoading}
                     remove={null}
                     select={this.props.selectSampleIntegrityWarningFilter}
-                    changeOperator={
-                      this.props.changeSampleIntegrityWarningFilterOperator
-                    }
-                    changeValue={
-                      this.props.changeSampleIntegrityWarningFilterValue
-                    }
-                    changeValue2={
-                      this.props.changeSampleIntegrityWarningFilterValue2
-                    }
-                    changeValues={
-                      this.props.changeSampleIntegrityWarningFilterValues
-                    }
+                    changeOperator={this.props.changeSampleIntegrityWarningFilterOperator}
+                    changeValue={this.props.changeSampleIntegrityWarningFilterValue}
+                    changeValue2={this.props.changeSampleIntegrityWarningFilterValue2}
+                    changeValues={this.props.changeSampleIntegrityWarningFilterValues}
                     definitions={this.props.definitions}
                   />
                 ))}
@@ -200,9 +189,7 @@ class ContextualFilterCard extends React.Component<any> {
                       type="select"
                       bsSize="sm"
                       value={this.props.contextualFiltersMode}
-                      onChange={(evt) =>
-                        this.props.selectContextualFiltersMode(evt.target.value)
-                      }
+                      onChange={(evt) => this.props.selectContextualFiltersMode(evt.target.value)}
                     >
                       <option value="and">all</option>
                       <option value="or">any</option>
@@ -219,10 +206,7 @@ class ContextualFilterCard extends React.Component<any> {
               key={`${fltr.name}-${index}`}
               index={index}
               filter={fltr}
-              dataDefinition={find(
-                this.props.dataDefinitions,
-                (dd) => dd.name === fltr.name
-              )}
+              dataDefinition={find(this.props.dataDefinitions, (dd) => dd.name === fltr.name)}
               options={this.props.contextualFilterOptions}
               optionsLoading={this.props.optionsLoading}
               remove={this.props.removeContextualFilter}
@@ -244,40 +228,37 @@ class ContextualFilterCard extends React.Component<any> {
           </Button>
         </CardFooter>
       </Card>
-    );
+    )
   }
 }
 
 const getFilterOptions = (filters, selectedEnvironment) =>
-  filter(filters, doesFilterMatchEnvironment(selectedEnvironment));
+  filter(filters, doesFilterMatchEnvironment(selectedEnvironment))
 
 function mapStateToProps(state) {
   return {
     contextualFilters: state.searchPage.filters.contextual.filters,
     contextualFiltersMode: state.searchPage.filters.contextual.filtersMode,
-    sampleIntegrityWarningFilters:
-      state.searchPage.filters.sampleIntegrityWarning.filters,
-    sampleIntegrityWarningFiltersMode:
-      state.searchPage.filters.sampleIntegrityWarning.filtersMode,
+    sampleIntegrityWarningFilters: state.searchPage.filters.sampleIntegrityWarning.filters,
+    sampleIntegrityWarningFiltersMode: state.searchPage.filters.sampleIntegrityWarning.filtersMode,
     dataDefinitions: state.contextualDataDefinitions.filters,
     contextualFilterOptions: getFilterOptions(
       state.contextualDataDefinitions.filters.filter(
-        (x) => x.name !== "sample_integrity_warnings_id"
+        (x) => x.name !== 'sample_integrity_warnings_id'
       ),
       state.searchPage.filters.contextual.selectedEnvironment
     ),
     sampleIntegrityWarningFilterOptions: getFilterOptions(
       state.contextualDataDefinitions.filters.filter(
-        (x) => x.name === "sample_integrity_warnings_id"
+        (x) => x.name === 'sample_integrity_warnings_id'
       ),
       state.searchPage.filters.contextual.selectedEnvironment
     ),
     optionsLoading: state.contextualDataDefinitions.isLoading,
     definitions_url: state.contextualDataDefinitions.definitions_url,
-    scientific_manual_url:
-      state.contextualDataDefinitions.scientific_manual_url,
+    scientific_manual_url: state.contextualDataDefinitions.scientific_manual_url,
     definitions: state.contextualDataDefinitions.values,
-  };
+  }
 }
 
 function mapDispatchToProps(dispatch: any) {
@@ -308,10 +289,7 @@ function mapDispatchToProps(dispatch: any) {
       clearSampleIntegrityWarningFilters,
     },
     dispatch
-  );
+  )
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(ContextualFilterCard);
+export default connect(mapStateToProps, mapDispatchToProps)(ContextualFilterCard)

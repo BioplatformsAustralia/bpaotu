@@ -4,13 +4,13 @@ import { isEmpty } from 'lodash'
 
 import 'react-table/react-table.css'
 
-import { fieldsToColumns, SearchResultsTable } from '../../../components/search_results_table'
+import { fieldsToColumns, SearchResultsTable } from 'components/search_results_table'
 import { changeTableProperties, search } from '../reducers/search'
 
 function mapStateToProps(state) {
   return {
     results: state.contextualPage.results,
-    extraColumns: fieldsToColumns(state.contextualPage.selectColumns.columns)
+    extraColumns: fieldsToColumns(state.contextualPage.selectColumns.columns),
   }
 }
 
@@ -18,7 +18,7 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
       changeTableProperties,
-      search
+      search,
     },
     dispatch
   )
@@ -32,7 +32,4 @@ class ContextualSearchResultsTable extends SearchResultsTable {
   }
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(ContextualSearchResultsTable)
+export default connect(mapStateToProps, mapDispatchToProps)(ContextualSearchResultsTable)

@@ -2,12 +2,9 @@ import { searchPageInitialState } from './types'
 
 import { createActions, handleActions } from 'redux-actions'
 
-export const {
-  showPhinchTipAction,
-  clearTipsAction,
-} = createActions(
+export const { showPhinchTipAction, clearTipsAction } = createActions(
   'SHOW_PHINCH_TIP_ACTION',
-  'CLEAR_TIPS_ACTION',
+  'CLEAR_TIPS_ACTION'
 )
 
 export const showPhinchTip = () => (dispatch, getState) => {
@@ -23,8 +20,9 @@ function alert(text, color = 'primary') {
 }
 
 const TIP_PHINCH = alert(
-    'Tip: Visit <a target="_other" href="http://phinch.org/">phinch.org</a> to visualise your BIOM file.',
-    'success')
+  'Tip: Visit <a target="_other" href="http://phinch.org/">phinch.org</a> to visualise your BIOM file.',
+  'success'
+)
 
 export default handleActions(
   {
@@ -41,8 +39,8 @@ export default handleActions(
       },
       throw: (state, action) => ({
         ...state,
-        isSubmitting: false
-      })
+        isSubmitting: false,
+      }),
     },
   },
   searchPageInitialState.tips
