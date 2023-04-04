@@ -10,14 +10,21 @@ const { fetchTaxonomyDataForGraphStarted, fetchTaxonomyDataForGraphEnded } = cre
 )
 
 export const fetchTaxonomyDataForGraph = () => (dispatch, getState) => {
-  const state = getState();
+  const state = getState()
   const filters = describeSearch(state)
   const options = {
     ...state.contextualPage.results,
-    columns: reject(map(state.contextualPage.selectColumns.columns, c => c.name), name => isEmpty(name))
+    columns: reject(
+      map(state.contextualPage.selectColumns.columns, (c) => c.name),
+      (name) => isEmpty(name)
+    ),
   }
   dispatch(fetchTaxonomyDataForGraphStarted())
-  handleSimpleAPIResponse(dispatch, partial(getTaxonomyDataForGraph, filters, options), fetchTaxonomyDataForGraphEnded)
+  handleSimpleAPIResponse(
+    dispatch,
+    partial(getTaxonomyDataForGraph, filters, options),
+    fetchTaxonomyDataForGraphEnded
+  )
 }
 
 const initialState = {
@@ -29,14 +36,14 @@ export default handleActions(
   {
     [fetchTaxonomyDataForGraphStarted as any]: (state, action) => ({
       ...initialState,
-      isLoading: true
+      isLoading: true,
     }),
     [fetchTaxonomyDataForGraphEnded as any]: (state, action: any) => {
       return {
         isLoading: false,
         graphdata: action.payload.data.graphdata,
       }
-    }
+    },
   },
   initialState
 )

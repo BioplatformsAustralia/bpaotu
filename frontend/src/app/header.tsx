@@ -12,18 +12,20 @@ export default class Header extends React.Component<any, any> {
 
     this.toggle = this.toggle.bind(this)
     this.state = {
-      isOpen: false
+      isOpen: false,
     }
   }
 
   public toggle() {
     this.setState({
-      isOpen: !this.state.isOpen
+      isOpen: !this.state.isOpen,
     })
   }
 
   public render() {
-    const logoPNG = window.otu_search_config.static_base_url + join(['bpa-logos', 'BIO-RGB_Full-POS_Portal.png'], '/')
+    const logoPNG =
+      window.otu_search_config.static_base_url +
+      join(['bpa-logos', 'BIO-RGB_Full-POS_Portal.png'], '/')
     return (
       <Navbar color="light" light={true} expand="lg">
         <NavbarBrand className="site-header-logo" href="/">
@@ -32,7 +34,6 @@ export default class Header extends React.Component<any, any> {
         <NavbarToggler onClick={this.toggle} />
         <Collapse isOpen={this.state.isOpen} navbar={true}>
           <Nav tabs className="navbar-nav">
-
             <NavItem>
               <NavLink exact={true} to="/" activeClassName="active" tag={RRNavLink}>
                 Amplicon
@@ -62,10 +63,8 @@ export default class Header extends React.Component<any, any> {
                 Map
               </NavLink>
             </NavItem>
-
           </Nav>
           <Nav className="ml-auto" navbar={true}>
-
             <NavItem>
               <NavLink>
                 <BPAOTUTour />
@@ -73,13 +72,25 @@ export default class Header extends React.Component<any, any> {
             </NavItem>
 
             <NavItem>
-              <NavLink target="_am" href={window.otu_search_config.ckan_base_url + "organization/pages/australian-microbiome/processed"}>
+              <NavLink
+                target="_am"
+                href={
+                  window.otu_search_config.ckan_base_url +
+                  'organization/pages/australian-microbiome/processed'
+                }
+              >
                 Help
               </NavLink>
             </NavItem>
 
             <NavItem>
-              <NavLink target="_am" href={window.otu_search_config.ckan_base_url + "organization/about/australian-microbiome"}>
+              <NavLink
+                target="_am"
+                href={
+                  window.otu_search_config.ckan_base_url +
+                  'organization/about/australian-microbiome'
+                }
+              >
                 Australian Microbiome Home
               </NavLink>
             </NavItem>

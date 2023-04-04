@@ -9,10 +9,10 @@ export const {
 
   addColumn,
   removeColumn,
-  clearColumns
+  clearColumns,
 } = createActions(
   {
-    SELECT_COLUMN: (index, value) => ({ index, value })
+    SELECT_COLUMN: (index, value) => ({ index, value }),
   },
   'ADD_COLUMN',
   'REMOVE_COLUMN',
@@ -21,7 +21,7 @@ export const {
 
 const EmptyColumn = {
   name: '',
-  value: ''
+  value: '',
 }
 
 const columnsReducer = handleActions(
@@ -30,10 +30,10 @@ const columnsReducer = handleActions(
     [removeColumn as any]: (state: any, action) => removeElementAtIndex(state, action.payload),
     [clearColumns as any]: (state: any, action) => [],
     [selectColumn as any]: (state: any, action: any) =>
-      changeElementAtIndex(state, action.payload.index, filter => ({
+      changeElementAtIndex(state, action.payload.index, (filter) => ({
         ...EmptyColumn,
-        name: action.payload.value
-      }))
+        name: action.payload.value,
+      })),
   },
   []
 )

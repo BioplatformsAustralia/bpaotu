@@ -10,14 +10,21 @@ const { fetchContextualDataForGraphStarted, fetchContextualDataForGraphEnded } =
 )
 
 export const fetchContextualDataForGraph = () => (dispatch, getState) => {
-  const state = getState();
+  const state = getState()
   const filters = describeSearch(state)
   const options = {
     ...state.contextualPage.results,
-    columns: reject(map(state.contextualPage.selectColumns.columns, c => c.name), name => isEmpty(name))
+    columns: reject(
+      map(state.contextualPage.selectColumns.columns, (c) => c.name),
+      (name) => isEmpty(name)
+    ),
   }
   dispatch(fetchContextualDataForGraphStarted())
-  handleSimpleAPIResponse(dispatch, partial(getContextualDataForGraph, filters, options), fetchContextualDataForGraphEnded)
+  handleSimpleAPIResponse(
+    dispatch,
+    partial(getContextualDataForGraph, filters, options),
+    fetchContextualDataForGraphEnded
+  )
 }
 
 const initialState = {
@@ -29,14 +36,14 @@ export default handleActions(
   {
     [fetchContextualDataForGraphStarted as any]: (state, action) => ({
       ...initialState,
-      isLoading: true
+      isLoading: true,
     }),
     [fetchContextualDataForGraphEnded as any]: (state, action: any) => {
       return {
         isLoading: false,
         graphdata: action.payload.data.graphdata,
       }
-    }
+    },
   },
   initialState
 )

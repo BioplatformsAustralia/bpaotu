@@ -3,10 +3,10 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
 import analytics, { triggerHashedIdentify } from 'app/analytics'
-import { Col, Container, Row} from 'reactstrap'
+import { Col, Container, Row } from 'reactstrap'
 import SearchButton from '../../components/search_button'
 import AnimateHelix from '../../components/animate_helix'
-import {AmpliconTaxonomyFilterCard } from './components/amplicon_taxonomy_filter_card'
+import { AmpliconTaxonomyFilterCard } from './components/amplicon_taxonomy_filter_card'
 import BlastSearchCard from './components/blast_search_card'
 import ContextualFilterCard from './components/contextual_filter_card'
 import SearchErrors from './components/search_errors'
@@ -15,9 +15,9 @@ import { SearchResultsCard, MetagenomeSearchResultsCard } from './components/sea
 import { openSamplesMapModal } from './reducers/samples_map_modal'
 import { openSamplesGraphModal } from './reducers/samples_graph_modal'
 import { search } from './reducers/search'
-import { clearSearchResults } from  './reducers/search'
+import { clearSearchResults } from './reducers/search'
 
-const SearchPage = props => {
+const SearchPage = (props) => {
   const newSearch = () => {
     props.clearSearchResults()
     props.search()
@@ -42,9 +42,7 @@ const SearchPage = props => {
     <Container fluid={true}>
       <Row>
         <Col sm={6}>
-          <Row>
-            {children[0]}
-          </Row>
+          <Row>{children[0]}</Row>
           {children[1]}
         </Col>
         <Col sm={6} data-tut="reactour__ContextualFilterCard">
@@ -65,22 +63,28 @@ const SearchPage = props => {
           </Col>
         ) : (
           <>
-            <Col sm={{ size: 2, offset: 3 }} >
+            <Col sm={{ size: 2, offset: 3 }}>
               <SearchButton octicon="search" text="Sample search" onClick={newSearch} />
             </Col>
-            <Col sm={{ size: 2 }} >
-              <SearchButton octicon="globe" text="Interactive map search" onClick={interactiveMapSearch} />
+            <Col sm={{ size: 2 }}>
+              <SearchButton
+                octicon="globe"
+                text="Interactive map search"
+                onClick={interactiveMapSearch}
+              />
             </Col>
-            <Col sm={{ size: 2 }} >
-              <SearchButton octicon="graph" text="Interactive graph search" onClick={interactiveGraphSearch} />
+            <Col sm={{ size: 2 }}>
+              <SearchButton
+                octicon="graph"
+                text="Interactive graph search"
+                onClick={interactiveGraphSearch}
+              />
             </Col>
           </>
         )}
       </Row>
 
-      <Row className="space-above">
-        {children[2]}
-      </Row>
+      <Row className="space-above">{children[2]}</Row>
     </Container>
   )
 }
@@ -89,7 +93,7 @@ function mapStateToProps(state) {
   return {
     isSearchInProgress: state.searchPage.results.isLoading,
     errors: state.searchPage.results.errors,
-    auth: state.auth
+    auth: state.auth,
   }
 }
 
@@ -105,10 +109,7 @@ function mapDispatchToProps(dispatch) {
   )
 }
 
-const ConnectedSearchPage = connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(SearchPage)
+const ConnectedSearchPage = connect(mapStateToProps, mapDispatchToProps)(SearchPage)
 
 export function SampleSearchPage() {
   analytics.page()

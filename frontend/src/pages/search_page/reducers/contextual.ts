@@ -6,22 +6,23 @@ import { combineActions, createActions, handleAction, handleActions } from 'redu
 import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils'
 import { searchPageInitialState } from './types'
 
-export const { selectEnvironment, selectEnvironmentOperator, selectContextualFiltersMode } = createActions(
-  'SELECT_ENVIRONMENT',
-  'SELECT_ENVIRONMENT_OPERATOR',
-  'SELECT_CONTEXTUAL_FILTERS_MODE'
-)
+export const { selectEnvironment, selectEnvironmentOperator, selectContextualFiltersMode } =
+  createActions(
+    'SELECT_ENVIRONMENT',
+    'SELECT_ENVIRONMENT_OPERATOR',
+    'SELECT_CONTEXTUAL_FILTERS_MODE'
+  )
 
 const selectedEnvironmentReducer = handleActions(
   {
     [selectEnvironment as any]: (state, action: any) => ({
       ...state,
-      value: action.payload
+      value: action.payload,
     }),
     [selectEnvironmentOperator as any]: (state, action: any) => ({
       ...state,
-      operator: action.payload
-    })
+      operator: action.payload,
+    }),
   },
   searchPageInitialState.filters.contextual.selectedEnvironment
 )
@@ -44,7 +45,7 @@ const EmptyContextualFilter = {
   operator: '',
   value: '',
   value2: '',
-  values: []
+  values: [],
 }
 
 export const {
@@ -56,14 +57,14 @@ export const {
 
   addContextualFilter,
   removeContextualFilter,
-  clearContextualFilters
+  clearContextualFilters,
 } = createActions(
   {
     SELECT_CONTEXTUAL_FILTER: (index, value) => ({ index, value }),
     CHANGE_CONTEXTUAL_FILTER_OPERATOR: (index, operator) => ({ index, operator }),
     CHANGE_CONTEXTUAL_FILTER_VALUE: (index, value) => ({ index, value }),
     CHANGE_CONTEXTUAL_FILTER_VALUE2: (index, value) => ({ index, value }),
-    CHANGE_CONTEXTUAL_FILTER_VALUES: (index, values) => ({ index, values })
+    CHANGE_CONTEXTUAL_FILTER_VALUES: (index, values) => ({ index, values }),
   },
   'ADD_WARNING_CONTEXTUAL_FILTER',
   'REMOVE_WARNING_CONTEXTUAL_FILTER',
@@ -72,11 +73,11 @@ export const {
   'CLEAR_CONTEXTUAL_FILTERS'
 )
 
-export const doesFilterMatchEnvironment = environment => filter => {
+export const doesFilterMatchEnvironment = (environment) => (filter) => {
   if (environment.value === '') {
     return true
   }
-  const eq = fltr => fltr.environment === toNumber(environment.value)
+  const eq = (fltr) => fltr.environment === toNumber(environment.value)
   const op = environment.operator === 'is' ? eq : negate(eq)
   return isNull(filter.environment) || op(filter)
 }
@@ -85,64 +86,65 @@ const contextualFiltersReducer = handleActions(
   {
     [addContextualFilter as any]: (state: any, action) => ({
       ...state,
-      filters: [...state.filters, EmptyContextualFilter]
+      filters: [...state.filters, EmptyContextualFilter],
     }),
     [removeContextualFilter as any]: (state: any, action) => ({
       ...state,
-      filters: removeElementAtIndex(state.filters, action.payload)
+      filters: removeElementAtIndex(state.filters, action.payload),
     }),
     [clearContextualFilters as any]: (state: any, action) => ({
       ...state,
-      filters: []
+      filters: [],
     }),
     [combineActions(selectEnvironment, selectEnvironmentOperator) as any]: (state, action) => ({
       ...state,
-      filters: filter(state.filters, f => {
+      filters: filter(state.filters, (f) => {
         if (f.name === '') {
           return true
         }
-        if(state.dataDefinitions) 
-        {
-          const dataDefinition = find(state.dataDefinitions.filters, dd => dd.name === f.name)
-          return doesFilterMatchEnvironment(state.selectedEnvironment)(dataDefinition) ? f : EmptyContextualFilter
+        if (state.dataDefinitions) {
+          const dataDefinition = find(state.dataDefinitions.filters, (dd) => dd.name === f.name)
+          return doesFilterMatchEnvironment(state.selectedEnvironment)(dataDefinition)
+            ? f
+            : EmptyContextualFilter
         }
-      })
+      }),
     }),
     [selectContextualFilter as any]: (state: any, action: any) => ({
       ...state,
-      filters: changeElementAtIndex(state.filters, action.payload.index, filter => ({
+      filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
         ...EmptyContextualFilter,
-        name: action.payload.value
-      }))
+        name: action.payload.value,
+      })),
     }),
     [changeContextualFilterOperator as any]: (state: any, action: any) => ({
       ...state,
-      filters: changeElementAtIndex(state.filters, action.payload.index, filter => ({
+      filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
         ...filter,
-        operator: action.payload.operator
-      }))
+        operator: action.payload.operator,
+      })),
     }),
     [changeContextualFilterValue as any]: (state: any, action: any) => ({
       ...state,
-      filters: changeElementAtIndex(state.filters, action.payload.index, filter => ({
+      filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
         ...filter,
-        value: action.payload.value
-      }))
+        value: action.payload.value,
+      })),
     }),
     [changeContextualFilterValue2 as any]: (state: any, action: any) => ({
       ...state,
-      filters: changeElementAtIndex(state.filters, action.payload.index, filter => ({
+      filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
         ...filter,
-        value2: action.payload.value
-      }))
+        value2: action.payload.value,
+      })),
     }),
     [changeContextualFilterValues as any]: (state: any, action: any) => ({
       ...state,
-      filters: changeElementAtIndex(state.filters, action.payload.index, filter => ({
+      filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
         ...filter,
-        values: action.payload.values
-      }))
-    })
+        values: action.payload.values,
+      })),
+    }),
   },
   searchPageInitialState.filters.contextual.filters
 )
@@ -150,7 +152,7 @@ const contextualFiltersReducer = handleActions(
 const combinedContextualReducers = (state = searchPageInitialState.filters.contextual, action) => ({
   ...state,
   selectedEnvironment: selectedEnvironmentReducer(state.selectedEnvironment, action),
-  filtersMode: contextualFiltersModeReducer(state.filtersMode, action)
+  filtersMode: contextualFiltersModeReducer(state.filtersMode, action),
   // filters: array of filters is filled in here by the reduceReducers below
 })
 

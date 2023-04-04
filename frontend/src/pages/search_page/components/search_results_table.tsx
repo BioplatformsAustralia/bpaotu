@@ -7,12 +7,18 @@ import { fieldsToColumns, SearchResultsTable } from '../../../components/search_
 import { changeTableProperties, search } from '../reducers/search'
 
 function mapStateToProps(state) {
-  const nonEmptyFilters = uniqBy(reject(state.searchPage.filters.contextual.filters, f => isEmpty(f.name)), 'name')
-  const nonEmptySIWFilters = uniqBy(reject(state.searchPage.filters.sampleIntegrityWarning.filters, f => isEmpty(f.name)), 'name')
-  
+  const nonEmptyFilters = uniqBy(
+    reject(state.searchPage.filters.contextual.filters, (f) => isEmpty(f.name)),
+    'name'
+  )
+  const nonEmptySIWFilters = uniqBy(
+    reject(state.searchPage.filters.sampleIntegrityWarning.filters, (f) => isEmpty(f.name)),
+    'name'
+  )
+
   return {
     results: state.searchPage.results,
-    extraColumns: fieldsToColumns([...nonEmptyFilters, ...nonEmptySIWFilters])
+    extraColumns: fieldsToColumns([...nonEmptyFilters, ...nonEmptySIWFilters]),
   }
 }
 
@@ -20,13 +26,10 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
       changeTableProperties,
-      search
+      search,
     },
     dispatch
   )
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(SearchResultsTable)
+export default connect(mapStateToProps, mapDispatchToProps)(SearchResultsTable)

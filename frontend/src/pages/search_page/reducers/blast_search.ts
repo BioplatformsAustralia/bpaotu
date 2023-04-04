@@ -25,7 +25,7 @@ export const {
   blastSubmissionUpdateStarted,
   blastSubmissionUpdateEnded,
 
-  clearBlastAlert
+  clearBlastAlert,
 } = createActions(
   HANDLE_BLAST_SEQUENCE,
 
@@ -42,7 +42,7 @@ const blastInitialState = {
   sequenceValue: '',
   alerts: [],
   isSubmitting: false,
-  submissions: []
+  submissions: [],
 }
 
 export const runBlast = () => (dispatch, getState) => {
@@ -54,7 +54,7 @@ export const runBlast = () => (dispatch, getState) => {
   const searchString = state.searchPage.blastSearch.sequenceValue
 
   executeBlast(searchString, filters)
-    .then(data => {
+    .then((data) => {
       if (_get(data, 'data.errors', []).length > 0) {
         dispatch(runBlastEnded(new ErrorList(data.data.errors)))
         return
@@ -62,23 +62,24 @@ export const runBlast = () => (dispatch, getState) => {
       dispatch(runBlastEnded(data))
       dispatch(autoUpdateBlastSubmission())
     })
-    .catch(error => {
+    .catch((error) => {
       dispatch(runBlastEnded(new ErrorList('Unhandled server-side error!')))
     })
 }
 
 export const autoUpdateBlastSubmission = () => (dispatch, getState) => {
-  const getLastSubmission: (() => BlastSubmission) = () => last(getState().searchPage.blastSearch.submissions)
+  const getLastSubmission: () => BlastSubmission = () =>
+    last(getState().searchPage.blastSearch.submissions)
   const lastSubmission = getLastSubmission()
   getBlastSubmission(lastSubmission.submissionId)
-    .then(data => {
+    .then((data) => {
       dispatch(blastSubmissionUpdateEnded(data))
       const newLastSubmission = getLastSubmission()
       if (!newLastSubmission.finished) {
         setTimeout(() => dispatch(autoUpdateBlastSubmission()), BLAST_SUBMISSION_POLL_FREQUENCY_MS)
       }
     })
-    .catch(error => {
+    .catch((error) => {
       dispatch(blastSubmissionUpdateEnded(new Error('Unhandled server-side error!')))
     })
 }
@@ -86,25 +87,30 @@ function alert(text, color = 'primary') {
   return { color, text }
 }
 
-const BLAST_ALERT_IN_PROGRESS = alert('BLAST search is in progress, and may take several minutes. Do not close your browser - this status will update once the search is complete.')
+const BLAST_ALERT_IN_PROGRESS = alert(
+  'BLAST search is in progress, and may take several minutes. Do not close your browser - this status will update once the search is complete.'
+)
 const BLAST_ALERT_ERROR = alert('An error occured while running BLAST.', 'danger')
 
 export default handleActions(
   {
     [handleBlastSequence as any]: (state, action: any) => ({
       ...state,
-      sequenceValue: join(filter(upperCase(action.payload), ch => includes('GATC', ch)), '')
+      sequenceValue: join(
+        filter(upperCase(action.payload), (ch) => includes('GATC', ch)),
+        ''
+      ),
     }),
     [runBlastStarted as any]: (state, action: any) => ({
       ...state,
-      isSubmitting: true
+      isSubmitting: true,
     }),
     [runBlastEnded as any]: {
       next: (state, action: any) => {
         const lastSubmission: BlastSubmission = {
           submissionId: action.payload.data.submission_id,
           finished: false,
-          succeeded: false
+          succeeded: false,
         }
         const alerts = [BLAST_ALERT_IN_PROGRESS]
 
@@ -112,24 +118,24 @@ export default handleActions(
           ...state,
           sequenceValue: state.sequenceValue,
           alerts,
-          submissions: [...state.submissions, lastSubmission]
+          submissions: [...state.submissions, lastSubmission],
         }
       },
       throw: (state, action: any) => ({
         ...state,
         isSubmitting: false,
-        alerts: [BLAST_ALERT_ERROR]
-      })
+        alerts: [BLAST_ALERT_ERROR],
+      }),
     },
     [blastSubmissionUpdateEnded as any]: {
       next: (state, action: any) => {
         const lastSubmission = last(state.submissions)
-        const newLastSubmissionState = (submission => {
+        const newLastSubmissionState = ((submission) => {
           const { state: status, error } = action.payload.data.submission
           const newState = {
             ...submission,
             finished: status === 'complete' || status === 'error',
-            succeeded: status === 'complete'
+            succeeded: status === 'complete',
           }
           if (status === 'error') {
             newState['error'] = error
@@ -146,7 +152,9 @@ export default handleActions(
             'success'
           )
           newAlerts = reject([state.alerts, BLAST_ALERT_IN_PROGRESS])
-          newAlerts.push(newLastSubmissionState['succeeded'] ? BLAST_ALERT_SUCCESS : BLAST_ALERT_ERROR)
+          newAlerts.push(
+            newLastSubmissionState['succeeded'] ? BLAST_ALERT_SUCCESS : BLAST_ALERT_ERROR
+          )
         }
 
         let isSubmitted: any = state.isSubmitting
@@ -159,36 +167,40 @@ export default handleActions(
           submissions: changeElementAtIndex(
             state.submissions,
             state.submissions.length - 1,
-            _ => newLastSubmissionState
+            (_) => newLastSubmissionState
           ),
           alerts: newAlerts,
-          isSubmitting: isSubmitted
+          isSubmitting: isSubmitted,
         }
       },
       throw: (state, action) => {
         return {
           ...state,
-          submissions: changeElementAtIndex(state.submissions, state.submissions.length - 1, submission => ({
-            ...submission,
-            finished: true,
-            succeeded: false,
-            error: action.error
-          })),
+          submissions: changeElementAtIndex(
+            state.submissions,
+            state.submissions.length - 1,
+            (submission) => ({
+              ...submission,
+              finished: true,
+              succeeded: false,
+              error: action.error,
+            })
+          ),
           alerts: [BLAST_ALERT_ERROR],
-          isSubmitting: false
+          isSubmitting: false,
         }
-      }
+      },
     },
     [clearBlastAlert as any]: (state, action) => {
       const index = action.payload
       const alerts = isNumber(index)
         ? removeElementAtIndex(state.alerts, index)
-        : state.alerts.filter(a => a.color === 'danger') // never auto-remove errors
+        : state.alerts.filter((a) => a.color === 'danger') // never auto-remove errors
       return {
         ...state,
-        alerts
+        alerts,
       }
-    }
+    },
   },
   blastInitialState
 )

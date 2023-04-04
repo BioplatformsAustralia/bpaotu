@@ -11,13 +11,17 @@ import samplesGraphModalReducer from './samples_graph_modal'
 import metagenomeModalReducer from './metagenome_modal'
 import searchResultsReducer from './search'
 import submitToGalaxyReducer from './submit_to_galaxy'
-import taxonomyReducer,  {taxonomyOptionsLoading}    from './taxonomy'
+import taxonomyReducer, { taxonomyOptionsLoading } from './taxonomy'
 import tipsReducer from './tips'
 
 const taxonomyLoadingReducer = handleActions(
-  { [taxonomyOptionsLoading as any]: (state, action: any) => {
-    return (action.payload)
-  }}, false)
+  {
+    [taxonomyOptionsLoading as any]: (state, action: any) => {
+      return action.payload
+    },
+  },
+  false
+)
 
 const filtersReducer = combineReducers({
   metagenomeMode: metagenomeModeReducer,
@@ -37,7 +41,7 @@ const pageReducer = combineReducers({
   galaxy: submitToGalaxyReducer,
   tips: tipsReducer,
   results: searchResultsReducer,
-  blastSearch: blastSearchReducer
+  blastSearch: blastSearchReducer,
 })
 
 export default pageReducer

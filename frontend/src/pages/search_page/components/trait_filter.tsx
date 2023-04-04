@@ -13,7 +13,7 @@ function mapStateToProps(state) {
     optionsLoadingError: state.referenceData.traits.error,
     isDisabled: _get(state, 'referenceData.traits.values', []).length === 0,
     optionsLoading: state.referenceData.traits.isLoading,
-    selected: state.searchPage.filters.selectedTrait
+    selected: state.searchPage.filters.selectedTrait,
   }
 }
 
@@ -22,15 +22,12 @@ function mapDispatchToProps(dispatch) {
     {
       selectValue: selectTrait,
       selectOperator: selectTraitOperator,
-      onChange: updateTaxonomyDropDowns('')
+      onChange: updateTaxonomyDropDowns(''),
     },
     dispatch
   )
 }
 
-const TraitFilter = connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(DropDownFilter)
+const TraitFilter = connect(mapStateToProps, mapDispatchToProps)(DropDownFilter)
 
 export default TraitFilter

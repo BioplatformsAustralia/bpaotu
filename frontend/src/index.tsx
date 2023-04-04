@@ -1,6 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css'
 
-import 'core-js';
+import 'core-js'
 import axios from 'axios'
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
@@ -18,8 +18,8 @@ export const store = createStore(reducers, composeEnhancers(applyMiddleware(thun
 
 axios
   .get(window.otu_search_config.base_url + '/private/api/v1/config')
-  .then(function(response) {
-    window.otu_search_config = response.data;
+  .then(function (response) {
+    window.otu_search_config = response.data
     ReactDOM.render(
       <Provider store={store}>
         <Router basename={window.otu_search_config.base_url}>
@@ -30,10 +30,11 @@ axios
     )
   })
   .catch((error) => {
-    console.log("Error fetching app config")
+    console.log('Error fetching app config')
 
     if (process.env.NODE_ENV === 'development') {
-      const message = '<h1>NODE_ENV === development only message</h1><p>perhaps taxonomy or spatial cache is still warming</p>'
+      const message =
+        '<h1>NODE_ENV === development only message</h1><p>perhaps taxonomy or spatial cache is still warming</p>'
       document.write(message)
     }
-  });
+  })

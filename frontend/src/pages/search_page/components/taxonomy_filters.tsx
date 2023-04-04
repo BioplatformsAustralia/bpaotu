@@ -9,12 +9,13 @@ import DropDownSelector from './taxonomy_selector'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import { taxonomy_ranks } from '../../../constants'
 
-
 class TaxonomySourceSelector extends DropDownSelector {
   public getDefaultOption() {
     for (const default_ts of window.otu_search_config.default_taxonomies) {
-      const d = find(this.props.options,
-        opt => opt.value.toLowerCase() === default_ts.toLowerCase())
+      const d = find(
+        this.props.options,
+        (opt) => opt.value.toLowerCase() === default_ts.toLowerCase()
+      )
       if (d) {
         return d.id
       }
@@ -23,43 +24,40 @@ class TaxonomySourceSelector extends DropDownSelector {
   }
 }
 
+const taxonomyFilterStateToProps =
+  (rank, label: any = '') =>
+  (state) => {
+    const { options, isDisabled, isLoading, selected } = state.searchPage.filters.taxonomy[rank]
 
-const taxonomyFilterStateToProps = (rank, label : any = "") => state => {
-  const { options, isDisabled, isLoading, selected } = state.searchPage.filters.taxonomy[rank]
-
-  return {
-    label: label || state.referenceData.ranks.rankLabels[rank] || null,
-    options,
-    selected,
-    optionsLoading: isLoading,
-    isDisabled
+    return {
+      label: label || state.referenceData.ranks.rankLabels[rank] || null,
+      options,
+      selected,
+      optionsLoading: isLoading,
+      isDisabled,
+    }
   }
-}
-const taxonomyDispatchToProps = rank => dispatch => {
+const taxonomyDispatchToProps = (rank) => (dispatch) => {
   const nameU = rank.toUpperCase()
   return bindActionCreators(
     {
       selectValue: createAction('SELECT_' + nameU),
       selectOperator: createAction(`SELECT_${nameU}_OPERATOR`),
-      onChange: updateTaxonomyDropDowns(rank)
+      onChange: updateTaxonomyDropDowns(rank),
     },
     dispatch
   )
 }
 
 const connectUpTaxonomyDropDownFilter = (rank) =>
-  connect(
-    taxonomyFilterStateToProps(rank),
-    taxonomyDispatchToProps(rank)
-  )(DropDownFilter)
+  connect(taxonomyFilterStateToProps(rank), taxonomyDispatchToProps(rank))(DropDownFilter)
 
 export const TaxonomySelector = connect(
   taxonomyFilterStateToProps('taxonomy_source', 'Taxonomy'),
   taxonomyDispatchToProps('taxonomy_source')
 )(TaxonomySourceSelector)
 
-export const TaxonomyDropDowns = taxonomy_ranks.map(
-  (rank) => {
-    const TaxonomyLevelDropDown = connectUpTaxonomyDropDownFilter(rank);
-    return <TaxonomyLevelDropDown key={rank}/>;
-  });
+export const TaxonomyDropDowns = taxonomy_ranks.map((rank) => {
+  const TaxonomyLevelDropDown = connectUpTaxonomyDropDownFilter(rank)
+  return <TaxonomyLevelDropDown key={rank} />
+})

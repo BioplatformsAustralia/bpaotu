@@ -15,10 +15,10 @@ export const fetchTraits = () => {
     dispatch(fetchTraitsStarted())
     const state = getState()
     return getTraits(getAmpliconFilter(state))
-      .then(data => {
+      .then((data) => {
         dispatch(fetchTraitsEnded(data))
       })
-      .catch(err => {
+      .catch((err) => {
         dispatch(fetchTraitsEnded(err))
       })
   }
@@ -27,7 +27,7 @@ export const fetchTraits = () => {
 const initialState = {
   isLoading: true,
   values: [],
-  error: false
+  error: false,
 }
 
 export default handleAction(
@@ -36,7 +36,10 @@ export default handleAction(
     next: (state, action: any) => ({
       isLoading: false,
       error: false,
-      values: map(action.payload.data.possibilities, (option: any) => ({ id: option[0], value: option[1] }))
+      values: map(action.payload.data.possibilities, (option: any) => ({
+        id: option[0],
+        value: option[1],
+      })),
     }),
     throw: (state, action: any) => {
       // tslint:disable-next-line:no-console
@@ -44,9 +47,9 @@ export default handleAction(
       return {
         isLoading: false,
         error: true,
-        values: []
+        values: [],
       }
-    }
+    },
   },
   initialState
 )

@@ -1,18 +1,16 @@
-import { concat, map } from "lodash";
-import * as React from "react";
-import { Button, Col, Row } from "reactstrap";
-import Octicon from "./octicon";
-import Select from "react-select";
+import { concat, map } from 'lodash'
+import * as React from 'react'
+import { Button, Col, Row } from 'reactstrap'
+import Octicon from './octicon'
+import Select from 'react-select'
 
 export class ContextualDropDown extends React.Component<any> {
   // for contextual tab
-  protected dropDownSize = 11;
-  protected dropDownSizeNoRemove = 11;
+  protected dropDownSize = 11
+  protected dropDownSizeNoRemove = 11
 
   public render() {
-    const size = this.props.remove
-      ? this.dropDownSize
-      : this.dropDownSizeNoRemove;
+    const size = this.props.remove ? this.dropDownSize : this.dropDownSizeNoRemove
 
     return (
       <Row>
@@ -24,7 +22,7 @@ export class ContextualDropDown extends React.Component<any> {
               size="sm"
               className="form-control"
               onClick={() => {
-                this.props.remove(this.props.index);
+                this.props.remove(this.props.index)
               }}
             >
               <Octicon name="dash" size="small" />
@@ -45,23 +43,23 @@ export class ContextualDropDown extends React.Component<any> {
         </Col>
         {this.renderOperatorAndValue()}
       </Row>
-    );
+    )
   }
 
   public renderOptions() {
-    return concat(map(this.props.options, this.renderOption));
+    return concat(map(this.props.options, this.renderOption))
   }
 
   public renderOption(option) {
-    let displayName = option.display_name;
+    let displayName = option.display_name
     if (option.units) {
-      displayName += ` [${option.units}]`;
+      displayName += ` [${option.units}]`
     }
 
-    return { value: option.name, label: displayName };
+    return { value: option.name, label: displayName }
   }
 
   protected renderOperatorAndValue() {
-    return <span />;
+    return <span />
   }
 }

@@ -5,7 +5,7 @@ import selectColumnsReducer from './select_columns'
 
 const pageReducer = combineReducers({
   selectColumns: selectColumnsReducer,
-  results: searchResultsReducer
+  results: searchResultsReducer,
 })
 
 export default pageReducer

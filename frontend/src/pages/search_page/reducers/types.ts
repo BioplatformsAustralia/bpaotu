@@ -45,7 +45,7 @@ export interface PageState {
   samplesMapModal: {
     isOpen: boolean
     isLoading: boolean
-    markers: SampleMarker[],
+    markers: SampleMarker[]
     sample_otus: any[]
   }
   samplesGraphModal: {
@@ -54,7 +54,7 @@ export interface PageState {
   metagenomeModal: {
     isLoading: boolean
     isOpen: boolean
-    sample_ids: any,
+    sample_ids: any
     error: string
   }
   galaxy: {
@@ -90,45 +90,44 @@ export const EmptySelectableLoadableValues: SelectableLoadableValues = {
   selected: EmptyOperatorAndValue,
   isDisabled: true,
   isLoading: false,
-  options: []
+  options: [],
 }
 
 export const searchPageInitialState: PageState = {
   filters: {
     selectedAmplicon: EmptyOperatorAndValue,
-    taxonomy: Object.fromEntries(
-      taxonomy_keys.map(k => [k, EmptySelectableLoadableValues])),
+    taxonomy: Object.fromEntries(taxonomy_keys.map((k) => [k, EmptySelectableLoadableValues])),
     selectedTrait: EmptyOperatorAndValue,
     contextual: {
       selectedEnvironment: EmptyOperatorAndValue,
       filtersMode: 'and',
-      filters: []
+      filters: [],
     },
     sampleIntegrityWarning: {
       selectedEnvironment: EmptyOperatorAndValue,
       filtersMode: 'and',
-      filters: []
-    }
+      filters: [],
+    },
   },
   samplesMapModal: {
     isOpen: false,
     isLoading: false,
     markers: [],
-    sample_otus: []
+    sample_otus: [],
   },
   samplesGraphModal: {
-    isOpen: false
+    isOpen: false,
   },
   metagenomeModal: {
     isOpen: false,
     isLoading: false,
     sample_ids: [],
-    error: ""
+    error: '',
   },
   galaxy: {
     alerts: [],
     isSubmitting: false,
-    submissions: []
+    submissions: [],
   },
   tips: {
     alerts: [],
@@ -142,8 +141,8 @@ export const searchPageInitialState: PageState = {
     pages: 0,
     pageSize: 10,
     rowsCount: 0,
-    sorted: []
-  }
+    sorted: [],
+  },
 }
 
 export class ErrorList extends Error {

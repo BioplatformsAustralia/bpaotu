@@ -1,6 +1,6 @@
-import * as React from "react";
-import { Button } from "reactstrap";
-import Octicon from "./octicon";
+import * as React from 'react'
+import { Button } from 'reactstrap'
+import Octicon from './octicon'
 
 export default (props) => (
   <Button
@@ -18,8 +18,8 @@ export default (props) => (
         &nbsp;
       </span>
     ) : (
-      ""
-    )}{" "}
+      ''
+    )}{' '}
     &nbsp; {props.text}
   </Button>
-);
+)

@@ -33,7 +33,7 @@ class SelectColumnsCard extends React.Component<any> {
               key={`${column.name}-${index}`}
               index={index}
               filter={column}
-              dataDefinition={find(this.props.dataDefinitions, dd => dd.name === column.name)}
+              dataDefinition={find(this.props.dataDefinitions, (dd) => dd.name === column.name)}
               options={this.props.dataDefinitions}
               optionsLoading={this.props.optionsLoading}
               remove={this.onRemoveColumn}
@@ -73,7 +73,7 @@ function mapStateToProps(state) {
   return {
     columns: state.contextualPage.selectColumns.columns,
     dataDefinitions: state.contextualDataDefinitions.values,
-    optionsLoading: state.contextualDataDefinitions.isLoading
+    optionsLoading: state.contextualDataDefinitions.isLoading,
   }
 }
 
@@ -85,13 +85,10 @@ function mapDispatchToProps(dispatch: any) {
       removeColumn,
       selectColumn,
       clearColumns,
-      search
+      search,
     },
     dispatch
   )
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(SelectColumnsCard)
+export default connect(mapStateToProps, mapDispatchToProps)(SelectColumnsCard)

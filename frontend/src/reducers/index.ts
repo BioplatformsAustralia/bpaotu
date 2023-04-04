@@ -16,7 +16,7 @@ const rootReducer = combineReducers({
   contextualDataDefinitions: contextualDataDefinitionsReducer,
   contextualDataForGraph: contextualDataForGraphReducer,
   taxonomyDataForGraph: taxonomyDataForGraphReducer,
-  auth: authReducer
+  auth: authReducer,
 })
 
 export default rootReducer

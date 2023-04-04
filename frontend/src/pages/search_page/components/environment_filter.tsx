@@ -2,7 +2,7 @@ import { concat, map } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
 import { Col, FormGroup, Input, Label, UncontrolledTooltip } from 'reactstrap'
-import Select from 'react-select';
+import Select from 'react-select'
 import { bindActionCreators } from 'redux'
 import Octicon from '../../../components/octicon'
 import { selectEnvironment, selectEnvironmentOperator } from '../reducers/contextual'
@@ -28,7 +28,7 @@ class EnvironmentFilter extends React.Component<any> {
             type="select"
             name="operator"
             value={this.props.selected.operator}
-            onChange={evt => this.props.selectEnvironmentOperator(evt.target.value)}
+            onChange={(evt) => this.props.selectEnvironmentOperator(evt.target.value)}
           >
             <option value="is">is</option>
             <option value="isnot">isn't</option>
@@ -39,9 +39,11 @@ class EnvironmentFilter extends React.Component<any> {
             placeholder="---"
             isSearchable={true}
             options={this.renderOptions()}
-            defaultValue={{ value: "", label: "---"}}
-            value={map(this.props.options, this.renderOption).filter(option => option.value === this.props.selected.value)}
-            onChange={evt => this.props.selectEnvironment(evt.value)}
+            defaultValue={{ value: '', label: '---' }}
+            value={map(this.props.options, this.renderOption).filter(
+              (option) => option.value === this.props.selected.value
+            )}
+            onChange={(evt) => this.props.selectEnvironment(evt.value)}
           />
         </Col>
       </FormGroup>
@@ -49,18 +51,11 @@ class EnvironmentFilter extends React.Component<any> {
   }
 
   public renderOptions() {
-    return concat(
-      [
-        { value: "", label: "---"}
-      ],
-      map(this.props.options, this.renderOption)
-    )
+    return concat([{ value: '', label: '---' }], map(this.props.options, this.renderOption))
   }
 
   public renderOption(option) {
-    return (
-      { value: option.id, label: option.name}
-    )
+    return { value: option.id, label: option.name }
   }
 }
 
@@ -68,7 +63,7 @@ function mapStateToProps(state) {
   return {
     selected: state.searchPage.filters.contextual.selectedEnvironment,
     optionsLoading: state.contextualDataDefinitions.isLoading,
-    options: state.contextualDataDefinitions.environment
+    options: state.contextualDataDefinitions.environment,
   }
 }
 
@@ -76,13 +71,10 @@ function mapDispatchToProps(dispatch: any) {
   return bindActionCreators(
     {
       selectEnvironment,
-      selectEnvironmentOperator
+      selectEnvironmentOperator,
     },
     dispatch
   )
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(EnvironmentFilter)
+export default connect(mapStateToProps, mapDispatchToProps)(EnvironmentFilter)
