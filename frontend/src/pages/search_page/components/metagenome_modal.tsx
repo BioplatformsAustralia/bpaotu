@@ -1,4 +1,5 @@
 import React from 'react'
+import { isString, pickBy, keys, join, values, filter } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import {
@@ -13,14 +14,14 @@ import {
   Alert,
 } from 'reactstrap'
 
+import { metagenomeRequest } from 'api'
 import analytics from 'app/analytics'
-import { isString, pickBy, keys, join } from 'lodash'
+import AnimateHelix, { loadingstyle } from 'components/animate_helix'
+
 import { closeMetagenomeModal } from '../reducers/metagenome_modal'
 import { describeSearch } from '../reducers/search'
+
 import { metagenome_rows } from './metagenome_rows'
-import { values, filter } from 'lodash'
-import AnimateHelix, { loadingstyle } from '../../../components/animate_helix'
-import { metagenomeRequest } from '../../../api'
 
 const InfoBox = (props) => (
   <div

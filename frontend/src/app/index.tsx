@@ -10,11 +10,11 @@ import Header from './header'
 import Footer from './footer'
 import Routes from './routes'
 
-import AustralianMicrobiomeAccessRequiredPage from '../pages/australian_microbiome_access_required_page'
-import LoginInProgressPage from '../pages/login_in_progress_page'
-import LoginRequiredPage from '../pages/login_required_page'
+import AustralianMicrobiomeAccessRequiredPage from 'pages/australian_microbiome_access_required_page'
+import LoginInProgressPage from 'pages/login_in_progress_page'
+import LoginRequiredPage from 'pages/login_required_page'
 
-import { getCKANAuthInfo } from '../reducers/auth'
+import { getCKANAuthInfo } from 'reducers/auth'
 
 class App extends React.Component<any> {
   public componentDidMount() {

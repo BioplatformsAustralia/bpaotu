@@ -1,8 +1,8 @@
 import { filter, get as _get, includes, isNumber, join, last, reject, upperCase } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
 
-import { executeBlast, getBlastSubmission } from '../../../api'
-import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils'
+import { executeBlast, getBlastSubmission } from 'api'
+import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 
 import { describeSearch } from './search'
 import { BlastSubmission, ErrorList } from './types'

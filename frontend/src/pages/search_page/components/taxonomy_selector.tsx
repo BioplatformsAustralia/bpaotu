@@ -1,9 +1,9 @@
 import { map } from 'lodash'
 import * as React from 'react'
 import { Col, FormGroup, Label, UncontrolledTooltip } from 'reactstrap'
-import Octicon from '../../../components/octicon'
-
 import Select from 'react-select'
+
+import Octicon from 'components/octicon'
 
 export default class DropDownSelector extends React.Component<any> {
   constructor(props) {

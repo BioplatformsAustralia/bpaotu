@@ -1,9 +1,10 @@
 import React from 'react'
 import Plot from 'react-plotly.js'
-import { plotly_chart_config } from './../charts/plotly_chart'
 import { find, filter } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
+
+import { plotly_chart_config } from '../charts/plotly_chart'
 import { selectEnvironment } from '../../reducers/contextual'
 
 class StackChartTraits extends React.Component<any> {

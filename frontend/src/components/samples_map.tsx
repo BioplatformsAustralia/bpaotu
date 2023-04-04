@@ -1,5 +1,5 @@
-import { first, join, keys, map, find } from 'lodash'
 import * as React from 'react'
+import { first, join, keys, map, find } from 'lodash'
 import { Nav, NavItem, NavLink, TabContent, TabPane, UncontrolledTooltip, Alert } from 'reactstrap'
 
 import * as L from 'leaflet'
@@ -18,14 +18,14 @@ import {
 } from 'react-leaflet'
 import PrintControlDefault from 'react-leaflet-easyprint'
 import { EditControl } from 'react-leaflet-draw'
-import HeatMapLegendControl from '../pages/search_page/components/heatmap_legend'
+import HeatMapLegendControl from 'pages/search_page/components/heatmap_legend'
 import GridCellLegendControl, {
   GridCellConstants,
-} from '../pages/search_page/components/gridcell_legend'
-import LatLngCoordinatesControl from '../pages/search_page/components/coordinates_control'
-import GridCellSizer from '../pages/search_page/components/gridcell_sizer'
-import Octicon from '../components/octicon'
-import AnimateHelix from './animate_helix'
+} from 'pages/search_page/components/gridcell_legend'
+import LatLngCoordinatesControl from 'pages/search_page/components/coordinates_control'
+import GridCellSizer from 'pages/search_page/components/gridcell_sizer'
+import Octicon from 'components/octicon'
+import AnimateHelix from 'components/animate_helix'
 
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
@@ -35,18 +35,18 @@ import {
   changeContextualFilterValue,
   changeContextualFilterValue2,
   selectContextualFilter,
-} from '../pages/search_page/reducers/contextual'
+} from 'pages/search_page/reducers/contextual'
 
 import FullscreenControl from 'react-leaflet-fullscreen'
 import MarkerClusterGroup from 'react-leaflet-markercluster'
 import HeatmapLayer from 'react-leaflet-heatmap-layer'
-import { strongLine, strongHeader } from '../utils'
+import { strongLine, strongHeader } from 'utils'
 import {
   aggregateSampleOtusBySite,
   aggregateSamplesByCell,
   aggregateSamplePointsBySite,
   calculateMaxes,
-} from '../aggregation'
+} from 'aggregation'
 
 /*
 Unfortunately, react-leaflet fails to load markers if the css isn't included in the html file, so

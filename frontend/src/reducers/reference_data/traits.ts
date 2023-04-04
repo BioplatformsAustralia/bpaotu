@@ -1,8 +1,8 @@
 import { map } from 'lodash'
 import { createActions, handleAction } from 'redux-actions'
-import { getTraits } from '../../api'
-import { selectTrait } from '../../pages/search_page/reducers/trait'
-import { getAmpliconFilter } from '../../pages/search_page/reducers/amplicon'
+import { getTraits } from 'api'
+import { selectTrait } from 'pages/search_page/reducers/trait'
+import { getAmpliconFilter } from 'pages/search_page/reducers/amplicon'
 
 export const { fetchTraitsStarted, fetchTraitsEnded } = createActions(
   'FETCH_TRAITS_STARTED',

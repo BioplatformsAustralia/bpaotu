@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { filter, find } from 'lodash'
 import { connect } from 'react-redux'
+import { bindActionCreators } from 'redux'
 import {
   Button,
   Card,
@@ -17,9 +18,12 @@ import {
   Badge,
   Alert,
 } from 'reactstrap'
-import Octicon from '../../../components/octicon'
+import { v4 as uuid } from 'uuid'
 
-import { bindActionCreators } from 'redux'
+import Octicon from 'components/octicon'
+import ContextualFilter from 'components/contextual_filter'
+import { fetchContextualDataDefinitions } from 'reducers/contextual_data_definitions'
+
 import {
   addContextualFilter,
   changeContextualFilterOperator,
@@ -45,11 +49,8 @@ import {
   selectSampleIntegrityWarningFilter,
   selectSampleIntegrityWarningFiltersMode,
 } from '../reducers/sample_integrity_warning'
-import { fetchContextualDataDefinitions } from '../../../reducers/contextual_data_definitions'
 
-import ContextualFilter from '../../../components/contextual_filter'
 import EnvironmentFilter from './environment_filter'
-import { v4 as uuid } from 'uuid'
 
 export const ContextualFilterInfo =
   'Contextual filters allow data to be filtered on site specific chemical and physical data. '

@@ -1,8 +1,10 @@
 import { partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
+
+import { executeMetagenomeSearch } from 'api'
+import { handleSimpleAPIResponse } from 'reducers/utils'
+
 import { searchPageInitialState } from './types'
-import { executeMetagenomeSearch } from '../../../api'
-import { handleSimpleAPIResponse } from '../../../reducers/utils'
 import { describeSearch } from './search'
 
 export const {

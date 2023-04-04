@@ -2,13 +2,15 @@ import * as React from 'react'
 import { get as _get } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
+
+import DropDownFilter from 'components/drop_down_filter'
+
 import {
   selectAmplicon,
   selectAmpliconOperator,
   getDefaultAmplicon,
   getDefaultMetagenomeAmplicon,
 } from '../reducers/amplicon'
-import DropDownFilter from '../../../components/drop_down_filter'
 
 class AmpliconFilter extends React.Component<any> {
   defaultAmplicon: any

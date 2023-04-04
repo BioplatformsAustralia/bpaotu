@@ -4,10 +4,12 @@ import { plotly_chart_config } from './plotly_chart'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { startCase } from 'lodash'
+
+import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
+import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
+
 import { selectTrait } from '../../reducers/trait'
 import { updateTaxonomyDropDowns } from '../../reducers/taxonomy'
-import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
-import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 
 class PieChartTraits extends React.Component<any> {
   render() {

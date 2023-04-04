@@ -4,7 +4,7 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
 import analytics from 'app/analytics'
-import SamplesMap from '../../components/samples_map'
+import SamplesMap from 'components/samples_map'
 import { fetchSampleMapSamples } from './reducers'
 
 const MapPage = (props) => {

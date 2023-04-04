@@ -1,11 +1,13 @@
 import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
+import { Col, Container, Row } from 'reactstrap'
 
 import analytics, { triggerHashedIdentify } from 'app/analytics'
-import { Col, Container, Row } from 'reactstrap'
-import SearchButton from '../../components/search_button'
-import AnimateHelix from '../../components/animate_helix'
+
+import AnimateHelix from 'components/animate_helix'
+import SearchButton from 'components/search_button'
+
 import { AmpliconTaxonomyFilterCard } from './components/amplicon_taxonomy_filter_card'
 import BlastSearchCard from './components/blast_search_card'
 import ContextualFilterCard from './components/contextual_filter_card'

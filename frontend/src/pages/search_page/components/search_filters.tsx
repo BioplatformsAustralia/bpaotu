@@ -2,8 +2,13 @@ import React from 'react'
 import { find, isNull } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
+import { createAction } from 'redux-actions'
 import { Button, Input, UncontrolledTooltip } from 'reactstrap'
-import Octicon from '../../../components/octicon'
+
+import { taxonomy_ranks } from 'app/constants'
+import Octicon from 'components/octicon'
+import { fetchTraits } from 'reducers/reference_data/traits'
+
 import {
   selectEnvironment,
   removeContextualFilter,
@@ -12,11 +17,8 @@ import {
 import { removeSampleIntegrityWarningFilter } from '../reducers/sample_integrity_warning'
 import { isMetagenomeSearch } from '../reducers/amplicon'
 import { clearAllTaxonomyFilters } from '../reducers/taxonomy'
-import { fetchTraits } from '../../../reducers/reference_data/traits'
 import { selectTrait } from '../reducers/trait'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
-import { createAction } from 'redux-actions'
-import { taxonomy_ranks } from '../../../constants'
 
 const SearchFilterButton = (props) => {
   const mytooltip = {

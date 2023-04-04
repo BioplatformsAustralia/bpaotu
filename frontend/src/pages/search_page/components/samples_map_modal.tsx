@@ -1,11 +1,13 @@
 import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-
 import { Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
-import SearchFilters from './search_filters'
-import SamplesMap from '../../../components/samples_map'
+
+import SamplesMap from 'components/samples_map'
+
 import { closeSamplesMapModal, fetchSampleMapModalSamples } from '../reducers/samples_map_modal'
+
+import SearchFilters from './search_filters'
 
 class SamplesMapModal extends React.Component<any> {
   render() {

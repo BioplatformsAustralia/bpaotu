@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js'
 import { plotly_chart_config } from './plotly_chart'
 import { connect } from 'react-redux'
 import { startCase, fromPairs, unzip } from 'lodash'
+
 import { getAmpliconFilter } from '../../reducers/amplicon'
 
 class PieChartAmplicon extends React.Component<any> {

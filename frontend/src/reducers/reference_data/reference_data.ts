@@ -1,9 +1,9 @@
 import { map, zipObject } from 'lodash'
 import { createActions, handleAction, handleActions } from 'redux-actions'
 
-import { getReferenceData } from '../../api'
-import { taxonomy_keys } from '../../constants'
-import { handleSimpleAPIResponse } from '../utils'
+import { getReferenceData } from 'api'
+import { taxonomy_keys } from 'app/constants'
+import { handleSimpleAPIResponse } from 'reducers/utils'
 
 export const { fetchReferenceDataEnded, selectTaxonomySource } = createActions(
   'FETCH_REFERENCE_DATA_ENDED',

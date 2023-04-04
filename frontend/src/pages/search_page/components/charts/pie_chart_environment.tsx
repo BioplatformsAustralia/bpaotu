@@ -3,9 +3,11 @@ import Plot from 'react-plotly.js'
 import { connect } from 'react-redux'
 import { plotly_chart_config } from './plotly_chart'
 import { bindActionCreators } from 'redux'
+
+import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
+import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
+
 import { selectEnvironment } from '../../reducers/contextual'
-import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
-import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 
 class PieChartEnvironment extends React.Component<any> {
   render() {

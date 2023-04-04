@@ -1,10 +1,11 @@
 import { get as _get } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { selectTrait, selectTraitOperator } from '../reducers/trait'
 
-import DropDownFilter from '../../../components/drop_down_filter'
+import DropDownFilter from 'components/drop_down_filter'
+
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
+import { selectTrait, selectTraitOperator } from '../reducers/trait'
 
 function mapStateToProps(state) {
   return {

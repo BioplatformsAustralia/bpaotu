@@ -1,5 +1,5 @@
 import { times } from 'lodash'
-import { taxonomy_keys } from './constants'
+import { taxonomy_keys } from 'app/constants'
 
 export interface SearchConfig {
   base_url: string

@@ -1,13 +1,15 @@
 import React from 'react'
 import { isEmpty } from 'lodash'
-import AnimateHelix from '../../../components/animate_helix'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { fetchContextualDataForGraph } from '../../../reducers/contextual_data_graph'
-import { fetchTaxonomyDataForGraph } from '../../../reducers/taxonomy_data_graph'
+import { Alert } from 'reactstrap'
+
+import AnimateHelix from 'components/animate_helix'
+import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
+import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
+
 import GraphListed from './graph_listed'
 import GraphTabbed from './graph_tabbed'
-import { Alert } from 'reactstrap'
 
 function chartEnabled(state) {
   return (

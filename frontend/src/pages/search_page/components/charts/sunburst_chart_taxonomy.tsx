@@ -4,12 +4,14 @@ import { plotly_chart_config } from './plotly_chart'
 import { find, isUndefined, sum, startCase } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
+import { createAction } from 'redux-actions'
+
+import { taxonomy_ranks } from 'app/constants'
+import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
+import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
+
 import { selectEnvironment } from '../../reducers/contextual'
 import { updateTaxonomyDropDowns } from '../../reducers/taxonomy'
-import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
-import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
-import { createAction } from 'redux-actions'
-import { taxonomy_ranks } from '../../../../constants'
 
 const make_id = (name, tx_id) => `${name}_${tx_id}`
 

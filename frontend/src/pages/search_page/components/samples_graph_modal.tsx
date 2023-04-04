@@ -10,13 +10,16 @@ import {
   Button,
   UncontrolledTooltip,
 } from 'reactstrap'
-import SearchFilters from './search_filters'
-import { fetchContextualDataForGraph } from '../../../reducers/contextual_data_graph'
-import { fetchTaxonomyDataForGraph } from '../../../reducers/taxonomy_data_graph'
-import GraphDashboard from './graph_dashboard'
+
+import Octicon from 'components/octicon'
+import BPAOTUGraphTour from 'components/bpaotu_graph_tour'
+import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
+import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
+
 import { closeSamplesGraphModal } from '../reducers/samples_graph_modal'
-import Octicon from '../../../components/octicon'
-import BPAOTUGraphTour from '../../../components/bpaotu_graph_tour'
+
+import SearchFilters from './search_filters'
+import GraphDashboard from './graph_dashboard'
 
 class SamplesGraphModal extends React.Component<any> {
   public state = {

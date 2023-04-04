@@ -1,10 +1,10 @@
 import axios from 'axios'
 import { get as _get, map, partial, join } from 'lodash'
 
-import { store } from '../index'
-import '../interfaces'
-import { ckanAuthInfoEnded } from '../reducers/auth'
-import { taxonomy_keys } from '../constants'
+import { store } from 'index'
+import 'interfaces'
+import { ckanAuthInfoEnded } from 'reducers/auth'
+import { taxonomy_keys } from 'app/constants'
 
 axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN'
 axios.defaults.xsrfCookieName = 'csrftoken'

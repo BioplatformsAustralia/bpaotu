@@ -1,8 +1,8 @@
 import { map, partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import { executeSampleSitesSearch } from '../../../api'
-import { handleSimpleAPIResponse } from '../../../reducers/utils'
-import { EmptyOTUQuery } from '../../../search'
+import { executeSampleSitesSearch } from 'api'
+import { handleSimpleAPIResponse } from 'reducers/utils'
+import { EmptyOTUQuery } from 'search'
 
 export const { samplesMapFetchSamplesStarted, samplesMapFetchSamplesEnded } = createActions(
   'SAMPLES_MAP_FETCH_SAMPLES_STARTED',

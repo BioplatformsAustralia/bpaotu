@@ -2,9 +2,11 @@ import { isEmpty, reject, uniqBy } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
-import 'react-table/react-table.css'
-import { fieldsToColumns, SearchResultsTable } from '../../../components/search_results_table'
+import { fieldsToColumns, SearchResultsTable } from 'components/search_results_table'
+
 import { changeTableProperties, search } from '../reducers/search'
+
+import 'react-table/react-table.css'
 
 function mapStateToProps(state) {
   const nonEmptyFilters = uniqBy(

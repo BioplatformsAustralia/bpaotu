@@ -1,5 +1,5 @@
-import { taxonomy_keys } from '../../../constants'
-import { OperatorAndValue } from '../../../search'
+import { taxonomy_keys } from 'app/constants'
+import { OperatorAndValue } from 'search'
 
 export interface LoadableValues {
   isLoading: boolean

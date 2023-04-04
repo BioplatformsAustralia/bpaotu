@@ -2,8 +2,8 @@ import * as React from 'react'
 import { connect } from 'react-redux'
 import { filter as _filter } from 'lodash'
 import { bindActionCreators } from 'redux'
-import { fetchContextualDataDefinitions } from '../reducers/contextual_data_definitions'
-import { fetchReferenceData } from '../reducers/reference_data/reference_data'
+import { fetchContextualDataDefinitions } from 'reducers/contextual_data_definitions'
+import { fetchReferenceData } from 'reducers/reference_data/reference_data'
 
 import analytics from 'app/analytics'
 import {
@@ -17,7 +17,7 @@ import {
   Label,
   Button,
 } from 'reactstrap'
-import { nondenoisedDataRequest } from '../api'
+import { nondenoisedDataRequest } from 'api'
 
 class NonDenoisedPage extends React.Component<any> {
   state = {

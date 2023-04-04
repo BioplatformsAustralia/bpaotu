@@ -5,9 +5,9 @@ import { connect } from 'react-redux'
 import { Button, Card, CardBody, CardHeader } from 'reactstrap'
 
 import analytics from 'app/analytics'
-import Octicon from '../../../components/octicon'
+import Octicon from 'components/octicon'
 
-import { EmptyOTUQuery } from '../../../search'
+import { EmptyOTUQuery } from 'search'
 import SearchResultsTable from './search_results_table'
 
 const HeaderButton = (props) => (

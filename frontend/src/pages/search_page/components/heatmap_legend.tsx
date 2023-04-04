@@ -1,5 +1,6 @@
 import L from 'leaflet'
 import { withLeaflet, MapControl } from 'react-leaflet'
+
 class HeatMapLegendControl extends MapControl {
   outlineOpacity = 1
   outlineColor = 'transparent'

@@ -12,14 +12,16 @@ import {
   UncontrolledTooltip,
 } from 'reactstrap'
 
-import { fetchReferenceData } from '../../../reducers/reference_data/reference_data'
-import { selectTrait } from '../reducers/trait'
+import Octicon from 'components/octicon'
+import { fetchReferenceData } from 'reducers/reference_data/reference_data'
+import { fetchTraits } from 'reducers/reference_data/traits'
+
 import { setMetagenomeMode, getAmpliconFilter } from '../reducers/amplicon'
 import { clearSearchResults } from '../reducers/search'
-import { EmptyOperatorAndValue } from '../reducers/types'
-import { fetchTraits } from '../../../reducers/reference_data/traits'
 import { clearAllTaxonomyFilters, updateTaxonomyDropDowns } from '../reducers/taxonomy'
-import Octicon from '../../../components/octicon'
+import { selectTrait } from '../reducers/trait'
+import { EmptyOperatorAndValue } from '../reducers/types'
+
 import TraitFilter from './trait_filter'
 import AmpliconFilter from './amplicon_filter'
 import { TaxonomySelector, TaxonomyDropDowns } from './taxonomy_filters'

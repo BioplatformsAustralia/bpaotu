@@ -1,9 +1,9 @@
 import axios from 'axios'
 import { createActions, handleActions } from 'redux-actions'
 
-import { ckanAuthInfo } from '../api'
+import { ckanAuthInfo } from 'api'
 
-import { handleSimpleAPIResponse } from './utils'
+import { handleSimpleAPIResponse } from 'reducers/utils'
 
 const { ckanAuthInfoStarted, ckanAuthInfoEnded } = createActions(
   'CKAN_AUTH_INFO_STARTED',

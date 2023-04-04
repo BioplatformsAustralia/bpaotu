@@ -5,9 +5,10 @@ import { bindActionCreators } from 'redux'
 
 import { Button, Card, CardBody, CardFooter, CardHeader } from 'reactstrap'
 
-import { ContextualDropDown } from '../../../components/contextual_drop_down'
+import { ContextualDropDown } from 'components/contextual_drop_down'
 
-import { fetchContextualDataDefinitions } from '../../../reducers/contextual_data_definitions'
+import { fetchContextualDataDefinitions } from 'reducers/contextual_data_definitions'
+
 import { search } from '../reducers/search'
 import { addColumn, clearColumns, removeColumn, selectColumn } from '../reducers/select_columns'
 

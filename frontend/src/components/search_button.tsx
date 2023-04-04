@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Button } from 'reactstrap'
-import Octicon from './octicon'
+import Octicon from 'components/octicon'
 
 export default (props) => (
   <Button

@@ -1,7 +1,9 @@
 import React from 'react'
 import { find, filter } from 'lodash'
 import { TabContent, TabPane, Nav, NavItem, NavLink, UncontrolledTooltip } from 'reactstrap'
-import Octicon from '../../../components/octicon'
+
+import Octicon from 'components/octicon'
+
 import PieChartContextual from './charts/pie_chart_contextual'
 import PieChartEnvironment from './charts/pie_chart_environment'
 import PieChartAmplicon from './charts/pie_chart_amplicon'
@@ -10,6 +12,7 @@ import HistogramChartContextual from './charts/histogram_chart_contextual'
 import StackChartTaxonomy from './charts/stack_chart_taxonomy'
 import StackChartTraits from './charts/stack_chart_traits'
 import SunBurstChartTaxonomy from './charts/sunburst_chart_taxonomy'
+
 import {
   AmpliconFilterInfo,
   TaxonomyFilterInfo,
@@ -17,6 +20,7 @@ import {
 } from './amplicon_taxonomy_filter_card'
 import { EnvironmentInfo } from './environment_filter'
 import { ContextualFilterInfo } from './contextual_filter_card'
+
 import classnames from 'classnames'
 
 class ContextualTab extends React.Component<any> {

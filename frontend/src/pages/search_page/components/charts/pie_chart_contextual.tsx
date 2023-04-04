@@ -4,14 +4,16 @@ import { plotly_chart_config } from './plotly_chart'
 import { find } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
+
+import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
+import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
+
 import {
   changeContextualFilterOperator,
   changeContextualFilterValue,
   changeContextualFilterValue2,
   selectContextualFilter,
 } from '../../reducers/contextual'
-import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
-import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
 
 class PieChartContextual extends React.Component<any> {
   public findFilterIndex = (data, selected) => {

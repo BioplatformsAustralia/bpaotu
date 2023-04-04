@@ -4,8 +4,9 @@ import { plotly_chart_config } from './plotly_chart'
 import { find, isString } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { fetchContextualDataForGraph } from '../../../../reducers/contextual_data_graph'
-import { fetchTaxonomyDataForGraph } from '../../../../reducers/taxonomy_data_graph'
+
+import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
+import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
 
 import {
   changeContextualFilterOperator,

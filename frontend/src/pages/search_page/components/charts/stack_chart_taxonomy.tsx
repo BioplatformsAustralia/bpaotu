@@ -4,6 +4,7 @@ import { plotly_chart_config } from './plotly_chart'
 import { find, filter } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
+
 import { selectEnvironment } from '../../reducers/contextual'
 
 class StackChartTaxonomy extends React.Component<any> {

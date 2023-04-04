@@ -6,9 +6,9 @@ import {
   EmptySelectableLoadableValues,
   searchPageInitialState,
 } from './types'
-import { taxonomy_keys } from '../../../constants'
+import { taxonomy_keys } from 'app/constants'
 
-import { getTaxonomy } from '../../../api'
+import { getTaxonomy } from 'api'
 import { getAmpliconFilter } from '../reducers/amplicon'
 
 // Generic Taxonomy Actions

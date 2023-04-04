@@ -1,8 +1,8 @@
 import { map, reject, isEmpty, partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import { getTaxonomyDataForGraph } from '../api'
-import { handleSimpleAPIResponse } from './utils'
-import { describeSearch } from '../pages/search_page/reducers/search'
+import { getTaxonomyDataForGraph } from 'api'
+import { handleSimpleAPIResponse } from 'reducers/utils'
+import { describeSearch } from 'pages/search_page/reducers/search'
 
 const { fetchTaxonomyDataForGraphStarted, fetchTaxonomyDataForGraphEnded } = createActions(
   'FETCH_TAXONOMY_DATA_FOR_GRAPH_STARTED',

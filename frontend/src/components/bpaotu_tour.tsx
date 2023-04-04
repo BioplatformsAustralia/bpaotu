@@ -4,7 +4,7 @@ import { withRouter } from 'react-router-dom'
 import { connect } from 'react-redux'
 import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock'
 import { Badge, UncontrolledTooltip } from 'reactstrap'
-import Octicon from '../components/octicon'
+import Octicon from 'components/octicon'
 
 const stepsStyle = {
   backgroundColor: 'rgb(30 30 30 / 90%)',

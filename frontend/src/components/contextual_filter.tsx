@@ -1,7 +1,7 @@
-import { filter as _filter, get as _get, isArray, find } from 'lodash'
 import * as React from 'react'
+import { filter as _filter, get as _get, isArray, find } from 'lodash'
 import { Col, Input, Row, UncontrolledTooltip } from 'reactstrap'
-import Octicon from './octicon'
+import Octicon from 'components/octicon'
 
 import { ContextualDropDown } from './contextual_drop_down'
 

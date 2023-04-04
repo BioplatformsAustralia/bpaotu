@@ -9,8 +9,8 @@ import { BrowserRouter as Router } from 'react-router-dom'
 import { applyMiddleware, compose, createStore } from 'redux'
 import thunk from 'redux-thunk'
 
-import App from './app'
-import reducers from './reducers'
+import App from 'app'
+import reducers from 'reducers'
 
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose
 

@@ -1,9 +1,9 @@
 import { get as _get, isNumber, join, last, reject } from 'lodash'
-import { executeSubmitToGalaxy, executeWorkflowOnGalaxy, getGalaxySubmission } from '../../../api'
+import { executeSubmitToGalaxy, executeWorkflowOnGalaxy, getGalaxySubmission } from 'api'
 import { ErrorList, GalaxySubmission, searchPageInitialState } from './types'
 
 import { createActions, handleActions } from 'redux-actions'
-import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils'
+import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
 
 const GALAXY_SUBMISSION_POLL_FREQUENCY_MS = 5000

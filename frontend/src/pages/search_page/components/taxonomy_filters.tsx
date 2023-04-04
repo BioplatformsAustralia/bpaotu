@@ -4,10 +4,12 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { createAction } from 'redux-actions'
 
-import DropDownFilter from '../../../components/drop_down_filter'
-import DropDownSelector from './taxonomy_selector'
+import { taxonomy_ranks } from 'app/constants'
+import DropDownFilter from 'components/drop_down_filter'
+
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
-import { taxonomy_ranks } from '../../../constants'
+
+import DropDownSelector from './taxonomy_selector'
 
 class TaxonomySourceSelector extends DropDownSelector {
   public getDefaultOption() {

@@ -5,7 +5,8 @@ import { Container, Row, Col, UncontrolledTooltip } from 'reactstrap'
 import { withLeaflet, MapControl } from 'react-leaflet'
 import ReactSlider from 'react-slider'
 import styled from 'styled-components'
-import Octicon from '../../../components/octicon'
+
+import Octicon from 'components/octicon'
 
 const StyledSlider = styled(ReactSlider)`
   width: 450px;

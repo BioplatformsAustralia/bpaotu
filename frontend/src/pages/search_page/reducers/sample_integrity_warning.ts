@@ -1,9 +1,8 @@
 import { find, isNull, filter, negate, toNumber } from 'lodash'
 import reduceReducers from 'reduce-reducers'
-
 import { combineActions, createActions, handleAction, handleActions } from 'redux-actions'
 
-import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils'
+import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { searchPageInitialState } from './types'
 
 export const {

@@ -3,7 +3,8 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { Alert, Button, Card, CardBody, CardFooter, CardHeader, Input } from 'reactstrap'
 
-import AnimateHelix from '../../../components/animate_helix'
+import AnimateHelix from 'components/animate_helix'
+
 import { clearBlastAlert, handleBlastSequence, runBlast } from '../reducers/blast_search'
 import { getAmpliconFilter } from '../reducers/amplicon'
 

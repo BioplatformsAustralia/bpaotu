@@ -2,7 +2,7 @@ import { combineReducers } from 'redux'
 
 import { createActions, handleActions } from 'redux-actions'
 
-import { changeElementAtIndex, removeElementAtIndex } from '../../../reducers/utils'
+import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 
 export const {
   selectColumn,

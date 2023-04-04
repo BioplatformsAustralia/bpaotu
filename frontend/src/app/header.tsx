@@ -3,8 +3,8 @@ import * as React from 'react'
 import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap'
 
 import { NavLink as RRNavLink } from 'react-router-dom'
-import Octicon from '../components/octicon'
-import BPAOTUTour from '../components/bpaotu_tour'
+import Octicon from 'components/octicon'
+import BPAOTUTour from 'components/bpaotu_tour'
 
 export default class Header extends React.Component<any, any> {
   constructor(props) {

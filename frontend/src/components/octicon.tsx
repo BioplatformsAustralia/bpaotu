@@ -1,5 +1,5 @@
-import * as octicons from 'octicons'
 import * as React from 'react'
+import * as octicons from 'octicons'
 
 const style = {
   display: 'inline-block',

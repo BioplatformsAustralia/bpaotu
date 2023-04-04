@@ -1,7 +1,9 @@
 import React from 'react'
 import { find, filter } from 'lodash'
 import { Container, Card, CardHeader, CardBody, Row, Col, UncontrolledTooltip } from 'reactstrap'
-import Octicon from '../../../components/octicon'
+
+import Octicon from 'components/octicon'
+
 import PieChartContextual from './charts/pie_chart_contextual'
 import PieChartEnvironment from './charts/pie_chart_environment'
 import PieChartAmplicon from './charts/pie_chart_amplicon'
@@ -10,6 +12,7 @@ import HistogramChartContextual from './charts/histogram_chart_contextual'
 import StackChartTaxonomy from './charts/stack_chart_taxonomy'
 import StackChartTraits from './charts/stack_chart_traits'
 import SunBurstChartTaxonomy from './charts/sunburst_chart_taxonomy'
+
 import {
   AmpliconFilterInfo,
   TaxonomyFilterInfo,

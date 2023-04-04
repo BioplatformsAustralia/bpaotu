@@ -1,7 +1,7 @@
-import { concat, map } from 'lodash'
 import * as React from 'react'
+import { concat, map } from 'lodash'
 import { Button, Col, Row } from 'reactstrap'
-import Octicon from './octicon'
+import Octicon from 'components/octicon'
 import Select from 'react-select'
 
 export class ContextualDropDown extends React.Component<any> {

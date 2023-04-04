@@ -1,10 +1,10 @@
-import { concat, map } from 'lodash'
 import * as React from 'react'
+import { concat, map } from 'lodash'
 import { Col, FormGroup, Input, Label, UncontrolledTooltip } from 'reactstrap'
-import Octicon from './octicon'
+import Octicon from 'components/octicon'
 
 import Select from 'react-select'
-import { OperatorAndValue } from '../search'
+import { OperatorAndValue } from 'search'
 
 interface Props {
   label: string

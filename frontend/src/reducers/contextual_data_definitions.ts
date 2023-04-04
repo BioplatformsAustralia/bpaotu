@@ -1,8 +1,8 @@
 import { find, map, reject } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
 
-import { getContextualDataDefinitions } from '../api'
-import { handleSimpleAPIResponse } from './utils'
+import { getContextualDataDefinitions } from 'api'
+import { handleSimpleAPIResponse } from 'reducers/utils'
 
 const { fetchContextualDataDefinitionsStarted, fetchContextualDataDefinitionsEnded } =
   createActions(

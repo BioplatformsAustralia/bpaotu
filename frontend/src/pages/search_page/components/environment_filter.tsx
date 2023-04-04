@@ -1,10 +1,12 @@
-import { concat, map } from 'lodash'
 import * as React from 'react'
+import { concat, map } from 'lodash'
 import { connect } from 'react-redux'
+import { bindActionCreators } from 'redux'
 import { Col, FormGroup, Input, Label, UncontrolledTooltip } from 'reactstrap'
 import Select from 'react-select'
-import { bindActionCreators } from 'redux'
-import Octicon from '../../../components/octicon'
+
+import Octicon from 'components/octicon'
+
 import { selectEnvironment, selectEnvironmentOperator } from '../reducers/contextual'
 
 export const EnvironmentInfo =

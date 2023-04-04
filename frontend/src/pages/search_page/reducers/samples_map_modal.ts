@@ -1,7 +1,7 @@
 import { map, partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import { executeSampleSitesSearch } from '../../../api'
-import { handleSimpleAPIResponse } from '../../../reducers/utils'
+import { executeSampleSitesSearch } from 'api'
+import { handleSimpleAPIResponse } from 'reducers/utils'
 import { describeSearch } from './search'
 import { searchPageInitialState } from './types'
 

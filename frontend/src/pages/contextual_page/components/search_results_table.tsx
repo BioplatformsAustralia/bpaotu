@@ -4,7 +4,7 @@ import { isEmpty } from 'lodash'
 
 import 'react-table/react-table.css'
 
-import { fieldsToColumns, SearchResultsTable } from '../../../components/search_results_table'
+import { fieldsToColumns, SearchResultsTable } from 'components/search_results_table'
 import { changeTableProperties, search } from '../reducers/search'
 
 function mapStateToProps(state) {

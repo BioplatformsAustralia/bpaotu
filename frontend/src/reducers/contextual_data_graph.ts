@@ -1,8 +1,8 @@
 import { map, reject, isEmpty, partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import { getContextualDataForGraph } from '../api'
-import { handleSimpleAPIResponse } from './utils'
-import { describeSearch } from '../pages/search_page/reducers/search'
+import { getContextualDataForGraph } from 'api'
+import { handleSimpleAPIResponse } from 'reducers/utils'
+import { describeSearch } from 'pages/search_page/reducers/search'
 
 const { fetchContextualDataForGraphStarted, fetchContextualDataForGraphEnded } = createActions(
   'FETCH_CONTEXTUAL_DATA_FOR_GRAPH_STARTED',

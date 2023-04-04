@@ -1,4 +1,4 @@
-import { SearchConfig } from './search'
+import { SearchConfig } from 'search'
 
 declare global {
   interface Window {
