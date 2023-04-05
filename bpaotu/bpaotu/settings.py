@@ -425,3 +425,5 @@ DEFAULT_TAXONOMIES = [
     # In priority order. Uses first available match as default for taxonomy selector.
     ['silva138', 'SKlearn'],
     ['unite8', 'wang']]
+
+MIXPANEL_TOKEN = env.get("MIXPANEL_TOKEN", "")

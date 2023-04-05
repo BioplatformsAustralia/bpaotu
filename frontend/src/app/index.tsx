@@ -4,6 +4,7 @@ import { Link, withRouter } from 'react-router-dom'
 import { bindActionCreators } from 'redux'
 
 import CookieConsent, { getCookieConsentValue } from 'react-cookie-consent'
+import { apiCookieConsentDeclined } from 'api'
 import analytics, { pluginsList, triggerHashedIdentify } from 'app/analytics'
 
 import Header from './header'
@@ -39,6 +40,10 @@ class App extends React.Component<any> {
     }
   }
 
+  public cookieConsentDeclined() {
+    apiCookieConsentDeclined()
+  }
+
   public render() {
     return (
       <div>
@@ -60,6 +65,9 @@ class App extends React.Component<any> {
           enableDeclineButton
           onAccept={() => {
             this.enableCookies()
+          }}
+          onDecline={() => {
+            this.cookieConsentDeclined()
           }}
         >
           <div>
