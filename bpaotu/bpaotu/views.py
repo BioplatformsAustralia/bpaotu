@@ -49,6 +49,8 @@ from .spatial import spatial_query
 from .tabular import tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_float
 
+from mixpanel import Mixpanel
+
 logger = logging.getLogger("rainbow")
 
 
@@ -63,6 +65,24 @@ CACHE_7DAYS = (60 * 60 * 24 * 7)
 class OTUError(Exception):
     def __init__(self, *errors):
         self.errors = errors
+
+class HttpResponseNoContent(HttpResponse):
+    """
+    Special HTTP response with no content, just headers.
+    The content operations are ignored.
+    """
+
+    def __init__(self, content="", mimetype=None, status=None, content_type=None):
+        super().__init__(status=204)
+
+        if "content-type" in self._headers:
+            del self._headers["content-type"]
+
+    def _set_content(self, value):
+        pass
+
+    def _get_content(self, value):
+        pass
 
 
 def make_environment_lookup():
@@ -150,6 +170,7 @@ def api_config(request):
         'required_table_headers_endpoint': reverse('required_table_headers'),
         'contextual_csv_download_endpoint': reverse('contextual_csv_download_endpoint'),
         'contextual_schema_definition': reverse('contextual_schema_definition'),
+        'cookie_consent_declined_endpoint': reverse('cookie_consent_declined'),
         'base_url': settings.BASE_URL,
         'static_base_url': settings.STATIC_URL,
         'galaxy_base_url': settings.GALAXY_BASE_URL,
@@ -164,6 +185,17 @@ def api_config(request):
         'metaxa_amplicon': 'metaxa_from_metagenomes',
     }
     return JsonResponse(config)
+
+@require_CKAN_auth
+@require_GET
+def cookie_consent_declined(request):
+    if settings.MIXPANEL_TOKEN:
+        mp = Mixpanel(settings.MIXPANEL_TOKEN)
+        mp.track('None', 'Cookie consent declined')
+    else:
+        logger.info("No Mixpanel token")
+
+    return HttpResponseNoContent()
 
 
 @require_CKAN_auth
