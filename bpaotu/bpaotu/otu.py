@@ -200,14 +200,23 @@ class OTU(SchemaMixin, Base):
     """
     __tablename__ = 'otu'
     id = Column(Integer, primary_key=True)
-    # Think of code as the fingerprint and amplicon as the finger it came from.
-    code = Column(String(length=1024), nullable=False)  # long GATTACAt-ype string or hash
+    code = Column(String(length=1024), nullable=False)  # typically a hash
 
     def __repr__(self):
         return "<OTU(%d: %s)>" % (
             self.id,
             self.code)
 
+class Sequence(SchemaMixin, Base):
+    """
+    This allows us to use short hash values for OTU.code and retain the full
+    GATTACA-style OTU for cases where it's needed (e.g. OTU+copntextual
+    download)
+    """
+    __tablename__ = 'sequence'
+    id = Column(Integer, ForeignKey(SCHEMA + '.otu.id'),
+                nullable=False, primary_key=True, index=True)
+    seq = Column(String(length=1024), nullable=False)  # long GATTACA-style string
 
 class SampleHorizonClassification(OntologyMixin, Base):
     pass

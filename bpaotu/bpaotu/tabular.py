@@ -6,9 +6,9 @@ from .otu import (
     SampleOTU,
     Taxonomy,
     OTU,
+    Sequence,
     SampleContext,
     taxonomy_otu_export)
-
 from .util import (
     format_sample_id,
     str_none_blank,
@@ -21,6 +21,8 @@ import csv
 import logging
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
+from Bio.SeqRecord  import SeqRecord
+from Bio.Seq  import Seq
 
 logger = logging.getLogger('rainbow')
 
@@ -116,6 +118,13 @@ def sample_otu_csv_rows(taxonomy_labels, ids_to_names, q):
 def sanitise(filename):
     return re.sub(r'[\W]+', '-', filename)
 
+def fasta_rows(seq_q):
+    for otu_code, fasta_seq in seq_q.yield_per(50):
+        yield SeqRecord(
+            Seq(fasta_seq),
+            id=otu_code,
+            description='').format('fasta').encode('utf8')
+
 def tabular_zip_file_generator(params, onlyContextual):
     taxonomy_source_id = params.taxonomy_filter.get_rank_equality_value(0)
     assert taxonomy_source_id != None
@@ -126,9 +135,18 @@ def tabular_zip_file_generator(params, onlyContextual):
         zf.write_iter('contextual.csv', contextual_csv(query.matching_samples()))
         zf.writestr('info.txt', info_text(params))
         if onlyContextual=='f':
-            q = query.otu_export()
-            # Rank 1 is top level below taxonomy source, e.g. kingdom
-            taxonomy_rank1_id_attr = getattr(taxonomy_otu_export.c, taxonomy_key_id_names[1])
+# <<<<<<< HEAD
+#             q = query.otu_export()
+#             # Rank 1 is top level below taxonomy source, e.g. kingdom
+#             taxonomy_rank1_id_attr = getattr(taxonomy_otu_export.c, taxonomy_key_id_names[1])
+# =======
+            zf.write_iter(
+                "OTU.fasta",
+                fasta_rows(query.matching_sample_otus(OTU.code, Sequence.seq).filter(
+                    Sequence.id == OTU.id).group_by(OTU.code, Sequence.seq)))
+
+            q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU)
+# >>>>>>> 8bd19dc (Use hashed OTU codes and provide FASTA sidecar file on OTU+contextual download)
             rank1_id_is_value = params.taxonomy_filter.get_rank_equality_value(1)
             taxonomy_labels = taxonomy_labels_by_source[taxonomy_source_id]
 
