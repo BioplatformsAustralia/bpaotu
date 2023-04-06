@@ -140,6 +140,9 @@ def tabular_zip_file_generator(params, onlyContextual):
 #             # Rank 1 is top level below taxonomy source, e.g. kingdom
 #             taxonomy_rank1_id_attr = getattr(taxonomy_otu_export.c, taxonomy_key_id_names[1])
 # =======
+
+            taxonomy_rank1_id_attr = getattr(taxonomy_otu_export.c, taxonomy_key_id_names[1])
+
             zf.write_iter(
                 "OTU.fasta",
                 fasta_rows(query.matching_sample_otus(OTU.code, Sequence.seq).filter(
