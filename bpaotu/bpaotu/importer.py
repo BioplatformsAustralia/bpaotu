@@ -495,7 +495,7 @@ class DataImporter:
                 self.save_ontology_errors(
                     getattr(contextual_source, "environment_ontology_errors", None))
                 for sample_id in contextual_source.sample_ids():
-                    metadata[sample_id]['sample_id'] = sample_id
+                    metadata[sample_id]['sample_id'] = sample_id # debug: sample_id must be a tuple for error to occur?
                     metadata[sample_id].update(contextual_source.get(sample_id))
 
         def has_minimum_metadata(row):
@@ -505,8 +505,21 @@ class DataImporter:
         rows = []
         for entry in metadata.values():
             if not has_minimum_metadata(entry):
-                self.sample_metadata_incomplete.add(
-                    entry['sample_id'].split('/')[-1])
+                logger.info('if not has_minimum_metadata(entry):')
+                logger.info('type(entry)')
+                logger.info(type(entry))
+                logger.info('entry')
+                logger.info(entry)
+                logger.info('type(entry[\'sample_id\'])')
+                logger.info(type(entry['sample_id']))
+                logger.info('entry[\'sample_id\']')
+                logger.info(entry['sample_id'])
+
+                # debug: entry['sample_id'] must be a tuple for this error to occur (line number will be different with this logging code)
+                # File "/env/lib/python3.8/site-packages/bpaotu/importer.py", line 509, in contextual_rows
+                #     entry['sample_id'].split('/')[-1])
+                # AttributeError: 'tuple' object has no attribute 'split'
+                self.sample_metadata_incomplete.add(entry['sample_id'].split('/')[-1])
                 continue
             rows.append(entry)
         return rows
