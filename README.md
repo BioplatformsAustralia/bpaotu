@@ -101,7 +101,10 @@ The ingest is then run as a Django management command. To run this you will need
 
 ```console
 cd ~/bpaotu # or wherever docker-compose.yml lives
+# either this
 docker-compose exec runserver bash
+# or this
+docker exec -it bpaotu_runserver_1 bash
 
 ## Either ingest using local sqlite db file for contextual metadata...
 root@05abc9e1ecb2:~# /app/docker-entrypoint.sh django-admin otu_ingest $dir $yyyy_mm_dd --use-sql-context --no-force-fetch

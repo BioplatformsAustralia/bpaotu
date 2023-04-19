@@ -138,10 +138,17 @@ class Taxonomy(SchemaMixin, Base):
     taxonomy_source = relationship(TaxonomySource)
 
     def __repr__(self):
+        logger.info('taxonomy_key_id_names')
+        logger.info(taxonomy_key_id_names)
+
+        for a in taxonomy_key_id_names:
+            logger.info(getattr(self, a))
+
         return "<Taxonomy(%d: amp. %d %s,%s)>" % (
             self.id,
-            self.amplicon_id,
-            ','.join(getattr(self, a) for a in taxonomy_key_id_names),
+            0,
+            'temp',
+            # ','.join(getattr(self, a) for a in taxonomy_key_id_names),
             self.traits)
 
     @classmethod
