@@ -1,4 +1,5 @@
 import zipstream
+import pdb
 import re
 from .otu import (
     taxonomy_key_id_names,
@@ -131,13 +132,10 @@ def tabular_zip_file_generator(params, onlyContextual):
         zf.write_iter('contextual.csv', contextual_csv(query.matching_samples()))
         zf.writestr('info.txt', info_text(params))
         if onlyContextual=='f':
-# <<<<<<< HEAD
-#             q = query.otu_export()
-#             # Rank 1 is top level below taxonomy source, e.g. kingdom
-#             taxonomy_rank1_id_attr = getattr(taxonomy_otu_export.c, taxonomy_key_id_names[1])
-# =======
-
+            # Rank 1 is top level below taxonomy source, e.g. kingdom
             taxonomy_rank1_id_attr = getattr(taxonomy_otu_export.c, taxonomy_key_id_names[1])
+
+            pdb.set_trace()
 
             zf.write_iter(
                 "OTU.fasta",
@@ -145,6 +143,7 @@ def tabular_zip_file_generator(params, onlyContextual):
                     Sequence.id == OTU.id).group_by(OTU.code, Sequence.seq)))
 
             q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU)
+
 # >>>>>>> 8bd19dc (Use hashed OTU codes and provide FASTA sidecar file on OTU+contextual download)
             rank1_id_is_value = params.taxonomy_filter.get_rank_equality_value(1)
             taxonomy_labels = taxonomy_labels_by_source[taxonomy_source_id]
@@ -152,7 +151,9 @@ def tabular_zip_file_generator(params, onlyContextual):
             ontology_attrs = ['amplicon_id'] + taxonomy_key_id_names[1:len(taxonomy_labels) +1]
             ontology_lookup_fns = {name: _csv_write_function(getattr(Taxonomy, name))
                                    for name in ontology_attrs}
+
             def ids_to_names(taxonomy):
+                logger.info(str(taxonomy))
                 return [ontology_lookup_fns[name](getattr(taxonomy, name))
                         for name in ontology_attrs]
 
