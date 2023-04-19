@@ -802,17 +802,16 @@ class SampleContext(SchemaMixin, Base):
         """
         return the display name for a field
 
-        if not explicitly set, we just replace '_' with ' ' and upper-case
-        drop _id if it's there
+        this is the same as the field_name, which is always the same as the schema definition
+        except if the field name refers to an ontology table, then remove _id suffix from the field_name
+        (since the schema definition won't have _id as this is added for the database)
         """
+        display_name = field_name
         column = getattr(cls, field_name)
-        display_name = getattr(column, 'display_name', None)
-        if display_name is None:
-            if field_name.endswith('_id'):
-                field_name = field_name[:-3]
-            display_name = ' '.join(((t[0].upper() + t[1:]) for t in field_name.split('_')))
+        is_foreign_key = True if column.foreign_keys else False
+        if is_foreign_key:
+            display_name = field_name.strip('_id')
         return display_name
-
 
 class SampleMeta(SchemaMixin, Base):
     __tablename__ = 'sample_meta'
