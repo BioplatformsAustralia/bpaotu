@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 from citext import CIText
 from django.conf import settings
@@ -798,21 +799,54 @@ class SampleContext(SchemaMixin, Base):
         return "<SampleContext(%d)>" % (self.id)
 
     @classmethod
+    def is_foreign_key(cls, column):
+        return True if column.foreign_keys else False
+
+    @classmethod
     def display_name(cls, field_name):
         """
         return the display name for a field
 
-        if not explicitly set, we just replace '_' with ' ' and upper-case
-        drop _id if it's there
+        - if not explicitly set, we replace '_' with ' ' and make it title case,
+          dropping the _id suffix if it is a foreign key
+        - if it is not a foreign key and field has _id suffix in it's name
+          (e.g. coastal_id, plant_id, sample_id)
+          then convert the "_id" suffix to " ID" (rather than " Id") as well as other capitalisations
         """
         column = getattr(cls, field_name)
         display_name = getattr(column, 'display_name', None)
         if display_name is None:
-            if field_name.endswith('_id'):
-                field_name = field_name[:-3]
-            display_name = ' '.join(((t[0].upper() + t[1:]) for t in field_name.split('_')))
+            display_name = field_name
+            # if display_name.endswith('_id'):
+            if SampleContext.is_foreign_key(column):
+                display_name = display_name.strip('_id')
+
+            display_name = ' '.join(((t[0].upper() + t[1:]) for t in display_name.split('_')))
+
+            # handle capitalisation
+            display_name = re.sub(r' Id$', ' ID', display_name)
+            display_name = re.sub(r'^Utc ', 'UTC ', display_name)
+            display_name = re.sub(r'^Dna ', 'DNA ', display_name)
+            display_name = re.sub(r'^Url$', 'URL', display_name)
+            display_name = re.sub(r'^Ph$', 'pH', display_name)
+            display_name = re.sub(r'^Ph ', 'pH ', display_name)
+            display_name = re.sub(r'H2o', 'H2O', display_name)
+
+
         return display_name
 
+    @classmethod
+    def csv_header_name(cls, field_name):
+        """
+        return the csv header name for a field
+
+        this is the same as the field_name, which is always the same as the schema definition
+        except if the field name refers to an ontology table, then remove _id suffix from the field_name
+        (since the schema definition won't have _id as this is added for the database column)
+        """
+        column = getattr(cls, field_name)
+        is_foreign_key = SampleContext.is_foreign_key(column)
+        return field_name.strip('_id') if is_foreign_key else field_name
 
 class SampleMeta(SchemaMixin, Base):
     __tablename__ = 'sample_meta'

@@ -310,7 +310,7 @@ def contextual_fields(request):
         [make_defn('float', field_name) for field_name in fields_by_type['FLOAT']] +
         [make_defn('string', field_name) for field_name in fields_by_type['CITEXT']] +
         [make_defn('ontology', field_name, values=values) for field_name, values in fields_with_values])
-    definitions.sort(key=itemgetter('display_name'))
+    definitions.sort(key=lambda a: a['display_name'].lower())
 
     return JsonResponse({
         'definitions': definitions,
