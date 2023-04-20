@@ -43,23 +43,23 @@ def _csv_write_function(column):
     else:
         return str_none_blank
 
+def _csv_units_heading(column, field_units):
+    return field_units.get(column.name)
 
-def _csv_heading(column, field_units):
-    units = field_units.get(column.name)
+def _csv_field_heading(column):
     if column.name == 'id':
-        return 'Sample ID'
-    title = SampleContext.display_name(column.name)
-    if units:
-        title += ' [%s]' % units
-    return title
+        return 'sample_id'
+    return SampleContext.csv_header_name(column.name)
 
 
 def contextual_csv(samples):
-    headings = {}
+    units_headings = {}
+    field_headings = {}
     write_fns = {}
     field_units = AustralianMicrobiomeSampleContextual.units_for_fields()
     for column in SampleContext.__table__.columns:
-        headings[column.name] = _csv_heading(column, field_units)
+        units_headings[column.name] = _csv_units_heading(column, field_units)
+        field_headings[column.name] = _csv_field_heading(column)
         write_fns[column.name] = _csv_write_function(column)
 
     def get_context_value(sample, field):
@@ -75,7 +75,8 @@ def contextual_csv(samples):
 
     csv_fd = io.StringIO()
     w = csv.writer(csv_fd)
-    w.writerow(headings[t] for t in fields)
+    w.writerow(units_headings[t] for t in fields)
+    w.writerow(field_headings[t] for t in fields)
     yield csv_fd.getvalue().encode('utf8')
 
     for sample in samples:
