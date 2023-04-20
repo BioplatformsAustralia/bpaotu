@@ -146,6 +146,9 @@ class OTUQueryParams:
                 indent + 'Dataset methodology={}'.format(metadata.methodology),
                 indent + 'Dataset analysis url={}'.format(metadata.analysis_url),
                 indent + 'Dataset revision date={}'.format(metadata.revision_date),
+                indent + 'Dataset revision date={}'.format(metadata.revision_date),
+                '',
+                'For the schema definition refer to the location provided in the database_schema_definitions_url column'
             ]
 
         add_section(amplicon_section())
