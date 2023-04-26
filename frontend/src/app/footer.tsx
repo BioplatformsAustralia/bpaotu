@@ -36,6 +36,13 @@ export default class Footer extends React.Component<any, any> {
               />
             </a>
           </span>
+          <div>
+            {window.otu_search_config.version && (
+              <p style={{ fontSize: 12, marginTop: 4 }}>
+                Version: {window.otu_search_config.version}
+              </p>
+            )}
+          </div>
         </div>
       </footer>
     )

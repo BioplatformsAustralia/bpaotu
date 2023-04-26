@@ -151,6 +151,7 @@ def normalise_blast_search_string(s):
 @ensure_csrf_cookie
 def api_config(request):
     config = {
+        'version': settings.VERSION,
         'reference_data_endpoint': reverse('reference_data_options'),
         'trait_endpoint': reverse('trait_options'),
         'taxonomy_endpoint': reverse('taxonomy_options'),

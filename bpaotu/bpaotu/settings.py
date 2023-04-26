@@ -427,3 +427,29 @@ DEFAULT_TAXONOMIES = [
     ['unite8', 'wang']]
 
 MIXPANEL_TOKEN = env.get("MIXPANEL_TOKEN", "")
+
+import subprocess
+import logging
+
+def git_dir():
+    return '--git-dir=/app/.git'
+
+def api_version():
+    """
+    Get the most recent tag name to display as a version.
+    If the current commit does not have a tag (i.e. during development),
+    it suffixes the most recent tag name with the number of additional commits
+    on top of the tagged object and the abbreviated object name of the most recent commit
+    e.g. 1.38.5-2-g1f104009 (version would be 1.38.5, there are 2 commits after tagged commit)
+
+    Also note that this only runs once when the app is booted, so it won't update dynamically during development
+    """
+    commit_tag = None
+    try:
+        commit_tag = subprocess.check_output(['git', git_dir(), 'describe', '--tags']).decode('ascii').strip()
+    except Exception as e:
+        logger = logging.getLogger("rainbow")
+        logger.warn("Unable to retrieve commit tag: %s" % (e))
+    return commit_tag
+
+VERSION = api_version()
