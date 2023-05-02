@@ -9,6 +9,7 @@ const TypeToOperatorAndValue = {
   string: StringOperatorAndValue,
   float: BetweenOperatorAndValue,
   date: BetweenOperatorAndValue,
+  time: BetweenOperatorAndValue,
   ontology: DropDownOperatorAndValue,
   sample_id: DropDownOperatorAndValue,
 }
@@ -100,9 +101,10 @@ function BetweenOperatorAndValue({
   changeValue,
   changeValue2,
 }) {
-  const valueType = dataDefinition.type === 'date' ? 'date' : 'number'
+  const valueType = getValueType(dataDefinition)
   const sizes = {
     date: { op: 2, values: 5 },
+    time: { op: 2, values: 5 },
     number: { op: 4, values: 4 },
   }
 
@@ -207,4 +209,15 @@ function DropDownOperatorAndValue({
       </Col>
     </Row>
   )
+}
+
+function getValueType(dataDefinition) {
+  switch (dataDefinition.type) {
+    case 'date':
+      return 'date'
+    case 'time':
+      return 'time'
+    default:
+      return 'number'
+  }
 }

@@ -37,7 +37,7 @@ from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .importer import DataImporter
 from .models import NonDenoisedDataRequest, MetagenomeRequest
 from .otu import (Environment, OTUAmplicon, SampleContext, TaxonomySource, format_taxonomy_name)
-from .query import (ContextualFilter, ContextualFilterTermDate,
+from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilterTermTime,
                     ContextualFilterTermFloat, ContextualFilterTermLongitude,
                     ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
@@ -47,7 +47,7 @@ from .query import (ContextualFilter, ContextualFilterTermDate,
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
 from .spatial import spatial_query
 from .tabular import tabular_zip_file_generator
-from .util import make_timestamp, parse_date, parse_float
+from .util import make_timestamp, parse_date, parse_time, parse_float
 
 from mixpanel import Mixpanel
 
@@ -497,6 +497,9 @@ def _parse_contextual_term(filter_spec):
     elif typ == 'DATE':
         return ContextualFilterTermDate(
             field_name, operator, parse_date(filter_spec['from']), parse_date(filter_spec['to']))
+    elif typ == 'TIME':
+        return ContextualFilterTermTime(
+            field_name, operator, parse_time(filter_spec['from']), parse_time(filter_spec['to']))
     elif typ == 'FLOAT':
         return (ContextualFilterTermLongitude
                 if field_name == 'longitude'

@@ -30,6 +30,7 @@ function marshallContextualFilters(filtersState, dataDefinitions) {
           break
         case 'float':
         case 'date':
+        case 'time':
           values.from = filter.value
           values.to = filter.value2
           break

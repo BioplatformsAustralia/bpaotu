@@ -781,6 +781,18 @@ class ContextualFilterTermDate(ContextualFilterTermBetween):
         return '<TermDate(%s,%s,%s,%s)>' % (self.field_name, self.operator, self.val_from, self.val_to)
 
 
+class ContextualFilterTermTime(ContextualFilterTermBetween):
+    def __init__(self, field_name, operator, val_from, val_to):
+        super().__init__(field_name, operator)
+        assert(type(val_from) is datetime.time)
+        assert(type(val_to) is datetime.time)
+        self.val_from = val_from
+        self.val_to = val_to
+
+    def __repr__(self):
+        return '<TermTime(%s,%s,%s,%s)>' % (self.field_name, self.operator, self.val_from, self.val_to)
+
+
 class ContextualFilterTermString(ContextualFilterTerm):
     def __init__(self, field_name, operator, val_contains):
         super().__init__(field_name, operator)
