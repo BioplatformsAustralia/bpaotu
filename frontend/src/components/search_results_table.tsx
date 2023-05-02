@@ -120,23 +120,19 @@ function bpaIDToCKANURL(bpaId) {
   }
 }
 
-function fieldToDisplayName(fieldName) {
-  const words = fieldName.split('_')
-  // For ontology foreign key cases, we drop all 'id' words that are not in the first position
-  const filteredWords = concat(
-    [first(words)],
-    reject(drop(words), (w) => w === 'id')
-  )
-  const userFriendly = join(map(filteredWords, capitalize), ' ')
+export const fieldsToColumns = (fields, contextualFilterDefinitions) => {
+  const fieldsPlus = fields.map((x) => {
+    // there will only be one match for each name
+    const def = contextualFilterDefinitions.find((f) => f.name == x.name)
+    const extra = { displayName: def.display_name }
+    return { ...x, ...extra }
+  })
 
-  return userFriendly
-}
-
-export const fieldsToColumns = (fields) =>
-  map(
-    reject(fields, (f) => isEmpty(f.name)),
+  return map(
+    reject(fieldsPlus, (f) => isEmpty(f.name)),
     (c) => ({
       name: c.name,
-      displayName: fieldToDisplayName(c.name),
+      displayName: c.displayName,
     })
   )
+}
