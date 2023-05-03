@@ -171,6 +171,7 @@ def api_config(request):
         'required_table_headers_endpoint': reverse('required_table_headers'),
         'contextual_csv_download_endpoint': reverse('contextual_csv_download_endpoint'),
         'contextual_schema_definition': reverse('contextual_schema_definition'),
+        'mixpanel_token': settings.MIXPANEL_TOKEN,
         'cookie_consent_declined_endpoint': reverse('cookie_consent_declined'),
         'base_url': settings.BASE_URL,
         'static_base_url': settings.STATIC_URL,

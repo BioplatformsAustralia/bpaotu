@@ -32,6 +32,7 @@ export interface SearchConfig {
   required_table_headers_endpoint: string
   contextual_csv_download_endpoint: string
   contextual_schema_definition_endpoint: string
+  mixpanel_token: string
   cookie_consent_declined_endpoint: string
   version: string
 }
