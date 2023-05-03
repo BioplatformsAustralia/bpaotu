@@ -120,14 +120,14 @@ function bpaIDToCKANURL(bpaId) {
   }
 }
 
-export const fieldsToColumns = (fields, contextualFilterDefinitions) => {
+export const fieldsToColumns = (fields, contextualDataDefinitions) => {
   const fieldsPlus = fields.map((x) => {
     // handle cases when adding field it adds an empty object first
     if (x.name === '') {
       return x
     } else {
       // there will only be one match for each name
-      const def = contextualFilterDefinitions.find((f) => f.name == x.name)
+      const def = contextualDataDefinitions.values.find((f) => f.name == x.name)
       const extra = { displayName: def.display_name }
       return { ...x, ...extra }
     }

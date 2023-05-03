@@ -12,7 +12,7 @@ function mapStateToProps(state) {
     results: state.contextualPage.results,
     extraColumns: fieldsToColumns(
       state.contextualPage.selectColumns.columns,
-      state.contextualDataDefinitions.filters
+      state.contextualDataDefinitions
     ),
   }
 }

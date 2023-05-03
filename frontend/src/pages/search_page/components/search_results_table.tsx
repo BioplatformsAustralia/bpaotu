@@ -22,7 +22,7 @@ function mapStateToProps(state) {
     results: state.searchPage.results,
     extraColumns: fieldsToColumns(
       [...nonEmptyFilters, ...nonEmptySIWFilters],
-      state.contextualDataDefinitions.filters
+      state.contextualDataDefinitions
     ),
   }
 }
