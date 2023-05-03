@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { capitalize, concat, drop, first, get as _get, isEmpty, join, map, reject } from 'lodash'
+import { get as _get, isEmpty, map, reject } from 'lodash'
 import { Alert } from 'reactstrap'
 
 import ReactTable from 'react-table'
@@ -127,7 +127,7 @@ export const fieldsToColumns = (fields, contextualDataDefinitions) => {
       return x
     } else {
       // there will only be one match for each name
-      const def = contextualDataDefinitions.values.find((f) => f.name == x.name)
+      const def = contextualDataDefinitions.values.find((f) => f.name === x.name)
       const extra = { displayName: def.display_name }
       return { ...x, ...extra }
     }
