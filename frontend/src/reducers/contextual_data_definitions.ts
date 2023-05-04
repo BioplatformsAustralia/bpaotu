@@ -25,6 +25,7 @@ const initialState = {
   isLoading: false,
   environment: [],
   filters: [],
+  values: [],
 }
 
 export default handleActions(
