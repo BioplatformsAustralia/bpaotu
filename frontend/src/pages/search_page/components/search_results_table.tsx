@@ -20,7 +20,10 @@ function mapStateToProps(state) {
 
   return {
     results: state.searchPage.results,
-    extraColumns: fieldsToColumns([...nonEmptyFilters, ...nonEmptySIWFilters]),
+    extraColumns: fieldsToColumns(
+      [...nonEmptyFilters, ...nonEmptySIWFilters],
+      state.contextualDataDefinitions
+    ),
   }
 }
 

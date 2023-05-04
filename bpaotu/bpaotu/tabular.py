@@ -77,13 +77,16 @@ def contextual_csv(samples):
     w = csv.writer(csv_fd)
     w.writerow(units_headings[t] for t in fields)
     w.writerow(field_headings[t] for t in fields)
-    yield csv_fd.getvalue().encode('utf8')
+
+    # use utf_8_sig to encode the header rows so the BOM is saved at the start of the file
+    # (don't use utf_8_sig for other yield statments since we only want the BOM once at the start of the file)
+    yield csv_fd.getvalue().encode('utf_8_sig')
 
     for sample in samples:
         csv_fd.truncate(0)
         csv_fd.seek(0)
         w.writerow(get_context_value(sample, field) for field in fields)
-        yield csv_fd.getvalue().encode('utf8')
+        yield csv_fd.getvalue().encode('utf_8')
 
 def sample_otu_csv_rows(taxonomy_labels, ids_to_names, q):
     fd = io.StringIO()

@@ -32,7 +32,7 @@ const steps = (props) => {
                   'organization/pages/australian-microbiome/processed'
                 }
               >
-                go here.
+                go here
               </a>
               .<br />
               <br />
@@ -78,7 +78,7 @@ const steps = (props) => {
                   'organization/pages/australian-microbiome/processed'
                 }
               >
-                go here.
+                go here
               </a>
               .<br />
             </span>
@@ -116,8 +116,9 @@ const steps = (props) => {
                 <li>
                   For metadata field search click 'Download metadata description' button or{' '}
                   <a rel="noopener noreferrer" target="_bpaotuSchema" href={props.definitions_url}>
-                    go here.
+                    go here
                   </a>
+                  .
                 </li>
                 <li>
                   For methods manual click 'Download methods manual' button or{' '}
@@ -126,8 +127,9 @@ const steps = (props) => {
                     target="_bpaotuMethod"
                     href={props.scientific_manual_url}
                   >
-                    go here.
+                    go here
                   </a>
+                  .
                 </li>
               </ul>
             </span>
@@ -173,8 +175,8 @@ const steps = (props) => {
               following steps.
               <br />
               <br />
-              To see details about a single sample, click on the sample link under 'SampleID' in the
-              results list, this will take to ALL raw sequencing data for that sample.
+              To see details about a single sample, click on the sample link under 'Sample ID' in
+              the results list, this will take to ALL raw sequencing data for that sample.
               <br />
               <br />
               Let's view the results on a map

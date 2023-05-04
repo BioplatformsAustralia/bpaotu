@@ -71,6 +71,13 @@ def parse_date(s):
         return datetime.datetime.strptime(s, '%d/%m/%Y').date()
 
 
+def parse_time(s):
+    try:
+        return datetime.datetime.strptime(s, '%H:%M').time()
+    except ValueError:
+        return datetime.datetime.strptime(s, '%H:%M').time()
+
+
 def parse_float(s):
     try:
         return float(s)

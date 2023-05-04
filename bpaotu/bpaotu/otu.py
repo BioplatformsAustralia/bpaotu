@@ -817,9 +817,8 @@ class SampleContext(SchemaMixin, Base):
         display_name = getattr(column, 'display_name', None)
         if display_name is None:
             display_name = field_name
-            # if display_name.endswith('_id'):
             if SampleContext.is_foreign_key(column):
-                display_name = display_name.strip('_id')
+                display_name = re.sub(r'_id$', '', display_name)
 
             display_name = ' '.join(((t[0].upper() + t[1:]) for t in display_name.split('_')))
 
@@ -846,7 +845,7 @@ class SampleContext(SchemaMixin, Base):
         """
         column = getattr(cls, field_name)
         is_foreign_key = SampleContext.is_foreign_key(column)
-        return field_name.strip('_id') if is_foreign_key else field_name
+        return re.sub(r'_id$', '', field_name) if is_foreign_key else field_name
 
 class SampleMeta(SchemaMixin, Base):
     __tablename__ = 'sample_meta'

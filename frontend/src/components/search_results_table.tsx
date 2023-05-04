@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { capitalize, concat, drop, first, get as _get, isEmpty, join, map, reject } from 'lodash'
+import { get as _get, isEmpty, map, reject } from 'lodash'
 import { Alert } from 'reactstrap'
 
 import ReactTable from 'react-table'
@@ -120,23 +120,24 @@ function bpaIDToCKANURL(bpaId) {
   }
 }
 
-function fieldToDisplayName(fieldName) {
-  const words = fieldName.split('_')
-  // For ontology foreign key cases, we drop all 'id' words that are not in the first position
-  const filteredWords = concat(
-    [first(words)],
-    reject(drop(words), (w) => w === 'id')
-  )
-  const userFriendly = join(map(filteredWords, capitalize), ' ')
+export const fieldsToColumns = (fields, contextualDataDefinitions) => {
+  const fieldsPlus = fields.map((x) => {
+    // handle cases when adding field it adds an empty object first
+    if (x.name === '') {
+      return x
+    } else {
+      // there will only be one match for each name
+      const def = contextualDataDefinitions.values.find((f) => f.name === x.name)
+      const extra = { displayName: def.display_name }
+      return { ...x, ...extra }
+    }
+  })
 
-  return userFriendly
-}
-
-export const fieldsToColumns = (fields) =>
-  map(
-    reject(fields, (f) => isEmpty(f.name)),
+  return map(
+    reject(fieldsPlus, (f) => isEmpty(f.name)),
     (c) => ({
       name: c.name,
-      displayName: fieldToDisplayName(c.name),
+      displayName: c.displayName,
     })
   )
+}

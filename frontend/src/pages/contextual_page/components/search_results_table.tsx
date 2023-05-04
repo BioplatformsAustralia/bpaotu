@@ -10,7 +10,10 @@ import { changeTableProperties, search } from '../reducers/search'
 function mapStateToProps(state) {
   return {
     results: state.contextualPage.results,
-    extraColumns: fieldsToColumns(state.contextualPage.selectColumns.columns),
+    extraColumns: fieldsToColumns(
+      state.contextualPage.selectColumns.columns,
+      state.contextualDataDefinitions
+    ),
   }
 }
 

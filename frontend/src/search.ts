@@ -33,6 +33,7 @@ export interface SearchConfig {
   contextual_csv_download_endpoint: string
   contextual_schema_definition_endpoint: string
   cookie_consent_declined_endpoint: string
+  version: string
 }
 
 export enum BooleanOperator {
