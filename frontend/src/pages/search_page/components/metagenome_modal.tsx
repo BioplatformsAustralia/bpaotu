@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { isString, pickBy, keys, join, values, filter } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
@@ -15,7 +15,7 @@ import {
 } from 'reactstrap'
 
 import { metagenomeRequest } from 'api'
-import analytics from 'app/analytics'
+import { useAnalytics } from 'use-analytics'
 import AnimateHelix, { loadingstyle } from 'components/animate_helix'
 
 import { closeMetagenomeModal } from '../reducers/metagenome_modal'
@@ -37,78 +37,69 @@ const InfoBox = (props) => (
   </div>
 )
 
-class MetagenomeModal extends React.Component<any> {
-  scrollRef: any
-  state = {
-    selected: {},
-    requestState: 0, // See modalBody() below
-    submissionResponse: {},
-  }
+interface SubmissionResponse {
+  status?: number
+  statusText?: string
+  data?: SubmissionResponseData
+}
 
-  constructor(props) {
-    super(props)
-    this.handleChecboxChange = this.handleChecboxChange.bind(this)
-    this.handleSubmit = this.handleSubmit.bind(this)
-    this.closeModal = this.closeModal.bind(this)
-    this.modalBody = this.modalBody.bind(this)
-    this.modalFooter = this.modalFooter.bind(this)
-    this.scrollRef = React.createRef()
-  }
+interface SubmissionResponseData {
+  request_id: string
+  timestamp: string
+  contact: string
+}
 
-  componentDidUpdate(prevProps, prevState) {
-    if (this.state.requestState !== prevState.requestState && this.scrollRef.current) {
-      this.scrollRef.current.scrollIntoView()
-    }
-  }
+const MetagenomeModal = (props) => {
+  const [selected, setSelected] = useState({})
+  const [requestState, setRequestState] = useState(0)
+  const [submissionResponse, setSubmissionResponse] = useState<SubmissionResponse>({})
 
-  handleChecboxChange(event) {
+  const { track } = useAnalytics()
+
+  const handleChecboxChange = (event) => {
     const target = event.target
     const value = target.checked
     const name = target.name
-    this.setState((state: any) => {
-      return {
-        selected: {
-          ...state.selected,
-          [name]: value,
-        },
-      }
-    })
+
+    setSelected((prevSelected) => ({
+      ...prevSelected,
+      [name]: value,
+    }))
   }
 
-  handleSubmit(event) {
+  const handleSubmit = (event) => {
     event.preventDefault()
-    if (this.state.requestState === 1) {
-      analytics.track('otu_request_metagenome_files')
 
-      metagenomeRequest(this.props.sample_ids, keys(pickBy(this.state.selected)))
+    if (requestState === 1) {
+      track('otu_request_metagenome_files')
+
+      metagenomeRequest(props.sample_ids, keys(pickBy(selected)))
         .then((response) => {
-          this.setState({
-            submissionResponse: response,
-            requestState: 3, // Request acknowledged
-          })
+          setSubmissionResponse(response)
+          setRequestState(3) // Request acknowledged
         })
         .catch((err) => {
-          this.setState({
-            submissionResponse: err.response,
-            requestState: 4,
-          }) // Request failed
+          setSubmissionResponse(err.response)
+          setRequestState(4) // Request failed
         })
     }
-    this.setState(
-      // Step through request states. 0 (select file types) → 1 (submit
-      // request) → 2 (waiting for response)
-      (state: any, props) => ({
-        requestState: state.requestState < 2 ? state.requestState + 1 : state.requestState,
-      })
+
+    // Step through request states.
+    // 0 (select file types)
+    // → 1 (submit request)
+    // → 2 (waiting for response)
+    setRequestState((prevRequestState) =>
+      prevRequestState < 2 ? prevRequestState + 1 : prevRequestState
     )
   }
 
-  closeModal() {
-    this.setState({ submissionResponse: {}, requestState: 0 })
-    this.props.closeMetagenomeModal()
+  const closeModal = () => {
+    setSubmissionResponse({})
+    setRequestState(0)
+    props.closeMetagenomeModal()
   }
 
-  get_rows() {
+  const getRows = () => {
     return metagenome_rows.map((row, index) => {
       // Note: key={index} is OK here as metagenome_rows is a constant
       if (isString(row)) {
@@ -118,6 +109,7 @@ class MetagenomeModal extends React.Component<any> {
           </tr>
         )
       }
+
       return (
         <tr key={'r' + index}>
           <td>{row[0]}</td>
@@ -128,8 +120,8 @@ class MetagenomeModal extends React.Component<any> {
                 <Input
                   type="checkbox"
                   name={row[2].toString()}
-                  onChange={this.handleChecboxChange}
-                  checked={this.state.selected[row[2].toString()] || false}
+                  onChange={handleChecboxChange}
+                  checked={selected[row[2].toString()] || false}
                 />
                 {row[2]}
               </Label>
@@ -140,22 +132,21 @@ class MetagenomeModal extends React.Component<any> {
     })
   }
 
-  modalBody() {
-    const response: any = this.state.submissionResponse
-    if (this.props.error || this.state.requestState === 4) {
+  const modalBody = () => {
+    const { status, statusText, data } = submissionResponse
+
+    if (props.error || requestState === 4) {
       return (
         <Alert color="danger">
-          {this.props.error && <>Search failed: {this.props.error}</>}
-          {this.state.requestState === 4 && (
-            <>
-              Submission failed:{' '}
-              {response && `${response.status}: ${response.statusText}. ${response.data}`}
-            </>
+          {props.error && <>Search failed: {props.error}</>}
+          {requestState === 4 && (
+            <>Submission failed: {submissionResponse && `${status}: ${statusText}. ${data}`}</>
           )}
         </Alert>
       )
     }
-    if (this.props.isLoading || this.state.requestState === 2) {
+
+    if (props.isLoading || requestState === 2) {
       return (
         <div style={loadingstyle}>
           <AnimateHelix />
@@ -163,16 +154,16 @@ class MetagenomeModal extends React.Component<any> {
       )
     }
 
-    switch (this.state.requestState) {
+    switch (requestState) {
       case 0: // Select file types
         return (
           <>
             <p>
               Metagenome files for
-              {this.props.sample_ids.length === 1 ? (
-                <> sample {this.props.sample_ids[0]}</>
+              {props.sample_ids.length === 1 ? (
+                <> sample {props.sample_ids[0]}</>
               ) : (
-                <> {this.props.sample_ids.length} samples</>
+                <> {props.sample_ids.length} samples</>
               )}
             </p>
             <table role="table" className="table table-bordered table-striped">
@@ -183,82 +174,77 @@ class MetagenomeModal extends React.Component<any> {
                   <th>Request</th>
                 </tr>
               </thead>
-              <tbody>{this.get_rows()}</tbody>
+              <tbody>{getRows()}</tbody>
             </table>
           </>
         )
       case 1: // Show confirmation page
         return (
-          <div ref={this.scrollRef}>
+          <div>
             <p>Please confirm metagenome data request for file types</p>
             <div style={{ paddingLeft: '2em', marginBottom: '1rem' }}>
-              {keys(pickBy(this.state.selected)).map((v) => (
+              {keys(pickBy(selected)).map((v) => (
                 <InfoBox key={v}>{v}</InfoBox>
               ))}
             </div>
             <p>
               for{' '}
-              {this.props.sample_ids.length !== 1
-                ? `${this.props.sample_ids.length} samples:`
-                : 'sample:'}
+              {props.sample_ids.length !== 1 ? `${props.sample_ids.length} samples:` : 'sample:'}
             </p>
             <p style={{ marginLeft: '2em', padding: '1em', border: '1px solid #ccc' }}>
-              {join(this.props.sample_ids, ', ')}
+              {join(props.sample_ids, ', ')}
             </p>
           </div>
         )
       case 2: // Waiting for submission response
         return <span>Submitting…</span>
       case 3: // Good response
-        const data = response.data
+        const { request_id, timestamp, contact } = submissionResponse.data
+
         return (
           <Alert color="success">
             <h4>Thank you for your data request</h4>
             <p>
-              Your request id is <strong>{data.request_id}</strong>,lodged at {data.timestamp}
+              Your request id is <strong>{request_id}</strong>, lodged at {timestamp}
             </p>
             <p>
-              We will be in touch. Please contact{' '}
-              <a href={'mailto:' + data.contact}>{data.contact}</a> for more information.
+              We will be in touch. Please contact <a href={'mailto:' + contact}>{contact}</a> for
+              more information.
             </p>
           </Alert>
         )
     }
   }
 
-  modalFooter() {
-    if (this.state.requestState > 2 || this.props.error) {
+  const modalFooter = () => {
+    if (requestState > 2 || props.error) {
       return (
-        <Button type="button" onClick={this.closeModal} color="primary">
+        <Button type="button" onClick={closeModal} color="primary">
           Close
         </Button>
       )
     }
-    const n_selected = filter(values(this.state.selected)).length
-    const sample_msg =
-      this.props.sample_ids.length === 1
-        ? 'sample ' + this.props.sample_ids[0]
-        : this.props.sample_ids.length.toString() + ' samples'
 
-    if (this.state.requestState === 0) {
+    const n_selected = filter(values(selected)).length
+    const sample_msg =
+      props.sample_ids.length === 1
+        ? 'sample ' + props.sample_ids[0]
+        : props.sample_ids.length.toString() + ' samples'
+
+    if (requestState === 0) {
       return (
-        <Button type="submit" onClick={this.handleSubmit} color="primary" disabled={n_selected < 1}>
+        <Button type="submit" onClick={handleSubmit} color="primary" disabled={n_selected < 1}>
           Request {n_selected} metagenome files for {sample_msg}
         </Button>
       )
     } else {
       return (
         <>
-          <Button type="button" onClick={this.closeModal} color="secondary">
+          <Button type="button" onClick={closeModal} color="secondary">
             Cancel
           </Button>
 
-          <Button
-            type="submit"
-            onClick={this.handleSubmit}
-            color="primary"
-            disabled={n_selected < 1}
-          >
+          <Button type="submit" onClick={handleSubmit} color="primary" disabled={n_selected < 1}>
             Confirm
           </Button>
         </>
@@ -266,17 +252,15 @@ class MetagenomeModal extends React.Component<any> {
     }
   }
 
-  render() {
-    return (
-      <Modal isOpen={this.props.isOpen} scrollable={true} fade={true}>
-        <ModalHeader toggle={this.closeModal}>Metagenome data request</ModalHeader>
-        <ModalBody style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          {this.modalBody()}
-        </ModalBody>
-        <ModalFooter>{this.modalFooter()}</ModalFooter>
-      </Modal>
-    )
-  }
+  return (
+    <Modal isOpen={props.isOpen} scrollable={true} fade={true}>
+      <ModalHeader toggle={closeModal}>Metagenome data request</ModalHeader>
+      <ModalBody style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {modalBody()}
+      </ModalBody>
+      <ModalFooter>{modalFooter()}</ModalFooter>
+    </Modal>
+  )
 }
 
 function mapStateToProps(state) {
@@ -300,4 +284,4 @@ function mapDispatchToProps(dispatch) {
   )
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(MetagenomeModal)
+export default connect(mapStateToProps, mapDispatchToProps)(MetagenomeModal as any)

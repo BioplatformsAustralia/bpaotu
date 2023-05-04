@@ -1,14 +1,19 @@
-import * as React from 'react'
+import React, { useEffect } from 'react'
 import { connect } from 'react-redux'
 
-import analytics from 'app/analytics'
+import { useAnalytics } from 'use-analytics'
 import { Col, Container, Row } from 'reactstrap'
 
 import SearchResultsCard from './components/search_results_card'
 import SelectColumnsCard from './components/select_columns_card'
 
 export const ContextualPage = (props) => {
-  analytics.page()
+  const { page } = useAnalytics()
+
+  // track page visit only on first render
+  useEffect(() => {
+    page()
+  }, [page])
 
   return (
     <Container fluid={true}>

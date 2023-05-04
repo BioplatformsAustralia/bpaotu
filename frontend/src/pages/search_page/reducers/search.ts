@@ -1,7 +1,6 @@
 import { find, get as _get, isEmpty, map, reject, uniq } from 'lodash'
 import { createActions, handleActions, createAction } from 'redux-actions'
 
-import analytics from 'app/analytics'
 import { taxonomy_keys } from 'app/constants'
 
 import { executeSearch } from 'api'
@@ -85,7 +84,7 @@ export const describeSearch = (state) => {
   }
 }
 
-export const search = () => (dispatch, getState) => {
+export const search = (track) => (dispatch, getState) => {
   const state = getState()
 
   dispatch(searchStarted())
@@ -112,9 +111,9 @@ export const search = () => (dispatch, getState) => {
     const params = { columns: options.columns.sort() }
 
     if (isMetagenomeSearch(state)) {
-      analytics.track('otu_sample_search_metagenome', params)
+      track('otu_sample_search_metagenome', params)
     } else {
-      analytics.track('otu_sample_search', params)
+      track('otu_sample_search', params)
     }
   }
 

@@ -1,9 +1,11 @@
-import * as React from 'react'
+import React, { useEffect } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { Col, Container, Row } from 'reactstrap'
 
-import analytics, { triggerHashedIdentify } from 'app/analytics'
+import { triggerHashedIdentify } from 'app/analytics'
+import { useAnalytics } from 'use-analytics'
+import { withAnalytics } from 'use-analytics'
 
 import AnimateHelix from 'components/animate_helix'
 import SearchButton from 'components/search_button'
@@ -20,16 +22,24 @@ import { search } from './reducers/search'
 import { clearSearchResults } from './reducers/search'
 
 const SearchPage = (props) => {
+  const { page, track, identify } = useAnalytics()
+
+  // this correctly recognises whether this is the Amplicon or Metagenome page
+  // track page visit only on first render
+  useEffect(() => {
+    page()
+  }, [page])
+
   const newSearch = () => {
     props.clearSearchResults()
-    props.search()
+    props.search(track)
   }
   const interactiveMapSearch = () => {
-    analytics.track('otu_interactive_map_search')
+    track('otu_interactive_map_search')
     props.openSamplesMapModal()
   }
   const interactiveGraphSearch = () => {
-    analytics.track('otu_interactive_graph_search')
+    track('otu_interactive_graph_search')
     props.openSamplesGraphModal()
   }
 
@@ -38,7 +48,7 @@ const SearchPage = (props) => {
   // this is here so we can access the auth state
   // it will trigger on both Amplicon and Metagenome search pages
   // but that is not an issue
-  triggerHashedIdentify(props.auth.email)
+  triggerHashedIdentify(identify, props.auth.email)
 
   return (
     <Container fluid={true}>
@@ -111,11 +121,9 @@ function mapDispatchToProps(dispatch) {
   )
 }
 
-const ConnectedSearchPage = connect(mapStateToProps, mapDispatchToProps)(SearchPage)
+const ConnectedSearchPage = withAnalytics(connect(mapStateToProps, mapDispatchToProps)(SearchPage))
 
 export function SampleSearchPage() {
-  analytics.page()
-
   return (
     <ConnectedSearchPage>
       <Col data-tut="reactour__AmpliconTaxonomyFilterCard">
@@ -136,8 +144,6 @@ export function SampleSearchPage() {
 }
 
 export function MetaGenomeSearchPage() {
-  analytics.page()
-
   return (
     <ConnectedSearchPage>
       <Col>

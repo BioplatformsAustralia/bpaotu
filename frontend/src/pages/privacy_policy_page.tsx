@@ -1,10 +1,15 @@
-import * as React from 'react'
+import React, { useEffect } from 'react'
 import { Container } from 'reactstrap'
 
-import analytics from 'app/analytics'
+import { useAnalytics } from 'use-analytics'
 
-export default (props) => {
-  analytics.page()
+const PrivacyPolicyPage = () => {
+  const { page } = useAnalytics()
+
+  // track page visit only on first render
+  useEffect(() => {
+    page()
+  }, [page])
 
   return (
     <Container fluid={true} style={{ marginTop: 10, width: '50%' }}>
@@ -259,3 +264,5 @@ export default (props) => {
     </Container>
   )
 }
+
+export default PrivacyPolicyPage

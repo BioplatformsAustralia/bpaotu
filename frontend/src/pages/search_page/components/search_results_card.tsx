@@ -4,7 +4,7 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { Alert, Button, Card, CardBody, CardHeader } from 'reactstrap'
 
-import analytics from 'app/analytics'
+import { useAnalytics } from 'use-analytics'
 import Octicon from 'components/octicon'
 
 import { describeSearch } from '../reducers/search'
@@ -79,134 +79,128 @@ const download = (baseURL, props, onlyContextual = false) => {
   window.open(url)
 }
 
-class _SearchResultsCard extends React.Component<any, any> {
-  constructor(props) {
-    super(props)
-    this.exportCSV = this.exportCSV.bind(this)
-    this.exportCSVOnlyContextual = this.exportCSVOnlyContextual.bind(this)
-    this.exportBIOM = this.exportBIOM.bind(this)
-  }
+const _SearchResultsCard = (props) => {
+  const { track } = useAnalytics()
 
-  public render() {
-    /*
-        TODO
-        The UI for the galaxy submission will probably change, so showing the history link inside the Alert box might not
-        be necessary later on.
-        In case, we keep this code, we should probably use something like sanitize-html to make sure we don't end up with
-        anything dangerous in the text.
-        */
-    return (
-      <div>
-        <Card>
-          <CardHeader>
-            <div className="text-center">
-              <HeaderButton
-                octicon="desktop-download"
-                text="Download OTU and Contextual Data (CSV)"
-                onClick={this.exportCSV}
-              />
-              <HeaderButton
-                octicon="desktop-download"
-                text="Download Contextual Data only (CSV)"
-                onClick={this.exportCSVOnlyContextual}
-              />
-              <HeaderButton
-                octicon="desktop-download"
-                text="Download BIOM format (Phinch compatible)"
-                onClick={this.exportBIOM}
-              />
-              {window.otu_search_config.galaxy_integration && (
-                <HeaderButton
-                  octicon="clippy"
-                  text="Export Data to Galaxy Australia for further analysis"
-                  disabled={this.isGalaxySubmissionDisabled()}
-                  onClick={this.props.submitToGalaxy}
-                />
-              )}
-              {window.otu_search_config.galaxy_integration && (
-                <HeaderButton
-                  octicon="graph"
-                  text="Export Data to Galaxy Australia for Krona Taxonomic Abundance Graph"
-                  disabled={this.isGalaxySubmissionDisabled()}
-                  onClick={this.props.workflowOnGalaxy}
-                />
-              )}
-            </div>
-          </CardHeader>
-          <CardBody>
-            <AlertBoxes
-              alerts={this.props.galaxy.alerts}
-              clearAlerts={this.props.clearGalaxyAlert}
-            />
-            <AlertBoxes alerts={this.props.tips.alerts} clearAlerts={this.props.clearTips} />
-            <SearchResultsTable />
-          </CardBody>
-        </Card>
-
-        <SamplesMapModal />
-        <SamplesGraphModal />
-      </div>
-    )
-  }
-
-  public isGalaxySubmissionDisabled() {
-    if (this.props.galaxy.isSubmitting) {
+  const isGalaxySubmissionDisabled = () => {
+    if (props.galaxy.isSubmitting) {
       return true
     }
-    const lastSubmission: GalaxySubmission = last(this.props.galaxy.submissions)
+
+    const lastSubmission: GalaxySubmission = last(props.galaxy.submissions)
     return lastSubmission && !lastSubmission.finished
   }
 
-  public exportBIOM() {
-    analytics.track('otu_export_BIOM')
+  const exportBIOM = () => {
+    track('otu_export_BIOM')
 
-    this.props.showPhinchTip()
-    download(window.otu_search_config.export_biom_endpoint, this.props)
+    props.showPhinchTip()
+    download(window.otu_search_config.export_biom_endpoint, props)
   }
 
-  public exportCSV() {
-    analytics.track('otu_export_CSV')
-    download(window.otu_search_config.export_endpoint, this.props)
+  const exportCSV = () => {
+    track('otu_export_CSV')
+
+    download(window.otu_search_config.export_endpoint, props)
   }
 
-  public exportCSVOnlyContextual() {
-    analytics.track('otu_export_CSV_only_contextual')
-    download(window.otu_search_config.export_endpoint, this.props, true)
+  const exportCSVOnlyContextual = () => {
+    track('otu_export_CSV_only_contextual')
+
+    download(window.otu_search_config.export_endpoint, props, true)
   }
+
+  return (
+    <div>
+      <Card>
+        <CardHeader>
+          <div className="text-center">
+            <HeaderButton
+              octicon="desktop-download"
+              text="Download OTU and Contextual Data (CSV)"
+              onClick={exportCSV}
+            />
+            <HeaderButton
+              octicon="desktop-download"
+              text="Download Contextual Data only (CSV)"
+              onClick={exportCSVOnlyContextual}
+            />
+            <HeaderButton
+              octicon="desktop-download"
+              text="Download BIOM format (Phinch compatible)"
+              onClick={exportBIOM}
+            />
+            {window.otu_search_config.galaxy_integration && (
+              <HeaderButton
+                octicon="clippy"
+                text="Export Data to Galaxy Australia for further analysis"
+                disabled={isGalaxySubmissionDisabled()}
+                onClick={props.submitToGalaxy}
+              />
+            )}
+            {window.otu_search_config.galaxy_integration && (
+              <HeaderButton
+                octicon="graph"
+                text="Export Data to Galaxy Australia for Krona Taxonomic Abundance Graph"
+                disabled={isGalaxySubmissionDisabled()}
+                onClick={props.workflowOnGalaxy}
+              />
+            )}
+          </div>
+        </CardHeader>
+        <CardBody>
+          <AlertBoxes alerts={props.galaxy.alerts} clearAlerts={props.clearGalaxyAlert} />
+          <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
+          <SearchResultsTable />
+        </CardBody>
+      </Card>
+
+      <SamplesMapModal />
+      <SamplesGraphModal />
+    </div>
+  )
 }
 
-const _MetagenomeSearchResultsCard = (props) => (
-  <div>
-    <Card>
-      <CardHeader>
-        <div className="text-center">
-          <HeaderButton
-            octicon="desktop-download"
-            text={`Request metagenome files for all selected samples`}
-            onClick={props.openMetagenomeModalSearch}
-          />
-          <HeaderButton
-            octicon="desktop-download"
-            text="Download Contextual Data only (CSV)"
-            onClick={() => {
-              download(window.otu_search_config.export_endpoint, props, true)
-            }}
-          />
-        </div>
-      </CardHeader>
-      <CardBody>
-        <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
-        <SearchResultsTable
-          cell_func={(cell_props) => cell_button(cell_props, props.openMetagenomeModal)}
-        />
-      </CardBody>
-    </Card>
+const _MetagenomeSearchResultsCard = (props) => {
+  const { track } = useAnalytics()
 
-    <SamplesMapModal />
-    <SamplesGraphModal />
-    <MetagenomeModal />
-  </div>
-)
+  const exportCSVOnlyContextualMetagenome = () => {
+    track('otu_export_CSV_only_contextual_metagenome')
+
+    download(window.otu_search_config.export_endpoint, props, true)
+  }
+
+  return (
+    <div>
+      <Card>
+        <CardHeader>
+          <div className="text-center">
+            <HeaderButton
+              octicon="desktop-download"
+              text={`Request metagenome files for all selected samples`}
+              onClick={props.openMetagenomeModalSearch}
+            />
+            <HeaderButton
+              octicon="desktop-download"
+              text="Download Contextual Data only (CSV)"
+              onClick={exportCSVOnlyContextualMetagenome}
+            />
+          </div>
+        </CardHeader>
+        <CardBody>
+          <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
+          <SearchResultsTable
+            cell_func={(cell_props) => cell_button(cell_props, props.openMetagenomeModal)}
+          />
+        </CardBody>
+      </Card>
+
+      <SamplesMapModal />
+      <SamplesGraphModal />
+      <MetagenomeModal />
+    </div>
+  )
+}
 
 function mapStateToProps(state) {
   return {
