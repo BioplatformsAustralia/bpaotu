@@ -35,8 +35,34 @@
   <div id="root"></div>
 
   <script>
-    window.base_url = "%PUBLIC_URL%"
-    window.otu_search_config = {}
+    window.otu_search_config = {
+      'reference_data_endpoint': "%PUBLIC_URL%/private/api/v1/reference-data-options",
+      'trait_endpoint': "%PUBLIC_URL%/private/api/v1/trait-options",
+      'taxonomy_endpoint': "%PUBLIC_URL%/private/api/v1/taxonomy-options",
+      'contextual_endpoint': "%PUBLIC_URL%/private/api/v1/contextual-fields",
+      'contextual_graph_endpoint': "%PUBLIC_URL%/private/api/v1/contextual-graph-fields",
+      'taxonomy_graph_endpoint': "%PUBLIC_URL%/private/api/v1/taxonomy-graph-fields",
+      'search_endpoint': "%PUBLIC_URL%/private/api/v1/search",
+      'export_endpoint': "%PUBLIC_URL%/private/api/v1/export",
+      'export_biom_endpoint': "%PUBLIC_URL%/private/api/v1/export_biom",
+      'submit_to_galaxy_endpoint': "%PUBLIC_URL%/private/api/v1/submit_to_galaxy",
+      'nondenoised_request_endpoint': "%PUBLIC_URL%/private/api/v1/nondenoised_request",
+      'execute_workflow_on_galaxy_endpoint': "%PUBLIC_URL%/private/api/v1/execute_workflow_on_galaxy",
+      'galaxy_submission_endpoint': "%PUBLIC_URL%/private/api/v1/galaxy_submission",
+      'submit_blast_endpoint': "%PUBLIC_URL%/private/api/v1/submit_blast",
+      'blast_submission_endpoint': "%PUBLIC_URL%/private/api/v1/blast_submission",
+      'search_sample_sites_endpoint': "%PUBLIC_URL%/private/api/v1/search-sample-sites",
+      'required_table_headers_endpoint': "%PUBLIC_URL%/private/api/v1/required_table_headers/",
+      'contextual_csv_download_endpoint': "%PUBLIC_URL%/contextual_csv_download_endpoint/",
+      'contextual_schema_definition_endpoint': "%PUBLIC_URL%/contextual_schema_definition/",
+      'cookie_consent_declined_endpoint': "%PUBLIC_URL%/private/api/v1/cookie_consent_declined/",
+      'base_url': "%PUBLIC_URL%",
+      'static_base_url': "%PUBLIC_URL%/static/",
+      'galaxy_base_url': "https://galaxy-aust-dev.genome.edu.au",
+      'ckan_base_url': "https://data.bioplatforms.com/",
+      'galaxy_integration': false,
+      'ckan_check_permissions': "%PUBLIC_URL%/private/api/v1/user/check_permissions"
+    };
   </script>
 </body>
 
