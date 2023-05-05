@@ -8,6 +8,7 @@ admin.autodiscover()
 
 urlpatterns = [
     url(r'^private/api/v1/config$', views.api_config, name="api_config"),
+    url(r'^private/api/v1/cookie_consent_accepted$', views.cookie_consent_accepted, name="cookie_consent_accepted"),
     url(r'^private/api/v1/cookie_consent_declined$', views.cookie_consent_declined, name="cookie_consent_declined"),
     url(r'^private/api/v1/reference-data-options$', views.reference_data_options, name="reference_data_options"),
     url(r'^private/api/v1/trait-options$', views.trait_options, name="trait_options"),

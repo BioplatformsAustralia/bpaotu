@@ -22,7 +22,7 @@ const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose
 export const store = createStore(reducers, composeEnhancers(applyMiddleware(thunk)))
 
 axios
-  .get(window.otu_search_config.base_url + '/private/api/v1/config')
+  .get(window.base_url + '/private/api/v1/config')
   .then(function (response) {
     window.otu_search_config = response.data
 

@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { connect } from 'react-redux'
 import { Link, withRouter } from 'react-router-dom'
 import { bindActionCreators } from 'redux'
 
 import CookieConsent, { getCookieConsentValue } from 'react-cookie-consent'
-import { apiCookieConsentDeclined } from 'api'
+import { apiCookieConsentAccepted, apiCookieConsentDeclined } from 'api'
 import { pluginsList, triggerHashedIdentify } from 'app/analytics'
 import { useAnalytics } from 'use-analytics'
 
@@ -19,22 +19,11 @@ import LoginRequiredPage from 'pages/login_required_page'
 import { getCKANAuthInfo } from 'reducers/auth'
 
 const App = (props) => {
-  const { identify, plugins } = useAnalytics()
+  const { identify, page, plugins } = useAnalytics()
 
-  useEffect(() => {
-    props.getCKANAuthInfo()
-  }, [])
+  const { auth, getCKANAuthInfo: getCKANAuthInfo_props } = props
 
-  useEffect(() => {
-    // important to note that cookie stores a string value of true or false
-    const priorConsent = getCookieConsentValue() === 'true'
-    if (priorConsent) {
-      enableCookies()
-    }
-  }, [])
-
-  const enableCookies = () => {
-    const { auth } = props
+  const enableCookies = useCallback(() => {
     plugins.enable(pluginsList)
 
     if (auth.email) {
@@ -44,6 +33,31 @@ const App = (props) => {
       // (for which the email will have been retrieved)
       triggerHashedIdentify(identify, auth.email)
     }
+  }, [identify, plugins, auth])
+
+  useEffect(() => {
+    getCKANAuthInfo_props()
+  }, [getCKANAuthInfo_props])
+
+  useEffect(() => {
+    // important to note that cookie stores a string value of true or false
+    const priorConsent = getCookieConsentValue() === 'true'
+    if (priorConsent) {
+      enableCookies()
+    }
+  }, [enableCookies])
+
+  const enableCookiesAsync = async () => {
+    enableCookies()
+  }
+
+  const cookieConsentAccepted = () => {
+    apiCookieConsentAccepted()
+    enableCookiesAsync().then(() => {
+      // make a page() to record the initial page visit
+      // even in a promise a decent delay is still required for page() to register
+      setTimeout(page, 500)
+    })
   }
 
   const cookieConsentDeclined = () => {
@@ -51,8 +65,6 @@ const App = (props) => {
   }
 
   const renderContents = () => {
-    const { auth } = props
-
     if (auth.isLoginInProgress) {
       return <LoginInProgressPage />
     }
@@ -80,7 +92,7 @@ const App = (props) => {
         declineButtonText="Decline"
         enableDeclineButton
         onAccept={() => {
-          enableCookies()
+          cookieConsentAccepted()
         }}
         onDecline={() => {
           cookieConsentDeclined()

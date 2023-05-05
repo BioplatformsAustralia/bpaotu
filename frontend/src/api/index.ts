@@ -227,6 +227,13 @@ export function getBlastSubmission(submissionId) {
   })
 }
 
+export function apiCookieConsentAccepted() {
+  return axios
+    .get(window.otu_search_config.cookie_consent_accepted_endpoint.toString())
+    .then((response) => {})
+    .catch((error) => {})
+}
+
 export function apiCookieConsentDeclined() {
   return axios
     .get(window.otu_search_config.cookie_consent_declined_endpoint.toString())
