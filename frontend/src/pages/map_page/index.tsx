@@ -1,14 +1,19 @@
+import React, { useEffect } from 'react'
 import { isEmpty, noop } from 'lodash'
-import * as React from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
-import analytics from 'app/analytics'
+import { useAnalytics } from 'use-analytics'
 import SamplesMap from 'components/samples_map'
 import { fetchSampleMapSamples } from './reducers'
 
 const MapPage = (props) => {
-  analytics.page()
+  const { page } = useAnalytics()
+
+  // track page visit only on first render
+  useEffect(() => {
+    page()
+  }, [page])
 
   const mapContainerHeight = window.innerHeight - 220 * 2 + 'px'
   const fetchSamples = isEmpty(props.markers) ? props.fetchSamples : noop

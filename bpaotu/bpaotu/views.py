@@ -171,6 +171,8 @@ def api_config(request):
         'required_table_headers_endpoint': reverse('required_table_headers'),
         'contextual_csv_download_endpoint': reverse('contextual_csv_download_endpoint'),
         'contextual_schema_definition': reverse('contextual_schema_definition'),
+        'mixpanel_token': settings.MIXPANEL_TOKEN,
+        'cookie_consent_accepted_endpoint': reverse('cookie_consent_accepted'),
         'cookie_consent_declined_endpoint': reverse('cookie_consent_declined'),
         'base_url': settings.BASE_URL,
         'static_base_url': settings.STATIC_URL,
@@ -198,6 +200,16 @@ def cookie_consent_declined(request):
 
     return HttpResponseNoContent()
 
+@require_CKAN_auth
+@require_GET
+def cookie_consent_accepted(request):
+    if settings.MIXPANEL_TOKEN:
+        mp = Mixpanel(settings.MIXPANEL_TOKEN)
+        mp.track('None', 'Cookie consent accepted')
+    else:
+        logger.info("No Mixpanel token")
+
+    return HttpResponseNoContent()
 
 @require_CKAN_auth
 @require_GET

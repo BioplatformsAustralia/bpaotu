@@ -4,7 +4,7 @@ import { connect } from 'react-redux'
 
 import { Button, Card, CardBody, CardHeader } from 'reactstrap'
 
-import analytics from 'app/analytics'
+import { useAnalytics } from 'use-analytics'
 import Octicon from 'components/octicon'
 
 import { EmptyOTUQuery } from 'search'
@@ -30,48 +30,44 @@ const HeaderButton = (props) => (
   </Button>
 )
 
-class SearchResultsCard extends React.Component<any, any> {
-  constructor(props) {
-    super(props)
-    this.exportCSV = this.exportCSV.bind(this)
-  }
+const SearchResultsCard = (props) => {
+  const { ckanAuthToken, extraColumns, sorting } = props
+  const { track } = useAnalytics()
 
-  public render() {
-    return (
-      <div>
-        <Card>
-          <CardHeader>
-            <div>
-              <HeaderButton
-                octicon="desktop-download"
-                text="Export Search Results (CSV)"
-                onClick={this.exportCSV}
-              />
-            </div>
-          </CardHeader>
-          <CardBody>
-            <SearchResultsTable />
-          </CardBody>
-        </Card>
-      </div>
-    )
-  }
-
-  public exportCSV() {
+  const exportCSV = () => {
     const params = new URLSearchParams()
-    params.set('token', this.props.ckanAuthToken)
+    params.set('token', ckanAuthToken)
     params.set('otu_query', JSON.stringify(EmptyOTUQuery))
-    params.set('columns', JSON.stringify(this.props.extraColumns))
-    params.set('sorting', JSON.stringify(this.props.sorting))
+    params.set('columns', JSON.stringify(extraColumns))
+    params.set('sorting', JSON.stringify(sorting))
 
-    analytics.track('otu_export_contextual_CSV', {
-      columns: this.props.extraColumns.sort(),
+    track('otu_export_contextual_CSV', {
+      columns: extraColumns.sort(),
     })
 
     const baseURL = window.otu_search_config.contextual_csv_download_endpoint
     const url = `${baseURL}?${params.toString()}`
     window.open(url)
   }
+
+  return (
+    <div>
+      <Card>
+        <CardHeader>
+          <div>
+            <HeaderButton
+              octicon="desktop-download"
+              text="Export Search Results (CSV)"
+              onClick={exportCSV}
+            />
+          </div>
+        </CardHeader>
+        <CardBody>
+          <SearchResultsTable />
+        </CardBody>
+      </Card>
+    </div>
+  )
 }
 
 function mapStateToProps(state) {
