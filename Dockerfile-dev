@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libyaml-dev \
   libxml2-dev \
   libxslt1-dev \
+  libcairo2-dev \
   pkg-config \
   openssh-client \
   zlib1g-dev \
