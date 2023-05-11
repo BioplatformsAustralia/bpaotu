@@ -66,18 +66,6 @@ const SamplesMapModal = (props) => {
       },
       position: [60, 100],
     },
-    // {
-    //   selector: '[data-tut="reactour__CloseSamplesMapModal"]',
-    //   style: stepsStyle,
-    //   content: () => {
-    //     return (
-    //       <div>
-    //         <h4>Close map view</h4>
-    //         <p>Click close button to close Map View.</p>
-    //       </div>
-    //     )
-    //   },
-    // },
   ]
 
   return (

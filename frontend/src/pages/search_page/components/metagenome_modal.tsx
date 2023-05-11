@@ -15,7 +15,7 @@ import {
 } from 'reactstrap'
 
 import AnimateHelix, { loadingstyle } from 'components/animate_helix'
-import { Tutorial } from 'components/tutorial'
+import { Tutorial, stepsStyle } from 'components/tutorial'
 import { TourContext } from 'providers/tour_provider'
 
 import { metagenomeRequest } from 'api'
@@ -25,14 +25,6 @@ import { closeMetagenomeModal } from '../reducers/metagenome_modal'
 import { describeSearch } from '../reducers/search'
 
 import { metagenome_rows } from './metagenome_rows'
-
-const stepsStyle = {
-  backgroundColor: 'rgb(30 30 30 / 90%)',
-  color: 'rgb(255 255 255 / 90%)',
-  padding: '50px 30px',
-  boxShadow: 'rgb(0 0 0 / 30%) 0px 0.5em 3em',
-  maxWidth: '500px',
-}
 
 const InfoBox = (props) => (
   <div

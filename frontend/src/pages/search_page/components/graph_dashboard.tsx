@@ -47,7 +47,7 @@ class GraphDashboard extends React.Component<any> {
                 optionscontextualFilter={this.props.optionscontextualFilter}
                 contextualGraphdata={this.props.contextualGraphdata}
                 taxonomyGraphdata={this.props.taxonomyGraphdata}
-                tabSelected={this.props.tabSelected}
+                selectedTab={this.props.selectedTab}
                 selectTab={(e) => {
                   this.props.selectTab(e)
                 }}

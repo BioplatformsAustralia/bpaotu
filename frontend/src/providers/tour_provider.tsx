@@ -6,12 +6,14 @@ interface TourContextValue {
   isGraphTourOpen: boolean
   isRequestTourOpen: boolean
   isMapTourOpen: boolean
+  isShortGraphTourOpen: boolean
   mainTourStep: number
   graphTourStep: number
   setIsMainTourOpen: React.Dispatch<React.SetStateAction<boolean>>
   setIsGraphTourOpen: React.Dispatch<React.SetStateAction<boolean>>
   setIsRequestTourOpen: React.Dispatch<React.SetStateAction<boolean>>
   setIsMapTourOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setIsShortGraphTourOpen: React.Dispatch<React.SetStateAction<boolean>>
   setMainTourStep: React.Dispatch<React.SetStateAction<number>>
   setGraphTourStep: React.Dispatch<React.SetStateAction<number>>
 }
@@ -21,12 +23,14 @@ export const TourContext = createContext<TourContextValue>({
   isGraphTourOpen: false,
   isRequestTourOpen: false,
   isMapTourOpen: false,
+  isShortGraphTourOpen: false,
   mainTourStep: 0,
   graphTourStep: 0,
   setIsMainTourOpen: () => {},
   setIsGraphTourOpen: () => {},
   setIsRequestTourOpen: () => {},
   setIsMapTourOpen: () => {},
+  setIsShortGraphTourOpen: () => {},
   setMainTourStep: () => {},
   setGraphTourStep: () => {},
 })
@@ -36,6 +40,7 @@ export const TourProvider = ({ children }) => {
   const [isGraphTourOpen, setIsGraphTourOpen] = useState(false)
   const [isRequestTourOpen, setIsRequestTourOpen] = useState(false)
   const [isMapTourOpen, setIsMapTourOpen] = useState(false)
+  const [isShortGraphTourOpen, setIsShortGraphTourOpen] = useState(false)
   const [mainTourStep, setMainTourStep] = useState(0)
   const [graphTourStep, setGraphTourStep] = useState(0)
 
@@ -46,12 +51,14 @@ export const TourProvider = ({ children }) => {
         isGraphTourOpen,
         isRequestTourOpen,
         isMapTourOpen,
+        isShortGraphTourOpen,
         mainTourStep,
         graphTourStep,
         setIsMainTourOpen,
         setIsGraphTourOpen,
         setIsRequestTourOpen,
         setIsMapTourOpen,
+        setIsShortGraphTourOpen,
         setMainTourStep,
         setGraphTourStep,
       }}
