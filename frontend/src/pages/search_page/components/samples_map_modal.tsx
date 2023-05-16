@@ -9,35 +9,42 @@ import { closeSamplesMapModal, fetchSampleMapModalSamples } from '../reducers/sa
 
 import SearchFilters from './search_filters'
 
-class SamplesMapModal extends React.Component<any> {
-  render() {
-    return (
-      <Modal isOpen={this.props.isOpen} data-tut="reactour__SamplesMap" id="reactour__SamplesMap">
-        <ModalHeader
-          toggle={this.props.closeSamplesMapModal}
-          data-tut="reactour__CloseSamplesMapModal"
-          id="reactour__CloseSamplesMapModal"
-        >
-          Interactive Map Search
-        </ModalHeader>
-        <ModalBody>
-          <SamplesMap
-            fetchSamples={this.props.fetchSampleMapModalSamples}
-            isLoading={this.props.isLoading}
-            isOpen={this.props.isOpen}
-            markers={this.props.markers}
-            sample_otus={this.props.sample_otus}
-          />
-        </ModalBody>
-        <ModalFooter>
-          <SearchFilters handleSearchFilterClick={this.props.fetchSampleMapModalSamples} />
-        </ModalFooter>
-      </Modal>
-    )
-  }
+const SamplesMapModal = (props) => {
+  const {
+    isOpen,
+    closeSamplesMapModal,
+    fetchSampleMapModalSamples,
+    isLoading,
+    markers,
+    sample_otus,
+  } = props
+
+  return (
+    <Modal isOpen={isOpen} data-tut="reactour__SamplesMap" id="reactour__SamplesMap">
+      <ModalHeader
+        toggle={closeSamplesMapModal}
+        data-tut="reactour__CloseSamplesMapModal"
+        id="reactour__CloseSamplesMapModal"
+      >
+        Interactive Map Search
+      </ModalHeader>
+      <ModalBody>
+        <SamplesMap
+          fetchSamples={fetchSampleMapModalSamples}
+          isLoading={isLoading}
+          isOpen={isOpen}
+          markers={markers}
+          sample_otus={sample_otus}
+        />
+      </ModalBody>
+      <ModalFooter>
+        <SearchFilters handleSearchFilterClick={fetchSampleMapModalSamples} />
+      </ModalFooter>
+    </Modal>
+  )
 }
 
-function mapStateToProps(state) {
+const mapStateToProps = (state) => {
   const { isLoading, isOpen, markers, sample_otus } = state.searchPage.samplesMapModal
   return {
     isLoading,
@@ -47,7 +54,7 @@ function mapStateToProps(state) {
   }
 }
 
-function mapDispatchToProps(dispatch) {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       closeSamplesMapModal,
