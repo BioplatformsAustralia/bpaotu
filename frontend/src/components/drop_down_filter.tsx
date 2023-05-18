@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { concat, map } from 'lodash'
-import { Col, FormGroup, Input, Label, UncontrolledTooltip } from 'reactstrap'
-import Octicon from 'components/octicon'
+import { Col, FormGroup, Input } from 'reactstrap'
+import { FilterHeader } from 'components/filter_header'
 
 import Select from 'react-select'
 import { OperatorAndValue } from 'search'
@@ -31,19 +31,7 @@ export default class DropDownFilter extends React.Component<any> {
 
     return (
       <FormGroup row={true}>
-        {this.props.info ? (
-          <Label sm={3}>
-            {this.props.label + ' '}
-            <span id={this.props.label + 'Tip'}>
-              <Octicon name="info" />
-            </span>
-            <UncontrolledTooltip target={this.props.label + 'Tip'} placement="auto">
-              {this.props.info}
-            </UncontrolledTooltip>
-          </Label>
-        ) : (
-          <Label sm={3}>{this.props.label}</Label>
-        )}
+        <FilterHeader label={this.props.label} info={this.props.info} />
         <Col sm={3}>
           <Input
             type="select"
