@@ -15,6 +15,7 @@ import reducers from 'reducers'
 
 import Analytics from 'analytics'
 import { AnalyticsProvider } from 'use-analytics'
+import { TourProvider } from 'providers/tour_provider'
 import mixpanelPlugin from '@analytics/mixpanel'
 
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose
@@ -52,9 +53,11 @@ axios
     ReactDOM.render(
       <Provider store={store}>
         <AnalyticsProvider instance={analytics}>
-          <Router basename={window.otu_search_config.base_url}>
-            <App />
-          </Router>
+          <TourProvider>
+            <Router basename={window.otu_search_config.base_url}>
+              <App />
+            </Router>
+          </TourProvider>
         </AnalyticsProvider>
       </Provider>,
       document.getElementById('root')

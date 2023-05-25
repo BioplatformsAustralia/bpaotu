@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import Tour from 'reactour'
 import { withRouter } from 'react-router-dom'
 import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock'
 import { Badge, UncontrolledTooltip } from 'reactstrap'
 import Octicon from 'components/octicon'
+import { TourContext } from 'providers/tour_provider'
 
 const stepsStyle = {
   backgroundColor: 'rgb(30 30 30 / 90%)',
@@ -33,26 +34,37 @@ const activateSelectedElement = (elementName) => {
   }
 }
 
-const steps = (props) => {
+const steps = (props, isMainTourOpen) => {
   return [
     {
       content: () => {
         return (
           <div>
-            <h4>Interactive Graph Tutorial</h4>
-            <br />
-            <p>Interactive Graphing tool can be used to visually interrogate the AM dataset. </p>
-            In this tutorial we will:
+            <h4>Interactive Graphical Search Tutorial</h4>
+            <p>
+              The Interactive Graphical Search tool can be used to visually interrogate the AM
+              dataset.
+            </p>
+            <p>In this tutorial we will:</p>
             <ul>
-              <li>Highlight the main features of the interactive graphing tool.</li>
-              <li>Show how filters can be applied using the interactive graphical interface. </li>
+              <li>Highlight the main features</li>
+              <li>Show how filters can be applied using the interactive graphical interface</li>
               <li>
                 Show how the interactive user interface can be used in conjunction with the other
-                search options available on the portal.
+                search options available on the portal
               </li>
             </ul>
+            {isMainTourOpen && (
+              <p>
+                If you are in the midst of the main tutorial, you can return to that at any time by
+                closing this tutorial
+              </p>
+            )}
           </div>
         )
+      },
+      action: (node) => {
+        // TODO: determine if graph tutorial was launched while main tutorial was open
       },
       style: stepsStyle,
     },
@@ -68,15 +80,16 @@ const steps = (props) => {
         return (
           <div>
             <h4>Graph View Selection</h4>
-            <br />
             <p>The interactive graphing page can be viewed in either tabbed or list layout. </p>
             <p>
               The default view is tabbed view, but you can swap between views by clicking between
-              the 2 buttons.{' '}
+              the 2 buttons.
             </p>
-            <ul>
-              <li>Click either 'Tabbed View' or 'Listed View' button to see respective view.</li>
-            </ul>
+            <p>
+              <ul>
+                <li>Click either 'Tabbed View' or 'Listed View' button to see respective view.</li>
+              </ul>
+            </p>
           </div>
         )
       },
@@ -87,16 +100,14 @@ const steps = (props) => {
       content: ({ goTo }: { goTo: (step: number) => void }) => {
         return (
           <div>
-            <span>
-              <h4>Graph View Selection</h4>
-              <p>
-                In tabbed view, different graphs can be viewed by clicking between the various tabs.
-              </p>
-              <p>In listed view, use the side scroll bar to view different graphs.</p>
-              <ul>
-                <li>Click "Prev" button to go back and switch the view.</li>
-              </ul>
-            </span>
+            <h4>Graph View Selection</h4>
+            <p>
+              In tabbed view, different graphs can be viewed by clicking between the various tabs.
+            </p>
+            <p>In listed view, use the side scroll bar to view different graphs.</p>
+            <ul>
+              <li>Click "Prev" button to go back and switch the view.</li>
+            </ul>
           </div>
         )
       },
@@ -109,18 +120,16 @@ const steps = (props) => {
       content: () => {
         return (
           <div>
-            <span>
-              <h4>Filter Selection</h4>
-              <br />A list of applied filters can be seen at the bottom of the page.
-              <ul>
-                <li>Filters can be applied by selecting/clicking on desired area of a graph.</li>
-                <li>All the applied filters are shown at the bottom of the graph page.</li>
-                <li>
-                  Filters can be deselected by clicking on the cross at the far right of the filter
-                  box.
-                </li>
-              </ul>
-            </span>
+            <h4>Filter Selection</h4>
+            <p> A list of applied filters can be seen at the bottom of the page.</p>
+            <ul>
+              <li>Filters can be applied by selecting/clicking on desired area of a graph.</li>
+              <li>All the applied filters are shown at the bottom of the graph page.</li>
+              <li>
+                Filters can be deselected by clicking on the cross at the far right of the filter
+                box.
+              </li>
+            </ul>
           </div>
         )
       },
@@ -136,26 +145,25 @@ const steps = (props) => {
       content: () => {
         return (
           <div>
-            <span>
-              <h4>Download + Info Button</h4>
-              <br />
+            <h4>Download + Info Buttons</h4>
+            <p>
+              All graphs are available for download by selecting the download button at the top
+              right hand corner of the graphing window. <br />
               <p>
-                All graphs are available for download by selecting the download button at the top
-                right hand corner of the graphing window. <br />
                 <i>
-                  (Note: Some browsers may require you to hover the cursor over the graph to make
-                  the download button visible).
+                  Note: some browsers may require you to hover the cursor over the graph to make the
+                  download button visible
                 </i>
               </p>
+            </p>
+            <p>
               Hover over the <Octicon name="info" /> Info buttons to view a definition of the
               function.
-              <br />
-              <br />
-              <p>
-                At any time, the graphical interactive pop-up window can be closed and reopened
-                without the search being lost.
-              </p>
-            </span>
+            </p>
+            <p>
+              At any time, the graphical interactive pop-up window can be closed and reopened
+              without the search being lost.
+            </p>
           </div>
         )
       },
@@ -169,7 +177,6 @@ const steps = (props) => {
         return (
           <div>
             <h4>Amplicon Selection</h4>
-            <br />
             <p>
               We will use the same example used in the tutorial on the main page to test the
               features of the interactive graphing tool.
@@ -182,15 +189,13 @@ const steps = (props) => {
               the main page before opening the graphing tool.
             </p>
             <ul>
-              <li>
-                Close the graphical interface and select the amplicon 2f519R_archaea then reopen the
-                interactive graph search.{' '}
-              </li>
+              <li>Close the graphical interface</li>
+              <li>Select the amplicon 2f519R_archaea then reopen the interactive graph search</li>
             </ul>
-            You will see:
+            <p>You will see:</p>
             <ul>
-              <li>The Amplicon plot for with the total number of ASVs for the Archaea.</li>
-              <li>The Amplicon filter at the bottom of the pop-up window.</li>
+              <li>The amplicon plot for with the total number of ASVs for the Archaea</li>
+              <li>The amplicon filter at the bottom of the pop-up window</li>
             </ul>
           </div>
         )
@@ -208,20 +213,18 @@ const steps = (props) => {
         return (
           <div>
             <h4>Reset Amplicon Selection</h4>
-            <br />
-            <p>We will use the default tabbed view for this tutorial.</p>
-            For this example, we'll find all ASV's
+            <p>We will use the default tabbed view for this step.</p>
+            <p>For this example, we'll find all ASV's that are:</p>
             <ul>
               <li>classified as phylum Verrucomicrobia,</li>
               <li>from grassland soils</li>
-              <li>with depth between 0 - 0.1m,</li>
-              <li>so we will use the default amplicon of bacterial 16S.</li>
+              <li>with a depth of 0 to 0.1m</li>
             </ul>
-            Reset the amplicon filter,
+            <p>For this we will use the default amplicon of bacterial 16S.</p>
             <ul>
               <li>
-                this can be done by clicking the cross on the amplicon filter or by closing the
-                popup and selecting the amplicon on the main page.
+                Reset the amplicon filter clicking the cross on the amplicon filter or by closing
+                the popup and selecting the amplicon on the main page
               </li>
             </ul>
           </div>
@@ -240,19 +243,18 @@ const steps = (props) => {
         return (
           <div>
             <h4>Taxonomy Selection</h4>
-            <br />
             <p>
               Click on the section of the pie graph corresponding to the desired taxonomy. You will
               notice the graph will reset to the next level of taxonomy with each click.
             </p>
-            To select the Verrucomicrobia
+            <p>To select the Verrucomicrobia</p>
             <ul>
-              <li>Click on the 'd_Bacteria' portion of the pie.</li>
-              <li>Click on the 'p__Verrucomicrobia' portion of the pie.</li>
+              <li>Click on the 'd_Bacteria' portion of the pie</li>
+              <li>Click on the 'p__Verrucomicrobia' portion of the pie</li>
             </ul>
             <p>
               Now, we'll move to the environment page to select the graphs showing environmental
-              breakdown{' '}
+              breakdown.
             </p>
           </div>
         )
@@ -269,10 +271,7 @@ const steps = (props) => {
         return (
           <div>
             <h4>Environment Selection</h4>
-            <br />
-            <ul>
-              <li>Click on the Soil section of the pie chart</li>
-            </ul>
+            <p>On the Environment tab, click on the Soil section of the pie chart</p>
           </div>
         )
       },
@@ -288,9 +287,10 @@ const steps = (props) => {
         return (
           <div>
             <h4>Contextual Filter Selection</h4>
+            <p>On the Contextual Filters tab:</p>
             <ul>
-              <li>Click on the 'Vegetation' tab if not selected.</li>
-              <li>Find and click 'Grassland' on the 'Vegetation Type Plot' pie chart.</li>
+              <li>Click on the 'Vegetation Type' tab if not selected</li>
+              <li>Find and click 'Grassland' on the 'Vegetation Type Plot' pie chart</li>
             </ul>
           </div>
         )
@@ -403,20 +403,17 @@ const steps = (props) => {
             <p>
               Now that we have selected some data of interest, we can use the graphical interface to
               explore the data in more detail.
-              <br />
             </p>
             <p>For example if we were interested in samples over a specific pH range we can: </p>
             <ul>
-              <li>Click on the “Contextual Filters” tab and select the Ph tab.</li>
+              <li>Click on the “Contextual Filters” tab and select the pH tab.</li>
               <li>By hovering the cursor over the values on the graph we can see their values.</li>
               <li>
                 You can use your mouse to draw a rectangle over values that you are interested to
                 filter for a range of interest.
               </li>
-              <li>
-                Try using your mouse to select for values ranging from 5 to 6.2{' '}
-                <i>(Notice the filter has been added to the list at the bottom of the page)</i>.{' '}
-              </li>
+              <li>Try using your mouse to select for values ranging from 5 to 6.2 </li>
+              <li>(Note that the filter has been added to the list at the bottom of the page)</li>
               <li>
                 If finer filtering is required, you can close the window popup window and change the
                 values in the dropdown menu of the main page.
@@ -434,16 +431,14 @@ const steps = (props) => {
         return (
           <div>
             <h4>Traits Selection</h4>
-            <ul>
-              <li>
-                The Traits tab provides information relating to inferred metabolic/functional
-                characteristics found in samples using the selected filters.
-              </li>
-              <li>
-                Filters for a specific trait can be added by clicking on the desired segment of the
-                pie chart.
-              </li>
-            </ul>
+            <p>
+              The Traits tab provides information relating to inferred metabolic/functional
+              characteristics found in samples using the selected filters.
+            </p>
+            <p>
+              Filters for a specific trait can be added by clicking on the desired segment of the
+              pie chart.
+            </p>
           </div>
         )
       },
@@ -459,17 +454,15 @@ const steps = (props) => {
         return (
           <div>
             <h4>Taxonomy or Trait information Selection</h4>
-            <ul>
-              <li>
-                Two additional tabs provide visualisation of taxonomy or trait information using the
-                selected filters against various AM environment types.{' '}
-              </li>
-              <li>
-                This includes comparative plots of the entire data set, all marine samples, all soil
-                samples and the composition of samples selected using the filters and samples not
-                included in the filtered dataset.
-              </li>
-            </ul>
+            <p>
+              Two additional tabs provide visualisation of taxonomy or trait information using the
+              selected filters against various AM environment types.
+            </p>
+            <p>
+              This includes comparative plots of the entire data set, all marine samples, all soil
+              samples and the composition of samples selected using the filters and samples not
+              included in the filtered dataset.
+            </p>
           </div>
         )
       },
@@ -496,68 +489,63 @@ const steps = (props) => {
   ]
 }
 
-class BPAOTUGraphTour extends React.Component<any> {
-  state = {
-    isTourOpen: false,
-  }
-  disableBody = (target) => disableBodyScroll(target)
-  enableBody = (target) => enableBodyScroll(target)
-  setIsTourOpen(action) {
-    this.setState({
-      isTourOpen: action,
-    })
-  }
-  setTourStep(step) {
-    if (step !== this.props.tourStep) {
-      this.props.setTourStep(step)
-    }
-  }
+const BPAOTUGraphTour = (props) => {
+  const {
+    isMainTourOpen,
+    setIsMainTourOpen,
+    isGraphTourOpen,
+    setIsGraphTourOpen,
+    mainTourStep,
+    setMainTourStep,
+    graphTourStep,
+    setGraphTourStep,
+  } = useContext(TourContext)
 
-  render() {
-    return (
-      <>
-        <Tour
-          startAt={this.props.tourStep}
-          steps={steps(this.props)}
-          prevButton={'<< Prev'}
-          nextButton={'Next >>'}
-          disableFocusLock={true}
-          badgeContent={(curr, tot) => `${curr} of ${tot}`}
-          getCurrentStep={(curr) => this.setTourStep(curr)}
-          accentColor={'#007bff'}
-          rounded={5}
-          isOpen={this.state.isTourOpen}
-          onRequestClose={(curr) => this.setIsTourOpen(false)}
-          onAfterOpen={this.disableBody}
-          onBeforeClose={this.enableBody}
-          lastStepNextButton={'End Tutorial'}
-        />
-        <Badge
-          id="tutorialTab"
-          style={{
-            cursor: 'pointer',
-            fontSize: '14px',
-            margin: '10px',
-            padding: '10px 25px',
-            color: '#041e48',
-            backgroundColor: '#17c496',
-          }}
-          onClick={() => {
-            this.setIsTourOpen(true)
-            this.props.history.push('/')
-          }}
-          pill
-        >
-          {' '}
-          <Octicon name="book" />
-          {'   '}Tutorial
-        </Badge>
-        <UncontrolledTooltip target="tutorialTab" placement="auto">
-          {'This tutorial helps to use interactive graph feature in the BPA-OTU data portal'}
-        </UncontrolledTooltip>
-      </>
-    )
-  }
+  const disableBody = (target) => disableBodyScroll(target)
+  const enableBody = (target) => enableBodyScroll(target)
+
+  return (
+    <>
+      <Tour
+        startAt={props.tourStep}
+        steps={steps(props, isMainTourOpen)}
+        prevButton={'<< Prev'}
+        nextButton={'Next >>'}
+        disableFocusLock={true}
+        badgeContent={(curr, tot) => `${curr} of ${tot}`}
+        getCurrentStep={(curr) => setGraphTourStep(curr)}
+        accentColor={'#007bff'}
+        rounded={5}
+        isOpen={isGraphTourOpen}
+        onRequestClose={(curr) => setIsGraphTourOpen(false)}
+        onAfterOpen={disableBody}
+        onBeforeClose={enableBody}
+        lastStepNextButton={'End Tutorial'}
+      />
+      <Badge
+        id="badgeGraphTutorial"
+        style={{
+          cursor: 'pointer',
+          fontSize: '14px',
+          margin: '10px',
+          padding: '10px 25px',
+          color: '#041e48',
+          backgroundColor: '#17c496',
+        }}
+        onClick={() => {
+          setIsGraphTourOpen(true)
+          props.history.push('/')
+        }}
+        pill
+      >
+        <Octicon name="book" />
+        <span style={{ marginLeft: 6 }}>Tutorial</span>
+      </Badge>
+      <UncontrolledTooltip target="badgeGraphTutorial" placement="auto">
+        This tutorial helps to use interactive graph feature in the BPA-OTU data portal
+      </UncontrolledTooltip>
+    </>
+  )
 }
 
 export default withRouter(BPAOTUGraphTour)
