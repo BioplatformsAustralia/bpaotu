@@ -76,10 +76,16 @@ const SearchPage = (props) => {
         ) : (
           <>
             <Col sm={{ size: 2, offset: 3 }}>
-              <SearchButton octicon="search" text="Sample search" onClick={newSearch} />
+              <SearchButton
+                id="SampleSearchButton"
+                octicon="search"
+                text="Sample search"
+                onClick={newSearch}
+              />
             </Col>
             <Col sm={{ size: 2 }}>
               <SearchButton
+                id="InteractiveMapSearchButton"
                 octicon="globe"
                 text="Interactive map search"
                 onClick={interactiveMapSearch}
@@ -87,6 +93,7 @@ const SearchPage = (props) => {
             </Col>
             <Col sm={{ size: 2 }}>
               <SearchButton
+                id="InteractiveGraphSearchButton"
                 octicon="graph"
                 text="Interactive graph search"
                 onClick={interactiveGraphSearch}
