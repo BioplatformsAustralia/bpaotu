@@ -2,33 +2,13 @@ import { isEmpty, map, reject } from 'lodash'
 import * as React from 'react'
 import { connect } from 'react-redux'
 
-import { Button, Card, CardBody, CardHeader } from 'reactstrap'
+import { Card, CardBody, CardHeader } from 'reactstrap'
 
 import { useAnalytics } from 'use-analytics'
-import Octicon from 'components/octicon'
+import { ExportDataButton } from 'components/export_data_button'
 
 import { EmptyOTUQuery } from 'search'
 import SearchResultsTable from './search_results_table'
-
-const HeaderButton = (props) => (
-  <Button
-    style={{ marginRight: 10 }}
-    outline={true}
-    color="primary"
-    disabled={props.disabled}
-    onClick={props.onClick}
-  >
-    {props.octicon ? (
-      <span>
-        <Octicon name={props.octicon} />
-        &nbsp;
-      </span>
-    ) : (
-      ''
-    )}
-    {props.text}
-  </Button>
-)
 
 const SearchResultsCard = (props) => {
   const { ckanAuthToken, extraColumns, sorting } = props
@@ -55,7 +35,7 @@ const SearchResultsCard = (props) => {
       <Card>
         <CardHeader>
           <div>
-            <HeaderButton
+            <ExportDataButton
               octicon="desktop-download"
               text="Export Search Results (CSV)"
               onClick={exportCSV}

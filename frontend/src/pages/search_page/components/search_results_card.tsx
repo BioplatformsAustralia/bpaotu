@@ -5,7 +5,7 @@ import { bindActionCreators } from 'redux'
 import { Alert, Button, Card, CardBody, CardHeader } from 'reactstrap'
 
 import { useAnalytics } from 'use-analytics'
-import Octicon from 'components/octicon'
+import { ExportDataButton } from 'components/export_data_button'
 
 import { describeSearch } from '../reducers/search'
 import { clearGalaxyAlert, submitToGalaxy, workflowOnGalaxy } from '../reducers/submit_to_galaxy'
@@ -17,30 +17,6 @@ import SamplesMapModal from './samples_map_modal'
 import SamplesGraphModal from './samples_graph_modal'
 import MetagenomeModal from './metagenome_modal'
 import SearchResultsTable from './search_results_table'
-
-const HeaderButton = (props) => (
-  <Button
-    id={props.text}
-    size="sm"
-    style={{ marginRight: 10 }}
-    outline={true}
-    color="primary"
-    disabled={props.disabled}
-    onClick={props.onClick}
-    data-tut={props.text}
-    title={props.disabled ? 'Select Amplicon to ' + props.text : ''}
-  >
-    {props.octicon ? (
-      <span>
-        <Octicon name={props.octicon} />
-        &nbsp;
-      </span>
-    ) : (
-      ''
-    )}
-    {props.text}
-  </Button>
-)
 
 const wrapText = (text) => ({ __html: text })
 
@@ -115,23 +91,31 @@ const _SearchResultsCard = (props) => {
       <Card>
         <CardHeader>
           <div className="text-center">
-            <HeaderButton
+            <ExportDataButton
+              id="ExportOtuContextual"
+              size="sm"
               octicon="desktop-download"
               text="Download OTU and Contextual Data (CSV)"
               onClick={exportCSV}
             />
-            <HeaderButton
+            <ExportDataButton
+              id="ExportContextualOnly"
+              size="sm"
               octicon="desktop-download"
               text="Download Contextual Data only (CSV)"
               onClick={exportCSVOnlyContextual}
             />
-            <HeaderButton
+            <ExportDataButton
+              id="ExportBIOM"
+              size="sm"
               octicon="desktop-download"
               text="Download BIOM format (Phinch compatible)"
               onClick={exportBIOM}
             />
             {window.otu_search_config.galaxy_integration && (
-              <HeaderButton
+              <ExportDataButton
+                id="ExportGalaxy"
+                size="sm"
                 octicon="clippy"
                 text="Export Data to Galaxy Australia for further analysis"
                 disabled={isGalaxySubmissionDisabled()}
@@ -139,7 +123,9 @@ const _SearchResultsCard = (props) => {
               />
             )}
             {window.otu_search_config.galaxy_integration && (
-              <HeaderButton
+              <ExportDataButton
+                id="ExportKrona"
+                size="sm"
                 octicon="graph"
                 text="Export Data to Galaxy Australia for Krona Taxonomic Abundance Graph"
                 disabled={isGalaxySubmissionDisabled()}
@@ -175,12 +161,12 @@ const _MetagenomeSearchResultsCard = (props) => {
       <Card>
         <CardHeader>
           <div className="text-center">
-            <HeaderButton
+            <ExportDataButton
               octicon="desktop-download"
               text={`Request metagenome files for all selected samples`}
               onClick={props.openMetagenomeModalSearch}
             />
-            <HeaderButton
+            <ExportDataButton
               octicon="desktop-download"
               text="Download Contextual Data only (CSV)"
               onClick={exportCSVOnlyContextualMetagenome}
