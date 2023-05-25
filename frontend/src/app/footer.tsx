@@ -10,12 +10,20 @@ export default class Footer extends React.Component<any, any> {
     return (
       <footer className="site-footer space-above">
         <div className="site-footer-links container-fluid">
-          <a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a>
-          <a href="https://github.com/BioplatformsAustralia/bpaotu">Source Code</a>
-          <Link to="/privacy-policy">Privacy Policy</Link>
-          <a href="mailto:help@bioplatforms.com" data-tut="reactour__Contact">
-            Contact
-          </a>
+          <span>
+            <a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a>
+          </span>
+          <span>
+            <a href="https://github.com/BioplatformsAustralia/bpaotu">Source Code</a>
+          </span>
+          <span>
+            <Link to="/privacy-policy">Privacy Policy</Link>
+          </span>
+          <span>
+            <a href="mailto:help@bioplatforms.com" data-tut="reactour__Contact">
+              Contact
+            </a>
+          </span>
         </div>
         <div className="site-footer-logo container-fluid">
           <span>

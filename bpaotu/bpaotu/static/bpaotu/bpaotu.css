@@ -33,21 +33,22 @@ body {
 
 .site-footer {
     padding-top: 15px;
-    color: rgb(230,230,230);
+    color: rgb(230, 230, 230);
     background-color: #1e73be;
     text-align: center;
 }
 
 .site-footer a {
-    color: rgb(255,255,255);
+    color: rgb(255, 255, 255);
 }
 
 .site-footer-links {
     padding-bottom: 15px;
 }
 
-.site-footer-links a {
-    padding-right: 25px;
+.site-footer-links span {
+    padding-left: 12px;
+    padding-right: 12px;
 }
 
 .site-footer-logo {
@@ -79,7 +80,7 @@ body {
 
     width: 100%;
     height: 100%;
-    background:rgba(140,140,140,0.7);
+    background: rgba(140, 140, 140, 0.7);
 
     text-align: center;
     vertical-align: middle;
@@ -102,8 +103,8 @@ body {
 }
 
 .modal-dialog {
-    max-width: none!important;
-    width: 94%!important;
+    max-width: none !important;
+    width: 94% !important;
     height: 94%;
     padding: 0;
 }
@@ -128,13 +129,21 @@ body {
 }
 
 @keyframes spin {
-    from { transform: scale(1) rotate(0deg); }
-    to { transform: scale(1) rotate(360deg); }
+    from {
+        transform: scale(1) rotate(0deg);
+    }
+    to {
+        transform: scale(1) rotate(360deg);
+    }
 }
 
 @-webkit-keyframes spin2 {
-    from { -webkit-transform: rotate(0deg); }
-    to { -webkit-transform: rotate(360deg); }
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+    }
 }
 
 .octicon {
@@ -169,7 +178,6 @@ body {
 .nav-item a {
     cursor: pointer;
 }
-
 
 .bpaotu-map-popup .leaflet-popup-content {
     border: 0;
