@@ -7,6 +7,8 @@ import { Badge, UncontrolledTooltip } from 'reactstrap'
 import Octicon from 'components/octicon'
 import { TourContext } from 'providers/tour_provider'
 
+import { useAnalytics } from 'use-analytics'
+
 const stepsStyle = {
   backgroundColor: 'rgb(30 30 30 / 90%)',
   color: 'rgb(255 255 255 / 90%)',
@@ -459,16 +461,9 @@ const ampliconTourSteps = (props) => {
 }
 
 const BPAOTUTour = (props) => {
-  const {
-    isMainTourOpen,
-    setIsMainTourOpen,
-    isGraphTourOpen,
-    setIsGraphTourOpen,
-    mainTourStep,
-    setMainTourStep,
-    graphTourStep,
-    setGraphTourStep,
-  } = useContext(TourContext)
+  const { track } = useAnalytics()
+  const { isMainTourOpen, setIsMainTourOpen, mainTourStep, setMainTourStep, isGraphTourOpen } =
+    useContext(TourContext)
 
   const disableBody = (target) => disableBodyScroll(target)
   const enableBody = (target) => enableBodyScroll(target)
@@ -486,11 +481,19 @@ const BPAOTUTour = (props) => {
         prevButton={'<< Prev'}
         nextButton={'Next >>'}
         disableFocusLock={true}
+        closeWithMask={false}
         badgeContent={(curr, tot) => `${curr} of ${tot}`}
         rounded={5}
         getCurrentStep={(curr) => setMainTourStep(curr)}
         isOpen={isMainTourOpen && !isGraphTourOpen}
-        onRequestClose={() => setIsMainTourOpen(false)}
+        onRequestClose={() => {
+          setIsMainTourOpen(false)
+          if (mainTourStep === lastStep) {
+            track('otu_tutorial_main_complete')
+          } else {
+            track('otu_tutorial_main_incomplete', { step: mainTourStep })
+          }
+        }}
         onAfterOpen={disableBody}
         onBeforeClose={enableBody}
         startAt={startAt}
@@ -508,6 +511,7 @@ const BPAOTUTour = (props) => {
         }}
         onClick={() => {
           setIsMainTourOpen(true)
+          track('otu_tutorial_main_open')
           props.history.push('/')
         }}
         pill

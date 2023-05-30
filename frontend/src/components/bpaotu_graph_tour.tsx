@@ -6,6 +6,8 @@ import { Badge, UncontrolledTooltip } from 'reactstrap'
 import Octicon from 'components/octicon'
 import { TourContext } from 'providers/tour_provider'
 
+import { useAnalytics } from 'use-analytics'
+
 const stepsStyle = {
   backgroundColor: 'rgb(30 30 30 / 90%)',
   color: 'rgb(255 255 255 / 90%)',
@@ -34,7 +36,7 @@ const activateSelectedElement = (elementName) => {
   }
 }
 
-const steps = (props, isMainTourOpen) => {
+const graphTourSteps = (props, isMainTourOpen) => {
   return [
     {
       content: () => {
@@ -55,16 +57,10 @@ const steps = (props, isMainTourOpen) => {
               </li>
             </ul>
             {isMainTourOpen && (
-              <p>
-                If you are in the midst of the main tutorial, you can return to that at any time by
-                closing this tutorial
-              </p>
+              <p>You can return to the main tutorial at any time by simply closing this one.</p>
             )}
           </div>
         )
-      },
-      action: (node) => {
-        // TODO: determine if graph tutorial was launched while main tutorial was open
       },
       style: stepsStyle,
     },
@@ -490,34 +486,40 @@ const steps = (props, isMainTourOpen) => {
 }
 
 const BPAOTUGraphTour = (props) => {
-  const {
-    isMainTourOpen,
-    setIsMainTourOpen,
-    isGraphTourOpen,
-    setIsGraphTourOpen,
-    mainTourStep,
-    setMainTourStep,
-    graphTourStep,
-    setGraphTourStep,
-  } = useContext(TourContext)
+  const { track } = useAnalytics()
+  const { isMainTourOpen, isGraphTourOpen, setIsGraphTourOpen, graphTourStep, setGraphTourStep } =
+    useContext(TourContext)
 
   const disableBody = (target) => disableBodyScroll(target)
   const enableBody = (target) => enableBodyScroll(target)
 
+  const steps = graphTourSteps(props, isMainTourOpen)
+
+  // all steps are zero-indexed
+  const lastStep = steps.length - 1
+
   return (
     <>
       <Tour
-        startAt={props.tourStep}
-        steps={steps(props, isMainTourOpen)}
+        startAt={graphTourStep}
+        steps={steps}
         prevButton={'<< Prev'}
         nextButton={'Next >>'}
         disableFocusLock={true}
+        closeWithMask={false}
         badgeContent={(curr, tot) => `${curr} of ${tot}`}
         getCurrentStep={(curr) => setGraphTourStep(curr)}
         accentColor={'#007bff'}
         rounded={5}
         isOpen={isGraphTourOpen}
-        onRequestClose={(curr) => setIsGraphTourOpen(false)}
+        onRequestClose={() => {
+          setIsGraphTourOpen(false)
+          if (graphTourStep === lastStep) {
+            track('otu_tutorial_graph_complete')
+          } else {
+            track('otu_tutorial_graph_incomplete', { step: graphTourStep })
+          }
+        }}
         onAfterOpen={disableBody}
         onBeforeClose={enableBody}
         lastStepNextButton={'End Tutorial'}
@@ -534,6 +536,7 @@ const BPAOTUGraphTour = (props) => {
         }}
         onClick={() => {
           setIsGraphTourOpen(true)
+          track('otu_tutorial_graph_open')
           props.history.push('/')
         }}
         pill
