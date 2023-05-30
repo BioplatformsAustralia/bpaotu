@@ -253,8 +253,20 @@ const MetagenomeModal = (props) => {
   }
 
   return (
-    <Modal isOpen={props.isOpen} scrollable={true} fade={true}>
-      <ModalHeader toggle={closeModal}>Metagenome data request</ModalHeader>
+    <Modal
+      isOpen={props.isOpen}
+      scrollable={true}
+      fade={true}
+      data-tut="reactour__MetagenomeDataRequestModal"
+      id="MetagenomeDataRequestModal"
+    >
+      <ModalHeader
+        toggle={closeModal}
+        data-tut="reactour__CloseMetagenomeDataRequestModal"
+        id="CloseMetagenomeDataRequestModal"
+      >
+        Metagenome data request
+      </ModalHeader>
       <ModalBody style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         {modalBody()}
       </ModalBody>

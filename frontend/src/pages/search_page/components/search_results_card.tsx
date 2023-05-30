@@ -162,11 +162,13 @@ const _MetagenomeSearchResultsCard = (props) => {
         <CardHeader>
           <div className="text-center">
             <ExportDataButton
+              id="RequestMetagenomeFiles"
               octicon="desktop-download"
               text={`Request metagenome files for all selected samples`}
               onClick={props.openMetagenomeModalSearch}
             />
             <ExportDataButton
+              id="ExportContextualOnly"
               octicon="desktop-download"
               text="Download Contextual Data only (CSV)"
               onClick={exportCSVOnlyContextualMetagenome}

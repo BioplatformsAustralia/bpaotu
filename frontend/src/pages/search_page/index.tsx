@@ -150,16 +150,16 @@ export function SampleSearchPage() {
   )
 }
 
-export function MetaGenomeSearchPage() {
+export function MetagenomeSearchPage() {
   return (
     <ConnectedSearchPage>
-      <Col>
+      <Col data-tut="reactour__AmpliconTaxonomyFilterCard">
         <AmpliconTaxonomyFilterCard metagenomeMode={true} />
       </Col>
 
       <></>
 
-      <Col sm={12}>
+      <Col sm={12} data-tut="reactour__SearchResultsCard">
         <MetagenomeSearchResultsCard />
       </Col>
     </ConnectedSearchPage>

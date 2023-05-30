@@ -7,6 +7,8 @@ import { Badge, UncontrolledTooltip } from 'reactstrap'
 import Octicon from 'components/octicon'
 import { TourContext } from 'providers/tour_provider'
 
+import { NavLink as RRNavLink } from 'react-router-dom'
+
 import { useAnalytics } from 'use-analytics'
 
 const stepsStyle = {
@@ -32,8 +34,10 @@ const AMBLink = ({ text }) => {
   )
 }
 
-const ampliconTourSteps = (props) => {
-  return [
+const tourSteps = (props) => {
+  const metagenome = window.location.pathname === '/metagenome'
+
+  const commonSteps = [
     {
       content: () => {
         return (
@@ -43,12 +47,27 @@ const ampliconTourSteps = (props) => {
               This tutorial will take you through an example search and demonstrate some of the
               features available in the data portal.
             </p>
-            <p>TODO We have two sets of data amplicon or metagenome</p>
-            <p>links to each page try and deep link to tutorial</p>
-            <p>
-              For this example, we'll find all ASV's classified as Verrucomicrobia, from grassland
-              soils.
-            </p>
+            <p>TODO We have two sets of data available amplicon or metagenome</p>
+            {metagenome ? (
+              <>
+                <p>
+                  You can follow the amplicon tutorial instead by clicking{' '}
+                  <RRNavLink to="/">here</RRNavLink>.
+                </p>
+                <p>TODO an example specific to metagenome (if required)</p>
+              </>
+            ) : (
+              <>
+                <p>
+                  You can follow the metagenome tutorial instead by clicking{' '}
+                  <RRNavLink to="/metagenome">here</RRNavLink>.
+                </p>
+                <p>
+                  For this example, we'll find all ASV's classified as Verrucomicrobia, from
+                  grassland soils.
+                </p>
+              </>
+            )}
           </div>
         )
       },
@@ -60,18 +79,45 @@ const ampliconTourSteps = (props) => {
         return (
           <div>
             <h4>Select Amplicon and Taxonomy</h4>
-            <p>
-              We first need to select an amplicon. For our example, amplicon == '27f519r_bacteria'.
-            </p>
+
+            {metagenome ? (
+              <>
+                <p>
+                  TODO metagenome specifc text instead of: We first need to select an amplicon. For
+                  our example, amplicon == '27f519r_bacteria'.
+                </p>
+                <p>
+                  TODO explain how searching the other amplicons will be different on Metagenome
+                  page (only returns results for samples with metagenome data??)
+                </p>
+              </>
+            ) : (
+              <p>
+                We first need to select an amplicon. For our example, amplicon ==
+                '27f519r_bacteria'.
+              </p>
+            )}
+
             <p>
               This selection will cause the lower level taxonomies to be filtered to those available
               in the upper selection. We now need to select our target kingdom and phylum.
             </p>
-            <p>
-              Select Kingdom as 'd__Bacteria' to keep only sequences hitting the bacterial target
-              the primers were designed for.
-            </p>
-            <p>Select Phylum as 'p__Verrucomicrobiota'.</p>
+
+            {metagenome ? (
+              <>
+                <p>TODO metagenome specifc text about the metaxa taxonomy</p>
+                <p>TODO metagenome specifc textinstead of: Select Kingdom</p>
+              </>
+            ) : (
+              <>
+                <p>
+                  Select Kingdom as 'd__Bacteria' to keep only sequences hitting the bacterial
+                  target the primers were designed for.
+                </p>
+                <p>Select Phylum as 'p__Verrucomicrobiota'.</p>
+              </>
+            )}
+
             <p>
               For more details about taxonomy selection <AMBLink text="see this page" />.
             </p>
@@ -157,15 +203,12 @@ const ampliconTourSteps = (props) => {
       selector: '[data-tut="reactour__InteractiveMapSearchButton"]',
       content: ({ goTo }: { goTo: (step: number) => void }) => {
         if (document.getElementById('reactour__SamplesMap')) {
-          console.log('if')
           setTimeout(() => {
             goTo(6)
           }, 0)
         } else {
-          console.log('else')
           document.getElementById('InteractiveMapSearchButton').addEventListener('click', () => {
             setTimeout(() => {
-              console.log('else setTimeout')
               goTo(6)
             }, 10)
           })
@@ -279,8 +322,8 @@ const ampliconTourSteps = (props) => {
             </p>
             <p>
               Click the "Tutorial" link on the top of the interactive graph visualisation page at
-              any time for more information. You can even do this now and resume the main tutorial
-              when you are done.
+              any time for more information. You do this now and resume the main tutorial when you
+              are done, or come back to it at any time.
             </p>
           </div>
         )
@@ -291,7 +334,7 @@ const ampliconTourSteps = (props) => {
     {
       selector: '[data-tut="reactour__CloseSamplesGraphModal"]',
       content: ({ goTo }: { goTo: (step: number) => void }) => {
-        const nstep = document.getElementById('reactour__CloseSamplesGraphModal') ? 11 : 8
+        const nstep = document.getElementById('CloseSamplesGraphModal') ? 11 : 8
         setTimeout(() => {
           goTo(nstep)
         }, 0)
@@ -313,6 +356,24 @@ const ampliconTourSteps = (props) => {
       },
       style: stepsStyle,
     },
+  ]
+
+  const contactStep = {
+    selector: '[data-tut="reactour__Contact"]',
+    content: () => {
+      return (
+        <div>
+          <span>
+            <h4>End of the Tutorial</h4>
+            <p>If you have any queries, please click on the contact link</p>
+          </span>
+        </div>
+      )
+    },
+    style: stepsStyle,
+  }
+
+  const ampliconSteps = [
     {
       selector: '[data-tut="reactour__ExportOtuContextual"]',
       content: () => {
@@ -443,14 +504,97 @@ const ampliconTourSteps = (props) => {
       },
       style: stepsStyle,
     },
+  ]
+
+  const metagenomeSteps = [
     {
-      selector: '[data-tut="reactour__Contact"]',
+      selector: '[data-tut="reactour__RequestMetagenomeFiles"]',
+      content: ({ goTo }: { goTo: (step: number) => void }) => {
+        if (document.getElementById('MetagenomeDataRequestModal')) {
+          setTimeout(() => {
+            goTo(12)
+          }, 0)
+        } else {
+          document.getElementById('RequestMetagenomeFiles').addEventListener('click', () => {
+            setTimeout(() => {
+              goTo(12)
+            }, 10)
+          })
+        }
+
+        return (
+          <div>
+            <span>
+              <h4>Request Metagenome Files</h4>
+              <p>
+                Click on the 'Request metagenome files for all selected samples' to send a
+                metagenome data request.
+              </p>
+              <p>
+                You will be given a list of data object types for different workflow activities to
+                select from.
+              </p>
+            </span>
+          </div>
+        )
+      },
+      style: stepsStyle,
+    },
+    {
+      selector: '[data-tut="reactour__MetagenomeDataRequestModal"]',
+      content: ({ goTo }: { goTo: (step: number) => void }) => {
+        if (!document.getElementById('MetagenomeDataRequestModal')) {
+          setTimeout(() => {
+            goTo(14)
+          }, 0)
+        }
+
+        return (
+          <div>
+            <h4>Request Metagenome Files</h4>
+            <p>TODO Blah blah blah</p>
+          </div>
+        )
+      },
+      style: stepsStyle,
+      position: [60, 100],
+    },
+    {
+      selector: '[data-tut="reactour__CloseMetagenomeDataRequestModal"]',
+      content: ({ goTo }: { goTo: (step: number) => void }) => {
+        const nstep = document.getElementById('CloseMetagenomeDataRequestModal') ? 14 : 11
+        setTimeout(() => {
+          goTo(nstep)
+        }, 0)
+
+        return (
+          <div>
+            <h4>Close Metagenome Data Request</h4>
+            <p>Click the close button to close the Metagenome Data Request.</p>
+          </div>
+        )
+      },
+      action: (node) => {
+        if (node) {
+          const closeButton = node.querySelector('.close')
+          if (closeButton) {
+            closeButton.click()
+          }
+        }
+      },
+      style: stepsStyle,
+    },
+    {
+      selector: '[data-tut="reactour__ExportContextualOnly"]',
       content: () => {
         return (
           <div>
             <span>
-              <h4>End of the Tutorial</h4>
-              <p>If you have any queries, please click on the contact link</p>
+              <h4>Export the contextual data as CSV</h4>
+              <p>
+                Contextual data can be exported as CSV by clicking the 'Download Contextual Data
+                only (CSV)'. This will only provide the sample metadata, not the ASV table.
+              </p>
             </span>
           </div>
         )
@@ -458,6 +602,10 @@ const ampliconTourSteps = (props) => {
       style: stepsStyle,
     },
   ]
+
+  const specificSteps = metagenome ? metagenomeSteps : ampliconSteps
+
+  return [...commonSteps, ...specificSteps, contactStep]
 }
 
 const BPAOTUTour = (props) => {
@@ -468,7 +616,7 @@ const BPAOTUTour = (props) => {
   const disableBody = (target) => disableBodyScroll(target)
   const enableBody = (target) => enableBodyScroll(target)
 
-  const steps = ampliconTourSteps(props)
+  const steps = tourSteps(props)
 
   // all steps are zero-indexed
   const lastStep = steps.length - 1
@@ -512,7 +660,6 @@ const BPAOTUTour = (props) => {
         onClick={() => {
           setIsMainTourOpen(true)
           track('otu_tutorial_main_open')
-          props.history.push('/')
         }}
         pill
       >

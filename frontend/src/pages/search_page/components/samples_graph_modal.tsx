@@ -73,7 +73,7 @@ class SamplesGraphModal extends React.Component<any> {
         <ModalHeader
           toggle={this.props.closeSamplesGraphModal}
           data-tut="reactour__CloseSamplesGraphModal"
-          id="reactour__CloseSamplesGraphModal"
+          id="CloseSamplesGraphModal"
         >
           <div>
             <span>{'Interactive Graphical Search '}</span>
