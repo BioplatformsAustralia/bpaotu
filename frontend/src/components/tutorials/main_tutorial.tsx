@@ -404,8 +404,15 @@ const tourSteps = (props) => {
 
 const MainTutorial = (props) => {
   const { track } = useAnalytics()
-  const { isMainTourOpen, setIsMainTourOpen, mainTourStep, setMainTourStep, isGraphTourOpen } =
-    useContext(TourContext)
+  const {
+    tourMode,
+    setTourMode,
+    isMainTourOpen,
+    setIsMainTourOpen,
+    mainTourStep,
+    setMainTourStep,
+    isGraphTourOpen,
+  } = useContext(TourContext)
 
   const steps = tourSteps(props)
 
@@ -421,6 +428,7 @@ const MainTutorial = (props) => {
         isOpen={isMainTourOpen && !isGraphTourOpen}
         getCurrentStep={(curr) => setMainTourStep(curr)}
         onRequestClose={() => {
+          setTourMode(false)
           setIsMainTourOpen(false)
           if (mainTourStep === lastStep) {
             track('otu_tutorial_main_complete')
@@ -433,6 +441,7 @@ const MainTutorial = (props) => {
       <TutorialBadge
         id="mainTutorial"
         onClick={() => {
+          setTourMode(true)
           setIsMainTourOpen(true)
           track('otu_tutorial_main_open')
         }}

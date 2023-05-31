@@ -61,6 +61,7 @@ const SamplesGraphModal = (props) => {
     setIsMainTourOpen,
     mainTourStep,
     setMainTourStep,
+    setIsGraphTourOpen,
     isShortGraphTourOpen,
     setIsShortGraphTourOpen,
   } = useContext(TourContext)
@@ -75,10 +76,18 @@ const SamplesGraphModal = (props) => {
       if (isShortGraphTourOpen) {
         setIsMainTourOpen(true)
         setIsShortGraphTourOpen(false)
+        setIsGraphTourOpen(false)
         setMainTourStep(mainTourStep + 1)
       }
     }
-  }, [isOpen, isMainTourOpen, isShortGraphTourOpen, setIsMainTourOpen, setIsShortGraphTourOpen])
+  }, [
+    isOpen,
+    isMainTourOpen,
+    isShortGraphTourOpen,
+    setIsMainTourOpen,
+    setIsGraphTourOpen,
+    setIsShortGraphTourOpen,
+  ])
 
   useEffect(() => {
     setScrollToSelected('None')

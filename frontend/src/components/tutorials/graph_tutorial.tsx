@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import { withRouter } from 'react-router-dom'
 
 import Octicon from 'components/octicon'
@@ -476,8 +476,15 @@ const graphTourSteps = (props, isMainTourOpen) => {
 
 const GraphTutorial = (props) => {
   const { track } = useAnalytics()
-  const { isMainTourOpen, isGraphTourOpen, setIsGraphTourOpen, graphTourStep, setGraphTourStep } =
-    useContext(TourContext)
+  const {
+    tourMode,
+    isMainTourOpen,
+    isGraphTourOpen,
+    setIsGraphTourOpen,
+    graphTourStep,
+    setGraphTourStep,
+    setIsShortGraphTourOpen,
+  } = useContext(TourContext)
 
   const steps = graphTourSteps(props, isMainTourOpen)
 
@@ -493,10 +500,15 @@ const GraphTutorial = (props) => {
         getCurrentStep={(curr) => setGraphTourStep(curr)}
         onRequestClose={() => {
           setIsGraphTourOpen(false)
+
           if (graphTourStep === lastStep) {
             track('otu_tutorial_graph_complete')
           } else {
             track('otu_tutorial_graph_incomplete', { step: graphTourStep })
+          }
+
+          if (tourMode) {
+            setIsShortGraphTourOpen(true)
           }
         }}
         lastStepNextButton={'End Tutorial'}
@@ -504,9 +516,9 @@ const GraphTutorial = (props) => {
       <TutorialBadge
         id="badgeGraphTutorial"
         onClick={() => {
+          setIsShortGraphTourOpen(false)
           setIsGraphTourOpen(true)
           track('otu_tutorial_graph_open')
-          props.history.push('/')
         }}
         tooltip="This tutorial helps to use interactive graph feature in the BPA-OTU data portal"
       />
