@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { isString, pickBy, keys, join, values, filter } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
@@ -13,15 +13,25 @@ import {
   FormGroup,
   Alert,
 } from 'reactstrap'
+import Tour from 'reactour'
 
 import { metagenomeRequest } from 'api'
 import { useAnalytics } from 'use-analytics'
 import AnimateHelix, { loadingstyle } from 'components/animate_helix'
+import { TourContext } from 'providers/tour_provider'
 
 import { closeMetagenomeModal } from '../reducers/metagenome_modal'
 import { describeSearch } from '../reducers/search'
 
 import { metagenome_rows } from './metagenome_rows'
+
+const stepsStyle = {
+  backgroundColor: 'rgb(30 30 30 / 90%)',
+  color: 'rgb(255 255 255 / 90%)',
+  padding: '50px 30px',
+  boxShadow: 'rgb(0 0 0 / 30%) 0px 0.5em 3em',
+  maxWidth: '500px',
+}
 
 const InfoBox = (props) => (
   <div
@@ -55,6 +65,23 @@ const MetagenomeModal = (props) => {
   const [submissionResponse, setSubmissionResponse] = useState<SubmissionResponse>({})
 
   const { track } = useAnalytics()
+
+  const { isMainTourOpen, setIsMainTourOpen, isRequestTourOpen, setIsRequestTourOpen } =
+    useContext(TourContext)
+
+  useEffect(() => {
+    if (props.isOpen) {
+      if (isMainTourOpen) {
+        setIsMainTourOpen(false)
+        setIsRequestTourOpen(true)
+      }
+    } else {
+      if (isRequestTourOpen) {
+        setIsMainTourOpen(true)
+        setIsRequestTourOpen(false)
+      }
+    }
+  }, [props, isMainTourOpen, isRequestTourOpen, setIsMainTourOpen, setIsRequestTourOpen])
 
   const handleChecboxChange = (event) => {
     const target = event.target
@@ -252,6 +279,35 @@ const MetagenomeModal = (props) => {
     }
   }
 
+  const steps = [
+    {
+      selector: '[data-tut="reactour__MetagenomeDataRequestModal"]',
+      content: ({ goTo }: { goTo: (step: number) => void }) => {
+        return (
+          <div>
+            <h4>Request Metagenome Files</h4>
+            <p>TODO Blah blah blah</p>
+          </div>
+        )
+      },
+      style: stepsStyle,
+      position: [60, 100],
+    },
+    {
+      selector: '[data-tut="reactour__CloseMetagenomeDataRequestModal"]',
+      content: ({ goTo }: { goTo: (step: number) => void }) => {
+        return (
+          <div>
+            <p>
+              Click the close button to close the Metagenome Data Request and resume the tutorial.
+            </p>
+          </div>
+        )
+      },
+      style: stepsStyle,
+    },
+  ]
+
   return (
     <Modal
       isOpen={props.isOpen}
@@ -271,6 +327,21 @@ const MetagenomeModal = (props) => {
         {modalBody()}
       </ModalBody>
       <ModalFooter>{modalFooter()}</ModalFooter>
+      <Tour
+        steps={steps}
+        prevButton={'<< Prev'}
+        nextButton={'Next >>'}
+        disableFocusLock={true}
+        closeWithMask={false}
+        badgeContent={(curr, tot) => `${curr} of ${tot}`}
+        rounded={5}
+        // getCurrentStep={(curr) => setMainTourStep(curr)}
+        isOpen={isRequestTourOpen}
+        onRequestClose={() => setIsRequestTourOpen(false)}
+        // onAfterOpen={disableBody}
+        // onBeforeClose={enableBody}
+        lastStepNextButton={' '}
+      />
     </Modal>
   )
 }

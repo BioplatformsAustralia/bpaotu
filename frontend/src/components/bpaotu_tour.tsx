@@ -193,7 +193,6 @@ const tourSteps = (props) => {
               To see details about a single sample, click on the sample link under 'Sample ID' in
               the results list, this will take you to ALL raw sequencing data for that sample.
             </p>
-            <p>Now, let's view the results on a map.</p>
           </div>
         )
       },
@@ -201,158 +200,31 @@ const tourSteps = (props) => {
     },
     {
       selector: '[data-tut="reactour__InteractiveMapSearchButton"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
-        if (document.getElementById('reactour__SamplesMap')) {
-          setTimeout(() => {
-            goTo(6)
-          }, 0)
-        } else {
-          document.getElementById('InteractiveMapSearchButton').addEventListener('click', () => {
-            setTimeout(() => {
-              goTo(6)
-            }, 10)
-          })
-        }
-
+      content: () => {
         return (
           <div>
-            <h4>View results map</h4>
-            <p>Click the 'Interactive map search' button</p>
-            <p>This will load a map of the location of the selected samples</p>
+            <h4>View interactive map search</h4>
+            <p>Now, let's view the results on a map.</p>
+            <p>Click the 'Interactive map search' button.</p>
+            <p>This will load a map of the location of the selected samples.</p>
           </div>
         )
-      },
-      style: stepsStyle,
-    },
-    {
-      selector: '[data-tut="reactour__SamplesMap"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
-        if (!document.getElementById('reactour__SamplesMap')) {
-          setTimeout(() => {
-            goTo(8)
-          }, 0)
-        }
-
-        return (
-          <div>
-            <h4>View map visualisation</h4>
-            <p>
-              The map shows the location of samples, the number of samples per location, community
-              richness, and a heat map of sequence abundance.
-            </p>
-            <p>You can toggle the features by selecting layers button on the right.</p>
-            <p>
-              For more information on the map <AMBLink text="see this page" />
-            </p>
-          </div>
-        )
-      },
-      style: stepsStyle,
-      position: [60, 100],
-    },
-    {
-      selector: '[data-tut="reactour__CloseSamplesMapModal"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
-        const nstep = document.getElementById('reactour__CloseSamplesMapModal') ? 8 : 5
-        setTimeout(() => {
-          goTo(nstep)
-        }, 0)
-
-        return (
-          <div>
-            <h4>Close map view</h4>
-            <p>Click close button to close Map View.</p>
-          </div>
-        )
-      },
-      action: (node) => {
-        if (node) {
-          const closeButton = node.querySelector('.close')
-          if (closeButton) {
-            closeButton.click()
-          }
-        }
       },
       style: stepsStyle,
     },
     {
       selector: '[data-tut="reactour__InteractiveGraphSearchButton"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
-        if (document.getElementById('reactour__SamplesGraph')) {
-          setTimeout(() => {
-            goTo(9)
-          }, 0)
-        } else {
-          document.getElementById('InteractiveGraphSearchButton').addEventListener('click', () => {
-            setTimeout(() => {
-              goTo(9)
-            }, 10)
-          })
-        }
-
+      content: () => {
         return (
           <div>
-            <h4>Show interactive graphical search</h4>
+            <h4>View interactive graphical search</h4>
             <p>We can also explore the data visually.</p>
             <p>Click the 'Interactive graph search' button.</p>
-          </div>
-        )
-      },
-      style: stepsStyle,
-    },
-    {
-      selector: '[data-tut="reactour__SamplesGraph"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
-        var element = document.getElementById('reactour__SamplesGraph')
-        if (!element) {
-          setTimeout(() => {
-            goTo(11)
-          }, 0)
-        }
-
-        return (
-          <div>
-            <h4>Show interactive graphical search</h4>
             <p>
               This will load all of your search parameters and results into some summary figures.
             </p>
-            <p>
-              Other contextual data associated with the samples can be explored here. For example,
-              look at the pH range of soils selected.
-            </p>
-            <p>
-              Click the "Tutorial" link on the top of the interactive graph visualisation page at
-              any time for more information. You do this now and resume the main tutorial when you
-              are done, or come back to it at any time.
-            </p>
           </div>
         )
-      },
-      style: stepsStyle,
-      position: [60, 180],
-    },
-    {
-      selector: '[data-tut="reactour__CloseSamplesGraphModal"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
-        const nstep = document.getElementById('CloseSamplesGraphModal') ? 11 : 8
-        setTimeout(() => {
-          goTo(nstep)
-        }, 0)
-
-        return (
-          <div>
-            <h4>Close graph view</h4>
-            <p>Click close button to close Graph View.</p>
-          </div>
-        )
-      },
-      action: (node) => {
-        if (node) {
-          const closeButton = node.querySelector('.close')
-          if (closeButton) {
-            closeButton.click()
-          }
-        }
       },
       style: stepsStyle,
     },
@@ -509,19 +381,7 @@ const tourSteps = (props) => {
   const metagenomeSteps = [
     {
       selector: '[data-tut="reactour__RequestMetagenomeFiles"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
-        if (document.getElementById('MetagenomeDataRequestModal')) {
-          setTimeout(() => {
-            goTo(12)
-          }, 0)
-        } else {
-          document.getElementById('RequestMetagenomeFiles').addEventListener('click', () => {
-            setTimeout(() => {
-              goTo(12)
-            }, 10)
-          })
-        }
-
+      content: () => {
         return (
           <div>
             <span>
@@ -537,50 +397,6 @@ const tourSteps = (props) => {
             </span>
           </div>
         )
-      },
-      style: stepsStyle,
-    },
-    {
-      selector: '[data-tut="reactour__MetagenomeDataRequestModal"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
-        if (!document.getElementById('MetagenomeDataRequestModal')) {
-          setTimeout(() => {
-            goTo(14)
-          }, 0)
-        }
-
-        return (
-          <div>
-            <h4>Request Metagenome Files</h4>
-            <p>TODO Blah blah blah</p>
-          </div>
-        )
-      },
-      style: stepsStyle,
-      position: [60, 100],
-    },
-    {
-      selector: '[data-tut="reactour__CloseMetagenomeDataRequestModal"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
-        const nstep = document.getElementById('CloseMetagenomeDataRequestModal') ? 14 : 11
-        setTimeout(() => {
-          goTo(nstep)
-        }, 0)
-
-        return (
-          <div>
-            <h4>Close Metagenome Data Request</h4>
-            <p>Click the close button to close the Metagenome Data Request.</p>
-          </div>
-        )
-      },
-      action: (node) => {
-        if (node) {
-          const closeButton = node.querySelector('.close')
-          if (closeButton) {
-            closeButton.click()
-          }
-        }
       },
       style: stepsStyle,
     },
