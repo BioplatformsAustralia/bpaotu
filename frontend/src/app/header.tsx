@@ -4,7 +4,7 @@ import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } f
 
 import { NavLink as RRNavLink } from 'react-router-dom'
 import Octicon from 'components/octicon'
-import BPAOTUTour from 'components/bpaotu_tour'
+import MainTutorial from 'components/tutorials/main_tutorial'
 
 export default class Header extends React.Component<any, any> {
   constructor(props) {
@@ -67,7 +67,7 @@ export default class Header extends React.Component<any, any> {
           <Nav className="ml-auto" navbar={true}>
             <NavItem>
               <NavLink>
-                <BPAOTUTour />
+                <MainTutorial />
               </NavLink>
             </NavItem>
 

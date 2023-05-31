@@ -13,7 +13,7 @@ import {
   FormGroup,
   Alert,
 } from 'reactstrap'
-import Tour from 'reactour'
+import { Tutorial } from 'components/tutorial'
 
 import { metagenomeRequest } from 'api'
 import { useAnalytics } from 'use-analytics'
@@ -327,19 +327,11 @@ const MetagenomeModal = (props) => {
         {modalBody()}
       </ModalBody>
       <ModalFooter>{modalFooter()}</ModalFooter>
-      <Tour
+      <Tutorial
         steps={steps}
-        prevButton={'<< Prev'}
-        nextButton={'Next >>'}
-        disableFocusLock={true}
-        closeWithMask={false}
-        badgeContent={(curr, tot) => `${curr} of ${tot}`}
-        rounded={5}
         // getCurrentStep={(curr) => setMainTourStep(curr)}
         isOpen={isRequestTourOpen}
         onRequestClose={() => setIsRequestTourOpen(false)}
-        // onAfterOpen={disableBody}
-        // onBeforeClose={enableBody}
         lastStepNextButton={' '}
       />
     </Modal>

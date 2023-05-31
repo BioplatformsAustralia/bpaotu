@@ -1,20 +1,11 @@
 import React, { useContext } from 'react'
-import Tour from 'reactour'
 import { withRouter } from 'react-router-dom'
-import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock'
-import { Badge, UncontrolledTooltip } from 'reactstrap'
+
 import Octicon from 'components/octicon'
+import { Tutorial, TutorialBadge, stepsStyle } from 'components/tutorial'
 import { TourContext } from 'providers/tour_provider'
 
 import { useAnalytics } from 'use-analytics'
-
-const stepsStyle = {
-  backgroundColor: 'rgb(30 30 30 / 90%)',
-  color: 'rgb(255 255 255 / 90%)',
-  padding: '50px 30px',
-  boxShadow: 'rgb(0 0 0 / 30%) 0px 0.5em 3em',
-  maxWidth: '500px',
-}
 
 const backLinkStyle = {
   border: '1px solid #f7f7f7',
@@ -81,11 +72,9 @@ const graphTourSteps = (props, isMainTourOpen) => {
               The default view is tabbed view, but you can swap between views by clicking between
               the 2 buttons.
             </p>
-            <p>
-              <ul>
-                <li>Click either 'Tabbed View' or 'Listed View' button to see respective view.</li>
-              </ul>
-            </p>
+            <ul>
+              <li>Click either 'Tabbed View' or 'Listed View' button to see respective view.</li>
+            </ul>
           </div>
         )
       },
@@ -145,12 +134,12 @@ const graphTourSteps = (props, isMainTourOpen) => {
             <p>
               All graphs are available for download by selecting the download button at the top
               right hand corner of the graphing window. <br />
-              <p>
-                <i>
-                  Note: some browsers may require you to hover the cursor over the graph to make the
-                  download button visible
-                </i>
-              </p>
+            </p>
+            <p>
+              <i>
+                Note: some browsers may require you to hover the cursor over the graph to make the
+                download button visible
+              </i>
             </p>
             <p>
               Hover over the <Octicon name="info" /> Info buttons to view a definition of the
@@ -485,13 +474,10 @@ const graphTourSteps = (props, isMainTourOpen) => {
   ]
 }
 
-const BPAOTUGraphTour = (props) => {
+const GraphTutorial = (props) => {
   const { track } = useAnalytics()
   const { isMainTourOpen, isGraphTourOpen, setIsGraphTourOpen, graphTourStep, setGraphTourStep } =
     useContext(TourContext)
-
-  const disableBody = (target) => disableBodyScroll(target)
-  const enableBody = (target) => enableBodyScroll(target)
 
   const steps = graphTourSteps(props, isMainTourOpen)
 
@@ -500,18 +486,11 @@ const BPAOTUGraphTour = (props) => {
 
   return (
     <>
-      <Tour
-        startAt={graphTourStep}
+      <Tutorial
         steps={steps}
-        prevButton={'<< Prev'}
-        nextButton={'Next >>'}
-        disableFocusLock={true}
-        closeWithMask={false}
-        badgeContent={(curr, tot) => `${curr} of ${tot}`}
-        getCurrentStep={(curr) => setGraphTourStep(curr)}
-        accentColor={'#007bff'}
-        rounded={5}
+        startAt={graphTourStep}
         isOpen={isGraphTourOpen}
+        getCurrentStep={(curr) => setGraphTourStep(curr)}
         onRequestClose={() => {
           setIsGraphTourOpen(false)
           if (graphTourStep === lastStep) {
@@ -520,35 +499,19 @@ const BPAOTUGraphTour = (props) => {
             track('otu_tutorial_graph_incomplete', { step: graphTourStep })
           }
         }}
-        onAfterOpen={disableBody}
-        onBeforeClose={enableBody}
         lastStepNextButton={'End Tutorial'}
       />
-      <Badge
+      <TutorialBadge
         id="badgeGraphTutorial"
-        style={{
-          cursor: 'pointer',
-          fontSize: '14px',
-          margin: '10px',
-          padding: '10px 25px',
-          color: '#041e48',
-          backgroundColor: '#17c496',
-        }}
         onClick={() => {
           setIsGraphTourOpen(true)
           track('otu_tutorial_graph_open')
           props.history.push('/')
         }}
-        pill
-      >
-        <Octicon name="book" />
-        <span style={{ marginLeft: 6 }}>Tutorial</span>
-      </Badge>
-      <UncontrolledTooltip target="badgeGraphTutorial" placement="auto">
-        This tutorial helps to use interactive graph feature in the BPA-OTU data portal
-      </UncontrolledTooltip>
+        tooltip="This tutorial helps to use interactive graph feature in the BPA-OTU data portal"
+      />
     </>
   )
 }
 
-export default withRouter(BPAOTUGraphTour)
+export default withRouter(GraphTutorial)

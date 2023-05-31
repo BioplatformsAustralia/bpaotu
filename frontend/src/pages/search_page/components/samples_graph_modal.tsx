@@ -12,7 +12,7 @@ import {
 } from 'reactstrap'
 
 import Octicon from 'components/octicon'
-import BPAOTUGraphTour from 'components/bpaotu_graph_tour'
+import GraphTutorial from 'components/tutorials/graph_tutorial'
 import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
 
@@ -110,7 +110,7 @@ class SamplesGraphModal extends React.Component<any> {
               </Button>
             </ButtonGroup>
             <ButtonGroup size="sm">
-              <BPAOTUGraphTour
+              <GraphTutorial
                 tourStep={this.state.tourStep}
                 setTourStep={(val) => {
                   this.setTourStep(val)

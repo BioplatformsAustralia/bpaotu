@@ -1,23 +1,13 @@
 import React, { useContext } from 'react'
-import Tour from 'reactour'
 import { withRouter } from 'react-router-dom'
 import { connect } from 'react-redux'
-import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock'
-import { Badge, UncontrolledTooltip } from 'reactstrap'
-import Octicon from 'components/octicon'
+
+import { Tutorial, TutorialBadge, stepsStyle } from 'components/tutorial'
 import { TourContext } from 'providers/tour_provider'
 
 import { NavLink as RRNavLink } from 'react-router-dom'
 
 import { useAnalytics } from 'use-analytics'
-
-const stepsStyle = {
-  backgroundColor: 'rgb(30 30 30 / 90%)',
-  color: 'rgb(255 255 255 / 90%)',
-  padding: '50px 30px',
-  boxShadow: 'rgb(0 0 0 / 30%) 0px 0.5em 3em',
-  maxWidth: '500px',
-}
 
 const AMBLink = ({ text }) => {
   return (
@@ -424,13 +414,10 @@ const tourSteps = (props) => {
   return [...commonSteps, ...specificSteps, contactStep]
 }
 
-const BPAOTUTour = (props) => {
+const MainTutorial = (props) => {
   const { track } = useAnalytics()
   const { isMainTourOpen, setIsMainTourOpen, mainTourStep, setMainTourStep, isGraphTourOpen } =
     useContext(TourContext)
-
-  const disableBody = (target) => disableBodyScroll(target)
-  const enableBody = (target) => enableBodyScroll(target)
 
   const steps = tourSteps(props)
 
@@ -440,16 +427,11 @@ const BPAOTUTour = (props) => {
 
   return (
     <>
-      <Tour
+      <Tutorial
         steps={steps}
-        prevButton={'<< Prev'}
-        nextButton={'Next >>'}
-        disableFocusLock={true}
-        closeWithMask={false}
-        badgeContent={(curr, tot) => `${curr} of ${tot}`}
-        rounded={5}
-        getCurrentStep={(curr) => setMainTourStep(curr)}
+        startAt={startAt}
         isOpen={isMainTourOpen && !isGraphTourOpen}
+        getCurrentStep={(curr) => setMainTourStep(curr)}
         onRequestClose={() => {
           setIsMainTourOpen(false)
           if (mainTourStep === lastStep) {
@@ -458,33 +440,16 @@ const BPAOTUTour = (props) => {
             track('otu_tutorial_main_incomplete', { step: mainTourStep })
           }
         }}
-        onAfterOpen={disableBody}
-        onBeforeClose={enableBody}
-        startAt={startAt}
         lastStepNextButton={'End Tutorial'}
       />
-      <Badge
-        id="badgeMainTutorial"
-        style={{
-          cursor: 'pointer',
-          fontSize: '14px',
-          marginTop: '-10px',
-          padding: '10px 25px',
-          color: '#041e48',
-          backgroundColor: '#17c496',
-        }}
+      <TutorialBadge
+        id="mainTutorial"
         onClick={() => {
           setIsMainTourOpen(true)
           track('otu_tutorial_main_open')
         }}
-        pill
-      >
-        <Octicon name="book" />
-        <span style={{ marginLeft: 6 }}>Tutorial</span>
-      </Badge>
-      <UncontrolledTooltip target="badgeMainTutorial" placement="auto">
-        Get a tour of the available features in the BPA-OTU data portal
-      </UncontrolledTooltip>
+        tooltip="Get a tour of the available features in the BPA-OTU data portal"
+      />
     </>
   )
 }
@@ -496,4 +461,4 @@ const mapStateToProps = (state) => {
   }
 }
 
-export default connect(mapStateToProps, null)(withRouter(BPAOTUTour))
+export default connect(mapStateToProps, null)(withRouter(MainTutorial))
