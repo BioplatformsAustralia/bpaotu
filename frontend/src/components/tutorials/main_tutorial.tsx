@@ -2,27 +2,12 @@ import React, { useContext } from 'react'
 import { withRouter } from 'react-router-dom'
 import { connect } from 'react-redux'
 
-import { Tutorial, TutorialBadge, stepsStyle } from 'components/tutorial'
+import { Tutorial, TutorialBadge, AMBLink, stepsStyle } from 'components/tutorial'
 import { TourContext } from 'providers/tour_provider'
 
 import { NavLink as RRNavLink } from 'react-router-dom'
 
 import { useAnalytics } from 'use-analytics'
-
-const AMBLink = ({ text }) => {
-  return (
-    <a
-      rel="noopener noreferrer"
-      target="_bpaotu"
-      href={
-        window.otu_search_config.ckan_base_url +
-        'organization/pages/australian-microbiome/processed'
-      }
-    >
-      {text}
-    </a>
-  )
-}
 
 const tourSteps = (props) => {
   const metagenome = window.location.pathname === '/metagenome'

@@ -12,6 +12,21 @@ export const stepsStyle = {
   maxWidth: '500px',
 }
 
+export const AMBLink = ({ text }) => {
+  return (
+    <a
+      rel="noopener noreferrer"
+      target="_bpaotu"
+      href={
+        window.otu_search_config.ckan_base_url +
+        'organization/pages/australian-microbiome/processed'
+      }
+    >
+      {text}
+    </a>
+  )
+}
+
 export const Tutorial = (props) => {
   const disableBody = (target) => disableBodyScroll(target)
   const enableBody = (target) => enableBodyScroll(target)

@@ -3,50 +3,57 @@ import { createContext } from 'react'
 
 interface TourContextValue {
   isMainTourOpen: boolean
-  mainTourStep: number
   isGraphTourOpen: boolean
-  graphTourStep: number
   isRequestTourOpen: boolean
+  isMapTourOpen: boolean
+  mainTourStep: number
+  graphTourStep: number
   setIsMainTourOpen: React.Dispatch<React.SetStateAction<boolean>>
-  setMainTourStep: React.Dispatch<React.SetStateAction<number>>
   setIsGraphTourOpen: React.Dispatch<React.SetStateAction<boolean>>
-  setGraphTourStep: React.Dispatch<React.SetStateAction<number>>
   setIsRequestTourOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setIsMapTourOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setMainTourStep: React.Dispatch<React.SetStateAction<number>>
+  setGraphTourStep: React.Dispatch<React.SetStateAction<number>>
 }
 
 export const TourContext = createContext<TourContextValue>({
   isMainTourOpen: false,
-  mainTourStep: 0,
   isGraphTourOpen: false,
-  graphTourStep: 0,
   isRequestTourOpen: false,
+  isMapTourOpen: false,
+  mainTourStep: 0,
+  graphTourStep: 0,
   setIsMainTourOpen: () => {},
-  setMainTourStep: () => {},
   setIsGraphTourOpen: () => {},
-  setGraphTourStep: () => {},
   setIsRequestTourOpen: () => {},
+  setIsMapTourOpen: () => {},
+  setMainTourStep: () => {},
+  setGraphTourStep: () => {},
 })
 
 export const TourProvider = ({ children }) => {
   const [isMainTourOpen, setIsMainTourOpen] = useState(false)
-  const [mainTourStep, setMainTourStep] = useState(0)
   const [isGraphTourOpen, setIsGraphTourOpen] = useState(false)
-  const [graphTourStep, setGraphTourStep] = useState(0)
   const [isRequestTourOpen, setIsRequestTourOpen] = useState(false)
+  const [isMapTourOpen, setIsMapTourOpen] = useState(false)
+  const [mainTourStep, setMainTourStep] = useState(0)
+  const [graphTourStep, setGraphTourStep] = useState(0)
 
   return (
     <TourContext.Provider
       value={{
         isMainTourOpen,
-        mainTourStep,
         isGraphTourOpen,
-        graphTourStep,
         isRequestTourOpen,
+        isMapTourOpen,
+        mainTourStep,
+        graphTourStep,
         setIsMainTourOpen,
-        setMainTourStep,
         setIsGraphTourOpen,
-        setGraphTourStep,
         setIsRequestTourOpen,
+        setIsMapTourOpen,
+        setMainTourStep,
+        setGraphTourStep,
       }}
     >
       {children}

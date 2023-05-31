@@ -13,12 +13,13 @@ import {
   FormGroup,
   Alert,
 } from 'reactstrap'
+
+import AnimateHelix, { loadingstyle } from 'components/animate_helix'
 import { Tutorial } from 'components/tutorial'
+import { TourContext } from 'providers/tour_provider'
 
 import { metagenomeRequest } from 'api'
 import { useAnalytics } from 'use-analytics'
-import AnimateHelix, { loadingstyle } from 'components/animate_helix'
-import { TourContext } from 'providers/tour_provider'
 
 import { closeMetagenomeModal } from '../reducers/metagenome_modal'
 import { describeSearch } from '../reducers/search'
@@ -66,8 +67,14 @@ const MetagenomeModal = (props) => {
 
   const { track } = useAnalytics()
 
-  const { isMainTourOpen, setIsMainTourOpen, isRequestTourOpen, setIsRequestTourOpen } =
-    useContext(TourContext)
+  const {
+    isMainTourOpen,
+    setIsMainTourOpen,
+    mainTourStep,
+    setMainTourStep,
+    isRequestTourOpen,
+    setIsRequestTourOpen,
+  } = useContext(TourContext)
 
   useEffect(() => {
     if (props.isOpen) {
@@ -79,6 +86,7 @@ const MetagenomeModal = (props) => {
       if (isRequestTourOpen) {
         setIsMainTourOpen(true)
         setIsRequestTourOpen(false)
+        setMainTourStep(mainTourStep + 1)
       }
     }
   }, [props, isMainTourOpen, isRequestTourOpen, setIsMainTourOpen, setIsRequestTourOpen])
@@ -282,7 +290,7 @@ const MetagenomeModal = (props) => {
   const steps = [
     {
       selector: '[data-tut="reactour__MetagenomeDataRequestModal"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
+      content: () => {
         return (
           <div>
             <h4>Request Metagenome Files</h4>
@@ -292,19 +300,6 @@ const MetagenomeModal = (props) => {
       },
       style: stepsStyle,
       position: [60, 100],
-    },
-    {
-      selector: '[data-tut="reactour__CloseMetagenomeDataRequestModal"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
-        return (
-          <div>
-            <p>
-              Click the close button to close the Metagenome Data Request and resume the tutorial.
-            </p>
-          </div>
-        )
-      },
-      style: stepsStyle,
     },
   ]
 
@@ -329,10 +324,19 @@ const MetagenomeModal = (props) => {
       <ModalFooter>{modalFooter()}</ModalFooter>
       <Tutorial
         steps={steps}
-        // getCurrentStep={(curr) => setMainTourStep(curr)}
         isOpen={isRequestTourOpen}
-        onRequestClose={() => setIsRequestTourOpen(false)}
-        lastStepNextButton={' '}
+        showCloseButton={false}
+        showNumber={false}
+        onRequestClose={() => {
+          setIsRequestTourOpen(false)
+          setIsMainTourOpen(true)
+          const node = document.getElementById('CloseMetagenomeDataRequestModal')
+          const closeButton = node.querySelector('.close')
+          if (closeButton instanceof HTMLElement) {
+            closeButton.click()
+          }
+        }}
+        lastStepNextButton="Back to Tutorial"
       />
     </Modal>
   )
