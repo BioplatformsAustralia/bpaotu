@@ -14,6 +14,8 @@ const tourSteps = (props) => {
 
   const commonSteps = [
     {
+      selector: '[data-tut="tabHighlighterMetagenome"]',
+      highlightedSelectors: ['[data-tut="tabHighlighterAmplicon"]'],
       content: () => {
         return (
           <div>
@@ -47,6 +49,7 @@ const tourSteps = (props) => {
         )
       },
       style: stepsStyle,
+      position: 'center',
     },
     {
       selector: '[data-tut="reactour__AmpliconTaxonomyFilterCard"]',

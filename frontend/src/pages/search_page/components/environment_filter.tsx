@@ -13,6 +13,7 @@ export const EnvironmentInfo =
   'Data may be filtered on environment to restrict samples to either soil or marine environment sources. Marine environment includes pelagic, coastal, sediment and host associated samples which can be further selected by applying "Sample Type" filter under Contextual Filters.'
 
 class EnvironmentFilter extends React.Component<any> {
+  protected defaultOption = { value: '', label: '---' }
   public render() {
     return (
       <FormGroup row={true}>
@@ -38,10 +39,10 @@ class EnvironmentFilter extends React.Component<any> {
         </Col>
         <Col sm={6}>
           <Select
-            placeholder="---"
+            placeholder={this.defaultOption.label}
             isSearchable={true}
             options={this.renderOptions()}
-            defaultValue={{ value: '', label: '---' }}
+            defaultValue={this.defaultOption}
             value={map(this.props.options, this.renderOption).filter(
               (option) => option.value === this.props.selected.value
             )}
@@ -53,7 +54,7 @@ class EnvironmentFilter extends React.Component<any> {
   }
 
   public renderOptions() {
-    return concat([{ value: '', label: '---' }], map(this.props.options, this.renderOption))
+    return concat([this.defaultOption], map(this.props.options, this.renderOption))
   }
 
   public renderOption(option) {

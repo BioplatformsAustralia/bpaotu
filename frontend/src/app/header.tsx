@@ -35,8 +35,25 @@ export default class Header extends React.Component<any, any> {
         <Collapse isOpen={this.state.isOpen} navbar={true}>
           <Nav tabs className="navbar-nav">
             <NavItem>
-              <NavLink exact={true} to="/" activeClassName="active" tag={RRNavLink}>
+              <NavLink
+                exact={true}
+                to="/"
+                activeClassName="active"
+                tag={RRNavLink}
+                data-tut="tabHighlighterAmplicon"
+              >
                 Amplicon
+              </NavLink>
+            </NavItem>
+
+            <NavItem>
+              <NavLink
+                to="/metagenome"
+                activeClassName="active"
+                tag={RRNavLink}
+                data-tut="tabHighlighterMetagenome"
+              >
+                Metagenome
               </NavLink>
             </NavItem>
 
@@ -49,12 +66,6 @@ export default class Header extends React.Component<any, any> {
             <NavItem>
               <NavLink to="/non-denoised" activeClassName="active" tag={RRNavLink}>
                 Non-denoised data
-              </NavLink>
-            </NavItem>
-
-            <NavItem>
-              <NavLink to="/metagenome" activeClassName="active" tag={RRNavLink}>
-                Metagenome
               </NavLink>
             </NavItem>
 
