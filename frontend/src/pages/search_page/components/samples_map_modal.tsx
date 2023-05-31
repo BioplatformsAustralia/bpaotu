@@ -60,7 +60,7 @@ const SamplesMapModal = (props) => {
       content: () => {
         return (
           <div>
-            <h4>View map visualisation</h4>
+            <h4>Interactive map search</h4>
             <p>
               The map shows the location of samples, the number of samples per location, community
               richness, and a heat map of sequence abundance.

@@ -102,7 +102,7 @@ const SamplesGraphModal = (props) => {
       content: () => {
         return (
           <div>
-            <h4>Show interactive graphical search</h4>
+            <h4>Interactive graphical search</h4>
             <p>
               Other contextual data associated with the samples can be explored here. For example,
               look at the pH range of soils selected.

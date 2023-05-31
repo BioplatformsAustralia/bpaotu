@@ -181,10 +181,10 @@ const tourSteps = (props) => {
       content: () => {
         return (
           <div>
-            <h4>View interactive map search</h4>
-            <p>Now, let's view the results on a map.</p>
-            <p>Click the 'Interactive map search' button.</p>
-            <p>This will load a map of the location of the selected samples.</p>
+            <h4>Interactive map search</h4>
+            <p>
+              Click the 'Interactive map search' button to view the results on an interactive map.
+            </p>
           </div>
         )
       },
@@ -195,11 +195,11 @@ const tourSteps = (props) => {
       content: () => {
         return (
           <div>
-            <h4>View interactive graphical search</h4>
+            <h4>Interactive graphical search</h4>
             <p>We can also explore the data visually.</p>
-            <p>Click the 'Interactive graph search' button.</p>
             <p>
-              This will load all of your search parameters and results into some summary figures.
+              Click the 'Interactive graph search' button to load the results from your search
+              parameters into some summary figures.
             </p>
           </div>
         )
