@@ -87,6 +87,8 @@ const SamplesGraphModal = (props) => {
     setIsMainTourOpen,
     setIsGraphTourOpen,
     setIsShortGraphTourOpen,
+    mainTourStep,
+    setMainTourStep,
   ])
 
   useEffect(() => {

@@ -405,7 +405,6 @@ const tourSteps = (props) => {
 const MainTutorial = (props) => {
   const { track } = useAnalytics()
   const {
-    tourMode,
     setTourMode,
     isMainTourOpen,
     setIsMainTourOpen,

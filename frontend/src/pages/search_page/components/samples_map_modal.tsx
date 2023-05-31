@@ -43,7 +43,15 @@ const SamplesMapModal = (props) => {
         setMainTourStep(mainTourStep + 1)
       }
     }
-  }, [isOpen, isMainTourOpen, isMapTourOpen, setIsMainTourOpen, setIsMapTourOpen])
+  }, [
+    isOpen,
+    isMainTourOpen,
+    isMapTourOpen,
+    setIsMainTourOpen,
+    setIsMapTourOpen,
+    mainTourStep,
+    setMainTourStep,
+  ])
 
   const steps = [
     {

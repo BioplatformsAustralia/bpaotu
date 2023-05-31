@@ -81,7 +81,15 @@ const MetagenomeModal = (props) => {
         setMainTourStep(mainTourStep + 1)
       }
     }
-  }, [props, isMainTourOpen, isRequestTourOpen, setIsMainTourOpen, setIsRequestTourOpen])
+  }, [
+    props,
+    isMainTourOpen,
+    isRequestTourOpen,
+    setIsMainTourOpen,
+    setIsRequestTourOpen,
+    mainTourStep,
+    setMainTourStep,
+  ])
 
   const handleChecboxChange = (event) => {
     const target = event.target
