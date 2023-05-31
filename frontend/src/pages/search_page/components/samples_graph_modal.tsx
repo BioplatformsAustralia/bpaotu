@@ -62,20 +62,20 @@ const SamplesGraphModal = (props) => {
     mainTourStep,
     setMainTourStep,
     setIsGraphTourOpen,
-    isShortGraphTourOpen,
-    setIsShortGraphTourOpen,
+    isGraphSubtourOpen,
+    setIsGraphSubtourOpen,
   } = useContext(TourContext)
 
   useEffect(() => {
     if (isOpen) {
       if (isMainTourOpen) {
         setIsMainTourOpen(false)
-        setIsShortGraphTourOpen(true)
+        setIsGraphSubtourOpen(true)
       }
     } else {
-      if (isShortGraphTourOpen) {
+      if (isGraphSubtourOpen) {
         setIsMainTourOpen(true)
-        setIsShortGraphTourOpen(false)
+        setIsGraphSubtourOpen(false)
         setIsGraphTourOpen(false)
         setMainTourStep(mainTourStep + 1)
       }
@@ -83,10 +83,10 @@ const SamplesGraphModal = (props) => {
   }, [
     isOpen,
     isMainTourOpen,
-    isShortGraphTourOpen,
+    isGraphSubtourOpen,
     setIsMainTourOpen,
     setIsGraphTourOpen,
-    setIsShortGraphTourOpen,
+    setIsGraphSubtourOpen,
     mainTourStep,
     setMainTourStep,
   ])
@@ -110,7 +110,7 @@ const SamplesGraphModal = (props) => {
             <p>
               Click the "Tutorial" link on the top of the interactive graph visualisation page at
               any time for more information. You do this now and resume the main tutorial when you
-              are done, or come back to it at any time.
+              are done, or come back to it later.
             </p>
           </div>
         )
@@ -134,7 +134,11 @@ const SamplesGraphModal = (props) => {
         data-tut="reactour__CloseSamplesGraphModal"
       >
         <span>Interactive Graphical Search</span>
-        <ButtonGroup size="sm" style={{ marginLeft: 16 }} data-tut="reactour__graph_menu">
+        <ButtonGroup
+          size="sm"
+          style={{ marginLeft: 16, marginRight: 16 }}
+          data-tut="reactour__graph_menu"
+        >
           <Button
             id="reactour__graph_menu_tabbed"
             size="sm"
@@ -162,7 +166,7 @@ const SamplesGraphModal = (props) => {
             />
           </Button>
         </ButtonGroup>
-        <ButtonGroup size="sm">
+        <ButtonGroup size="sm" style={{ marginTop: 8 }}>
           <GraphTutorial
             tourStep={tourStep}
             setTourStep={(val) => {
@@ -187,11 +191,11 @@ const SamplesGraphModal = (props) => {
       </ModalFooter>
       <Tutorial
         steps={steps}
-        isOpen={isShortGraphTourOpen}
+        isOpen={isGraphSubtourOpen}
         showCloseButton={false}
         showNumber={false}
         onRequestClose={() => {
-          setIsShortGraphTourOpen(false)
+          setIsGraphSubtourOpen(false)
           setIsMainTourOpen(true)
           const node = document.getElementById('CloseSamplesGraphModal')
           const closeButton = node.querySelector('.close')

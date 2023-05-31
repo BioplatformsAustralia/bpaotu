@@ -28,16 +28,16 @@ const tourSteps = (props) => {
             {metagenome ? (
               <>
                 <p>
-                  You can follow the amplicon tutorial instead by clicking{' '}
-                  <RRNavLink to="/">here</RRNavLink>.
+                  This is a tutorial for the metagenome dataset. You can follow the amplicon
+                  tutorial instead by clicking <RRNavLink to="/">here</RRNavLink>.
                 </p>
                 <p>TODO an example specific to metagenome (if required)</p>
               </>
             ) : (
               <>
                 <p>
-                  You can follow the metagenome tutorial instead by clicking{' '}
-                  <RRNavLink to="/metagenome">here</RRNavLink>.
+                  This is a tutorial for the amplicon dataset. You can follow the metagenome
+                  tutorial instead by clicking <RRNavLink to="/metagenome">here</RRNavLink>.
                 </p>
                 <p>
                   For this example, we'll find all ASV's classified as Verrucomicrobia, from

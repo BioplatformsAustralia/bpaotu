@@ -483,7 +483,7 @@ const GraphTutorial = (props) => {
     setIsGraphTourOpen,
     graphTourStep,
     setGraphTourStep,
-    setIsShortGraphTourOpen,
+    setIsGraphSubtourOpen,
   } = useContext(TourContext)
 
   const steps = graphTourSteps(props, isMainTourOpen)
@@ -508,7 +508,7 @@ const GraphTutorial = (props) => {
           }
 
           if (tourMode) {
-            setIsShortGraphTourOpen(true)
+            setIsGraphSubtourOpen(true)
           }
         }}
         lastStepNextButton={'End Tutorial'}
@@ -516,7 +516,7 @@ const GraphTutorial = (props) => {
       <TutorialBadge
         id="badgeGraphTutorial"
         onClick={() => {
-          setIsShortGraphTourOpen(false)
+          setIsGraphSubtourOpen(false)
           setIsGraphTourOpen(true)
           track('otu_tutorial_graph_open')
         }}

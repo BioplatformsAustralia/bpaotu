@@ -64,29 +64,29 @@ const MetagenomeModal = (props) => {
     setIsMainTourOpen,
     mainTourStep,
     setMainTourStep,
-    isRequestTourOpen,
-    setIsRequestTourOpen,
+    isRequestSubtourOpen,
+    setIsRequestSubtourOpen,
   } = useContext(TourContext)
 
   useEffect(() => {
     if (props.isOpen) {
       if (isMainTourOpen) {
         setIsMainTourOpen(false)
-        setIsRequestTourOpen(true)
+        setIsRequestSubtourOpen(true)
       }
     } else {
-      if (isRequestTourOpen) {
+      if (isRequestSubtourOpen) {
         setIsMainTourOpen(true)
-        setIsRequestTourOpen(false)
+        setIsRequestSubtourOpen(false)
         setMainTourStep(mainTourStep + 1)
       }
     }
   }, [
     props,
     isMainTourOpen,
-    isRequestTourOpen,
+    isRequestSubtourOpen,
     setIsMainTourOpen,
-    setIsRequestTourOpen,
+    setIsRequestSubtourOpen,
     mainTourStep,
     setMainTourStep,
   ])
@@ -324,11 +324,11 @@ const MetagenomeModal = (props) => {
       <ModalFooter>{modalFooter()}</ModalFooter>
       <Tutorial
         steps={steps}
-        isOpen={isRequestTourOpen}
+        isOpen={isRequestSubtourOpen}
         showCloseButton={false}
         showNumber={false}
         onRequestClose={() => {
-          setIsRequestTourOpen(false)
+          setIsRequestSubtourOpen(false)
           setIsMainTourOpen(true)
           const node = document.getElementById('CloseMetagenomeDataRequestModal')
           const closeButton = node.querySelector('.close')

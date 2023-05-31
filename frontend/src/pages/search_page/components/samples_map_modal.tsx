@@ -26,29 +26,29 @@ const SamplesMapModal = (props) => {
     setIsMainTourOpen,
     mainTourStep,
     setMainTourStep,
-    isMapTourOpen,
-    setIsMapTourOpen,
+    isMapSubtourOpen,
+    setIsMapSubtourOpen,
   } = useContext(TourContext)
 
   useEffect(() => {
     if (isOpen) {
       if (isMainTourOpen) {
         setIsMainTourOpen(false)
-        setIsMapTourOpen(true)
+        setIsMapSubtourOpen(true)
       }
     } else {
-      if (isMapTourOpen) {
+      if (isMapSubtourOpen) {
         setIsMainTourOpen(true)
-        setIsMapTourOpen(false)
+        setIsMapSubtourOpen(false)
         setMainTourStep(mainTourStep + 1)
       }
     }
   }, [
     isOpen,
     isMainTourOpen,
-    isMapTourOpen,
+    isMapSubtourOpen,
     setIsMainTourOpen,
-    setIsMapTourOpen,
+    setIsMapSubtourOpen,
     mainTourStep,
     setMainTourStep,
   ])
@@ -99,11 +99,11 @@ const SamplesMapModal = (props) => {
       </ModalFooter>
       <Tutorial
         steps={steps}
-        isOpen={isMapTourOpen}
+        isOpen={isMapSubtourOpen}
         showCloseButton={false}
         showNumber={false}
         onRequestClose={() => {
-          setIsMapTourOpen(false)
+          setIsMapSubtourOpen(false)
           setIsMainTourOpen(true)
           const node = document.getElementById('CloseSamplesMapModal')
           const closeButton = node.querySelector('.close')
