@@ -135,6 +135,7 @@ def tabular_zip_file_generator(params, onlyContextual):
             ontology_attrs = ['amplicon_id'] + taxonomy_key_id_names[1:len(taxonomy_labels) +1]
             ontology_lookup_fns = {name: _csv_write_function(getattr(Taxonomy, name))
                                    for name in ontology_attrs}
+
             def ids_to_names(taxonomy):
                 return [ontology_lookup_fns[name](getattr(taxonomy, name))
                         for name in ontology_attrs]
@@ -145,9 +146,16 @@ def tabular_zip_file_generator(params, onlyContextual):
                     # zf.write_iter() just stores the query iterator and evaluates
                     # it later
                     rank1_query = q.filter(taxonomy_rank1_id_attr == rank1_id)
-                    zf.write_iter("{}.csv".format(sanitise(rank1_name)),
-                                  sample_otu_csv_rows(taxonomy_labels, ids_to_names,
-                                                      rank1_query))
+
+                    # To prevent empty files from being included in the zipstream
+                    # we have to count the number of rows in each query
+                    # This does increase a small overhead (5-10s) in the time taken to start the stream
+                    record_count = rank1_query.count()
+
+                    if record_count > 0:
+                        filename = "{}.csv".format(sanitise(rank1_name))
+                        zf.write_iter(filename,
+                                      sample_otu_csv_rows(taxonomy_labels, ids_to_names, rank1_query))
             else:
                 zf.write_iter(
                     "{}.csv".format(sanitise(info.id_to_value(rank1_ontology_class,
