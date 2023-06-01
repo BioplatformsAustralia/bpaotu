@@ -35,7 +35,7 @@ const SearchPage = (props) => {
   // ensure tour starts from the start if user switches the page
   useEffect(() => {
     setMainTourStep(0)
-  }, [])
+  }, [setMainTourStep])
 
   const newSearch = () => {
     props.clearSearchResults()
