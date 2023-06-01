@@ -155,6 +155,9 @@ class SearchFilters extends React.Component<any> {
 
   render() {
     let searchFilters = []
+
+    console.log('this.props.filters', this.props.filters)
+
     for (const [key, value] of Object.entries(this.props.filters)) {
       switch (key) {
         case 'selectedAmplicon':
@@ -215,8 +218,11 @@ class SearchFilters extends React.Component<any> {
             }
           }
           break
+
+        // contextual and sampleIntegrityWarning are the same
+        // except that both will contain the selectedEnvironment filter
+        // which we want to retain but only want to show it once (the contextual one)
         case 'contextual':
-        case 'sampleIntegrityWarning':
           let selectedEnvironmentValue = value['selectedEnvironment']
           if (selectedEnvironmentValue && selectedEnvironmentValue['value']) {
             const searchFilterText =
@@ -241,6 +247,11 @@ class SearchFilters extends React.Component<any> {
             searchFilters.push(searchFilter)
           }
 
+        // note the intentional missing break above the 'contextual' case
+        // to treat both contextual and sampleIntegrityWarning filters the same
+        // except that only one selectedEnvironment gets shown
+        // eslint-disable-next-line no-fallthrough
+        case 'sampleIntegrityWarning':
           let selectedFilters = value['filters']
           for (let selectedFilterIndex in selectedFilters) {
             let selectedFilter = selectedFilters[selectedFilterIndex]
@@ -292,6 +303,7 @@ class SearchFilters extends React.Component<any> {
           break
       }
     }
+
     return (
       <>
         {this.props.selectedContextualFilters.length >= 2 && (
