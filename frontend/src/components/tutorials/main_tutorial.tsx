@@ -43,12 +43,12 @@ const tourSteps = (props) => {
             {metagenome ? (
               <p>
                 For this metagenome example, we'll find all samples with sequences classified as
-                Verrucomicrobia and from grassland surface soils, that have metagenome data.
+                Verrucomicrobia from grassland surface soils that have metagenome data.
               </p>
             ) : (
               <p>
-                For this example, we'll find all ASV's classified as Verrucomicrobia, from grassland
-                surface soils.
+                For this amplicon example, we'll find all ASV's classified as Verrucomicrobia from
+                grassland surface soils.
               </p>
             )}
           </div>
@@ -127,12 +127,12 @@ const tourSteps = (props) => {
               </i>
             </p>
             <p>
-              Because we'd like to include samples that are both from grasslands AND 0 to 0.1m depth
-              we will accpet the defult "all" filter, if we only required one of these conditions
-              (OR) we would set the filter to "any".
+              Because we'd like to include samples that are both from grasslands AND 0 to 0.1m
+              depth, we will accept the default "all" filter, if we only required one of these
+              conditions (OR) we would set the filter to "any".
             </p>
             <p>
-              For a metadata of the contextual data fields or to view the methods manual, click the
+              For metadata of the contextual data fields or to view the methods manual, click the
               relevant buttons.
             </p>
           </div>
