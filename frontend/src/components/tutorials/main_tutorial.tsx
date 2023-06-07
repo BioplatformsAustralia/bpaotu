@@ -24,27 +24,26 @@ const tourSteps = (props) => {
               This tutorial will take you through an example search and demonstrate some of the
               features available in the data portal.
             </p>
-            <p>TODO We have two sets of data available amplicon or metagenome</p>
-            {metagenome ? (
-              <>
-                <p>
-                  This is a tutorial for the metagenome dataset. You can follow the amplicon
+            <p>
+              We have two collections of data available based on amplicon or metagenome analysis.
+              {metagenome ? (
+                <>
+                  {' '}
+                  This is a tutorial for the metagenome datasets. You can follow the amplicon
                   tutorial instead by clicking <RRNavLink to="/">here</RRNavLink>.
-                </p>
-                <p>TODO an example specific to metagenome (if required)</p>
-              </>
-            ) : (
-              <>
-                <p>
-                  This is a tutorial for the amplicon dataset. You can follow the metagenome
+                </>
+              ) : (
+                <>
+                  {' '}
+                  This is a tutorial for the amplicon datasets. You can follow the metagenome
                   tutorial instead by clicking <RRNavLink to="/metagenome">here</RRNavLink>.
-                </p>
-                <p>
-                  For this example, we'll find all ASV's classified as Verrucomicrobia, from
-                  grassland soils.
-                </p>
-              </>
-            )}
+                </>
+              )}
+            </p>
+            <p>
+              For this example, we'll find all ASV's classified as Verrucomicrobia, from grassland
+              soils.
+            </p>
           </div>
         )
       },
@@ -61,12 +60,10 @@ const tourSteps = (props) => {
             {metagenome ? (
               <>
                 <p>
-                  TODO metagenome specifc text instead of: We first need to select an amplicon. For
-                  our example, amplicon == '27f519r_bacteria'.
-                </p>
-                <p>
-                  TODO explain how searching the other amplicons will be different on Metagenome
-                  page (only returns results for samples with metagenome data??)
+                  In a metagenome search, the amplicon defaults to 'metaxa_from_metagenomes',
+                  however you can also use taxonomies from one of our amplicon datasets to search
+                  for taxa of interest. In both cases, metagenome searches will only return results
+                  for samples with metagenome data.
                 </p>
               </>
             ) : (
@@ -83,8 +80,8 @@ const tourSteps = (props) => {
 
             {metagenome ? (
               <>
-                <p>TODO metagenome specifc text about the metaxa taxonomy</p>
-                <p>TODO metagenome specifc textinstead of: Select Kingdom</p>
+                <p>Select Kingdom as 'Bacteria'</p>
+                <p>Select Phylum as 'Verrucomicrobia'</p>
               </>
             ) : (
               <>
@@ -163,14 +160,33 @@ const tourSteps = (props) => {
             <p>
               Here you can see each sample that has the search attributes and the attribute data.
             </p>
-            <p>
-              There are also multiple exploration and export buttons, which we'll explore in the
-              following steps.
-            </p>
-            <p>
-              To see details about a single sample, click on the sample link under 'Sample ID' in
-              the results list, this will take you to ALL raw sequencing data for that sample.
-            </p>
+
+            {metagenome ? (
+              <>
+                <p>
+                  There is a button to request the metagenome files for all selected samples and a
+                  button to export the contextual data only.
+                </p>
+                <p>
+                  To request metagenome files for a single sample, click on the sample link with the
+                  grey box under 'Sample ID' in the results list, this will display a form that we
+                  will demonstrate shortly.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  There are also multiple exploration and export buttons, which we'll explore in the
+                  following steps.
+                </p>
+                <p>
+                  To see details about a single sample, click on the sample link under 'Sample ID'
+                  in the results list, this will take you to ALL raw sequencing data for that
+                  sample.
+                </p>
+              </>
+            )}
+            <p>Now, let's view the results on a map.</p>
           </div>
         )
       },
@@ -215,7 +231,7 @@ const tourSteps = (props) => {
         <div>
           <span>
             <h4>End of the Tutorial</h4>
-            <p>If you have any queries, please click on the contact link</p>
+            <p>If you have any further queries, please click on the contact link.</p>
           </span>
         </div>
       )
@@ -365,8 +381,12 @@ const tourSteps = (props) => {
             <span>
               <h4>Request Metagenome Files</h4>
               <p>
-                Click on the 'Request metagenome files for all selected samples' to send a
-                metagenome data request.
+                To select data from all returned samples click on the button 'Request metagenome
+                files for all selected samples' to send a metagenome data request.
+              </p>
+              <p>
+                You can also request analysis files from a single sample by clicking on the grey box
+                with the sample ID in the search results.
               </p>
               <p>
                 You will be given a list of data object types for different workflow activities to

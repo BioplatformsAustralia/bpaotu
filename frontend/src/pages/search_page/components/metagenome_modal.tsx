@@ -78,7 +78,10 @@ const MetagenomeModal = (props) => {
       if (isRequestSubtourOpen) {
         setIsMainTourOpen(true)
         setIsRequestSubtourOpen(false)
-        setMainTourStep(mainTourStep + 1)
+        // Note: we don't auto increment the mainTourStep when closing modal subtour (like for other subtours)
+        // because the tour steps that launch this subtour has lots of text and users might click the
+        // 'Request all' or 'Request on' buttons before finishing reading them all
+        setMainTourStep(mainTourStep)
       }
     }
   }, [
@@ -294,7 +297,10 @@ const MetagenomeModal = (props) => {
         return (
           <div>
             <h4>Request Metagenome Files</h4>
-            <p>TODO Blah blah blah</p>
+            <p>
+              You can use the checkboxes to select different data products resulting from the
+              metagenome analysis of each sample that you would like to receive.
+            </p>
           </div>
         )
       },
