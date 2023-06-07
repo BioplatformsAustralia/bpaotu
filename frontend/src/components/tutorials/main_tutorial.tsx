@@ -40,10 +40,17 @@ const tourSteps = (props) => {
                 </>
               )}
             </p>
-            <p>
-              For this example, we'll find all ASV's classified as Verrucomicrobia, from grassland
-              soils.
-            </p>
+            {metagenome ? (
+              <p>
+                For this metagenome example, we'll find all samples with sequences classified as
+                Verrucomicrobia and from grassland surface soils, that have metagenome data.
+              </p>
+            ) : (
+              <p>
+                For this example, we'll find all ASV's classified as Verrucomicrobia, from grassland
+                surface soils.
+              </p>
+            )}
           </div>
         )
       },
@@ -79,10 +86,7 @@ const tourSteps = (props) => {
             </p>
 
             {metagenome ? (
-              <>
-                <p>Select Kingdom as 'Bacteria'</p>
-                <p>Select Phylum as 'Verrucomicrobia'</p>
-              </>
+              <p>Select Kingdom as 'Bacteria' and Phylum as 'Verrucomicrobia'.</p>
             ) : (
               <>
                 <p>
@@ -114,13 +118,18 @@ const tourSteps = (props) => {
             For our example, we will further refine the search to include:
             <ul>
               <li>Vegetation Type is Grassland</li>
-              <li>Depth of 0 to 0.1</li>
+              <li>Depth of 0 to 0.1m</li>
             </ul>
             <p>
               <i>
                 Note: matching filters will be suggested after typing a few characters in the
                 dropdown list
               </i>
+            </p>
+            <p>
+              Because we'd like to include samples that are both from grasslands AND 0 to 0.1m depth
+              we will accpet the defult "all" filter, if we only required one of these conditions
+              (OR) we would set the filter to "any".
             </p>
             <p>
               For a metadata of the contextual data fields or to view the methods manual, click the
@@ -152,11 +161,21 @@ const tourSteps = (props) => {
         return (
           <div>
             <h4>View Results</h4>
-            <p>
-              Once the database search is complete all samples with the desired data
-              (Verrucomicrobia ASV's from surface soils) will be shown in the results section at the
-              bottom of the page.
-            </p>
+
+            {metagenome ? (
+              <p>
+                Once the database search is complete all samples with the desired data (samples
+                containing Verrucomicrobia from grassland surface soils) will be shown in the
+                results section at the bottom of the page.
+              </p>
+            ) : (
+              <p>
+                Once the database search is complete all samples with the desired data
+                (Verrucomicrobia ASV's from grassland surface soils) will be shown in the results
+                section at the bottom of the page.
+              </p>
+            )}
+
             <p>
               Here you can see each sample that has the search attributes and the attribute data.
             </p>
