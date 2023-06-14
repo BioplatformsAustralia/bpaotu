@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { isString, pickBy, keys, join, values, filter } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
@@ -14,9 +14,12 @@ import {
   Alert,
 } from 'reactstrap'
 
+import AnimateHelix, { loadingstyle } from 'components/animate_helix'
+import { Tutorial, stepsStyle } from 'components/tutorial'
+import { TourContext } from 'providers/tour_provider'
+
 import { metagenomeRequest } from 'api'
 import { useAnalytics } from 'use-analytics'
-import AnimateHelix, { loadingstyle } from 'components/animate_helix'
 
 import { closeMetagenomeModal } from '../reducers/metagenome_modal'
 import { describeSearch } from '../reducers/search'
@@ -55,6 +58,41 @@ const MetagenomeModal = (props) => {
   const [submissionResponse, setSubmissionResponse] = useState<SubmissionResponse>({})
 
   const { track } = useAnalytics()
+
+  const {
+    isMainTourOpen,
+    setIsMainTourOpen,
+    mainTourStep,
+    setMainTourStep,
+    isRequestSubtourOpen,
+    setIsRequestSubtourOpen,
+  } = useContext(TourContext)
+
+  useEffect(() => {
+    if (props.isOpen) {
+      if (isMainTourOpen) {
+        setIsMainTourOpen(false)
+        setIsRequestSubtourOpen(true)
+      }
+    } else {
+      if (isRequestSubtourOpen) {
+        setIsMainTourOpen(true)
+        setIsRequestSubtourOpen(false)
+        // Note: we don't auto increment the mainTourStep when closing modal subtour (like for other subtours)
+        // because the tour steps that launch this subtour has lots of text and users might click the
+        // 'Request all' or 'Request on' buttons before finishing reading them all
+        setMainTourStep(mainTourStep)
+      }
+    }
+  }, [
+    props,
+    isMainTourOpen,
+    isRequestSubtourOpen,
+    setIsMainTourOpen,
+    setIsRequestSubtourOpen,
+    mainTourStep,
+    setMainTourStep,
+  ])
 
   const handleChecboxChange = (event) => {
     const target = event.target
@@ -252,13 +290,60 @@ const MetagenomeModal = (props) => {
     }
   }
 
+  const steps = [
+    {
+      selector: '[data-tut="reactour__MetagenomeDataRequestModal"]',
+      content: () => {
+        return (
+          <div>
+            <h4>Request Metagenome Files</h4>
+            <p>
+              You can use the checkboxes to select different data products resulting from the
+              metagenome analysis of each sample that you would like to receive.
+            </p>
+          </div>
+        )
+      },
+      style: stepsStyle,
+      position: [60, 100],
+    },
+  ]
+
   return (
-    <Modal isOpen={props.isOpen} scrollable={true} fade={true}>
-      <ModalHeader toggle={closeModal}>Metagenome data request</ModalHeader>
+    <Modal
+      isOpen={props.isOpen}
+      scrollable={true}
+      fade={true}
+      data-tut="reactour__MetagenomeDataRequestModal"
+      id="MetagenomeDataRequestModal"
+    >
+      <ModalHeader
+        toggle={closeModal}
+        data-tut="reactour__CloseMetagenomeDataRequestModal"
+        id="CloseMetagenomeDataRequestModal"
+      >
+        Metagenome data request
+      </ModalHeader>
       <ModalBody style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         {modalBody()}
       </ModalBody>
       <ModalFooter>{modalFooter()}</ModalFooter>
+      <Tutorial
+        steps={steps}
+        isOpen={isRequestSubtourOpen}
+        showCloseButton={false}
+        showNumber={false}
+        onRequestClose={() => {
+          setIsRequestSubtourOpen(false)
+          setIsMainTourOpen(true)
+          const node = document.getElementById('CloseMetagenomeDataRequestModal')
+          const closeButton = node.querySelector('.close')
+          if (closeButton instanceof HTMLElement) {
+            closeButton.click()
+          }
+        }}
+        lastStepNextButton="Back to Tutorial"
+      />
     </Modal>
   )
 }

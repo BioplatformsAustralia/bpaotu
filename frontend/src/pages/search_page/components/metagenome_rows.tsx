@@ -1,5 +1,5 @@
 export const metagenome_rows = [
-  'Worflow activity: Read quality control',
+  'Workflow activity: Read quality control',
   ['Filtered  sequencing reads', 'Quality filtered fastq.gz files', 'qc.fastq.zip'],
   [
     'Filtered  sequencing reads statistics',
@@ -7,7 +7,7 @@ export const metagenome_rows = [
     'qc.stats.zip',
   ],
 
-  'Worflow activity: Assembly activity',
+  'Workflow activity: Assembly activity',
   ['Assembly', 'Fasta file containing the contigs from the assembly', 'sqm.01.fasta'],
   ['Assembly statistics', 'Length of the contigs', 'sqm.01.lon'],
   ['Assembly statistics', 'Assembly statistics (N50, N90, number of reads, etc)', 'sqm.01.stats'],
@@ -17,7 +17,7 @@ export const metagenome_rows = [
     'sqm.sorted.bam',
   ],
 
-  'Worflow activity: Annotation activity',
+  'Workflow activity: Annotation activity',
   ['Annotation', 'Assignment (RDP classifier) for the 16S rRNAs sequences found', 'sqm.02.16S.txt'],
   [
     'Annotation',

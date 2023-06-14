@@ -4,7 +4,7 @@ import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } f
 
 import { NavLink as RRNavLink } from 'react-router-dom'
 import Octicon from 'components/octicon'
-import BPAOTUTour from 'components/bpaotu_tour'
+import MainTutorial from 'components/tutorials/main_tutorial'
 
 export default class Header extends React.Component<any, any> {
   constructor(props) {
@@ -35,8 +35,25 @@ export default class Header extends React.Component<any, any> {
         <Collapse isOpen={this.state.isOpen} navbar={true}>
           <Nav tabs className="navbar-nav">
             <NavItem>
-              <NavLink exact={true} to="/" activeClassName="active" tag={RRNavLink}>
+              <NavLink
+                exact={true}
+                to="/"
+                activeClassName="active"
+                tag={RRNavLink}
+                data-tut="tabHighlighterAmplicon"
+              >
                 Amplicon
+              </NavLink>
+            </NavItem>
+
+            <NavItem>
+              <NavLink
+                to="/metagenome"
+                activeClassName="active"
+                tag={RRNavLink}
+                data-tut="tabHighlighterMetagenome"
+              >
+                Metagenome
               </NavLink>
             </NavItem>
 
@@ -53,12 +70,6 @@ export default class Header extends React.Component<any, any> {
             </NavItem>
 
             <NavItem>
-              <NavLink to="/metagenome" activeClassName="active" tag={RRNavLink}>
-                Metagenome
-              </NavLink>
-            </NavItem>
-
-            <NavItem>
               <NavLink to="/map" activeClassName="active" tag={RRNavLink}>
                 Map
               </NavLink>
@@ -67,7 +78,7 @@ export default class Header extends React.Component<any, any> {
           <Nav className="ml-auto" navbar={true}>
             <NavItem>
               <NavLink>
-                <BPAOTUTour />
+                <MainTutorial />
               </NavLink>
             </NavItem>
 

@@ -134,7 +134,7 @@ export const fieldsToColumns = (fields, contextualDataDefinitions) => {
   // which switching pages, contextualDataDefinitions gets refreshed
   // since it is initialised as it's `initialState` it will be empty for a brief moment
   // so use the base fields until it is defined
-  if (contextualDataDefinitions.length) {
+  if (contextualDataDefinitions) {
     const fieldsPlus = fields.map((x) => {
       // handle cases when adding field it adds an empty object first
       if (x.name === '') {

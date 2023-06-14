@@ -1,8 +1,8 @@
-import * as React from 'react'
+import React from 'react'
 import { Button } from 'reactstrap'
 import Octicon from 'components/octicon'
 
-export default (props) => {
+export const ExportDataButton = (props) => {
   const id = props.id
   const dataTut = id ? `reactour__${id}` : null
 
@@ -10,18 +10,23 @@ export default (props) => {
     <Button
       id={id}
       data-tut={dataTut}
-      block={true}
-      color="primary"
       size={props.size}
-      disabled={props.isDisabled}
+      style={{ marginRight: 10 }}
+      outline={true}
+      color="primary"
+      disabled={props.disabled}
       onClick={props.onClick}
+      title={props.disabled ? 'Select Amplicon to ' + props.text : ''}
     >
-      {props.octicon && (
-        <span style={{ marginRight: 8 }}>
+      {props.octicon ? (
+        <span>
           <Octicon name={props.octicon} />
+          &nbsp;
         </span>
+      ) : (
+        ''
       )}
-      <span>{props.text}</span>
+      {props.text}
     </Button>
   )
 }

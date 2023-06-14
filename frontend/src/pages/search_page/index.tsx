@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useContext } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { Col, Container, Row } from 'reactstrap'
@@ -9,6 +9,7 @@ import { withAnalytics } from 'use-analytics'
 
 import AnimateHelix from 'components/animate_helix'
 import SearchButton from 'components/search_button'
+import { TourContext } from 'providers/tour_provider'
 
 import { AmpliconTaxonomyFilterCard } from './components/amplicon_taxonomy_filter_card'
 import BlastSearchCard from './components/blast_search_card'
@@ -23,12 +24,18 @@ import { clearSearchResults } from './reducers/search'
 
 const SearchPage = (props) => {
   const { page, track, identify } = useAnalytics()
+  const { setMainTourStep } = useContext(TourContext)
 
   // this correctly recognises whether this is the Amplicon or Metagenome page
   // track page visit only on first render
   useEffect(() => {
     page()
   }, [page])
+
+  // ensure tour starts from the start if user switches the page
+  useEffect(() => {
+    setMainTourStep(0)
+  }, [setMainTourStep])
 
   const newSearch = () => {
     props.clearSearchResults()
@@ -76,10 +83,16 @@ const SearchPage = (props) => {
         ) : (
           <>
             <Col sm={{ size: 2, offset: 3 }}>
-              <SearchButton octicon="search" text="Sample search" onClick={newSearch} />
+              <SearchButton
+                id="SampleSearchButton"
+                octicon="search"
+                text="Sample search"
+                onClick={newSearch}
+              />
             </Col>
             <Col sm={{ size: 2 }}>
               <SearchButton
+                id="InteractiveMapSearchButton"
                 octicon="globe"
                 text="Interactive map search"
                 onClick={interactiveMapSearch}
@@ -87,6 +100,7 @@ const SearchPage = (props) => {
             </Col>
             <Col sm={{ size: 2 }}>
               <SearchButton
+                id="InteractiveGraphSearchButton"
                 octicon="graph"
                 text="Interactive graph search"
                 onClick={interactiveGraphSearch}
@@ -143,16 +157,16 @@ export function SampleSearchPage() {
   )
 }
 
-export function MetaGenomeSearchPage() {
+export function MetagenomeSearchPage() {
   return (
     <ConnectedSearchPage>
-      <Col>
+      <Col data-tut="reactour__AmpliconTaxonomyFilterCard">
         <AmpliconTaxonomyFilterCard metagenomeMode={true} />
       </Col>
 
       <></>
 
-      <Col sm={12}>
+      <Col sm={12} data-tut="reactour__SearchResultsCard">
         <MetagenomeSearchResultsCard />
       </Col>
     </ConnectedSearchPage>
