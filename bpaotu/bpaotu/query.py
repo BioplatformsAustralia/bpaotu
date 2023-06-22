@@ -96,6 +96,8 @@ class OTUQueryParams:
 
         parts = []
         amplicon_descr, taxonomy_descr, trait_descr = self.taxonomy_filter.describe()
+        contextual_descr  = self.contextual_filter.describe()
+        sample_integrity_warnings_descr  = self.sample_integrity_warnings_filter.describe()
         indent = '  '
 
         def add_section(lines):
@@ -127,14 +129,20 @@ class OTUQueryParams:
 
         def contextual_section():
             p = ['Contextual filter:']
-            for entry in self.contextual_filter.describe():
-                p.append(indent + entry)
+            if len(contextual_descr) > 0:
+                for entry in contextual_descr:
+                    p.append(indent + entry)
+            else:
+                p.append(indent + '(no contextual filter applied)')
             return p
 
         def sample_integrity_warnings_section():
             p = ['Sample Integrity Warnings filter:']
-            for entry in self.sample_integrity_warnings_filter.describe():
-                p.append(indent + entry)
+            if len(sample_integrity_warnings_descr) > 0:
+                for entry in sample_integrity_warnings_descr:
+                    p.append(indent + entry)
+            else:
+                p.append(indent + '(no sample intergrity warnings filter applied)')
             return p
 
         def metadata_section():
