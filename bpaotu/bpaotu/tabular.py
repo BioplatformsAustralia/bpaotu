@@ -135,14 +135,10 @@ def tabular_zip_file_generator(params, onlyContextual):
         zf.write_iter('contextual.csv', contextual_csv(query.matching_samples()))
         zf.writestr('info.txt', info_text(params))
         if onlyContextual=='f':
-            q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU)
-
             zf.write_iter(
                 "OTU.fasta",
                 fasta_rows(
-                    query.matching_sample_otus(OTU.code, Sequence.seq)
-                         .filter(Sequence.id == OTU.id)
-                         .group_by(OTU.code, Sequence.seq)
+                    query.matching_otu_sequences()
                     )
                 )
 
@@ -154,6 +150,8 @@ def tabular_zip_file_generator(params, onlyContextual):
             ontology_attrs = ['amplicon_id'] + taxonomy_key_id_names[1:len(taxonomy_labels) +1]
             ontology_lookup_fns = {name: _csv_write_function(getattr(Taxonomy, name))
                                    for name in ontology_attrs}
+
+            q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU)
 
             def ids_to_names(taxonomy):
                 return [ontology_lookup_fns[name](getattr(taxonomy, name))
