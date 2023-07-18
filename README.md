@@ -239,7 +239,7 @@ docker-compose up -d
 - Build frontend and launch browser window to portal
 
 > Run this on local machine, not in the container
-> If development machine already has a version onf node (e.g. personal laptop) then use nvm to install the version needed by bpaotu
+> If development machine already has a version of node (e.g. personal laptop) then use nvm to install the version needed by bpaotu
 
 ```
 cd frontend
@@ -282,7 +282,7 @@ dot  -Tsvg webapp.dot  > webapp.svg
 
 ### Database login
 
-Start a bash terminal on the db container and run log into pgql with the webapp role:
+Start a bash terminal on the db container and run log into psql with the webapp role:
 
 ```
 psql -U webapp
