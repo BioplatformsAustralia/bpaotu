@@ -16,6 +16,7 @@ from hashlib import sha256
 from .otu import (
     Environment,
     OTU,
+    Sequence,
     OTUAmplicon,
     TaxonomySource,
     taxonomy_keys,
@@ -96,6 +97,8 @@ class OTUQueryParams:
 
         parts = []
         amplicon_descr, taxonomy_descr, trait_descr = self.taxonomy_filter.describe()
+        contextual_descr  = self.contextual_filter.describe()
+        sample_integrity_warnings_descr  = self.sample_integrity_warnings_filter.describe()
         indent = '  '
 
         def add_section(lines):
@@ -127,14 +130,20 @@ class OTUQueryParams:
 
         def contextual_section():
             p = ['Contextual filter:']
-            for entry in self.contextual_filter.describe():
-                p.append(indent + entry)
+            if len(contextual_descr) > 0:
+                for entry in contextual_descr:
+                    p.append(indent + entry)
+            else:
+                p.append(indent + '(no contextual filter applied)')
             return p
 
         def sample_integrity_warnings_section():
             p = ['Sample Integrity Warnings filter:']
-            for entry in self.sample_integrity_warnings_filter.describe():
-                p.append(indent + entry)
+            if len(sample_integrity_warnings_descr) > 0:
+                for entry in sample_integrity_warnings_descr:
+                    p.append(indent + entry)
+            else:
+                p.append(indent + '(no sample intergrity warnings filter applied)')
             return p
 
         def metadata_section():
@@ -460,6 +469,31 @@ class SampleQuery:
         # and we're unlikely to have the same query run twice.
         # instead, we return the sqlalchemy query object so that
         # it can be iterated over
+        # log_query(q)
+        return q
+
+    # just return the hash and sequence
+    # this is the same as matching_sample_otus without the otu.id = sample_otu.otu_id condition
+    # (which increases the query time and result set significantly)
+    # (in addition, the joins are defined explicitly rather than letting sqlalchemy use implicit joins - significant speed difference)
+    def matching_otu_sequences(self):
+        q = self._session\
+                .query(OTU.code, Sequence.seq)\
+                .join(Taxonomy.otus)\
+                .join(Sequence, Sequence.id == OTU.id)
+
+        # exclude this because we don't want all sample data for this
+        # alternatively could use full query and get distinct values
+        # but am experimenting with running 2 queries so the fasta file can save out first
+        # and the second query won't need to join to the Sequence table
+        # .join(SampleOTU, SampleOTU.otu_id == OTU.id)\
+
+        q = self._taxonomy_filter.apply(q, Taxonomy)
+        if not self._sample_integrity_warnings_filter.is_empty():
+            q = self._sample_integrity_warnings_filter.apply(q)
+        if not self._contextual_filter.is_empty():
+            q = self._contextual_filter.apply(q)
+
         # log_query(q)
         return q
 

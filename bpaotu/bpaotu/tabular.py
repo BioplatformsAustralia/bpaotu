@@ -3,12 +3,12 @@ import re
 from .otu import (
     taxonomy_key_id_names,
     taxonomy_ontology_classes,
+    taxonomy_otu_export,
     SampleOTU,
     Taxonomy,
     OTU,
-    SampleContext,
-    taxonomy_otu_export)
-
+    Sequence,
+    SampleContext)
 from .util import (
     format_sample_id,
     str_none_blank,
@@ -21,6 +21,8 @@ import csv
 import logging
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
+from Bio.SeqRecord  import SeqRecord
+from Bio.Seq  import Seq
 
 logger = logging.getLogger('rainbow')
 
@@ -107,14 +109,21 @@ def sample_otu_csv_rows(taxonomy_labels, ids_to_names, q):
             format_sample_id(row.SampleOTU.sample_id),
             row.OTU.code,
             row.SampleOTU.count] +
-            ids_to_names(row) +
-            [array_or_empty(row.traits).replace(",", ";")])
+            ids_to_names(row.Taxonomy) +
+            [array_or_empty(row.Taxonomy.traits).replace(",", ";")])
         yield fd.getvalue().encode('utf8')
         fd.seek(0)
         fd.truncate(0)
 
 def sanitise(filename):
     return re.sub(r'[\W]+', '-', filename)
+
+def fasta_rows(seq_q):
+    for otu_code, fasta_seq in seq_q.yield_per(50):
+        yield SeqRecord(
+            Seq(fasta_seq),
+            id=otu_code,
+            description='').format('fasta').encode('utf8')
 
 def tabular_zip_file_generator(params, onlyContextual):
     taxonomy_source_id = params.taxonomy_filter.get_rank_equality_value(0)
@@ -126,7 +135,13 @@ def tabular_zip_file_generator(params, onlyContextual):
         zf.write_iter('contextual.csv', contextual_csv(query.matching_samples()))
         zf.writestr('info.txt', info_text(params))
         if onlyContextual=='f':
-            q = query.otu_export()
+            zf.write_iter(
+                "OTU.fasta",
+                fasta_rows(
+                    query.matching_otu_sequences()
+                    )
+                )
+
             # Rank 1 is top level below taxonomy source, e.g. kingdom
             taxonomy_rank1_id_attr = getattr(taxonomy_otu_export.c, taxonomy_key_id_names[1])
             rank1_id_is_value = params.taxonomy_filter.get_rank_equality_value(1)
@@ -136,6 +151,8 @@ def tabular_zip_file_generator(params, onlyContextual):
             ontology_lookup_fns = {name: _csv_write_function(getattr(Taxonomy, name))
                                    for name in ontology_attrs}
 
+            q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU)
+
             def ids_to_names(taxonomy):
                 return [ontology_lookup_fns[name](getattr(taxonomy, name))
                         for name in ontology_attrs]
@@ -143,8 +160,7 @@ def tabular_zip_file_generator(params, onlyContextual):
             if rank1_id_is_value is None: # not selecting a specific kingdom
                 for rank1_id, rank1_name in info.get_values(rank1_ontology_class):
                     # We have to do this as separate queries because
-                    # zf.write_iter() just stores the query iterator and evaluates
-                    # it later
+                    # zf.write_iter() just stores the query iterator and evaluates it later
                     rank1_query = q.filter(taxonomy_rank1_id_attr == rank1_id)
 
                     # To prevent empty files from being included in the zipstream
@@ -154,14 +170,16 @@ def tabular_zip_file_generator(params, onlyContextual):
 
                     if record_count > 0:
                         filename = "{}.csv".format(sanitise(rank1_name))
-                        zf.write_iter(filename,
-                                      sample_otu_csv_rows(taxonomy_labels, ids_to_names, rank1_query))
+                        zf.write_iter(
+                            filename,
+                            sample_otu_csv_rows(taxonomy_labels, ids_to_names, rank1_query)
+                        )
             else:
+                filename = "{}.csv".format(sanitise(info.id_to_value(rank1_ontology_class, rank1_id_is_value)))
                 zf.write_iter(
-                    "{}.csv".format(sanitise(info.id_to_value(rank1_ontology_class,
-                                                              rank1_id_is_value))),
-                    sample_otu_csv_rows(taxonomy_labels, ids_to_names,
-                                        q))
+                    filename,
+                    sample_otu_csv_rows(taxonomy_labels, ids_to_names, q)
+                )
         return zf
 
 

@@ -32,3 +32,6 @@ yarn_cache/
 rds/
 temp/
 .nvmrc
+
+backup_*/
+dbdata_*/
