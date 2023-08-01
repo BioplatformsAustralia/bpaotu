@@ -288,7 +288,7 @@ Start a bash terminal on the db container and run log into psql with the webapp 
 psql -U webapp
 ```
 
-Then set the search path to the "otu" schema at the psql prompt
+Then set the search path to the "otu" schema at the psql prompt:
 
 ```
 SET search_path TO otu;
