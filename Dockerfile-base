@@ -21,17 +21,18 @@ RUN addgroup --gid 1000 bioplatforms \
   && mkdir /data /app \
   && chown bioplatforms:bioplatforms /data
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  gettext \
-  libpcre3 \
-  libpq5 \
-  gdal-bin \
-  libgeos3.11.1 \
-  libproj-dev \
-  ncbi-blast+ \
-  mime-support \
-  unixodbc \
-  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends gettext
+RUN apt-get install -y --no-install-recommends libpcre3
+RUN apt-get install -y --no-install-recommends libpq5
+RUN apt-get install -y --no-install-recommends gdal-bin
+RUN apt-get install -y --no-install-recommends libgeos3.11.1
+RUN apt-get install -y --no-install-recommends libproj-dev
+RUN apt-get install -y --no-install-recommends ncbi-blast+
+RUN apt-get install -y --no-install-recommends mime-support
+RUN apt-get install -y --no-install-recommends unixodbc
+RUN apt-get clean
+RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN python3 -m venv $VIRTUAL_ENV
 
