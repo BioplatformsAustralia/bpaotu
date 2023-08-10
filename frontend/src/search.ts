@@ -58,6 +58,7 @@ export interface OTUQuery {
   taxonomy_filters: OperatorAndValue[]
   contextual_filters: ContextualFilters
   sample_integrity_warnings_filter: ContextualFilters
+  sampled_ids_filter: ContextualFilters
   amplicon_filter: string
   trait_filter: string
   required_headers?: string[]
@@ -83,6 +84,7 @@ export const EmptyOTUQuery: OTUQuery = {
   taxonomy_filters: times(taxonomy_keys.length, (_) => emptyTaxonomyFilter),
   contextual_filters: emptyContextualFilters,
   sample_integrity_warnings_filter: emptyContextualFilters,
+  sampled_ids_filter: emptyContextualFilters,
   amplicon_filter: '',
   trait_filter: '',
   metagenome_only: false,

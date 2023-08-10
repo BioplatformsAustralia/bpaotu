@@ -51,6 +51,7 @@ import {
 } from '../reducers/sample_integrity_warning'
 
 import EnvironmentFilter from './environment_filter'
+import SampleIdFilter from './sample_id_filter'
 
 export const ContextualFilterInfo =
   'Contextual filters allow data to be filtered on site specific chemical and physical data. '
@@ -110,6 +111,7 @@ class ContextualFilterCard extends React.Component<any> {
         </CardHeader>
         <CardBody className="filters">
           <EnvironmentFilter />
+          <SampleIdFilter />
           <hr />
           <h5 className="text-center">
             Contextual Filters

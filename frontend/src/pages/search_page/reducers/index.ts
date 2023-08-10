@@ -6,6 +6,7 @@ import selectedTraitReducer from './trait'
 import blastSearchReducer from './blast_search'
 import contextualReducer from './contextual'
 import sampleIntegrityWarningReducer from './sample_integrity_warning'
+import sampleIdsReducer from './sample_ids'
 import samplesMapModalReducer from './samples_map_modal'
 import samplesGraphModalReducer from './samples_graph_modal'
 import metagenomeModalReducer from './metagenome_modal'
@@ -31,6 +32,7 @@ const filtersReducer = combineReducers({
   taxonomy: taxonomyReducer,
   contextual: contextualReducer,
   sampleIntegrityWarning: sampleIntegrityWarningReducer,
+  sampleIds: sampleIdsReducer,
 })
 
 const pageReducer = combineReducers({

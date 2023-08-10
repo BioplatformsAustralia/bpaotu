@@ -41,6 +41,7 @@ export interface PageState {
     selectedTrait: OperatorAndValue
     contextual: any // TODO
     sampleIntegrityWarning: any
+    sampleIds: any
   }
   samplesMapModal: {
     isOpen: boolean
@@ -107,6 +108,10 @@ export const searchPageInitialState: PageState = {
       selectedEnvironment: EmptyOperatorAndValue,
       filtersMode: 'and',
       filters: [],
+    },
+    sampleIds: {
+      idOperator: 'all',
+      idValues: [],
     },
   },
   samplesMapModal: {

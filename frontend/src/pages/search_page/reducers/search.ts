@@ -17,6 +17,7 @@ export const clearSearchResults = createAction('CLEAR_SEARCH_RESULTS')
 
 function marshallContextualFilters(filtersState, dataDefinitions) {
   const filterDataDefinition = (name) => find(dataDefinitions.filters, (dd) => dd.name === name)
+
   const filters = map(
     reject(filtersState, (filter) => filter.name === ''),
     (filter) => {
@@ -51,6 +52,17 @@ function marshallContextualFilters(filtersState, dataDefinitions) {
   return filters
 }
 
+function marshallSampleIdsFilters(idOperator, idValues) {
+  // return an array for only one item to slot it with existing methods
+  return [
+    {
+      field: 'id',
+      operator: idOperator,
+      is: idValues,
+    },
+  ]
+}
+
 function marshallContextual(state, contextualDataDefinitions) {
   const { selectedEnvironment, filtersMode } = state
 
@@ -58,6 +70,15 @@ function marshallContextual(state, contextualDataDefinitions) {
     environment: selectedEnvironment.value === '' ? null : selectedEnvironment,
     mode: filtersMode,
     filters: marshallContextualFilters(state.filters, contextualDataDefinitions),
+  }
+}
+
+function marshallSampleIds(state) {
+  const { idOperator, idValues } = state
+
+  return {
+    mode: 'and',
+    filters: marshallSampleIdsFilters(idOperator, idValues),
   }
 }
 
@@ -80,6 +101,7 @@ export const describeSearch = (state) => {
       stateFilters.sampleIntegrityWarning,
       contextualDataDefinitions
     ),
+    sample_ids_filter: marshallSampleIds(stateFilters.sampleIds),
     metagenome_only: isMetagenomeSearch(state),
   }
 }

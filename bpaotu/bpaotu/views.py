@@ -316,8 +316,28 @@ def contextual_fields(request):
             (field_name, info.get_values_filtered(ontology_classes[field_name], field_name))
             for field_name in fields_by_type['_ontology']]
 
+    sample_ids_dict = get_sample_ids()
+    sample_ids_all = [item['id'] for item in sample_ids_dict]
+
+    sample_ids_dict_env = {}
+    for item in sample_ids_dict:
+        am_environment_id = item['am_environment_id']
+        id_value = item['id']
+        
+        if am_environment_id not in sample_ids_dict_env:
+            sample_ids_dict_env[am_environment_id] = []
+        
+        sample_ids_dict_env[am_environment_id].append(id_value)
+
+        sorted_sample_ids_dict_env = {key: sorted(value) for key, value in sample_ids_dict_env.items()}
+
+    defn_sample_id = make_defn('sample_id', 'id',
+                               display_name='Sample ID',
+                               values=sorted(sample_ids_all),
+                               values_env=sorted_sample_ids_dict_env)
+
     definitions = (
-        [make_defn('sample_id', 'id', display_name='Sample ID', values=sorted(get_sample_ids()))] +
+        [defn_sample_id] +
         [make_defn('date', field_name) for field_name in fields_by_type['DATE']] +
         [make_defn('time', field_name) for field_name in fields_by_type['TIME']] +
         [make_defn('float', field_name) for field_name in fields_by_type['FLOAT']] +
@@ -525,6 +545,17 @@ def _parse_contextual_term(filter_spec):
     else:
         raise ValueError("invalid filter term type: %s", typ)
 
+def _parse_sample_ids_term(filter_spec):
+    field_name = filter_spec['field'] # should always be 'id'
+    operator = filter_spec.get('operator')
+    column = SampleContext.__table__.columns[field_name]
+    typ = str(column.type)
+    if column.name == 'id':
+        if len(filter_spec['is']) == 0:
+            raise ValueError("No Sample IDs selected. Either select 1 or more IDs, or choose '(all)'")
+        return ContextualFilterTermSampleID(field_name, operator, [t for t in filter_spec['is']])
+    else:
+        raise Exception("Sample IDs filter name should be 'id'")
 
 def param_to_filters(query_str, contextual_filtering=True):
     """
@@ -539,12 +570,16 @@ def param_to_filters(query_str, contextual_filtering=True):
         otu_query['trait_filter'])
     context_spec = otu_query['contextual_filters']
     sample_integrity_spec = otu_query['sample_integrity_warnings_filter']
+    sample_ids_spec = otu_query['sample_ids_filter']
     contextual_filter = ContextualFilter(context_spec['mode'],
                                          context_spec['environment'],
                                          otu_query['metagenome_only'])
     sample_integrity_warnings_filter = ContextualFilter(sample_integrity_spec['mode'],
                                                         sample_integrity_spec['environment'],
                                                         otu_query['metagenome_only'])
+    sample_ids_filter = ContextualFilter(sample_ids_spec['mode'],
+                                         None,
+                                         otu_query['metagenome_only'])
 
     errors = []
 
@@ -574,6 +609,19 @@ def param_to_filters(query_str, contextual_filtering=True):
             except Exception:
                 errors.append("Invalid value provided for sample integrity warning field `%s'" % field_name)
                 logger.critical("Exception parsing field: `%s'", field_name, exc_info=True)
+
+    if contextual_filtering:
+        for filter_spec in sample_ids_spec['filters']:
+            try:
+                logger.debug('filter_spec')
+                logger.debug(filter_spec)
+                if filter_spec['operator'] != 'all':
+                    contextual_filter.add_term(_parse_sample_ids_term(filter_spec))
+            except ValueError as e:
+                errors.append(e)
+            except Exception:
+                errors.append("Invalid value provided for sample ids filter")
+                logger.critical("Exception parsing field for sample ids filter", exc_info=True)
 
     return (OTUQueryParams(
         contextual_filter=contextual_filter,

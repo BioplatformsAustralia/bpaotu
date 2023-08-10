@@ -40,12 +40,14 @@ export default handleActions(
       const environment = find(action.payload.data.definitions, isEnvironment)
       const sample_id = find(action.payload.data.definitions, isSampleID)
       const allButEnvironment = reject(action.payload.data.definitions, isEnvironment)
+
       return {
         isLoading: false,
         environment: map(environment.values, ([id, name]) => ({ id, name })),
         filters: allButEnvironment,
         values: action.payload.data.definitions,
         sample_ids: sample_id.values,
+        sample_ids_env: sample_id.values_env,
         definitions_url: action.payload.data.definitions_url,
         scientific_manual_url: action.payload.data.scientific_manual_url,
       }

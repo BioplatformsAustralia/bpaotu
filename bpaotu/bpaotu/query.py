@@ -904,7 +904,7 @@ class ContextualFilterTermSampleID(ContextualFilterTerm):
 
 def get_sample_ids():
     session = Session()
-    ids = [t[0] for t in session.query(SampleContext.id).all()]
+    ids = [{'id': t[0], 'am_environment_id': t[1]} for t in session.query(SampleContext.id, SampleContext.am_environment_id).all()]
     session.close()
     return ids
 
