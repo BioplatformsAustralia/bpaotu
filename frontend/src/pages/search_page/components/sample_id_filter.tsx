@@ -10,7 +10,7 @@ import Octicon from 'components/octicon'
 import { changeSampleIdsFilterOperator, changeSampleIdsFilterValues } from '../reducers/sample_ids'
 
 export const SampleIdsInfo =
-  'Data may be filtered for a given Sample ID. Note that any other filter conditions (e.g. amplicaton, taxonoimy, traits, contextual) will still be applied.'
+  'Data may be filtered for a given Sample ID. Note that any other filter conditions (e.g. amplicaton, taxonoimy, traits, contextual) will still be applied, meaning that some selected samples may not return any results.'
 
 class SampleIdFilter extends React.Component<any> {
   public render() {
