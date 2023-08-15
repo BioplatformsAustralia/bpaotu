@@ -25,7 +25,7 @@ const sampleIdsFiltersReducer = handleActions(
       }
     },
   },
-  searchPageInitialState.filters.contextual.filters
+  searchPageInitialState.filters.sampleIds
 )
 
 const sampleIdsReducer = sampleIdsFiltersReducer
