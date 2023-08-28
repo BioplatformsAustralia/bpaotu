@@ -22,7 +22,6 @@ django-extensions==2.2.9
 redis==3.4.1
 django-redis==4.10.0
 zipstream==1.1.4
-h5py==2.10.0
 numpy==1.16.6
 celery==4.4.2
 Pillow>=8.1.1
@@ -33,7 +32,6 @@ httplib2==0.17.2
 google-api-python-client
 python-dateutil==2.8.1
 shapely==1.7.0
-fiona==1.8.13.post1
 django-anymail[amazon_ses]==7.1.0
 xhtml2pdf==0.2.6
 bitmath==1.3.3.1
