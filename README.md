@@ -35,6 +35,8 @@ developed to access data from the Australian Microbiome.
 
 ## Development environment setup
 
+### Backend (Django)
+
 - [Install docker and compose](https://docs.docker.com/compose/install/)
   - Note: the Docker compose plugin (`docker compose`) does not seem to work with the docker-compose-build.yml file, but the older executable (`docker-compose`) does work
   - On the docker compose install page, there is a note that Compose V1 won't be supported anymore
@@ -68,6 +70,32 @@ developed to access data from the Australian Microbiome.
 
   If the local machine already has a postgresql server instance it will need to be stopped, since the ports will conflict (`sudo service postgresql stop`)
 
+  This will start the docker containers attached to the current terminal process. If you want the containers to persist running after closing the terminal, start the containers with the -d argument:
+
+  `docker-compose up -d`
+
+  And then manage the containers with usual docker commands (`docker-compose ps`, `docker-compose stop`, `docker-compose start`)
+
+### Frontend (React)
+
+These steps are performed in a separate terminal, i.e. not in the container, and from the `frontend/` directory.
+
+- Install node
+
+  - The required version is in the `frontend/package.json` under the `"engines"`` property
+  - Most systems will already have a version of node installed. The easiest way to install the required version for this app is to use [`nvm`](https://github.com/nvm-sh/nvm#installing-and-updating) (Node Version Manager)
+  - Once nvm is installed, install the required version of node, e.g.: `nvm install x.y.z`
+  - There is also a file in the `frontend/` directory called `.nvmrc` that specifies the version of node to be used for this project in the event that the local system has multiple versions of node.
+
+- Install node modules for the web app
+
+  - Run `yarn install` to install the node modules
+
+- Start the React frontend
+
+  - Run `yarn start`
+  - The page will be accessible on port 3000 by default
+
 ## Input data
 
 BPA-OTU loads input data to generate a PostgreSQL schema named `otu`. The
@@ -79,20 +107,20 @@ Three categories of file are ingested:
 - taxonomy files (extension: `.taxonomy`)
 - OTU abundance tables (extension: `.txt`)
 
+Note that `/data/dev` is a mount point in a Docker container. See `./docker-compose.yml`
+
 By default the contextual metadata will be downloaded during the ingest
-operation, or it can be provided as either
+operation, or it can be provided as either a sqlite database or an Excel spreadsheet
 
-    /data/amd-metadata/amd-samplecontextual/*.db # sqlite database
-    /data/amd-metadata/amd-samplecontextual/*.xlsx # Excel spreadsheet
+    ./data/dev/amd-metadata/amd-samplecontextual/*.db # sqlite database
+    ./data/dev/amd-metadata/amd-samplecontextual/*.xlsx # Excel spreadsheet
 
-See "Additional arguments" below. `/data` is a mount point in a Docker
-container. See `./docker-compose.yml`
+See "Additional arguments" below for more context on these.
 
-Abundance and taxonomy files must be placed under a base directory, structured
-as follows:
+Abundance and taxonomy files must be placed under a base directory for the particular ingest `$dir`, which is under the mount point for the Docker container, structured as follows:
 
-    $dir/$amplicon_code/*.txt.gz
-    $dir/$amplicon_code/*.$classifier_db.$classifier_method.taxonomy.gz
+    ./data/dev/$dir/$amplicon_code/*.txt.gz
+    ./data/dev/$dir/$amplicon_code/*.$classifier_db.$classifier_method.taxonomy.gz
 
 `$classifier_db` and `$classifier_method` describe the database and method used to
 generate a given taxonomy. They can be arbitrary strings.
@@ -113,13 +141,26 @@ root@05abc9e1ecb2:~# /app/docker-entrypoint.sh django-admin otu_ingest $dir $yyy
 root@420c1d1e9fe4:~# /app/docker-entrypoint.sh django-admin otu_ingest $dir $yyyy_mm_dd
 ```
 
-> If the `docker-compose exec runserver bash` does not work, then find the id of the container
-> with `docker container ls` (the system will need to be running for this to work, i.e. with `sudo docker-compose up`)
+> If `docker-compose exec runserver bash` does not work, then find the id of the container
+> with `docker container ls` (the system will need to be running for this to work, i.e. with `docker-compose up`)
 > and then run `docker exec -it 2361ab2339af bash` (name will be different for the reader)
 
 `$dir` is the base directory for the abundance and taxonomy files.
 
 `$yyyy_mm_dd` is the ingest date .e.g. 2022-01-01
+
+**Example usage:**
+
+Get data file, unarchive and copy data to ./data/dev, and ingest data using a particular date:
+
+```console
+cd ./data/dev
+tar -xvzf </path/to/dataarchive.tar.gz> ./
+
+cd ~/bpaotu # or wherever docker-compose.yml lives
+docker-compose exec runserver bash
+/app/docker-entrypoint.sh django-admin otu_ingest AM_data_db_submit_202303211107/ 2023-11-29 --use-sql-context --no-force-tech
+```
 
 Additional arguments:
 
@@ -207,68 +248,6 @@ AAAAGAAGTAAGTAGTCTAACCGCAAGGAGGGCGCTTACCACTTTGTGATTCATGACTGGGG  21646 17
 AAAAGAAGTAAGTAGTCTAACCGTTTACGGAGGGCGCTTACCACTTTGTGATTCATGACTGGGG  21653 14
 AAAAGAAGTAGATAGCTTAACCTTCGGGAGGGCGTTTACCACTTTGTGATTCATGACTGGGG  21644 70  2
 ```
-
-## Development
-
-Ensure a late version of both docker and docker-compose are available in your
-environment.
-
-Bpaotu is available as a fully contained Dockerized stack. The dockerised stack
-are used for both production and development. Appropriate configuration files
-are available depending on usage.
-
-Note that for data ingestion to work you need passwords to the hosted data,
-these are available from BPA on request. Set passwords in your environment,
-these will be passed to the container.
-
-The steps to follow are basically those, above, for:
-
-- Development environment setup
-- Input Data
-
-But in summary:
-
-- Build images, source environment file (from one of the developers), and bring
-  up containers
-
-```
-docker-compose -f docker-compose-build.yml build base dev
-docker-compose up -d
-```
-
-- Build frontend and launch browser window to portal
-
-> Run this on local machine, not in the container
-> If development machine already has a version of node (e.g. personal laptop) then use nvm to install the version needed by bpaotu
-
-```
-cd frontend
-yarn install
-yarn start
-```
-
-- Get (data file from 1 of developers), unarchive and copy data to ./data/dev,
-  and ingest data using today's date:
-
-```
-cd ./data/dev
-tar -xvzf </path/to/dataarchive.tar.gz> ./
-cd ~/bpaotu # or wherever docker-compose.yml lives
-docker-compose exec runserver bash
-### Also see  "Additional arguments" above
-/app/docker-entrypoint.sh django-admin otu_ingest /data/2019-02 2021-08-02
-```
-
-NB: In example above,
-
-- /data/2019-02: location of the data folder
-- 2021-08-02: today's date
-
-If this error happens:
-
-sqlalchemy.orm.exc.NoResultFound: No row was found for one()
-
-Then a prior ingest process was likely cancelled before it finished.
 
 ### Database visualisation
 
