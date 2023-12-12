@@ -159,7 +159,7 @@ tar -xvzf </path/to/dataarchive.tar.gz> ./
 
 cd ~/bpaotu # or wherever docker-compose.yml lives
 docker-compose exec runserver bash
-/app/docker-entrypoint.sh django-admin otu_ingest AM_data_db_submit_202303211107/ 2023-11-29 --use-sql-context --no-force-tech
+/app/docker-entrypoint.sh django-admin otu_ingest AM_data_db_submit_202303211107/ 2023-11-29 --use-sql-context --no-force-fetch
 ```
 
 Additional arguments:
