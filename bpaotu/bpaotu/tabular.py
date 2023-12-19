@@ -137,10 +137,8 @@ def tabular_zip_file_generator(params, onlyContextual):
         if onlyContextual=='f':
             zf.write_iter(
                 "OTU.fasta",
-                fasta_rows(
-                    query.matching_otu_sequences()
-                    )
-                )
+                fasta_rows(query.matching_sample_otu_sequences())
+            )
 
             # Rank 1 is top level below taxonomy source, e.g. kingdom
             taxonomy_rank1_id_attr = getattr(taxonomy_otu_export.c, taxonomy_key_id_names[1])

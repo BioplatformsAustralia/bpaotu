@@ -472,33 +472,30 @@ class SampleQuery:
         # log_query(q)
         return q
 
-    # just return the hash and sequence
-    # this is the same as matching_sample_otus without the otu.id = sample_otu.otu_id condition
-    # (which increases the query time and result set significantly)
-    # (in addition, the joins are defined explicitly rather than letting sqlalchemy use implicit joins - significant speed difference)
-    def matching_otu_sequences(self):
+    def matching_sample_otu_sequences(self):
         q = self._session\
                 .query(OTU.code, Sequence.seq)\
+                .filter(OTU.id == SampleOTU.otu_id)\
                 .join(Taxonomy.otus)\
                 .join(Sequence, Sequence.id == OTU.id)
 
-        # exclude this because we don't want all sample data for this
-        # alternatively could use full query and get distinct values
-        # but am experimenting with running 2 queries so the fasta file can save out first
-        # and the second query won't need to join to the Sequence table
-        # .join(SampleOTU, SampleOTU.otu_id == OTU.id)\
-
-        q = self._taxonomy_filter.apply(q, Taxonomy)
-        if not self._sample_integrity_warnings_filter.is_empty():
-            q = self._sample_integrity_warnings_filter.apply(q)
-        if not self._contextual_filter.is_empty():
-            q = self._contextual_filter.apply(q)
+        q = self.apply_sample_otu_filters(q)
 
         # log_query(q)
         return q
 
     def matching_sample_otus(self, *args):
-        q = self._session.query(*args).filter(OTU.id == SampleOTU.otu_id).join(Taxonomy.otus)
+        q = self._session\
+                .query(*args)\
+                .filter(OTU.id == SampleOTU.otu_id)\
+                .join(Taxonomy.otus)
+
+        q = self.apply_sample_otu_filters(q)
+
+        # log_query(q)
+        return q
+
+    def apply_sample_otu_filters(self, q):
         q = self._taxonomy_filter.apply(q, Taxonomy)
         if not self._sample_integrity_warnings_filter.is_empty():
             q = self._sample_integrity_warnings_filter.apply(
@@ -506,6 +503,7 @@ class SampleQuery:
         if not self._contextual_filter.is_empty():
             q = self._contextual_filter.apply(
                 q.filter(SampleContext.id == SampleOTU.sample_id))
+
         # log_query(q)
         return q
 
