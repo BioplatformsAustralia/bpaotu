@@ -1,7 +1,7 @@
-import { find } from 'lodash'
-import * as React from 'react'
-import { connect } from 'react-redux'
+import React, { useEffect } from 'react'
 import { bindActionCreators } from 'redux'
+import { connect } from 'react-redux'
+import { find } from 'lodash'
 
 import { Button, Card, CardBody, CardFooter, CardHeader } from 'reactstrap'
 
@@ -12,65 +12,68 @@ import { fetchContextualDataDefinitions } from 'reducers/contextual_data_definit
 import { search } from '../reducers/search'
 import { addColumn, clearColumns, removeColumn, selectColumn } from '../reducers/select_columns'
 
-class SelectColumnsCard extends React.Component<any> {
-  constructor(props) {
-    super(props)
-    this.onRemoveColumn = this.onRemoveColumn.bind(this)
-    this.onSelectColumn = this.onSelectColumn.bind(this)
-    this.onClearColumns = this.onClearColumns.bind(this)
+const SelectColumnsCard = (props) => {
+  const {
+    columns,
+    dataDefinitions,
+    optionsLoading,
+    fetchContextualDataDefinitions,
+    addColumn,
+    removeColumn,
+    selectColumn,
+    clearColumns,
+    search,
+  } = props
+
+  useEffect(() => {
+    fetchContextualDataDefinitions()
+  }, [fetchContextualDataDefinitions])
+
+  const onRemoveColumn = (...args: any[]) => {
+    removeColumn(...args)
+    search()
   }
 
-  public componentDidMount() {
-    this.props.fetchContextualDataDefinitions()
+  const onSelectColumn = (...args: any[]) => {
+    selectColumn(...args)
+    search()
   }
 
-  public render() {
-    return (
-      <Card>
-        <CardHeader>Select Columns</CardHeader>
-        <CardBody className="filters">
-          {this.props.columns.map((column, index) => (
-            <ContextualDropDown
-              key={`${column.name}-${index}`}
-              index={index}
-              filter={column}
-              dataDefinition={find(this.props.dataDefinitions, (dd) => dd.name === column.name)}
-              options={this.props.dataDefinitions}
-              optionsLoading={this.props.optionsLoading}
-              remove={this.onRemoveColumn}
-              select={this.onSelectColumn}
-            />
-          ))}
-        </CardBody>
-        <CardFooter className="text-center">
-          <Button color="success" onClick={this.props.addColumn}>
-            Add
-          </Button>
-          <Button color="warning" onClick={this.onClearColumns}>
-            Clear
-          </Button>
-        </CardFooter>
-      </Card>
-    )
+  const onClearColumns = () => {
+    clearColumns()
+    search()
   }
 
-  private onRemoveColumn(...args) {
-    this.props.removeColumn(...args)
-    this.props.search()
-  }
-
-  private onSelectColumn(...args) {
-    this.props.selectColumn(...args)
-    this.props.search()
-  }
-
-  private onClearColumns() {
-    this.props.clearColumns()
-    this.props.search()
-  }
+  return (
+    <Card>
+      <CardHeader>Select Columns</CardHeader>
+      <CardBody className="filters">
+        {columns.map((column, index) => (
+          <ContextualDropDown
+            key={`${column.name}-${index}`}
+            index={index}
+            filter={column}
+            dataDefinition={find(dataDefinitions, (dd) => dd.name === column.name)}
+            options={dataDefinitions}
+            optionsLoading={optionsLoading}
+            remove={onRemoveColumn}
+            select={onSelectColumn}
+          />
+        ))}
+      </CardBody>
+      <CardFooter className="text-center">
+        <Button color="success" onClick={addColumn}>
+          Add
+        </Button>
+        <Button color="warning" onClick={onClearColumns}>
+          Clear
+        </Button>
+      </CardFooter>
+    </Card>
+  )
 }
 
-function mapStateToProps(state) {
+const mapStateToProps = (state) => {
   return {
     columns: state.contextualPage.selectColumns.columns,
     dataDefinitions: state.contextualDataDefinitions.values,
@@ -78,7 +81,7 @@ function mapStateToProps(state) {
   }
 }
 
-function mapDispatchToProps(dispatch: any) {
+const mapDispatchToProps = (dispatch: any) => {
   return bindActionCreators(
     {
       fetchContextualDataDefinitions,
