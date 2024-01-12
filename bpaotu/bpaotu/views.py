@@ -317,7 +317,7 @@ def contextual_fields(request):
             for field_name in fields_by_type['_ontology']]
 
     definitions = (
-        [make_defn('sample_id', 'id', display_name='Sample ID', values=sorted(get_sample_ids()))] +
+        [make_defn('sample_id', 'id', display_name='Sample ID', values=get_sample_ids())] +
         [make_defn('date', field_name) for field_name in fields_by_type['DATE']] +
         [make_defn('time', field_name) for field_name in fields_by_type['TIME']] +
         [make_defn('float', field_name) for field_name in fields_by_type['FLOAT']] +
