@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { isEmpty } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
@@ -11,7 +11,7 @@ import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
 import GraphListed from './graph_listed'
 import GraphTabbed from './graph_tabbed'
 
-function chartEnabled(state) {
+const chartEnabled = (state) => {
   return (
     !isEmpty(state.taxonomyDataForGraph.graphdata) &&
     !state.taxonomyDataForGraph.isLoading &&
@@ -20,70 +20,76 @@ function chartEnabled(state) {
   )
 }
 
-class GraphDashboard extends React.Component<any> {
-  componentDidMount() {
-    this.props.fetchContextualDataForGraph()
-    this.props.fetchTaxonomyDataForGraph()
+const GraphDashboard = (props) => {
+  const {
+    chartEnabled,
+    selectedEnvironment,
+    optionsEnvironment,
+    optionscontextualFilter,
+    contextualGraphdata,
+    taxonomyGraphdata,
+    fetchContextualDataForGraph,
+    fetchTaxonomyDataForGraph,
+    showTabbedGraph,
+    selectedTab,
+    selectTab,
+    scrollToSelected,
+    selectToScroll,
+  } = props
+
+  useEffect(() => {
+    fetchContextualDataForGraph()
+    fetchTaxonomyDataForGraph()
+  }, [fetchContextualDataForGraph, fetchTaxonomyDataForGraph])
+
+  const loadingstyle = {
+    display: 'flex',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   }
 
-  render() {
-    const loadingstyle = {
-      display: 'flex',
-      height: '100%',
-      justifyContent: 'center',
-      alignItems: 'center',
-    }
-
-    return (
-      <>
-        {this.props.chartEnabled ? (
-          <div>
-            {isEmpty(this.props.contextualGraphdata) ? (
-              <Alert color="warning">No matching samples</Alert>
-            ) : this.props.showTabbedGraph ? (
-              <GraphTabbed
-                selectedEnvironment={this.props.selectedEnvironment}
-                optionsEnvironment={this.props.optionsEnvironment}
-                optionscontextualFilter={this.props.optionscontextualFilter}
-                contextualGraphdata={this.props.contextualGraphdata}
-                taxonomyGraphdata={this.props.taxonomyGraphdata}
-                selectedTab={this.props.selectedTab}
-                selectTab={(e) => {
-                  this.props.selectTab(e)
-                }}
-                scrollToSelected={this.props.scrollToSelected}
-                selectToScroll={(e) => {
-                  this.props.selectToScroll(e)
-                }}
-              />
-            ) : (
-              <GraphListed
-                selectedEnvironment={this.props.selectedEnvironment}
-                optionscontextualFilter={this.props.optionscontextualFilter}
-                contextualGraphdata={this.props.contextualGraphdata}
-                taxonomyGraphdata={this.props.taxonomyGraphdata}
-                scrollToSelected={this.props.scrollToSelected}
-                selectToScroll={(e) => {
-                  this.props.selectToScroll(e)
-                }}
-                selectTab={(e) => {
-                  this.props.selectTab(e)
-                }}
-                data-tut="reactour__graph_listed"
-              />
-            )}
-          </div>
-        ) : (
-          <div style={loadingstyle}>
-            <AnimateHelix />
-          </div>
-        )}
-      </>
-    )
-  }
+  return (
+    <>
+      {chartEnabled ? (
+        <div>
+          {isEmpty(contextualGraphdata) ? (
+            <Alert color="warning">No matching samples</Alert>
+          ) : showTabbedGraph ? (
+            <GraphTabbed
+              selectedEnvironment={selectedEnvironment}
+              optionsEnvironment={optionsEnvironment}
+              optionscontextualFilter={optionscontextualFilter}
+              contextualGraphdata={contextualGraphdata}
+              taxonomyGraphdata={taxonomyGraphdata}
+              selectedTab={selectedTab}
+              selectTab={selectTab}
+              scrollToSelected={scrollToSelected}
+              selectToScroll={selectToScroll}
+            />
+          ) : (
+            <GraphListed
+              selectedEnvironment={selectedEnvironment}
+              optionscontextualFilter={optionscontextualFilter}
+              contextualGraphdata={contextualGraphdata}
+              taxonomyGraphdata={taxonomyGraphdata}
+              scrollToSelected={scrollToSelected}
+              selectToScroll={selectToScroll}
+              selectTab={selectTab}
+              data-tut="reactour__graph_listed"
+            />
+          )}
+        </div>
+      ) : (
+        <div style={loadingstyle}>
+          <AnimateHelix />
+        </div>
+      )}
+    </>
+  )
 }
 
-function mapStateToProps(state) {
+const mapStateToProps = (state) => {
   return {
     selectedEnvironment: state.searchPage.filters.contextual.selectedEnvironment,
     chartEnabled: chartEnabled(state),
@@ -94,7 +100,7 @@ function mapStateToProps(state) {
   }
 }
 
-function mapDispatchToProps(dispatch) {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       fetchContextualDataForGraph,
