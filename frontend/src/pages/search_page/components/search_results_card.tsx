@@ -15,6 +15,7 @@ import { GalaxySubmission } from '../reducers/types'
 
 import SamplesMapModal from './samples_map_modal'
 import SamplesGraphModal from './samples_graph_modal'
+import SamplesComparisonModal from './samples_comparison_modal'
 import MetagenomeModal from './metagenome_modal'
 import SearchResultsTable from './search_results_table'
 
@@ -143,6 +144,7 @@ const _SearchResultsCard = (props) => {
 
       <SamplesMapModal />
       <SamplesGraphModal />
+      <SamplesComparisonModal />
     </div>
   )
 }
@@ -185,6 +187,7 @@ const _MetagenomeSearchResultsCard = (props) => {
 
       <SamplesMapModal />
       <SamplesGraphModal />
+      <SamplesComparisonModal />
       <MetagenomeModal />
     </div>
   )

@@ -51,6 +51,9 @@ export interface PageState {
   samplesGraphModal: {
     isOpen: boolean
   }
+  samplesComparisonModal: {
+    isOpen: boolean
+  }
   metagenomeModal: {
     isLoading: boolean
     isOpen: boolean
@@ -116,6 +119,9 @@ export const searchPageInitialState: PageState = {
     sample_otus: [],
   },
   samplesGraphModal: {
+    isOpen: false,
+  },
+  samplesComparisonModal: {
     isOpen: false,
   },
   metagenomeModal: {

@@ -8,6 +8,7 @@ import contextualReducer from './contextual'
 import sampleIntegrityWarningReducer from './sample_integrity_warning'
 import samplesMapModalReducer from './samples_map_modal'
 import samplesGraphModalReducer from './samples_graph_modal'
+import samplesComparisonModalReducer from './samples_comparison_modal'
 import metagenomeModalReducer from './metagenome_modal'
 import searchResultsReducer from './search'
 import submitToGalaxyReducer from './submit_to_galaxy'
@@ -37,6 +38,7 @@ const pageReducer = combineReducers({
   filters: filtersReducer,
   samplesMapModal: samplesMapModalReducer,
   samplesGraphModal: samplesGraphModalReducer,
+  samplesComparisonModal: samplesComparisonModalReducer,
   metagenomeModal: metagenomeModalReducer,
   galaxy: submitToGalaxyReducer,
   tips: tipsReducer,

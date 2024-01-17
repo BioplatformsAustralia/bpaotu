@@ -19,6 +19,7 @@ import { SearchResultsCard, MetagenomeSearchResultsCard } from './components/sea
 
 import { openSamplesMapModal } from './reducers/samples_map_modal'
 import { openSamplesGraphModal } from './reducers/samples_graph_modal'
+import { openSamplesComparisonModal } from './reducers/samples_comparison_modal'
 import { search } from './reducers/search'
 import { clearSearchResults } from './reducers/search'
 
@@ -48,6 +49,10 @@ const SearchPage = (props) => {
   const interactiveGraphSearch = () => {
     track('otu_interactive_graph_search')
     props.openSamplesGraphModal()
+  }
+  const interactiveSampleComparison = () => {
+    track('otu_interactive_comparison_search')
+    props.openSamplesComparisonModal()
   }
 
   const children = React.Children.toArray(props.children)
@@ -82,7 +87,7 @@ const SearchPage = (props) => {
           </Col>
         ) : (
           <>
-            <Col sm={{ size: 2, offset: 3 }}>
+            <Col sm={{ size: 2, offset: 2 }}>
               <SearchButton
                 id="SampleSearchButton"
                 octicon="search"
@@ -104,6 +109,14 @@ const SearchPage = (props) => {
                 octicon="graph"
                 text="Interactive graph search"
                 onClick={interactiveGraphSearch}
+              />
+            </Col>
+            <Col sm={{ size: 2 }}>
+              <SearchButton
+                id="InteractiveSampleComparisonButton"
+                octicon="globe"
+                text="Interactive sample comparison"
+                onClick={interactiveSampleComparison}
               />
             </Col>
           </>
@@ -128,6 +141,7 @@ function mapDispatchToProps(dispatch) {
     {
       openSamplesMapModal,
       openSamplesGraphModal,
+      openSamplesComparisonModal,
       search,
       clearSearchResults,
     },
