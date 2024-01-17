@@ -49,37 +49,16 @@ const ComparisonDashboard = (props) => {
     alignItems: 'center',
   }
 
+  console.log('props', props)
+
   return (
     <>
       {chartEnabled ? (
         <div>
           {isEmpty(contextualGraphdata) ? (
             <Alert color="warning">No matching samples</Alert>
-          ) : showTabbedGraph ? (
-            // <ComparisonTabbed
-            //   selectedEnvironment={selectedEnvironment}
-            //   optionsEnvironment={optionsEnvironment}
-            //   optionscontextualFilter={optionscontextualFilter}
-            //   contextualGraphdata={contextualGraphdata}
-            //   taxonomyGraphdata={taxonomyGraphdata}
-            //   selectedTab={selectedTab}
-            //   selectTab={selectTab}
-            //   scrollToSelected={scrollToSelected}
-            //   selectToScroll={selectToScroll}
-            // />
-            <p>show tabbed</p>
           ) : (
-            // <ComparisonListed
-            //   selectedEnvironment={selectedEnvironment}
-            //   optionscontextualFilter={optionscontextualFilter}
-            //   contextualGraphdata={contextualGraphdata}
-            //   taxonomyGraphdata={taxonomyGraphdata}
-            //   scrollToSelected={scrollToSelected}
-            //   selectToScroll={selectToScroll}
-            //   selectTab={selectTab}
-            //   data-tut="reactour__comparison_listed"
-            // />
-            <p>show listed</p>
+            <p>show sample comparison stuff</p>
           )}
         </div>
       ) : (
