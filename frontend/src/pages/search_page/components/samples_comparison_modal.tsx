@@ -18,7 +18,10 @@ import { TourContext } from 'providers/tour_provider'
 import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
 
-import { closeSamplesComparisonModal } from '../reducers/samples_comparison_modal'
+import {
+  closeSamplesComparisonModal,
+  fetchSampleComparisonModalSamples,
+} from '../reducers/samples_comparison_modal'
 
 import SearchFilters from './search_filters'
 import ComparisonDashboard from './comparison_dashboard'
@@ -52,8 +55,10 @@ const SamplesComparisonModal = (props) => {
   const {
     isOpen,
     closeSamplesComparisonModal,
-    fetchContextualDataForGraph,
-    fetchTaxonomyDataForGraph,
+    fetchSampleComparisonModalSamples,
+    isLoading,
+    markers,
+    sample_otus,
   } = props
 
   const handleSearchFilterClick = (selectedElement) => {
@@ -103,73 +108,23 @@ const SamplesComparisonModal = (props) => {
   }, [])
 
   return (
-    <Modal
-      id="reactour__SamplesComparison"
-      isOpen={isOpen}
-      scrollable={true}
-      fade={true}
-      data-tut="reactour__SamplesComparison"
-    >
+    <Modal isOpen={isOpen} data-tut="reactour__SamplesComparison" id="reactour__SamplesComparison">
       <ModalHeader
-        id="CloseSamplesComparisonModal"
         toggle={closeSamplesComparisonModal}
         data-tut="reactour__CloseSamplesComparisonModal"
+        id="CloseSamplesComparisonModal"
       >
-        <span>Interactive Sample Comparison Search</span>
-        <ButtonGroup
-          size="sm"
-          style={{ marginLeft: 16, marginRight: 16 }}
-          data-tut="reactour__graph_menu"
-        >
-          <Button
-            id="reactour__graph_menu_tabbed"
-            size="sm"
-            onClick={(e) => setShowTabbedComparison(true)}
-            active={showTabbedComparison}
-          >
-            <TabIcon
-              viewType="tabbed"
-              octicon="browser"
-              text="Tabbed View"
-              tooltip="Show graph visualisation in tabbed view"
-            />
-          </Button>
-          <Button
-            id="reactour__graph_menu_listed"
-            size="sm"
-            onClick={(e) => setShowTabbedComparison(false)}
-            active={!showTabbedComparison}
-          >
-            <TabIcon
-              viewType="list"
-              octicon="server"
-              text="List View"
-              tooltip="Show graph visulisation in list view"
-            />
-          </Button>
-        </ButtonGroup>
-        <ButtonGroup size="sm" style={{ marginTop: 8 }}>
-          <ComparisonTutorial
-            tourStep={tourStep}
-            setTourStep={(val) => {
-              setTourStep(val)
-            }}
-          />
-        </ButtonGroup>
+        Interactive Sample Comparison Search
       </ModalHeader>
-      <ModalBody data-tut="reactour__graph_view" id="reactour__graph_view">
-        {isOpen && (
-          <ComparisonDashboard
-            showTabbedComparison={showTabbedComparison}
-            scrollToSelected={scrollToSelected}
-            selectedTab={selectedTab}
-            selectToScroll={(e) => setScrollToSelected(e)}
-            selectTab={(e) => setSelectedTab(e)}
-          />
-        )}
+      <ModalBody>
+        isLoading={isLoading}
+        isOpen={isOpen}
+        markers={markers}
+        sample_otus={sample_otus}
+        fetchSamples={fetchSampleComparisonModalSamples}
       </ModalBody>
-      <ModalFooter id="reactour__graph_filter" data-tut="reactour__graph_filter">
-        <SearchFilters handleSearchFilterClick={handleSearchFilterClick} />
+      <ModalFooter>
+        <SearchFilters handleSearchFilterClick={fetchSampleComparisonModalSamples} />
       </ModalFooter>
       {/*<Tutorial
         steps={steps}
@@ -185,23 +140,27 @@ const SamplesComparisonModal = (props) => {
             closeButton.click()
           }
         }}
-        lastStepNextButton="Back to Tutorial"
+        lastStepNextButton={'Back to Tutorial'}
       />*/}
     </Modal>
   )
 }
 
 const mapStateToProps = (state) => {
-  const { isOpen } = state.searchPage.samplesComparisonModal
-  return { isOpen }
+  const { isLoading, isOpen, markers, sample_otus } = state.searchPage.samplesComparisonModal
+  return {
+    isLoading,
+    isOpen,
+    markers,
+    sample_otus,
+  }
 }
 
 const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       closeSamplesComparisonModal,
-      fetchContextualDataForGraph,
-      fetchTaxonomyDataForGraph,
+      fetchSampleComparisonModalSamples,
     },
     dispatch
   )
