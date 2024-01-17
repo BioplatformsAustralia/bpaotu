@@ -21,6 +21,7 @@ import { SearchResultsCard, MetagenomeSearchResultsCard } from './components/sea
 import { openBlastModal } from './reducers/blast_modal'
 import { openSamplesMapModal } from './reducers/samples_map_modal'
 import { openSamplesGraphModal } from './reducers/samples_graph_modal'
+import { openSamplesComparisonModal } from './reducers/samples_comparison_modal'
 import { search } from './reducers/search'
 import { clearSearchResults } from './reducers/search'
 
@@ -54,6 +55,10 @@ const SearchPage = (props) => {
   const interactiveGraphSearch = () => {
     track('otu_interactive_graph_search')
     props.openSamplesGraphModal()
+  }
+  const interactiveSampleComparison = () => {
+    track('otu_interactive_comparison_search')
+    props.openSamplesComparisonModal()
   }
 
   const children = React.Children.toArray(props.children)
@@ -122,6 +127,14 @@ const SearchPage = (props) => {
                 onClick={interactiveGraphSearch}
               />
             </Col>
+            <Col sm={{ size: 2 }}>
+              <SearchButton
+                id="InteractiveSampleComparisonButton"
+                octicon="globe"
+                text="Interactive sample comparison"
+                onClick={interactiveSampleComparison}
+              />
+            </Col>
           </>
         )}
       </Row>
@@ -147,6 +160,7 @@ function mapDispatchToProps(dispatch) {
       openBlastModal,
       openSamplesMapModal,
       openSamplesGraphModal,
+      openSamplesComparisonModal,
       search,
       clearSearchResults,
     },
