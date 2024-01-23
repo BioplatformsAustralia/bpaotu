@@ -82,23 +82,18 @@ def _spatial_query(params):
             sample_ids = sorted(sample_ids)
             otu_ids = sorted(otu_ids)
 
-            # matrix = np.zeros((len(sample_ids), len(otu_ids)), dtype=int)
-            # for sample_id, otu_id, count in matrix_data:
-            #     matrix[sample_ids.index(sample_id), otu_ids.index(otu_id)] = count
-
-            print(matrix_data)
-
-            matrix_data = [
-                ['Sample_1', 'OTU_B', 51],
-                ['Sample_1', 'OTU_D', 33],
-                ['Sample_2', 'OTU_A', 100],
-                ['Sample_2', 'OTU_C', 2],
-                ['Sample_4', 'OTU_A', 3],
-                ['Sample_4', 'OTU_B', 11],
-            ]
-            print(matrix_data)
-            sample_ids = ['Sample_1', 'Sample_2', 'Sample_3', 'Sample_4']
-            otu_ids = ['OTU_A', 'OTU_B', 'OTU_C', 'OTU_D']
+            # GBIF Example
+            #
+            # matrix_data = [
+            #     ['Sample_1', 'OTU_B', 51],
+            #     ['Sample_1', 'OTU_D', 33],
+            #     ['Sample_2', 'OTU_A', 100],
+            #     ['Sample_2', 'OTU_C', 2],
+            #     ['Sample_4', 'OTU_A', 3],
+            #     ['Sample_4', 'OTU_B', 11],
+            # ]
+            # sample_ids = ['Sample_1', 'Sample_2', 'Sample_3', 'Sample_4']
+            # otu_ids = ['OTU_A', 'OTU_B', 'OTU_C', 'OTU_D']
 
             # Map sample and OTU IDs to their corresponding indices
             sample_id_to_index = {sample_id: i for i, sample_id in enumerate(sample_ids)}
