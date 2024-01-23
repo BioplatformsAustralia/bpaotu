@@ -545,7 +545,7 @@ class SampleQuery:
 
     def matching_sample_distance_matrix(self):
         q = self._session\
-                .query(SampleOTU.otu_id, SampleOTU.sample_id, SampleOTU.count)\
+                .query(SampleOTU.sample_id, SampleOTU.otu_id, SampleOTU.count)\
                 .filter(OTU.id == SampleOTU.otu_id)\
                 .join(Taxonomy.otus)
 

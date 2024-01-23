@@ -74,22 +74,21 @@ def _spatial_query(params):
             sample_ids = set()
 
             for row in query.matching_sample_distance_matrix().yield_per(1000):
-                otu_id, sample_id, count = row
-                otu_ids.add(otu_id)
+                sample_id, otu_id, count = row
                 sample_ids.add(sample_id)
-                matrix_data.append([otu_id, sample_id, count])
+                otu_ids.add(otu_id)
+                matrix_data.append([sample_id, otu_id, count])
 
-            otu_ids = sorted(otu_ids)
             sample_ids = sorted(sample_ids)
-            matrix = np.zeros((len(otu_ids), len(sample_ids)), dtype=int)
+            otu_ids = sorted(otu_ids)
 
-            for otu_id, sample_id, count in matrix_data:
-                matrix[otu_ids.index(otu_id), sample_ids.index(sample_id)] = count
+            # matrix = np.zeros((len(sample_ids), len(otu_ids)), dtype=int)
+            # for sample_id, otu_id, count in matrix_data:
+            #     matrix[sample_ids.index(sample_id), otu_ids.index(otu_id)] = count
 
             print(matrix_data)
-            print(matrix)
 
-            example = [
+            matrix_data = [
                 ['Sample_1', 'OTU_B', 51],
                 ['Sample_1', 'OTU_D', 33],
                 ['Sample_2', 'OTU_A', 100],
@@ -97,33 +96,26 @@ def _spatial_query(params):
                 ['Sample_4', 'OTU_A', 3],
                 ['Sample_4', 'OTU_B', 11],
             ]
-            print(example)
+            print(matrix_data)
             sample_ids = ['Sample_1', 'Sample_2', 'Sample_3', 'Sample_4']
             otu_ids = ['OTU_A', 'OTU_B', 'OTU_C', 'OTU_D']
-
-            # Create a matrix to store the result
-            matrix = []
 
             # Map sample and OTU IDs to their corresponding indices
             sample_id_to_index = {sample_id: i for i, sample_id in enumerate(sample_ids)}
             otu_id_to_index = {otu_id: i for i, otu_id in enumerate(otu_ids)}
 
-            # Fill in the matrix with the provided data
-            for entry in example:
+            # Create matrix with indices and abundance values
+            matrix = []
+            for entry in matrix_data:
                 sample_id, otu_id, value = entry
                 sample_index = sample_id_to_index[sample_id]
                 otu_index = otu_id_to_index[otu_id]
                 matrix.append([otu_index, sample_index, value])
 
-            # Print the resulting matrix
-            for row in matrix:
-                print(row)
-
             abundance_matrix = {
                 'otu_ids': otu_ids,
                 'sample_ids': sample_ids,
                 'matrix': matrix,
-                'matrix_data': example
             }
 
         with SampleQuery(params) as query:
