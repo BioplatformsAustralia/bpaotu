@@ -728,14 +728,15 @@ def otu_search_sample_sites(request):
             'data': [],
             'sample_otus': []
         })
-    data, sample_otus = spatial_query(params)
+    data, sample_otus, abundance_matrix = spatial_query(params)
 
     site_image_lookup_table = get_site_image_lookup_table()
 
     for d in data:
         key = (str(d['latitude']), str(d['longitude']))
         d['site_images'] = site_image_lookup_table.get(key)
-    return JsonResponse({'data': data, 'sample_otus': sample_otus})
+
+    return JsonResponse({ 'data': data, 'sample_otus': sample_otus, 'abundance_matrix': abundance_matrix })
 
 
 @require_CKAN_auth

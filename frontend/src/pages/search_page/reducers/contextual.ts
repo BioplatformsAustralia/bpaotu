@@ -39,12 +39,21 @@ There are pros and cons either way. This way the display of the React Components
 will have multiple "values" fields that are empty if they don't make sense for the given type.
 Ex. values is used only by Sample ID, String filters only use value, "Between" filters use value and value2 etc.
 */
+// const EmptyContextualFilter = {
+//   name: '',
+//   operator: '',
+//   value: '',
+//   value2: '',
+//   values: [],
+// }
+
+// TEMP TO HELP FASTER DEV BY SETTING INITIAL SAMPLE IDS EASILY
 const EmptyContextualFilter = {
-  name: '',
+  name: 'id',
   operator: '',
-  value: '',
+  value: [],
   value2: '',
-  values: [],
+  values: ['10601', '10602', '10604'],
 }
 
 export const {

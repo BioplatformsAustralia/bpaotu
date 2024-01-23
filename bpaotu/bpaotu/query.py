@@ -543,6 +543,17 @@ class SampleQuery:
         # log_query(q)
         return q
 
+    def matching_sample_distance_matrix(self):
+        q = self._session\
+                .query(SampleOTU.otu_id, SampleOTU.sample_id, SampleOTU.count)\
+                .filter(OTU.id == SampleOTU.otu_id)\
+                .join(Taxonomy.otus)
+
+        q = self.apply_sample_otu_filters(q)
+
+        log_query(q)
+        return q
+
     def matching_sample_otus_groupby_lat_lng_id_20k(self):
         # Richness and abundance sums will be meaningless if we aren't
         # filtering on taxonomy_source_id, so use NULL in these cases.
@@ -550,8 +561,11 @@ class SampleQuery:
             (sqlalchemy.null(), sqlalchemy.null())
             if self._taxonomy_filter.state_vector[0] is None else (
                 func.sum(OTUSampleOTU.richness_20k),
+                # Note: in OTUSampleOTU class label for func.sum(SampleOTU.count) is 'count' and not 'sum_count'
+                func.sum(OTUSampleOTU.count),
                 # Note: sum(OTUSampleOTU.sum_count_20k) can be NULL (Python None)
                 func.sum(OTUSampleOTU.sum_count_20k)))
+
         q = (self._session.query(
             SampleContext.latitude,
             SampleContext.longitude,
@@ -566,7 +580,7 @@ class SampleQuery:
             q = apply_op_and_val_filter(getattr(OTUSampleOTU, taxonomy_attr), q, taxonomy)
         q = self._sample_integrity_warnings_filter.apply(q)
         q = self._contextual_filter.apply(q)
-        # log_query(q)
+        log_query(q)
         return q
 
     def _build_taxonomy_subquery(self):
