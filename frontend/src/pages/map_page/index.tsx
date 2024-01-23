@@ -25,6 +25,7 @@ const MapPage = (props) => {
         isLoading={props.isLoading}
         markers={props.markers}
         sample_otus={props.sample_otus}
+        abundance_matrix={props.abundance_matrix}
       />
     </div>
   )
@@ -35,6 +36,7 @@ function mapStateToProps(state) {
     isLoading: state.mapPage.isLoading,
     markers: state.mapPage.samples,
     sample_otus: state.mapPage.sample_otus,
+    abundance_matrix: state.mapPage.abundance_matrix,
   }
 }
 
