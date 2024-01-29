@@ -55,6 +55,7 @@ export interface PageState {
   samplesComparisonModal: {
     isOpen: boolean
     isLoading: boolean
+    isProcessing: boolean
     markers: SampleMarker[]
     sample_otus: any[]
     abundance_matrix: any[]
@@ -130,6 +131,7 @@ export const searchPageInitialState: PageState = {
   samplesComparisonModal: {
     isOpen: false,
     isLoading: false,
+    isProcessing: false,
     markers: [],
     sample_otus: [],
     abundance_matrix: [],
