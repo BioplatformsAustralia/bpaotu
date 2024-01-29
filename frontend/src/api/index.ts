@@ -164,6 +164,11 @@ export const executeSampleSitesSearch = partial(
   window.otu_search_config.search_sample_sites_endpoint
 )
 
+export const executeSampleSitesComparisonSearch = partial(
+  executeOtuSearch,
+  window.otu_search_config.search_sample_sites_comparison_endpoint
+)
+
 export const executeMetagenomeSearch = partial(
   executeOtuSearch,
   join([window.otu_search_config.base_url, 'private/metagenome-search'], '/')

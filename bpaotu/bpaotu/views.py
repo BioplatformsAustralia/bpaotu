@@ -168,6 +168,7 @@ def api_config(request):
         'submit_blast_endpoint': reverse('submit_blast'),
         'blast_submission_endpoint': reverse('blast_submission'),
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
+        'search_sample_sites_comparison_endpoint': reverse('otu_search_sample_sites_comparison'),
         'search_blast_otus_endpoint': reverse('otu_search_blast_otus'),
         'required_table_headers_endpoint': reverse('required_table_headers'),
         'contextual_csv_download_endpoint': reverse('contextual_csv_download_endpoint'),
@@ -721,6 +722,27 @@ def nondenoised_request(request):
 @require_CKAN_auth
 @require_POST
 def otu_search_sample_sites(request):
+    params, errors = param_to_filters(request.POST['otu_query'])
+    if errors:
+        return JsonResponse({
+            'errors': [str(e) for e in errors],
+            'data': [],
+            'sample_otus': []
+        })
+    data, sample_otus = spatial_query(params)
+
+    site_image_lookup_table = get_site_image_lookup_table()
+
+    for d in data:
+        key = (str(d['latitude']), str(d['longitude']))
+        d['site_images'] = site_image_lookup_table.get(key)
+
+    return JsonResponse({ 'data': data, 'sample_otus': sample_otus })
+
+
+@require_CKAN_auth
+@require_POST
+def otu_search_sample_sites_comparison(request):
     params, errors = param_to_filters(request.POST['otu_query'])
     if errors:
         return JsonResponse({

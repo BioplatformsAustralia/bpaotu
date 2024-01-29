@@ -29,6 +29,7 @@ export interface SearchConfig {
   submit_blast_endpoint: string
   blast_submission_endpoint: string
   search_sample_sites_endpoint: string
+  search_sample_sites_comparison_endpoint: string
   search_blast_otus_endpoint: string
   required_table_headers_endpoint: string
   contextual_csv_download_endpoint: string
