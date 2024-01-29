@@ -39,10 +39,23 @@ import numeric from 'numeric'
 
 import Plot from 'react-plotly.js'
 
+interface ModalSample {
+  id: number
+  x: number
+  y: number
+}
+
+const initialModalSample: ModalSample = {
+  id: null,
+  x: null,
+  y: null,
+}
+
 const SamplesComparisonModal = (props) => {
   const [tourStep, setTourStep] = useState(0)
   const [scrollToSelected, setScrollToSelected] = useState('')
   const [selectedMethod, setSelectedMethod] = useState('jaccard')
+  const [selectedSample, setSelectedSample] = useState<ModalSample>(initialModalSample)
 
   const [plotData, setPlotData] = useState([])
 
@@ -165,6 +178,19 @@ const SamplesComparisonModal = (props) => {
     setPlotData(plotData)
   }
 
+  const handlePointClick = (points) => {
+    // just take the first point if there are multiple
+    const point = points[0]
+    const pointSampleId = point.text
+
+    const sample = sample_otus.find((x) => x[2] === pointSampleId)
+    setSelectedSample({
+      id: sample[2],
+      x: sample[0],
+      y: sample[1],
+    })
+  }
+
   return (
     <Modal isOpen={isOpen} data-tut="reactour__SamplesComparison" id="reactour__SamplesComparison">
       <ModalHeader
@@ -233,9 +259,22 @@ const SamplesComparisonModal = (props) => {
                 marker: { color: 'red' },
               },
             ]}
+            onClick={(e) => {
+              const { points } = e
+              handlePointClick(points)
+            }}
             layout={{ width: 640, height: 480, title: 'MDS Plot' }}
             config={{ displayLogo: false, scrollZoom: false }}
           />
+        </Container>
+        <Container>
+          {selectedSample.id && (
+            <>
+              <p>Sample Id: {selectedSample.id}</p>
+              <p>x: {selectedSample.x}</p>
+              <p>y: {selectedSample.y}</p>
+            </>
+          )}
         </Container>
       </ModalBody>
       <ModalFooter>
