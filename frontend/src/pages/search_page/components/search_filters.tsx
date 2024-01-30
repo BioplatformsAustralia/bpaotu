@@ -156,8 +156,6 @@ class SearchFilters extends React.Component<any> {
   render() {
     let searchFilters = []
 
-    console.log('this.props.filters', this.props.filters)
-
     for (const [key, value] of Object.entries(this.props.filters)) {
       switch (key) {
         case 'selectedAmplicon':

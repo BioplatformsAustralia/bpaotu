@@ -3,6 +3,8 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import {
   Container,
+  Col,
+  Row,
   Modal,
   ModalBody,
   ModalHeader,
@@ -11,7 +13,9 @@ import {
   Button,
   UncontrolledTooltip,
 } from 'reactstrap'
+import { isEmpty } from 'lodash'
 
+import AnimateHelix from 'components/animate_helix'
 import Octicon from 'components/octicon'
 import { Tutorial, stepsStyle } from 'components/tutorial'
 import ComparisonTutorial from 'components/tutorials/comparison_tutorial'
@@ -23,6 +27,8 @@ import {
   closeSamplesComparisonModal,
   fetchSampleComparisonModalSamples,
   processSampleComparisonModalSamples,
+  setSelectedMethod,
+  clearPlotData,
 } from '../reducers/samples_comparison_modal'
 
 import SearchFilters from './search_filters'
@@ -51,28 +57,39 @@ const initialModalSample: ModalSample = {
   y: null,
 }
 
+interface PlotData {
+  jaccard: object
+  braycurtis: object
+}
+
+const initialPlotData: PlotData = {
+  jaccard: [],
+  braycurtis: [],
+}
+
 const SamplesComparisonModal = (props) => {
   const [tourStep, setTourStep] = useState(0)
   const [scrollToSelected, setScrollToSelected] = useState('')
-  const [selectedMethod, setSelectedMethod] = useState('jaccard')
   const [selectedSample, setSelectedSample] = useState<ModalSample>(initialModalSample)
-
-  const [plotData, setPlotData] = useState([])
-
-  console.log('props', props)
-  console.log('selectedMethod', selectedMethod)
+  // const [plotData, setPlotData] = useState<PlotData>(initialPlotData)
 
   const {
     isOpen,
     closeSamplesComparisonModal,
     fetchSampleComparisonModalSamples,
     processSampleComparisonModalSamples,
+    selectedMethod,
+    setSelectedMethod,
+    clearPlotData,
     isLoading,
     isProcessing,
     markers,
-    sample_otus,
-    abundance_matrix,
+    sampleOtus,
+    abundanceMatrix,
+    plotData,
   } = props
+
+  console.log('SamplesComparisonModal', 'props', props)
 
   const handleSearchFilterClick = (selectedElement) => {
     fetchContextualDataForGraph()
@@ -89,7 +106,7 @@ const SamplesComparisonModal = (props) => {
   //   isComparisonSubtourOpen,
   //   setIsComparisonSubtourOpen,
   // } = useContext(TourContext)
-
+  //
   // useEffect(() => {
   //   if (isOpen) {
   //     if (isMainTourOpen) {
@@ -115,21 +132,46 @@ const SamplesComparisonModal = (props) => {
   //   setMainTourStep,
   // ])
 
+  // Fetch data if the modal is opened
   useEffect(() => {
-    console.log('SamplesComparisonModal', 'useEffect', 'fetchSampleComparisonModalSamples')
-    // fetchSampleComparisonModalSamples()
-  }, [])
+    if (isOpen) {
+      fetchSampleComparisonModalSamples()
+    }
+  }, [isOpen])
 
   // Clear the plot if data is being refetched
+  // Update the plot if fetching has finished
   useEffect(() => {
-    if (isLoading) {
-      setPlotData([])
+    if (isOpen) {
+      if (isLoading) {
+        clearPlotData()
+      }
     }
-  }, [isLoading])
+  }, [isOpen, isLoading])
+
+  useEffect(() => {
+    if (isOpen) {
+      updatePlotSafe()
+    }
+  }, [isOpen, abundanceMatrix])
+
+  useEffect(() => {
+    if (isOpen) {
+      if (selectedMethod) {
+        updatePlotSafe()
+      }
+    }
+  }, [isOpen, selectedMethod])
+
+  const updatePlotSafe = () => {
+    if (!isEmpty(abundanceMatrix)) {
+      processSampleComparisonModalSamples()
+    }
+  }
 
   // const handleStartProcessing = () => {
-  //   const arg_data = abundance_matrix.matrix
-  //   const arg_sample_ids = abundance_matrix.sample_ids
+  //   const arg_data = abundanceMatrix.matrix
+  //   const arg_sample_ids = abundanceMatrix.sample_ids
 
   //   // Create a new Web Worker
   //   const calculationWorker = new Worker('./calculation.worker.js')
@@ -155,27 +197,33 @@ const SamplesComparisonModal = (props) => {
   // }
 
   const updatePlot = () => {
-    const data = abundance_matrix.matrix
-    const sample_ids = abundance_matrix.sample_ids
-    const processedData =
-      selectedMethod === 'jaccard'
-        ? getJaccardDistanceMatrix(data, sample_ids)
-        : getBrayCurtisDistanceMatrix(data, sample_ids)
+    console.log('updatePlot', 'selectedMethod', selectedMethod)
+    if (plotData[selectedMethod].length) {
+      // it should just update
+      console.log(`Using cached ${selectedMethod} data`)
+    } else {
+      const data = abundanceMatrix.matrix
+      const sample_ids = abundanceMatrix.sample_ids
+      const processedData =
+        selectedMethod === 'jaccard'
+          ? getJaccardDistanceMatrix(data, sample_ids)
+          : getBrayCurtisDistanceMatrix(data, sample_ids)
 
-    console.log('processedData', processedData)
+      // console.log('processedData', processedData)
 
-    const mds = classicMDS(processedData.matrix, 2)
-    console.log('mds', mds)
+      const mds = classicMDS(processedData.matrix, 2)
+      const positions = numeric.transpose(mds)
 
-    const positions = numeric.transpose(mds)
-    console.log('positions', positions)
+      const newPlotData = processedData.samples.map((s, i) => {
+        return { text: s, x: positions[0][i], y: positions[1][i] }
+      })
 
-    const plotData = processedData.samples.map((s, i) => {
-      return { text: s, x: positions[0][i], y: positions[1][i] }
-    })
-
-    console.log('plotData', plotData)
-    setPlotData(plotData)
+      console.log('newPlotData', newPlotData)
+      // setPlotData((prevState) => ({
+      //   ...prevState,
+      //   [selectedMethod]: newPlotData,
+      // }))
+    }
   }
 
   const handlePointClick = (points) => {
@@ -183,12 +231,48 @@ const SamplesComparisonModal = (props) => {
     const point = points[0]
     const pointSampleId = point.text
 
-    const sample = sample_otus.find((x) => x[2] === pointSampleId)
+    const sample = sampleOtus.find((x) => x[2] === pointSampleId)
     setSelectedSample({
       id: sample[2],
       x: sample[0],
       y: sample[1],
     })
+  }
+
+  const LoadingSpinnerOverlay = () => {
+    const loadingstyle = {
+      display: 'flex',
+      height: '100%',
+      width: '100%',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      background: 'rgba(0,0,0,0.4)',
+      zIndex: 99999,
+    } as React.CSSProperties
+
+    return (
+      <div style={loadingstyle}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <AnimateHelix />
+          <div
+            style={{
+              display: 'inline-block',
+              textAlign: 'center',
+              margin: 12,
+              padding: 6,
+              background: 'white',
+              width: '100%',
+            }}
+          >
+            {isLoading && <>Fetching Sample Information</>}
+            {isProcessing && <>Calculating MDS Plot</>}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -201,59 +285,32 @@ const SamplesComparisonModal = (props) => {
         Interactive Sample Comparison Search
       </ModalHeader>
       <ModalBody>
+        {isLoading && <LoadingSpinnerOverlay />}
+        {isProcessing && <LoadingSpinnerOverlay />}
         <Container>
-          <p>Dissimilarity method</p>
-          <select
-            placeholder={'Select a method'}
-            value={selectedMethod}
-            onChange={(e) => {
-              setSelectedMethod(e.target.value)
-            }}
-          >
-            <option value="jaccard">Jaccard</option>
-            <option value="braycurtis">Bray-Curtis</option>
-          </select>
+          <Row>
+            <Col xs="auto">Dissimilarity method:</Col>
+            <Col xs="auto" style={{ paddingLeft: 0, paddingRight: 0 }}>
+              <select
+                placeholder={'Select a method'}
+                value={selectedMethod}
+                onChange={(e) => {
+                  setSelectedMethod(e.target.value)
+                }}
+              >
+                <option value="jaccard">Jaccard</option>
+                <option value="braycurtis">Bray-Curtis</option>
+              </select>
+            </Col>
+          </Row>
         </Container>
-        <Container>
-          <Button
-            style={{ margin: 5, padding: 3 }}
-            onClick={() => {
-              fetchSampleComparisonModalSamples()
-            }}
-          >
-            fetchSampleComparisonModalSamples {isLoading && 'Loading...'}
-          </Button>
-        </Container>
-        <Container>
-          <Button
-            style={{ margin: 5, padding: 3 }}
-            onClick={() => {
-              console.log('props', props)
-              console.log('markers', markers)
-              console.log('sample_otus', sample_otus)
-              console.log('abundance_matrix', abundance_matrix)
-            }}
-          >
-            Debug
-          </Button>
-          <Button
-            style={{ margin: 5, padding: 3 }}
-            onClick={() => {
-              // processSampleComparisonModalSamples()
-              updatePlot()
-            }}
-          >
-            Abundance to MDS
-          </Button>
-        </Container>
-        <Container>{isProcessing && 'Processing'}</Container>
         <Container>
           <Plot
             data={[
               {
-                x: plotData.map((i) => i.x),
-                y: plotData.map((i) => i.y),
-                text: plotData.map((i) => i.text),
+                x: plotData[selectedMethod].map((i) => i.x),
+                y: plotData[selectedMethod].map((i) => i.y),
+                text: plotData[selectedMethod].map((i) => i.text),
                 type: 'scatter',
                 mode: 'markers',
                 marker: { color: 'red' },
@@ -301,15 +358,26 @@ const SamplesComparisonModal = (props) => {
 }
 
 const mapStateToProps = (state) => {
-  const { isLoading, isProcessing, isOpen, markers, sample_otus, abundance_matrix } =
-    state.searchPage.samplesComparisonModal
+  const {
+    isLoading,
+    isProcessing,
+    isOpen,
+    markers,
+    sampleOtus,
+    abundanceMatrix,
+    selectedMethod,
+    plotData,
+  } = state.searchPage.samplesComparisonModal
+
   return {
     isLoading,
     isProcessing,
     isOpen,
     markers,
-    sample_otus,
-    abundance_matrix,
+    sampleOtus,
+    abundanceMatrix,
+    selectedMethod,
+    plotData,
   }
 }
 
@@ -319,6 +387,8 @@ const mapDispatchToProps = (dispatch) => {
       closeSamplesComparisonModal,
       fetchSampleComparisonModalSamples,
       processSampleComparisonModalSamples,
+      setSelectedMethod,
+      clearPlotData,
     },
     dispatch
   )
