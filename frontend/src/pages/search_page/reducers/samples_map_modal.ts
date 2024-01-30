@@ -46,7 +46,7 @@ export default handleActions(
       isLoading: true,
       markers: [],
       sample_otus: [],
-      abundance_matrix: [],
+      abundance_matrix: {},
     }),
     [samplesMapModalFetchSamplesEnded as any]: (state, action: any) => ({
       ...state,

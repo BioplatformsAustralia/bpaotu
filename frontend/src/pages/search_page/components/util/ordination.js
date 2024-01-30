@@ -5,6 +5,43 @@ import BrayCurtis from './BrayCurtis'
 import Jaccard from 'jaccard-index'
 const jaccard = Jaccard()
 
+export const executeSampleSitesComparisonProcessing = async (args) => {
+  const { abundanceMatrix, plotData, selectedMethod } = args
+
+  if (plotData[selectedMethod].length) {
+    console.log(`Using cached ${selectedMethod} plot data`)
+    // it should just update automatically because
+    // SamplesComparisonModal component will re-render with a changed selectedMethod
+
+    return plotData
+  } else {
+    await new Promise((r) => setTimeout(r, 50)) // let renderer catch up
+    console.log(`Calculating ${selectedMethod} plot data`)
+
+    // setProcessingStarted() // modal isnt updated in time for this to display
+    const data = abundanceMatrix.matrix
+    const sample_ids = abundanceMatrix.sample_ids
+    const processedData =
+      selectedMethod === 'jaccard'
+        ? getJaccardDistanceMatrix(data, sample_ids)
+        : getBrayCurtisDistanceMatrix(data, sample_ids)
+
+    const mds = classicMDS(processedData.matrix, 2)
+    const positions = numeric.transpose(mds)
+
+    const newPlotDataMethod = processedData.samples.map((s, i) => {
+      return { text: s, x: positions[0][i], y: positions[1][i] }
+    })
+
+    const newPlotData = {
+      ...plotData,
+      [selectedMethod]: newPlotDataMethod,
+    }
+
+    return newPlotData
+  }
+}
+
 export const sparseToJaccardMatrix = (data) => {
   const maxSampleIndex = _.max(data.map((d) => d[1])) // : number
   const matrix = new Array(maxSampleIndex + 1).fill(0).map(() => [])

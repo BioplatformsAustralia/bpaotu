@@ -51,7 +51,7 @@ export interface PageState {
     isLoading: boolean
     markers: SampleMarker[]
     sample_otus: any[]
-    abundance_matrix: any[]
+    abundance_matrix: any
   }
   samplesGraphModal: {
     isOpen: boolean
@@ -61,8 +61,10 @@ export interface PageState {
     isLoading: boolean
     isProcessing: boolean
     markers: SampleMarker[]
-    sample_otus: any[]
-    abundance_matrix: any[]
+    sampleOtus: any[]
+    abundanceMatrix: any
+    selectedMethod: string
+    plotData: any
   }
   metagenomeModal: {
     isLoading: boolean
@@ -131,7 +133,7 @@ export const searchPageInitialState: PageState = {
     isLoading: false,
     markers: [],
     sample_otus: [],
-    abundance_matrix: [],
+    abundance_matrix: {},
   },
   samplesGraphModal: {
     isOpen: false,
@@ -141,8 +143,10 @@ export const searchPageInitialState: PageState = {
     isLoading: false,
     isProcessing: false,
     markers: [],
-    sample_otus: [],
-    abundance_matrix: [],
+    sampleOtus: [],
+    abundanceMatrix: {},
+    selectedMethod: 'jaccard',
+    plotData: { jaccard: [], braycurtis: [] },
   },
   metagenomeModal: {
     isOpen: false,
