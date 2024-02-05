@@ -328,24 +328,16 @@ BPA OTU is released under the GNU Affero GPL. See source for a licence copy.
 - Make changes on a feature branch
 - Submit pull request
 
-TODO
-
-State cleanup
-Convert updatePlot to start with dispatch
+MDS TODO
 
 Clean up query and include contextual info
 
 - want to incorporate info from the interactive graph modal
 - also will want spatial info for a responsive map
 
-If filters change then reset plotData; or just when modal is opened/closed
-Auto update when method is changed
-Cache the calculations
 Provide warning / prevent operations with too many samples
-Show an update when processing
-Click on points
 
-- is currently messing wth the zoom
+Click on points is currently messing wth the zoom
 
 Colour by factors
 
@@ -353,7 +345,17 @@ Colour by factors
 - Land use types
 - Some would be category colours; properties that are continuous (e.g. pH, salinity), change size of dot
 
+MDS DONE
+
+State cleanup
+
+Convert updatePlot to start with dispatch
+Cache the calculations
+If filters change then reset plotData; or just when modal is opened/closed
+Auto update when method is changed
+Show a message when processing
+
+MISC
+
 Multi boolean search paramaters
 And / Or between each option
-
-SOME GLITCHES WITH THE STATE TRACKING

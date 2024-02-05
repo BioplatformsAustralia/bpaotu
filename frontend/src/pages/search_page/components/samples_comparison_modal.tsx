@@ -196,36 +196,6 @@ const SamplesComparisonModal = (props) => {
   //   calculationWorker.postMessage({ totalSteps: totalSteps })
   // }
 
-  const updatePlot = () => {
-    console.log('updatePlot', 'selectedMethod', selectedMethod)
-    if (plotData[selectedMethod].length) {
-      // it should just update
-      console.log(`Using cached ${selectedMethod} data`)
-    } else {
-      const data = abundanceMatrix.matrix
-      const sample_ids = abundanceMatrix.sample_ids
-      const processedData =
-        selectedMethod === 'jaccard'
-          ? getJaccardDistanceMatrix(data, sample_ids)
-          : getBrayCurtisDistanceMatrix(data, sample_ids)
-
-      // console.log('processedData', processedData)
-
-      const mds = classicMDS(processedData.matrix, 2)
-      const positions = numeric.transpose(mds)
-
-      const newPlotData = processedData.samples.map((s, i) => {
-        return { text: s, x: positions[0][i], y: positions[1][i] }
-      })
-
-      console.log('newPlotData', newPlotData)
-      // setPlotData((prevState) => ({
-      //   ...prevState,
-      //   [selectedMethod]: newPlotData,
-      // }))
-    }
-  }
-
   const handlePointClick = (points) => {
     // just take the first point if there are multiple
     const point = points[0]
