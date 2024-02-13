@@ -1,4 +1,5 @@
-import * as React from 'react'
+import React, { useState, useEffect } from 'react'
+
 import { get as _get } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
@@ -12,41 +13,37 @@ import {
   getDefaultMetagenomeAmplicon,
 } from '../reducers/amplicon'
 
-class AmpliconFilter extends React.Component<any> {
-  defaultAmplicon: any
+const AmpliconFilter = (props) => {
+  const [defaultAmplicon, setDefaultAmplicon] = useState(null)
 
-  setDefaultAmplicon() {
-    if (this.defaultAmplicon || this.props.options.length === 0) {
+  const calculateDefaultAmplicon = () => {
+    if (defaultAmplicon || props.options.length === 0) {
       return
     }
-    this.defaultAmplicon = (
-      this.props.metagenomeMode ? getDefaultMetagenomeAmplicon : getDefaultAmplicon
-    )(this.props.options)
-    if (this.defaultAmplicon) {
-      this.props.selectValue(this.defaultAmplicon.id)
+    const ampliconFunction = props.metagenomeMode
+      ? getDefaultMetagenomeAmplicon
+      : getDefaultAmplicon
+    const amplicon = ampliconFunction(props.options)
+    if (amplicon) {
+      setDefaultAmplicon(amplicon)
+      props.selectValue(amplicon.id)
     }
   }
 
-  componentDidMount() {
-    this.defaultAmplicon = null
-    this.setDefaultAmplicon()
-  }
+  useEffect(() => {
+    calculateDefaultAmplicon()
+  }, [props.options, props.metagenomeMode])
 
-  componentDidUpdate() {
-    this.setDefaultAmplicon()
-    if (this.props.selected.value === '' && !this.props.metagenomeMode) {
-      if (this.defaultAmplicon) {
-        this.props.selectValue(this.defaultAmplicon.id)
-      }
+  useEffect(() => {
+    if (props.selected.value === '' && !props.metagenomeMode && defaultAmplicon) {
+      props.selectValue(defaultAmplicon.id)
     }
-  }
+  }, [props.selected.value, props.metagenomeMode, defaultAmplicon])
 
-  public render() {
-    return <DropDownFilter {...this.props} />
-  }
+  return <DropDownFilter {...props} />
 }
 
-function mapStateToProps(state) {
+const mapStateToProps = (state) => {
   return {
     label: 'Amplicon',
     options: state.referenceData.amplicons.values,
@@ -57,7 +54,7 @@ function mapStateToProps(state) {
   }
 }
 
-function mapDispatchToProps(dispatch) {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       selectValue: selectAmplicon,
