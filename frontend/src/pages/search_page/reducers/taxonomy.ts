@@ -99,10 +99,15 @@ function makeTaxonomyReducer(taxonomyName) {
       fetchEnded: `FETCH_${taxonomyU}_ENDED`,
       select: 'SELECT_' + taxonomyU,
       selectOperator: `SELECT_${taxonomyU}_OPERATOR`,
+      selectAmplicon: 'SELECT_AMPLICON',
     }
     switch (action.type) {
       case clearAllTaxonomyFilters.toString():
       case actionTypes.clear:
+        return EmptySelectableLoadableValues
+
+      // clear other dropdowns if amplicon was changed
+      case actionTypes.selectAmplicon:
         return EmptySelectableLoadableValues
 
       case actionTypes.disable:
