@@ -20,6 +20,7 @@ const SamplesMapModal = (props) => {
     markers,
     sample_otus,
     abundance_matrix,
+    contextual,
   } = props
 
   const {
@@ -94,6 +95,7 @@ const SamplesMapModal = (props) => {
           markers={markers}
           sample_otus={sample_otus}
           abundance_matrix={abundance_matrix}
+          contextual={contextual}
         />
       </ModalBody>
       <ModalFooter>
@@ -120,7 +122,7 @@ const SamplesMapModal = (props) => {
 }
 
 const mapStateToProps = (state) => {
-  const { isLoading, isOpen, markers, sample_otus, abundance_matrix } =
+  const { isLoading, isOpen, markers, sample_otus, abundance_matrix, contextual } =
     state.searchPage.samplesMapModal
   return {
     isLoading,
@@ -128,6 +130,7 @@ const mapStateToProps = (state) => {
     markers,
     sample_otus,
     abundance_matrix,
+    contextual,
   }
 }
 

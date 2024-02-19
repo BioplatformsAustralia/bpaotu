@@ -128,6 +128,8 @@ def _spatial_query(params):
                 sample_id_selected.append(sample_id)
 
             result = defaultdict(lambda: defaultdict(dict))
+            contextual = {}
+
             # It's typically faster to accumulate the sample_ids above and then
             # fetch the actual samples here.
             for sample in query.matching_selected_samples(sample_id_selected, SampleContext):
@@ -135,9 +137,10 @@ def _spatial_query(params):
                 latlng = result[(sample.latitude, longitude)]
                 latlng['latitude'] = sample.latitude
                 latlng['longitude'] = longitude
-                latlng['bpa_data'][sample.id] = samples_contextual_data(sample)
+                # latlng['bpa_data'][sample.id] = samples_contextual_data(sample)
+                contextual[sample.id] = samples_contextual_data(sample)
 
-            return list(result.values()), sample_otus_all, abundance_matrix
+            return list(result.values()), sample_otus_all, abundance_matrix, contextual
 
 
 def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=True):

@@ -13,7 +13,7 @@ import {
   Button,
   UncontrolledTooltip,
 } from 'reactstrap'
-import { isEmpty } from 'lodash'
+import { groupBy, isEmpty } from 'lodash'
 
 import AnimateHelix from 'components/animate_helix'
 import Octicon from 'components/octicon'
@@ -62,16 +62,10 @@ interface PlotData {
   braycurtis: object
 }
 
-const initialPlotData: PlotData = {
-  jaccard: [],
-  braycurtis: [],
-}
-
 const SamplesComparisonModal = (props) => {
   const [tourStep, setTourStep] = useState(0)
   const [scrollToSelected, setScrollToSelected] = useState('')
   const [selectedSample, setSelectedSample] = useState<ModalSample>(initialModalSample)
-  // const [plotData, setPlotData] = useState<PlotData>(initialPlotData)
 
   const {
     isOpen,
@@ -86,10 +80,69 @@ const SamplesComparisonModal = (props) => {
     markers,
     sampleOtus,
     abundanceMatrix,
+    contextual,
     plotData,
   } = props
 
-  console.log('SamplesComparisonModal', 'props', props)
+  const transformPlotData = (data) => {
+    const transformedData = Object.keys(data).map((type) => {
+      const typeData = data[type]
+      const transformedTypeData = {}
+
+      // Extract all properties dynamically
+      typeData.forEach((item) => {
+        Object.keys(item).forEach((prop) => {
+          if (!transformedTypeData[prop]) {
+            transformedTypeData[prop] = []
+          }
+          transformedTypeData[prop].push(item[prop])
+        })
+      })
+
+      return {
+        ...transformedTypeData,
+        name: type,
+        type: 'scatter',
+        mode: 'markers',
+      }
+    })
+
+    return transformedData
+  }
+
+  // console.log('SamplesComparisonModal', 'props', props)
+  console.log('SamplesComparisonModal', 'plotData', plotData)
+
+  const plotGroup = 'Env Broad Scale'
+  const plotDataGrouped = groupBy(plotData[selectedMethod], plotGroup)
+
+  // TODO use better way that includes groups with no entries
+  const plotGroups = Object.keys(plotDataGrouped)
+  const plotDataTransformed = transformPlotData(plotDataGrouped)
+
+  //
+  // desired format
+  //
+  // data={[
+  //   {
+  //     x: plotData[selectedMethod].slice(0, 23).map((i) => i.x),
+  //     y: plotData[selectedMethod].slice(0, 23).map((i) => i.y),
+  //     text: plotData[selectedMethod].slice(0, 23).map((i) => i.text),
+  //     type: 'scatter',
+  //     mode: 'markers',
+  //     // color: 'env',
+  //     // marker: { color: 'env' },
+  //   },
+  //   {
+  //     x: plotData[selectedMethod].slice(23, 46).map((i) => i.x),
+  //     y: plotData[selectedMethod].slice(23, 46).map((i) => i.y),
+  //     text: plotData[selectedMethod].slice(23, 46).map((i) => i.text),
+  //     type: 'scatter',
+  //     mode: 'markers',
+  //     // color: 'env',
+  //     // marker: { color: 'env' },
+  //   },
+  // ]}
 
   const handleSearchFilterClick = (selectedElement) => {
     fetchContextualDataForGraph()
@@ -276,19 +329,10 @@ const SamplesComparisonModal = (props) => {
         </Container>
         <Container>
           <Plot
-            data={[
-              {
-                x: plotData[selectedMethod].map((i) => i.x),
-                y: plotData[selectedMethod].map((i) => i.y),
-                text: plotData[selectedMethod].map((i) => i.text),
-                type: 'scatter',
-                mode: 'markers',
-                marker: { color: 'red' },
-              },
-            ]}
+            data={plotDataTransformed}
             onClick={(e) => {
               const { points } = e
-              handlePointClick(points)
+              // handlePointClick(points)
             }}
             layout={{ width: 640, height: 480, title: 'MDS Plot' }}
             config={{ displayLogo: false, scrollZoom: false }}
@@ -300,6 +344,7 @@ const SamplesComparisonModal = (props) => {
               <p>Sample Id: {selectedSample.id}</p>
               <p>x: {selectedSample.x}</p>
               <p>y: {selectedSample.y}</p>
+              <p>Env: {contextual[selectedSample.id]['Am Environment']}</p>
             </>
           )}
         </Container>
@@ -335,6 +380,7 @@ const mapStateToProps = (state) => {
     markers,
     sampleOtus,
     abundanceMatrix,
+    contextual,
     selectedMethod,
     plotData,
   } = state.searchPage.samplesComparisonModal
@@ -346,6 +392,7 @@ const mapStateToProps = (state) => {
     markers,
     sampleOtus,
     abundanceMatrix,
+    contextual,
     selectedMethod,
     plotData,
   }

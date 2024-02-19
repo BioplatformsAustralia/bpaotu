@@ -47,6 +47,7 @@ export default handleActions(
       markers: [],
       sample_otus: [],
       abundance_matrix: {},
+      contextual: {},
     }),
     [samplesMapModalFetchSamplesEnded as any]: (state, action: any) => ({
       ...state,
@@ -59,6 +60,7 @@ export default handleActions(
       })),
       sample_otus: action.payload.data.sample_otus,
       abundance_matrix: action.payload.data.abundance_matrix,
+      contextual: action.payload.data.contextual,
     }),
   },
   searchPageInitialState.samplesMapModal
