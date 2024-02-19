@@ -332,10 +332,16 @@ MDS TODO
 
 Clean up query and include contextual info
 
+Perhaps swap to the graph query rather tha spatial query, since it is faster
+Could maybe even just put the MDS plots on the graph page??
+Start without the map
+
+Why does the spatial query need to even be used? Why not just use the raw lat long components and if there are multiple samples for the same location, then collate them in the response, or after
+
 - want to incorporate info from the interactive graph modal
 - also will want spatial info for a responsive map
 
-Provide warning / prevent operations with too many samples
+Provide warning / prevent operations with too many samples - or fix query, might not need with graph data
 
 Click on points is currently messing wth the zoom
 

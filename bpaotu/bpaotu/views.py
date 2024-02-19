@@ -750,7 +750,9 @@ def otu_search_sample_sites_comparison(request):
             'data': [],
             'sample_otus': []
         })
-    data, sample_otus, abundance_matrix = spatial_query(params)
+
+    print('otu_search_sample_sites_comparison', 'params', params)
+    data, sample_otus, abundance_matrix, contextual = spatial_query(params)
 
     site_image_lookup_table = get_site_image_lookup_table()
 
@@ -758,7 +760,7 @@ def otu_search_sample_sites_comparison(request):
         key = (str(d['latitude']), str(d['longitude']))
         d['site_images'] = site_image_lookup_table.get(key)
 
-    return JsonResponse({ 'data': data, 'sample_otus': sample_otus, 'abundance_matrix': abundance_matrix })
+    return JsonResponse({ 'data': data, 'sample_otus': sample_otus, 'abundance_matrix': abundance_matrix, 'contextual': contextual })
 
 
 @require_CKAN_auth

@@ -6,7 +6,7 @@ import Jaccard from 'jaccard-index'
 const jaccard = Jaccard()
 
 export const executeSampleSitesComparisonProcessing = async (args) => {
-  const { abundanceMatrix, plotData, selectedMethod } = args
+  const { abundanceMatrix, contextual, plotData, selectedMethod } = args
 
   if (plotData[selectedMethod].length) {
     console.log(`Using cached ${selectedMethod} plot data`)
@@ -29,8 +29,16 @@ export const executeSampleSitesComparisonProcessing = async (args) => {
     const mds = classicMDS(processedData.matrix, 2)
     const positions = numeric.transpose(mds)
 
+    console.log('processedData', processedData)
+    console.log('contextual', contextual)
+
     const newPlotDataMethod = processedData.samples.map((s, i) => {
-      return { text: s, x: positions[0][i], y: positions[1][i] }
+      return {
+        text: s,
+        x: positions[0][i],
+        y: positions[1][i],
+        ...contextual[s], // TODO: only include some (or better: only include some in response)
+      }
     })
 
     const newPlotData = {

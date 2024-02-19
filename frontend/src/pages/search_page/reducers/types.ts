@@ -52,6 +52,7 @@ export interface PageState {
     markers: SampleMarker[]
     sample_otus: any[]
     abundance_matrix: any
+    contextual: any
   }
   samplesGraphModal: {
     isOpen: boolean
@@ -63,6 +64,7 @@ export interface PageState {
     markers: SampleMarker[]
     sampleOtus: any[]
     abundanceMatrix: any
+    contextual: any
     selectedMethod: string
     plotData: any
   }
@@ -134,6 +136,7 @@ export const searchPageInitialState: PageState = {
     markers: [],
     sample_otus: [],
     abundance_matrix: {},
+    contextual: {},
   },
   samplesGraphModal: {
     isOpen: false,
@@ -145,6 +148,7 @@ export const searchPageInitialState: PageState = {
     markers: [],
     sampleOtus: [],
     abundanceMatrix: {},
+    contextual: {},
     selectedMethod: 'jaccard',
     plotData: { jaccard: [], braycurtis: [] },
   },

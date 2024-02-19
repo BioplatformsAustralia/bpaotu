@@ -81,11 +81,12 @@ export default handleActions(
         markers: [],
         sampleOtus: [],
         abundanceMatrix: {},
+        contextual: {},
       }
     },
     [samplesComparisonModalFetchSamplesEnded as any]: (state, action: any) => {
-      // console.log('samplesComparisonModalFetchSamplesEnded', 'state', state)
-      // console.log('samplesComparisonModalFetchSamplesEnded', 'action', action)
+      console.log('samplesComparisonModalFetchSamplesEnded', 'state', state)
+      console.log('samplesComparisonModalFetchSamplesEnded', 'action', action)
       return {
         ...state,
         isLoading: false,
@@ -97,6 +98,7 @@ export default handleActions(
         })),
         sampleOtus: action.payload.data.sample_otus,
         abundanceMatrix: action.payload.data.abundance_matrix,
+        contextual: action.payload.data.contextual,
       }
     },
     [samplesComparisonModalProcessingStarted as any]: (state, action) => {
