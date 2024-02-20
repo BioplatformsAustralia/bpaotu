@@ -76,6 +76,28 @@ developed to access data from the Australian Microbiome.
 
   And then manage the containers with usual docker commands (`docker-compose ps`, `docker-compose stop`, `docker-compose start`)
 
+### Ingest
+
+Once the BE is operational it's possible to do a data ingest. This is described in detail in the _Input data description_ section. For quick reference:
+
+`/path/to/bpaotu` is the app root (i.e. where docker-compose.yml is)
+
+- Extract the ingest archive to /path/to/bpaotu/data/dev
+
+  `tar -zxvf </path/to/dataarchive.tar.gz> -C /path/to/bpaotu/data/dev`
+
+- Update the sample contenxtual database for the import
+
+  `cp /path/to/bpaotu/data/dev/$ingest_dir/db/AM_db_* /path/to/bpaotu/data/dev/amd-metadata/amd-samplecontextual/`
+
+- Run the otu_ingest management task on the app container
+
+  `docker-compose exec runserver bash`
+
+  `/app/docker-entrypoint.sh django-admin otu_ingest $ingest_dir $yyyy-mm-dd --use-sql-context --no-force-fetch`
+
+  Where: $ingest_dir is the directory of the extracted ingest archive (note: tab complete will work here), $yyyy-mm-dd is the date of the ingest (i.e. today's date)
+
 ### Frontend (React)
 
 These steps are performed in a separate terminal, i.e. not in the container, and from the `frontend/` directory.
@@ -96,7 +118,7 @@ These steps are performed in a separate terminal, i.e. not in the container, and
   - Run `yarn start`
   - The page will be accessible on port 3000 by default
 
-## Input data
+## Input data description
 
 BPA-OTU loads input data to generate a PostgreSQL schema named `otu`. The
 importer functionality completely erases all previously loaded data.
