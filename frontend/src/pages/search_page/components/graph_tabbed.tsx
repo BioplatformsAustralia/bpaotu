@@ -12,6 +12,7 @@ import HistogramChartContextual from './charts/histogram_chart_contextual'
 import StackChartTaxonomy from './charts/stack_chart_taxonomy'
 import StackChartTraits from './charts/stack_chart_traits'
 import SunBurstChartTaxonomy from './charts/sunburst_chart_taxonomy'
+import MdsChartTaxonomy from './charts/mds_chart_taxonomy'
 
 import {
   AmpliconFilterInfo,
@@ -292,6 +293,26 @@ const GraphTabbed = (props) => {
               </UncontrolledTooltip>
             </NavLink>
           </NavItem>
+          <NavItem>
+            <NavLink
+              data-tut="reactour__graph_mds_plots"
+              id="reactour__graph_mds_plots"
+              className={classnames({
+                active: selectedTab === 'tab_mds_plots_id',
+              })}
+              onClick={() => {
+                selectTab('tab_mds_plots_id')
+              }}
+            >
+              {'MDS Plots '}
+              <span id="mdsPlotsTipGraphTab">
+                <Octicon name="info" align="top" />
+              </span>
+              <UncontrolledTooltip target="mdsPlotsTipGraphTab" placement="auto">
+                {'MDS Plots'}
+              </UncontrolledTooltip>
+            </NavLink>
+          </NavItem>
         </Nav>
         <TabContent activeTab={selectedTab}>
           <TabPane tabId="tab_amplicon">
@@ -405,6 +426,23 @@ const GraphTabbed = (props) => {
                   selectToScroll(e)
                 }}
                 filter="taxonomy_am_environment_id"
+                taxonomyGraphdata={taxonomyGraphdata}
+                contextualGraphdata={contextualGraphdata}
+              />
+            </>
+          </TabPane>
+          <TabPane tabId="tab_mds_plots_id">
+            <>
+              <MdsChartTaxonomy
+                width={chartWidth}
+                height={chartHeight}
+                selectTab={(e) => {
+                  selectTab(e)
+                }}
+                selectToScroll={(e) => {
+                  selectToScroll(e)
+                }}
+                filter="taxonomy_mds_plots_id"
                 taxonomyGraphdata={taxonomyGraphdata}
                 contextualGraphdata={contextualGraphdata}
               />
