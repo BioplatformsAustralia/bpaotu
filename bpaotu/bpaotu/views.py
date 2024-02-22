@@ -391,11 +391,13 @@ def contextual_graph_fields(request, contextual_filtering=True):
             'graphdata': {}
         })
     graph_results = {}
+    sample_results = {}
 
     with SampleQuery(params) as query:
         results = query.matching_sample_graph_data(all_headers)
 
     if results:
+        ndata = np.array(results)
         tdata = np.array(results).T
         for i, h in enumerate(all_headers):
             column = SampleContext.__table__.columns[h]
@@ -406,8 +408,15 @@ def contextual_graph_fields(request, contextual_filtering=True):
                             (skip_sentinels and math.isclose(x, settings.BPAOTU_MISSING_VALUE_SENTINEL)))]
             graph_results[h] = [xy.tolist() for xy in np.unique(cleaned_data, return_counts=True)]
 
+        for x in ndata:
+            sample_id_column = all_headers.index('id')
+            sample_id = x[sample_id_column]
+            sample_data = dict(zip(all_headers, x.tolist()))
+            sample_results[sample_id] = sample_data
+
     return JsonResponse({
-        'graphdata': graph_results
+        'graphdata': graph_results,
+        'sampledata': sample_results,
     })
 
 @require_CKAN_auth
@@ -754,13 +763,39 @@ def otu_search_sample_sites_comparison(request):
     print('otu_search_sample_sites_comparison', 'params', params)
     data, sample_otus, abundance_matrix, contextual = spatial_query(params)
 
+    sample_results = {}
+
+    contextual_filtering = True
+    additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+    all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
+                   'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
+                   'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
+
+    with SampleQuery(params) as query:
+        results = query.matching_sample_graph_data(all_headers)
+
+    if results:
+        ndata = np.array(results)
+
+        for x in ndata:
+            sample_id_column = all_headers.index('id')
+            sample_id = x[sample_id_column]
+            sample_data = dict(zip(all_headers, x.tolist()))
+            sample_results[sample_id] = sample_data
+
+
     site_image_lookup_table = get_site_image_lookup_table()
 
     for d in data:
         key = (str(d['latitude']), str(d['longitude']))
         d['site_images'] = site_image_lookup_table.get(key)
 
-    return JsonResponse({ 'data': data, 'sample_otus': sample_otus, 'abundance_matrix': abundance_matrix, 'contextual': contextual })
+    return JsonResponse({
+        'data': data,
+        'sample_otus': sample_otus,
+        'abundance_matrix': abundance_matrix,
+        'contextual': contextual
+    })
 
 
 @require_CKAN_auth

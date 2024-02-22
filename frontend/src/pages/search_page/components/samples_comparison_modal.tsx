@@ -113,7 +113,7 @@ const SamplesComparisonModal = (props) => {
   // console.log('SamplesComparisonModal', 'props', props)
   console.log('SamplesComparisonModal', 'plotData', plotData)
 
-  const plotGroup = 'Env Broad Scale'
+  const plotGroup = 'Am Environment'
   const plotDataGrouped = groupBy(plotData[selectedMethod], plotGroup)
 
   // TODO use better way that includes groups with no entries

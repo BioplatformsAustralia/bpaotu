@@ -29,8 +29,8 @@ export const executeSampleSitesComparisonProcessing = async (args) => {
     const mds = classicMDS(processedData.matrix, 2)
     const positions = numeric.transpose(mds)
 
-    console.log('processedData', processedData)
-    console.log('contextual', contextual)
+    console.log('ordination', 'processedData', processedData)
+    console.log('ordination', 'contextual', contextual)
 
     const newPlotDataMethod = processedData.samples.map((s, i) => {
       return {
@@ -40,6 +40,8 @@ export const executeSampleSitesComparisonProcessing = async (args) => {
         ...contextual[s], // TODO: only include some (or better: only include some in response)
       }
     })
+
+    console.log('ordination', 'newPlotDataMethod', newPlotDataMethod)
 
     const newPlotData = {
       ...plotData,

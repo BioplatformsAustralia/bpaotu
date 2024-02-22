@@ -45,6 +45,8 @@ export const processSampleComparisonModalSamples = () => (dispatch, getState) =>
   const state = getState()
   const args = state.searchPage.samplesComparisonModal
 
+  console.log('processSampleComparisonModalSamples', 'args', args)
+
   // not actually an API call, but we can use handleSimpleAPIResponse to yield values to the reducer
   dispatch(samplesComparisonModalProcessingStarted())
   handleSimpleAPIResponse(
