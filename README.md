@@ -86,7 +86,7 @@ Once the BE is operational it's possible to do a data ingest. This is described 
 
   `tar -zxvf </path/to/dataarchive.tar.gz> -C /path/to/bpaotu/data/dev`
 
-- Update the sample contenxtual database for the import
+- Update the sample contextual database for the import
 
   `cp /path/to/bpaotu/data/dev/$ingest_dir/db/AM_db_* /path/to/bpaotu/data/dev/amd-metadata/amd-samplecontextual/`
 
