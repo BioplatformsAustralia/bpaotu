@@ -256,8 +256,52 @@ def taxonomy_options(request):
             json.loads(request.GET['selected']),
             json.loads(request.GET['trait']))
         possibilities = options.possibilities(taxonomy_filter)
+
+    # if no taxa fields are selected, then determine a preferred initial
+    # selection for rank1 (kingdom/domain)
+    try:
+        rank1_selection = json.loads(request.GET['selected'])[1]['value']
+    except KeyError as e:
+        rank1_selection = None
+
+    if rank1_selection:
+        initial = None
+    else:
+        def extract_first_word(string):
+            parts = string.split('_')
+            for part in parts:
+                if part.isalpha():
+                    return part
+            return None
+
+        def extract_full_word(string):
+            parts = string.split('_')
+            for part in parts:
+                if len(part) > 1:
+                    return part
+            return None
+
+        # match the first part of the word component of the amplicon with the domain/kingdom name
+        initial = None
+        with OntologyInfo() as options:
+            amplicons = options.get_values(OTUAmplicon)
+
+            amplicon_filter = json.loads(request.GET['amplicon'])
+            id_to_find = amplicon_filter['value']
+            matching = next((a for a in amplicons if a[0] == id_to_find), None)
+            amplicon_text = matching[1]
+            amplicon_word = extract_first_word(amplicon_text)
+
+            for p in possibilities['new_options']['possibilities']:
+                match_amplicon = amplicon_word[:5].lower()
+                match_kingdom = extract_full_word(p[1])[:5].lower()
+                if match_amplicon == match_kingdom:
+                    initial = p[0]
+                    break
+
     return JsonResponse({
-        'possibilities': possibilities
+        'possibilities': possibilities,
+        'initial': initial,
     })
 
 
@@ -317,7 +361,7 @@ def contextual_fields(request):
             for field_name in fields_by_type['_ontology']]
 
     definitions = (
-        [make_defn('sample_id', 'id', display_name='Sample ID', values=sorted(get_sample_ids()))] +
+        [make_defn('sample_id', 'id', display_name='Sample ID', values=get_sample_ids())] +
         [make_defn('date', field_name) for field_name in fields_by_type['DATE']] +
         [make_defn('time', field_name) for field_name in fields_by_type['TIME']] +
         [make_defn('float', field_name) for field_name in fields_by_type['FLOAT']] +

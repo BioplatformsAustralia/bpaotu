@@ -14,8 +14,10 @@ from .util import (
     str_none_blank,
     array_or_empty)
 from .query import (
+    log_query,
     OntologyInfo,
-    SampleQuery)
+    SampleQuery,
+    TaxonomyOptions)
 import io
 import csv
 import logging
@@ -130,7 +132,7 @@ def tabular_zip_file_generator(params, onlyContextual):
     assert taxonomy_source_id != None
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     rank1_ontology_class = taxonomy_ontology_classes[1]
-    with SampleQuery(params) as query, OntologyInfo() as info:
+    with SampleQuery(params) as query, OntologyInfo() as info, TaxonomyOptions() as options:
         taxonomy_labels_by_source = info.get_taxonomy_labels()
         zf.write_iter('contextual.csv', contextual_csv(query.matching_samples()))
         zf.writestr('info.txt', info_text(params))
@@ -141,7 +143,6 @@ def tabular_zip_file_generator(params, onlyContextual):
             )
 
             # Rank 1 is top level below taxonomy source, e.g. kingdom
-            taxonomy_rank1_id_attr = getattr(taxonomy_otu_export.c, taxonomy_key_id_names[1])
             rank1_id_is_value = params.taxonomy_filter.get_rank_equality_value(1)
             taxonomy_labels = taxonomy_labels_by_source[taxonomy_source_id]
 
@@ -156,22 +157,21 @@ def tabular_zip_file_generator(params, onlyContextual):
                         for name in ontology_attrs]
 
             if rank1_id_is_value is None: # not selecting a specific kingdom
-                for rank1_id, rank1_name in info.get_values(rank1_ontology_class):
+                # get the rank1 possibilities (domain/kingdom) for the amplicon in this query
+                possibilities = options.possibilities(params.taxonomy_filter)
+                rank1_pairs = possibilities['new_options']['possibilities']
+
+                for rank1_id, rank1_name in rank1_pairs:
                     # We have to do this as separate queries because
                     # zf.write_iter() just stores the query iterator and evaluates it later
+                    taxonomy_rank1_id_attr = getattr(Taxonomy, taxonomy_key_id_names[1])
                     rank1_query = q.filter(taxonomy_rank1_id_attr == rank1_id)
 
-                    # To prevent empty files from being included in the zipstream
-                    # we have to count the number of rows in each query
-                    # This does increase a small overhead (5-10s) in the time taken to start the stream
-                    record_count = rank1_query.count()
-
-                    if record_count > 0:
-                        filename = "{}.csv".format(sanitise(rank1_name))
-                        zf.write_iter(
-                            filename,
-                            sample_otu_csv_rows(taxonomy_labels, ids_to_names, rank1_query)
-                        )
+                    filename = "{}.csv".format(sanitise(rank1_name))
+                    zf.write_iter(
+                        filename,
+                        sample_otu_csv_rows(taxonomy_labels, ids_to_names, rank1_query)
+                    )
             else:
                 filename = "{}.csv".format(sanitise(info.id_to_value(rank1_ontology_class, rank1_id_is_value)))
                 zf.write_iter(

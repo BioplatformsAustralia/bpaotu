@@ -900,11 +900,25 @@ class ContextualFilterTermSampleID(ContextualFilterTerm):
                 self.val_is_in)
 
 
+# if the sample_id is an integer, then sort as integer and not alpha-numerically
+# i.e. avoid results like 138939, 13894, 138940, 138941
+# otherwise (if sample_id has letters), then place at the end and sort normally
+def sort_sample_ids_key(s):
+    try:
+        int(s)
+        return int(s)
+    except ValueError:
+        try:
+            return float(s)
+        except ValueError:
+            return float('inf')
+
 def get_sample_ids():
     session = Session()
     ids = [t[0] for t in session.query(SampleContext.id).all()]
     session.close()
-    return ids
+
+    return sorted(ids, key=lambda x: (sort_sample_ids_key(x), x))
 
 
 OP_DESCR = {

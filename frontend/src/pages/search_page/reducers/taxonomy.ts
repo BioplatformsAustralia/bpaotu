@@ -99,10 +99,15 @@ function makeTaxonomyReducer(taxonomyName) {
       fetchEnded: `FETCH_${taxonomyU}_ENDED`,
       select: 'SELECT_' + taxonomyU,
       selectOperator: `SELECT_${taxonomyU}_OPERATOR`,
+      selectAmplicon: 'SELECT_AMPLICON',
     }
     switch (action.type) {
       case clearAllTaxonomyFilters.toString():
       case actionTypes.clear:
+        return EmptySelectableLoadableValues
+
+      // clear other dropdowns if amplicon was changed
+      case actionTypes.selectAmplicon:
         return EmptySelectableLoadableValues
 
       case actionTypes.disable:
@@ -131,9 +136,39 @@ function makeTaxonomyReducer(taxonomyName) {
           return findIndex(options, (k: HTMLOptionElement) => k.id === selectedOption.value) !== -1
         }
 
-        const selected = isSelectedStillInOptions(state.selected)
-          ? state.selected
-          : EmptyOperatorAndValue
+        const isSelectedValueBlank = (selectedOption) => {
+          return selectedOption.value === ''
+        }
+
+        const isInitialSelectedPresent = () => {
+          return action.payload.data.initial !== null
+        }
+
+        // set r1 to default initial value if one is present
+        let selected
+        if (taxonomyName === 'r1') {
+          // initial value for rank1 select sent from backend
+          const initialSelectedValue = { value: action.payload.data.initial, operator: 'is' }
+
+          // console.log('isSelectedStillInOptions', isSelectedStillInOptions(state.selected))
+          // console.log('isSelectedValueBlank', isSelectedValueBlank(state.selected))
+          // console.log('isInitialSelectedPresent', isInitialSelectedPresent())
+
+          if (isSelectedStillInOptions(state.selected)) {
+            selected = isSelectedValueBlank(state.selected)
+              ? isInitialSelectedPresent()
+                ? initialSelectedValue
+                : EmptyOperatorAndValue
+              : state.selected
+          } else {
+            selected = isInitialSelectedPresent() ? initialSelectedValue : EmptyOperatorAndValue
+          }
+        } else {
+          // other ranks keep selected values as usual
+          selected = isSelectedStillInOptions(state.selected)
+            ? state.selected
+            : EmptyOperatorAndValue
+        }
 
         return {
           isLoading: false,
