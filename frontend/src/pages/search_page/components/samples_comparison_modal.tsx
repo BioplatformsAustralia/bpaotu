@@ -67,6 +67,12 @@ const SamplesComparisonModal = (props) => {
   const [scrollToSelected, setScrollToSelected] = useState('')
   const [selectedSample, setSelectedSample] = useState<ModalSample>(initialModalSample)
 
+  const [selectedFilter, setSelectedFilter] = useState('')
+  // const [filterOptions, setFilterOptions] = useState([])
+
+  const chartWidth = window.innerWidth * 0.7
+  const chartHeight = window.innerHeight * 0.7
+
   const {
     isOpen,
     closeSamplesComparisonModal,
@@ -84,43 +90,158 @@ const SamplesComparisonModal = (props) => {
     plotData,
   } = props
 
+  const isContinuous = selectedFilter != '' && !selectedFilter.endsWith('_id')
+
+  console.log('SamplesComparisonModal', 'props', props)
+  console.log('SamplesComparisonModal', 'plotData', plotData)
+  console.log('SamplesComparisonModal', 'plotData[selectedMethod]', plotData[selectedMethod])
+
   const transformPlotData = (data) => {
-    const transformedData = Object.keys(data).map((type) => {
-      const typeData = data[type]
-      const transformedTypeData = {}
+    console.log('transformPlotData', 'data', data)
+
+    // exclude null values (or maybe make size tiny?)
+    const groupValues = Object.keys(data).filter((x) => x !== 'null')
+
+    // is the selectedFilter discrete or continuous?
+
+    const size = groupValues.map((key) => {
+      return parseFloat(key)
+    })
+
+    const transformedData = groupValues.map((key) => {
+      console.log('transformPlotData', 'key', key)
+      const keyData = data[key]
+      const transformedKeyData = {}
 
       // Extract all properties dynamically
-      typeData.forEach((item) => {
+      const propsToKeep = ['x', 'y', 'text']
+      keyData.forEach((item) => {
         Object.keys(item).forEach((prop) => {
-          if (!transformedTypeData[prop]) {
-            transformedTypeData[prop] = []
+          // add important props only
+          if (propsToKeep.includes(prop)) {
+            if (!transformedKeyData[prop]) {
+              transformedKeyData[prop] = []
+            }
+            transformedKeyData[prop].push(item[prop])
           }
-          transformedTypeData[prop].push(item[prop])
         })
       })
 
+      // console.log('key', key)
+
+      // const floatValue = parseFloat(key)
+      // const sizeValue = isNaN(floatValue) ? defaultValue : floatValue
+      // const scale = 2
+      // const size = sizeValue * scale
+
+      // console.log('size', size)
+      const desired_maximum_marker_size = 40
+
+      var marker = {}
+      if (isContinuous) {
+        marker = {
+          color: '#abcdef', // make all same colour
+          size: size,
+          sizemode: 'area',
+          sizeref: (2.0 * Math.max(...size)) / desired_maximum_marker_size ** 2,
+        }
+      }
+
       return {
-        ...transformedTypeData,
-        name: type,
+        ...transformedKeyData,
+        name: key,
         type: 'scatter',
         mode: 'markers',
+        marker: marker,
       }
     })
 
     return transformedData
   }
 
-  // console.log('SamplesComparisonModal', 'props', props)
-  console.log('SamplesComparisonModal', 'plotData', plotData)
+  const arrayifyData = (data) => {
+    const propsToKeep = ['x', 'y', 'text']
+    const transformedObject = {}
 
-  const plotGroup = 'Am Environment'
-  const plotDataGrouped = groupBy(plotData[selectedMethod], plotGroup)
+    var dataToLoop
+    var propsToLoop
 
-  // TODO use better way that includes groups with no entries
-  const plotGroups = Object.keys(plotDataGrouped)
-  const plotDataTransformed = transformPlotData(plotDataGrouped)
+    if (selectedFilter == '') {
+      dataToLoop = data
+      propsToLoop = propsToKeep
+    } else {
+      dataToLoop = data.filter((x) => x[selectedFilter] != null)
+      propsToLoop = [...propsToKeep, selectedFilter]
+    }
 
-  //
+    dataToLoop.forEach((obj) => {
+      propsToLoop.forEach((key) => {
+        var val = obj[key]
+
+        // add the value to text if a filter is selected
+        // TODO make this look better
+        if (key === 'text' && selectedFilter != '') {
+          val = `${obj[selectedFilter]} (Sample ID: ${val})`
+        }
+
+        if (!transformedObject[key]) {
+          transformedObject[key] = []
+        }
+        transformedObject[key].push(val)
+      })
+    })
+
+    return transformedObject
+  }
+
+  var plotDataTransformed
+  if (isContinuous) {
+    const plotDataRestructured = arrayifyData(plotData[selectedMethod])
+
+    plotDataTransformed = [
+      {
+        ...plotDataRestructured,
+        // name: key,
+        type: 'scatter',
+        mode: 'markers',
+      },
+    ]
+
+    const desiredMinimumMarkerSize = 20
+    const desiredMaximumMarkerSize = 100
+    const size = plotDataRestructured[selectedFilter]
+    const maxDataValue = Math.max(...size)
+    const minDataValue = Math.min(...size)
+    const scaledSizes = size.map((value) => {
+      const scaledValue = (value - minDataValue) / (maxDataValue - minDataValue)
+      return (
+        scaledValue * (desiredMaximumMarkerSize - desiredMinimumMarkerSize) +
+        desiredMinimumMarkerSize
+      )
+    })
+
+    plotDataTransformed[0]['marker'] = {
+      size: scaledSizes,
+      sizemode: 'area',
+      sizeref: 0.5, // (2.0 * Math.max(...size)) / desiredMaximumMarkerSize ** 2,
+    }
+  } else {
+    const plotDataGrouped = groupBy(plotData[selectedMethod], selectedFilter)
+    console.log('SamplesComparisonModal', 'plotDataGrouped', plotDataGrouped)
+
+    // // TODO use better way that includes groups with no entries for categories
+    // const plotGroups = Object.keys(plotDataGrouped)
+    // console.log('SamplesComparisonModal', 'plotGroups', plotGroups)
+
+    plotDataTransformed = transformPlotData(plotDataGrouped)
+    console.log('SamplesComparisonModal', 'plotDataTransformed', plotDataTransformed)
+  }
+
+  console.log('SamplesComparisonModal', 'plotDataTransformed', plotDataTransformed)
+
+  const filterOptions =
+    Object.keys(contextual).length > 0 ? Object.keys(Object.values(contextual)[0]) : []
+
   // desired format
   //
   // data={[
@@ -149,41 +270,6 @@ const SamplesComparisonModal = (props) => {
     fetchTaxonomyDataForGraph()
     setScrollToSelected(selectedElement)
   }
-
-  // const {
-  //   isMainTourOpen,
-  //   setIsMainTourOpen,
-  //   mainTourStep,
-  //   setMainTourStep,
-  //   setIsComparisonTourOpen,
-  //   isComparisonSubtourOpen,
-  //   setIsComparisonSubtourOpen,
-  // } = useContext(TourContext)
-  //
-  // useEffect(() => {
-  //   if (isOpen) {
-  //     if (isMainTourOpen) {
-  //       setIsMainTourOpen(false)
-  //       setIsComparisonSubtourOpen(true)
-  //     }
-  //   } else {
-  //     if (isComparisonSubtourOpen) {
-  //       setIsMainTourOpen(true)
-  //       setIsComparisonSubtourOpen(false)
-  //       setIsComparisonTourOpen(false)
-  //       setMainTourStep(mainTourStep + 1)
-  //     }
-  //   }
-  // }, [
-  //   isOpen,
-  //   isMainTourOpen,
-  //   isComparisonSubtourOpen,
-  //   setIsMainTourOpen,
-  //   setIsComparisonTourOpen,
-  //   setIsComparisonSubtourOpen,
-  //   mainTourStep,
-  //   setMainTourStep,
-  // ])
 
   // Fetch data if the modal is opened
   useEffect(() => {
@@ -221,33 +307,6 @@ const SamplesComparisonModal = (props) => {
       processSampleComparisonModalSamples()
     }
   }
-
-  // const handleStartProcessing = () => {
-  //   const arg_data = abundanceMatrix.matrix
-  //   const arg_sample_ids = abundanceMatrix.sample_ids
-
-  //   // Create a new Web Worker
-  //   const calculationWorker = new Worker('./calculation.worker.js')
-
-  //   // Set up event listeners to handle messages from the worker
-  //   calculationWorker.addEventListener('message', (event) => {
-  //     const { type, progress: workerProgress, result: workerResult, arg_data, arg_sample_ids } = event.data;
-
-  //     if (type === 'progress') {
-  //       // Update the progress in your React state
-  //       setProgress(workerProgress * 100)
-  //     } else if (type === 'result') {
-  //       // Handle the final result
-  //       setResult(workerResult)
-
-  //       // Optionally, terminate the worker once the calculation is complete
-  //       calculationWorker.terminate()
-  //     }
-  //   })
-
-  //   // Start the calculation in the worker
-  //   calculationWorker.postMessage({ totalSteps: totalSteps })
-  // }
 
   const handlePointClick = (points) => {
     // just take the first point if there are multiple
@@ -328,13 +387,41 @@ const SamplesComparisonModal = (props) => {
           </Row>
         </Container>
         <Container>
+          <Row>
+            <Col xs="auto">Filter option:</Col>
+            <Col xs="auto" style={{ paddingLeft: 0, paddingRight: 0 }}>
+              <select
+                placeholder={'Select a contextual filter'}
+                value={selectedFilter}
+                onChange={(e) => {
+                  setSelectedFilter(e.target.value)
+                }}
+              >
+                <option value="">choose</option>
+                {filterOptions.map((option) => {
+                  return (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  )
+                })}
+              </select>
+            </Col>
+          </Row>
+        </Container>
+        <Container>
           <Plot
             data={plotDataTransformed}
             onClick={(e) => {
               const { points } = e
               // handlePointClick(points)
             }}
-            layout={{ width: 640, height: 480, title: 'MDS Plot' }}
+            layout={{
+              width: chartWidth,
+              height: chartHeight,
+              title: 'MDS Plot',
+              legend: { orientation: 'h' },
+            }}
             config={{ displayLogo: false, scrollZoom: false }}
           />
         </Container>

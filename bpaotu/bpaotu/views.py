@@ -794,7 +794,7 @@ def otu_search_sample_sites_comparison(request):
         'data': data,
         'sample_otus': sample_otus,
         'abundance_matrix': abundance_matrix,
-        'contextual': contextual
+        'contextual': sample_results
     })
 
 
