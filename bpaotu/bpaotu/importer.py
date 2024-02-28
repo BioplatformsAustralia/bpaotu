@@ -233,7 +233,7 @@ class DataImporter:
         self.load_otu_abundance(otu_lookup)
         self.load_taxonomy_otu()
         logger.info('Refreshing OTUSampleOTU')
-        refresh_materialized_view(self._session, OTUSampleOTU.__table__)
+        refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
         update_from_ckan()
         self.complete()
 
