@@ -97,8 +97,9 @@ const SamplesComparisonModal = (props) => {
   console.log('SamplesComparisonModal', 'plotData', plotData)
   console.log('SamplesComparisonModal', 'plotData[selectedMethod]', plotData[selectedMethod])
 
-  const transformPlotData = (data) => {
+  const transformPlotData = (data, contextualFilters) => {
     console.log('transformPlotData', 'data', data)
+    console.log('transformPlotData', 'contextualFilters', contextualFilters)
 
     // exclude null values (or maybe make size tiny?)
     const groupValues = Object.keys(data).filter((x) => x !== 'null')
@@ -138,9 +139,20 @@ const SamplesComparisonModal = (props) => {
         }
       }
 
+      const findFilter = contextualFilters.find((x) => x.name === key)
+      let name
+      console.log('findFilter', findFilter)
+      if (findFilter) {
+        name = findFilter.display_name
+      } else {
+        name = key
+      }
+
+      console.log('name', name)
+
       return {
         ...transformedKeyData,
-        name: key,
+        name: name,
         type: 'scatter',
         mode: 'markers',
         marker: marker,
@@ -224,14 +236,36 @@ const SamplesComparisonModal = (props) => {
     // const plotGroups = Object.keys(plotDataGrouped)
     // console.log('SamplesComparisonModal', 'plotGroups', plotGroups)
 
-    plotDataTransformed = transformPlotData(plotDataGrouped)
+    // TODO sub in values from contextualFilters lookups
+
+    console.log('contextualFilters', contextualFilters)
+    plotDataTransformed = transformPlotData(plotDataGrouped, contextualFilters)
     console.log('SamplesComparisonModal', 'plotDataTransformed', plotDataTransformed)
   }
 
   console.log('SamplesComparisonModal', 'plotDataTransformed', plotDataTransformed)
 
-  const filterOptions =
+  console.log('SamplesComparisonModal', 'contextual', contextual)
+
+  const filterOptionKeys =
     Object.keys(contextual).length > 0 ? Object.keys(Object.values(contextual)[0]) : []
+
+  const filterOptionsSubset = filterOptionKeys.map((x) => {
+    const filter = contextualFilters.find((y) => y.name === x)
+
+    console.log('filter', filter)
+
+    if (filter) {
+      return { value: filter.name, text: filter.display_name }
+    } else {
+      return null
+    }
+  })
+
+  const filterOptions = filterOptionsSubset.filter((x) => x != null)
+
+  console.log('SamplesComparisonModal', 'filterOptions', filterOptions)
+  console.log('SamplesComparisonModal', 'contextualFilters', contextualFilters)
 
   // contextualFilters
 
@@ -382,7 +416,6 @@ const SamplesComparisonModal = (props) => {
         <Container>
           <Row>
             <Col xs="auto">Filter option:</Col>
-            <p>TODO use contextualFilters to get names for filterOptions</p>
             <Col xs="auto" style={{ paddingLeft: 0, paddingRight: 0 }}>
               <select
                 placeholder={'Select a contextual filter'}
@@ -392,10 +425,10 @@ const SamplesComparisonModal = (props) => {
                 }}
               >
                 <option value="">choose</option>
-                {filterOptions.map((option) => {
+                {filterOptions.map((filterOption) => {
                   return (
-                    <option key={option} value={option}>
-                      {option}
+                    <option key={filterOption.value} value={filterOption.value}>
+                      {filterOption.text}
                     </option>
                   )
                 })}
