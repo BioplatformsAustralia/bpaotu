@@ -88,6 +88,7 @@ const SamplesComparisonModal = (props) => {
     abundanceMatrix,
     contextual,
     plotData,
+    contextualFilters,
   } = props
 
   const isContinuous = selectedFilter != '' && !selectedFilter.endsWith('_id')
@@ -103,13 +104,11 @@ const SamplesComparisonModal = (props) => {
     const groupValues = Object.keys(data).filter((x) => x !== 'null')
 
     // is the selectedFilter discrete or continuous?
-
     const size = groupValues.map((key) => {
       return parseFloat(key)
     })
 
     const transformedData = groupValues.map((key) => {
-      console.log('transformPlotData', 'key', key)
       const keyData = data[key]
       const transformedKeyData = {}
 
@@ -127,14 +126,6 @@ const SamplesComparisonModal = (props) => {
         })
       })
 
-      // console.log('key', key)
-
-      // const floatValue = parseFloat(key)
-      // const sizeValue = isNaN(floatValue) ? defaultValue : floatValue
-      // const scale = 2
-      // const size = sizeValue * scale
-
-      // console.log('size', size)
       const desired_maximum_marker_size = 40
 
       var marker = {}
@@ -241,6 +232,8 @@ const SamplesComparisonModal = (props) => {
 
   const filterOptions =
     Object.keys(contextual).length > 0 ? Object.keys(Object.values(contextual)[0]) : []
+
+  // contextualFilters
 
   // desired format
   //
@@ -389,6 +382,7 @@ const SamplesComparisonModal = (props) => {
         <Container>
           <Row>
             <Col xs="auto">Filter option:</Col>
+            <p>TODO use contextualFilters to get names for filterOptions</p>
             <Col xs="auto" style={{ paddingLeft: 0, paddingRight: 0 }}>
               <select
                 placeholder={'Select a contextual filter'}
@@ -482,6 +476,7 @@ const mapStateToProps = (state) => {
     contextual,
     selectedMethod,
     plotData,
+    contextualFilters: state.contextualDataDefinitions.filters,
   }
 }
 
