@@ -208,23 +208,28 @@ const SamplesComparisonModal = (props) => {
       },
     ]
 
-    const desiredMinimumMarkerSize = 20
-    const desiredMaximumMarkerSize = 100
-    const size = plotDataRestructured[selectedFilter]
-    const maxDataValue = Math.max(...size)
-    const minDataValue = Math.min(...size)
-    const scaledSizes = size.map((value) => {
-      const scaledValue = (value - minDataValue) / (maxDataValue - minDataValue)
-      return (
-        scaledValue * (desiredMaximumMarkerSize - desiredMinimumMarkerSize) +
-        desiredMinimumMarkerSize
-      )
-    })
+    // if data still needs to process then don't try to calculate everything
+    if (isEmpty(plotDataRestructured)) {
+      plotDataTransformed = []
+    } else {
+      const desiredMinimumMarkerSize = 20
+      const desiredMaximumMarkerSize = 100
+      const size = plotDataRestructured[selectedFilter]
+      const maxDataValue = Math.max(...size)
+      const minDataValue = Math.min(...size)
+      const scaledSizes = size.map((value) => {
+        const scaledValue = (value - minDataValue) / (maxDataValue - minDataValue)
+        return (
+          scaledValue * (desiredMaximumMarkerSize - desiredMinimumMarkerSize) +
+          desiredMinimumMarkerSize
+        )
+      })
 
-    plotDataTransformed[0]['marker'] = {
-      size: scaledSizes,
-      sizemode: 'area',
-      sizeref: 0.5, // (2.0 * Math.max(...size)) / desiredMaximumMarkerSize ** 2,
+      plotDataTransformed[0]['marker'] = {
+        size: scaledSizes,
+        sizemode: 'area',
+        sizeref: 0.5, // (2.0 * Math.max(...size)) / desiredMaximumMarkerSize ** 2,
+      }
     }
   } else {
     const plotDataGrouped = groupBy(plotData[selectedMethod], selectedFilter)
