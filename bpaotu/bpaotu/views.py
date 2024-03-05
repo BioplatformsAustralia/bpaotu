@@ -45,7 +45,7 @@ from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilter
                     TaxonomyFilter, TaxonomyOptions, get_sample_ids,
                     SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
-from .spatial import spatial_query
+from .spatial import comparison_query, spatial_query
 from .tabular import tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_time, parse_float
 
@@ -761,7 +761,7 @@ def otu_search_sample_sites_comparison(request):
         })
 
     print('otu_search_sample_sites_comparison', 'params', params)
-    data, sample_otus, abundance_matrix, contextual = spatial_query(params)
+    abundance_matrix = comparison_query(params)
 
     sample_results = {}
 
@@ -783,16 +783,7 @@ def otu_search_sample_sites_comparison(request):
             sample_data = dict(zip(all_headers, x.tolist()))
             sample_results[sample_id] = sample_data
 
-
-    site_image_lookup_table = get_site_image_lookup_table()
-
-    for d in data:
-        key = (str(d['latitude']), str(d['longitude']))
-        d['site_images'] = site_image_lookup_table.get(key)
-
     return JsonResponse({
-        'data': data,
-        'sample_otus': sample_otus,
         'abundance_matrix': abundance_matrix,
         'contextual': sample_results
     })
