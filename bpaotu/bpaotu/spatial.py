@@ -3,6 +3,8 @@ from collections import defaultdict
 from django.core.cache import caches
 from django.conf import settings
 
+import numpy as np
+
 from .query import (
     OntologyInfo,
     log_query,
@@ -23,6 +25,70 @@ logger = logging.getLogger("rainbow")
 def rewrap_longitude(longitude):
     d = settings.BPAOTU_MAP_CENTRE_LONGITUDE - longitude
     return longitude + (360 if d > 180 else -360 if d < -180 else 0)
+
+
+def _comparison_query(params):
+    """
+    this code actually executes the query, wrapped with cache
+    (see below)
+    """
+    # abundance matrix
+    with SampleQuery(params) as query:
+        sample_id_selected = []
+
+        # Create a matrix with default values set to 0
+        matrix_data = []
+        otu_ids = set()
+        sample_ids = set()
+
+        for row in query.matching_sample_distance_matrix().yield_per(1000):
+            sample_id, otu_id, count = row
+            sample_id_selected.append(sample_id)
+            sample_ids.add(sample_id)
+            otu_ids.add(otu_id)
+            matrix_data.append([sample_id, otu_id, count])
+
+        sample_ids = sorted(sample_ids)
+        otu_ids = sorted(otu_ids)
+
+        # Map sample and OTU IDs to their corresponding indices
+        sample_id_to_index = {sample_id: i for i, sample_id in enumerate(sample_ids)}
+        otu_id_to_index = {otu_id: i for i, otu_id in enumerate(otu_ids)}
+
+        # Create matrix with indices and abundance values
+        matrix = []
+        for entry in matrix_data:
+            sample_id, otu_id, value = entry
+            sample_index = sample_id_to_index[sample_id]
+            otu_index = otu_id_to_index[otu_id]
+            matrix.append([otu_index, sample_index, value])
+
+        abundance_matrix = {
+            'otu_ids': otu_ids,
+            'sample_ids': sample_ids,
+            'matrix': matrix,
+        }
+
+        return abundance_matrix
+
+
+def comparison_query(params, cache_duration=CACHE_7DAYS, force_cache=True):
+    """
+    currently only used by the frontend mapping component.
+    note that there are some hard-coded workarounds (see below)
+    which will need to be removed if this is to be used more generally
+    """
+    cache = caches['search_results']
+    key = make_cache_key(
+        'comparison_query',
+        params.state_key)
+    result = None
+    if not force_cache:
+        result = cache.get(key)
+    if result is None:
+        result = _comparison_query(params)
+        cache.set(key, result, cache_duration)
+    return result
 
 def _spatial_query(params):
     """
