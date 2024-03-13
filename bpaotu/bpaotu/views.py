@@ -760,27 +760,27 @@ def otu_search_sample_sites_comparison(request):
             'sample_otus': []
         })
 
-    print('otu_search_sample_sites_comparison', 'params', params)
     abundance_matrix = comparison_query(params)
 
     sample_results = {}
 
     contextual_filtering = True
     additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
-    all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
+    all_headers = ['id', 'am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
                    'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
                    'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
+    all_headers_unique = list(set(all_headers))
 
     with SampleQuery(params) as query:
-        results = query.matching_sample_graph_data(all_headers)
+        results = query.matching_sample_graph_data(all_headers_unique)
 
     if results:
         ndata = np.array(results)
 
         for x in ndata:
-            sample_id_column = all_headers.index('id')
+            sample_id_column = all_headers_unique.index('id')
             sample_id = x[sample_id_column]
-            sample_data = dict(zip(all_headers, x.tolist()))
+            sample_data = dict(zip(all_headers_unique, x.tolist()))
             sample_results[sample_id] = sample_data
 
     return JsonResponse({
@@ -807,7 +807,6 @@ def otu_search_blast_otus(request):
     return JsonResponse({
         'rowsCount': result_count,
     })
-
 
 # technically we should be using GET, but the specification
 # of the query (plus the datatables params) is large: so we

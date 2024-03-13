@@ -4,6 +4,7 @@ from django.core.cache import caches
 from django.conf import settings
 
 import numpy as np
+from scipy.spatial.distance import pdist, squareform
 
 from .query import (
     OntologyInfo,
@@ -48,6 +49,8 @@ def _comparison_query(params):
             otu_ids.add(otu_id)
             matrix_data.append([sample_id, otu_id, count])
 
+        # print('matrix_data', matrix_data)
+
         sample_ids = sorted(sample_ids)
         otu_ids = sorted(otu_ids)
 
@@ -63,11 +66,84 @@ def _comparison_query(params):
             otu_index = otu_id_to_index[otu_id]
             matrix.append([otu_index, sample_index, value])
 
+
+        ###
+        ###
+
+        # Convert matrix_data into a numpy array
+        matrix_array = np.array(matrix_data)
+
+        # Extract sample IDs, OTU IDs, and counts
+        sample_ids_2 = matrix_array[:, 0].astype(int)
+        otu_ids_2 = matrix_array[:, 1].astype(int)
+        counts = matrix_array[:, 2].astype(int)
+
+        # Determine unique sample IDs and OTU IDs
+        unique_sample_ids = np.unique(sample_ids_2)
+        unique_otu_ids = np.unique(otu_ids_2)
+
+        # Construct a matrix where rows represent samples and columns represent OTUs
+        num_samples = len(unique_sample_ids)
+        num_otus = len(unique_otu_ids)
+        data_matrix = np.zeros((num_samples, num_otus))
+
+        # Populate data_matrix with counts
+        for i, sample_id in enumerate(unique_sample_ids):
+            sample_indices = np.where(sample_ids_2 == sample_id)[0]
+            for j in sample_indices:
+                otu_index = np.where(unique_otu_ids == otu_ids_2[j])[0][0]
+                data_matrix[i, otu_index] = counts[j]
+
+        np.savetxt('matrix.csv', matrix, delimiter = ',')
+        np.savetxt('data_matrix.csv', data_matrix, delimiter = ',')
+
+        # Calculate Jaccard dissimilarity
+        jaccard_dissimilarity = pdist(data_matrix, metric='jaccard')
+
+        # Calculate Bray-Curtis dissimilarity
+        braycurtis_dissimilarity = pdist(data_matrix, metric='braycurtis')
+
+        # Convert pairwise distances to square matrices
+        jaccard_matrix = squareform(jaccard_dissimilarity)
+        braycurtis_matrix = squareform(braycurtis_dissimilarity)
+
+        np.savetxt('jaccard_matrix.csv', jaccard_matrix, delimiter = ',')
+        np.savetxt('braycurtis_matrix.csv', braycurtis_matrix, delimiter = ',')
+
+        # abundance_matrix = {
+        #     'sample_ids': unique_sample_ids.tolist(),
+        #     'otu_ids': unique_otu_ids.tolist(),
+        #     'matrix_jaccard': jaccard_matrix.tolist(),
+        #     'matrix_braycurtis': braycurtis_matrix.tolist(),
+        # }
+
+        ###
+        ###
+
+        # abundance_matrix = {
+        #     'sample_ids': sample_ids,
+        #     'otu_ids': otu_ids,
+        #     'matrix': matrix,
+        #     'sample_ids_2': sample_ids_2.tolist(),
+        #     'otu_ids_2': otu_ids_2.tolist(),
+        #     'matrix_jaccard': jaccard_matrix.tolist(),
+        #     'matrix_braycurtis': braycurtis_matrix.tolist(),
+        # }
+
+        ## js version
         abundance_matrix = {
-            'otu_ids': otu_ids,
             'sample_ids': sample_ids,
+            'otu_ids': otu_ids,
             'matrix': matrix,
         }
+
+        # ## python version
+        # abundance_matrix = {
+        #     'sample_ids': sample_ids_2.tolist(),
+        #     'otu_ids': otu_ids_2.tolist(),
+        #     'matrix_jaccard': np.unique(jaccard_matrix).tolist(),
+        #     'matrix_braycurtis': np.unique(braycurtis_matrix).tolist(),
+        # }
 
         return abundance_matrix
 
@@ -128,8 +204,6 @@ def _spatial_query(params):
             }
 
 
-        # abundance matrix
-        import numpy as np
 
         with SampleQuery(params) as query:
             sample_id_selected = []

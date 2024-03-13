@@ -395,7 +395,7 @@ class SampleQuery:
         q = self._session.query(*query_headers)
         subq = self._build_taxonomy_subquery()
         q = self._assemble_sample_query(q, subq)
-        log_query(q)
+        # log_query(q)
         return self._q_all_cached('matching_sample_graph', q)
 
     def matching_sample_headers(self, required_headers=None, sorting=()):
