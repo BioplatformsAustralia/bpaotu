@@ -7,7 +7,7 @@ boto==2.49.0
 ccg-django-utils==0.4.2
 psycopg2==2.8.5
 pytz==2019.3
-requests==2.23.0
+requests==2.31.0
 six==1.14.0
 uwsgi==2.0.18
 uwsgitop==0.11
@@ -32,7 +32,6 @@ git+https://github.com/BioplatformsAustralia/bpa-ingest.git@master
 httplib2==0.17.2
 google-api-python-client
 python-dateutil==2.8.1
-shapely==1.7.0
 django-anymail[amazon_ses]==7.1.0
 reportlab==4.0.9
 xhtml2pdf==0.2.6
