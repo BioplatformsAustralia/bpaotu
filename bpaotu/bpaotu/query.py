@@ -143,7 +143,7 @@ class OTUQueryParams:
                 for entry in sample_integrity_warnings_descr:
                     p.append(indent + entry)
             else:
-                p.append(indent + '(no sample intergrity warnings filter applied)')
+                p.append(indent + '(no sample integrity warnings filter applied)')
             return p
 
         def metadata_section():
