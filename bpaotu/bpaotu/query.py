@@ -477,7 +477,8 @@ class SampleQuery:
                 .query(OTU.code, Sequence.seq)\
                 .filter(OTU.id == SampleOTU.otu_id)\
                 .join(Taxonomy.otus)\
-                .join(Sequence, Sequence.id == OTU.id)
+                .join(Sequence, Sequence.id == OTU.id)\
+                .distinct()
 
         q = self.apply_sample_otu_filters(q)
 
