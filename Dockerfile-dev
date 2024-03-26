@@ -45,14 +45,6 @@ RUN pip install --upgrade -r bpaotu/biom-requirements.txt
 # Copy code and install the app
 COPY . /app
 RUN pip ${PIP_OPTS} install --upgrade -e bpaotu
-WORKDIR /app/bpa-ingest
-
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir poetry
-RUN poetry config virtualenvs.create false
-RUN poetry build -f wheel
-RUN pip install `ls dist/bpaingest-*.whl`
-# RUN pip uninstall --yes poetry
 
 EXPOSE 8000 9000 9001 9100 9101
 VOLUME ["/app", "/data"]

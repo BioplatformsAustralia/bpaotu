@@ -1,3 +1,0 @@
-[submodule "bpa-ingest"]
-	path = bpa-ingest
-	url = https://github.com/BioplatformsAustralia/bpa-ingest.git
