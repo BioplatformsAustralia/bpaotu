@@ -22,9 +22,13 @@ developed to access data from the Australian Microbiome.
   metagenome data). For this reason the docker containers (at least `runserver`
   and `celeryworker`) need to run with a valid CKAN_API_KEY environment
   variable (see ./.env_local and ./docker-compose.yml).
-- It uses a git submodule `bpa-ingest`, maintained externally. It's important to
-  update this submodule frequently in order to be able to ingest the latest
-  version of the sample context metadata.
+- It depends on another Bioplatforms Australia project called `bpa-ingest`
+  [(maintained externally)](https://github.com/BioplatformsAustralia/bpa-ingest).
+  The version of `bpa-ingest` used is maintained in the `runtime-requirements.txt` file.
+  When updating the AM metadata schema, the `bpa-ingest` repository requires changes.
+  These changes will be associated with a git tag by the `bpa-ingest` team for the new version.
+  The entry in `runtime-requirements.txt` must be updated to use the version at this new tag.
+  Note: This dependency was handled previously as a git submodule.
 - For development, Django runs in a Docker container, while the frontend
   webserver is started from a shell prompt outside of the container. The
   container mounts `./` as a volume, which means that Django will monitor all of
@@ -41,7 +45,6 @@ developed to access data from the Australian Microbiome.
   - Note: the Docker compose plugin (`docker compose`) does not seem to work with the docker-compose-build.yml file, but the older executable (`docker-compose`) does work
   - On the docker compose install page, there is a note that Compose V1 won't be supported anymore
     from the end of June 2023 (which may affect these steps)
-- `git clone --recurse-submodules` [https://github.com/BioplatformsAustralia/bpaotu.git](https://github.com/BioplatformsAustralia/bpaotu.git)
 - Generate `./.env_local`. This should contain `KEY=value` lines. See `./.env`
   for keys. This must have a valid `CKAN_API_KEY` so that site images and sample
   metagenome data can be fetched during development. You can use your personal
