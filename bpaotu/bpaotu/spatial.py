@@ -42,6 +42,15 @@ def _comparison_query(params):
         otu_ids = set()
         sample_ids = set()
 
+        row_count = query.matching_sample_distance_matrix().count()
+
+        print('row_count', row_count)
+
+        if row_count > 1000000:
+            return {
+                'error': 'Too many rows'
+            }
+
         for row in query.matching_sample_distance_matrix().yield_per(1000):
             sample_id, otu_id, count = row
             sample_id_selected.append(sample_id)
@@ -70,45 +79,48 @@ def _comparison_query(params):
         ###
         ###
 
-        # Convert matrix_data into a numpy array
-        matrix_array = np.array(matrix_data)
+        # # Convert matrix_data into a numpy array
+        # matrix_array = np.array(matrix_data)
 
-        # Extract sample IDs, OTU IDs, and counts
-        sample_ids_2 = matrix_array[:, 0].astype(int)
-        otu_ids_2 = matrix_array[:, 1].astype(int)
-        counts = matrix_array[:, 2].astype(int)
+        # # Extract sample IDs, OTU IDs, and counts
+        # sample_ids_2 = matrix_array[:, 0].astype(int)
+        # otu_ids_2 = matrix_array[:, 1].astype(int)
+        # counts = matrix_array[:, 2].astype(int)
 
-        # Determine unique sample IDs and OTU IDs
-        unique_sample_ids = np.unique(sample_ids_2)
-        unique_otu_ids = np.unique(otu_ids_2)
+        # # Determine unique sample IDs and OTU IDs
+        # unique_sample_ids = np.unique(sample_ids_2)
+        # unique_otu_ids = np.unique(otu_ids_2)
 
-        # Construct a matrix where rows represent samples and columns represent OTUs
-        num_samples = len(unique_sample_ids)
-        num_otus = len(unique_otu_ids)
-        data_matrix = np.zeros((num_samples, num_otus))
+        # np.savetxt('unique_sample_ids.csv', unique_sample_ids, delimiter = ',')
+        # np.savetxt('unique_otu_ids.csv', unique_otu_ids, delimiter = ',')
 
-        # Populate data_matrix with counts
-        for i, sample_id in enumerate(unique_sample_ids):
-            sample_indices = np.where(sample_ids_2 == sample_id)[0]
-            for j in sample_indices:
-                otu_index = np.where(unique_otu_ids == otu_ids_2[j])[0][0]
-                data_matrix[i, otu_index] = counts[j]
+        # # Construct a matrix where rows represent samples and columns represent OTUs
+        # num_samples = len(unique_sample_ids)
+        # num_otus = len(unique_otu_ids)
+        # data_matrix = np.zeros((num_samples, num_otus))
 
-        np.savetxt('matrix.csv', matrix, delimiter = ',')
-        np.savetxt('data_matrix.csv', data_matrix, delimiter = ',')
+        # # Populate data_matrix with counts
+        # for i, sample_id in enumerate(unique_sample_ids):
+        #     sample_indices = np.where(sample_ids_2 == sample_id)[0]
+        #     for j in sample_indices:
+        #         otu_index = np.where(unique_otu_ids == otu_ids_2[j])[0][0]
+        #         data_matrix[i, otu_index] = counts[j]
 
-        # Calculate Jaccard dissimilarity
-        jaccard_dissimilarity = pdist(data_matrix, metric='jaccard')
+        # np.savetxt('matrix.csv', matrix, delimiter = ',')
+        # np.savetxt('data_matrix.csv', data_matrix, delimiter = ',')
 
-        # Calculate Bray-Curtis dissimilarity
-        braycurtis_dissimilarity = pdist(data_matrix, metric='braycurtis')
+        # # Calculate Jaccard dissimilarity
+        # jaccard_dissimilarity = pdist(data_matrix, metric='jaccard')
 
-        # Convert pairwise distances to square matrices
-        jaccard_matrix = squareform(jaccard_dissimilarity)
-        braycurtis_matrix = squareform(braycurtis_dissimilarity)
+        # # Calculate Bray-Curtis dissimilarity
+        # braycurtis_dissimilarity = pdist(data_matrix, metric='braycurtis')
 
-        np.savetxt('jaccard_matrix.csv', jaccard_matrix, delimiter = ',')
-        np.savetxt('braycurtis_matrix.csv', braycurtis_matrix, delimiter = ',')
+        # # Convert pairwise distances to square matrices
+        # jaccard_matrix = squareform(jaccard_dissimilarity)
+        # braycurtis_matrix = squareform(braycurtis_dissimilarity)
+
+        # np.savetxt('jaccard_matrix.csv', jaccard_matrix, delimiter = ',')
+        # np.savetxt('braycurtis_matrix.csv', braycurtis_matrix, delimiter = ',')
 
         # abundance_matrix = {
         #     'sample_ids': unique_sample_ids.tolist(),
@@ -135,6 +147,12 @@ def _comparison_query(params):
             'sample_ids': sample_ids,
             'otu_ids': otu_ids,
             'matrix': matrix,
+            # 'python': {
+            #     'sample_ids': unique_sample_ids,
+            #     'otu_ids': otu_ids_2.tolist(),
+            #     'matrix_jaccard': np.unique(jaccard_matrix).tolist(),
+            #     'matrix_braycurtis': np.unique(braycurtis_matrix).tolist(),
+            # }
         }
 
         # ## python version

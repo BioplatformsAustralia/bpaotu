@@ -33,6 +33,11 @@ export const fetchSampleComparisonModalSamples = () => (dispatch, getState) => {
   const state = getState()
   const filters = describeSearch(state)
 
+  console.log('fetchSampleComparisonModalSamples', 'state', state)
+  console.log('fetchSampleComparisonModalSamples', 'filters', filters)
+
+  // todo limit the number of results
+
   dispatch(samplesComparisonModalFetchSamplesStarted())
   handleSimpleAPIResponse(
     dispatch,

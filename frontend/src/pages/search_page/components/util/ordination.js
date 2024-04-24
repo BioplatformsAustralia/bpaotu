@@ -91,6 +91,9 @@ export const getJaccardDistanceMatrix = (sparseMatrix, samples) => {
   const data = sparseToJaccardMatrix(sparseMatrix)
   const matrix = [...data.map(() => new Array(data.length))]
 
+  console.log('getJaccardDistanceMatrix', 'sparseMatrix', sparseMatrix)
+  console.log('getJaccardDistanceMatrix', 'matrix', matrix)
+
   console.log(`Processing ${data.length} records...`)
   for (let i = 0; i < data.length; i++) {
     if (i % 100 === 0) {

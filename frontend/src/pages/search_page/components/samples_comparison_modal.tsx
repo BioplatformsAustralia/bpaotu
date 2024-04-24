@@ -13,7 +13,7 @@ import {
   Button,
   UncontrolledTooltip,
 } from 'reactstrap'
-import { groupBy, isEmpty } from 'lodash'
+import { groupBy, sortBy, isEmpty } from 'lodash'
 
 import AnimateHelix from 'components/animate_helix'
 import Octicon from 'components/octicon'
@@ -249,10 +249,10 @@ const SamplesComparisonModal = (props) => {
   const filterOptionKeys =
     Object.keys(contextual).length > 0 ? Object.keys(Object.values(contextual)[0]) : []
 
-  const filterOptionsSubset = filterOptionKeys.map((x) => {
+  const filterOptionsSubset = filterOptionKeys.sort().map((x) => {
     const filter = contextualFilters.find((y) => y.name === x)
 
-    if (filter) {
+    if (filter && filter.type !== 'sample_id') {
       return { value: filter.name, text: filter.display_name }
     } else {
       return null
@@ -260,6 +260,8 @@ const SamplesComparisonModal = (props) => {
   })
 
   const filterOptions = filterOptionsSubset.filter((x) => x != null)
+
+  console.log('filterOptions', filterOptions)
 
   // contextualFilters
 
@@ -392,7 +394,7 @@ const SamplesComparisonModal = (props) => {
         {isProcessing && <LoadingSpinnerOverlay />}
         <Container>
           <Row>
-            <Col xs="auto">Dissimilarity method:</Col>
+            <Col xs="2">Dissimilarity method:</Col>
             <Col xs="auto" style={{ paddingLeft: 0, paddingRight: 0 }}>
               <select
                 placeholder={'Select a method'}
@@ -407,18 +409,18 @@ const SamplesComparisonModal = (props) => {
             </Col>
           </Row>
         </Container>
-        <Container>
+        <Container style={{ paddingTop: 3 }}>
           <Row>
-            <Col xs="auto">Filter option:</Col>
+            <Col xs="2"></Col>
             <Col xs="auto" style={{ paddingLeft: 0, paddingRight: 0 }}>
               <select
-                placeholder={'Select a contextual filter'}
+                placeholder={'(Select a contextual filter)'}
                 value={selectedFilter}
                 onChange={(e) => {
                   setSelectedFilter(e.target.value)
                 }}
               >
-                <option value="">choose</option>
+                <option value="">(Select a contextual filter)</option>
                 {filterOptions.map((filterOption) => {
                   return (
                     <option key={filterOption.value} value={filterOption.value}>
