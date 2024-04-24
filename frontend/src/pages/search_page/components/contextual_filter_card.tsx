@@ -64,19 +64,18 @@ const ContextualFilterLinkButton = ({ title, url, tooltip }) => {
         size="sm"
         color="secondary"
         style={{ cursor: 'pointer', margin: '-15px 2px', padding: '3px 10px' }}
-        onClick={() => {
-          window.open(url)
-        }}
+        href={url}
+        target="_blank"
       >
         <Octicon name="link" />
         <span style={{ paddingLeft: 4, paddingRight: 4 }}>{title}</span>
         <Badge color="secondary" id={id}>
           <Octicon name="info" />
         </Badge>
+        <UncontrolledTooltip target={id} placement="auto">
+          {tooltip}
+        </UncontrolledTooltip>
       </Button>
-      <UncontrolledTooltip target={id} placement="auto">
-        {tooltip}
-      </UncontrolledTooltip>
     </>
   )
 }
