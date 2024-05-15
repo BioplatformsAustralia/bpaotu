@@ -1,11 +1,10 @@
-version: '3'
+version: "3"
 services:
-
   base:
     build:
       context: ./
       dockerfile: Dockerfile-base
-    image: bioplatformsaustralia/bpaotu-base
+    image: bioplatformsaustralia/bpaotu
 
   builder:
     build:
@@ -14,7 +13,7 @@ services:
       args:
         BUILD_VERSION:
         GIT_BRANCH:
-    image: bioplatformsaustralia/bpaotu-builder
+    image: bioplatformsaustralia/bpaotu
     network_mode: host
 
   prod:
@@ -29,4 +28,4 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile-dev
-    image: bioplatformsaustralia/bpaotu-dev
+    image: bioplatformsaustralia/bpaotu

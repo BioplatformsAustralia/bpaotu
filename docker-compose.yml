@@ -25,7 +25,7 @@ services:
     image: redis:3-alpine
 
   runserver:
-    image: bioplatformsaustralia/bpaotu-dev
+    image: bioplatformsaustralia/bpaotu
     env_file:
       - .env_local
     environment:
@@ -45,7 +45,7 @@ services:
           - web
 
   celeryworker:
-    image: bioplatformsaustralia/bpaotu-dev
+    image: bioplatformsaustralia/bpaotu
     command: celery_worker
     env_file:
       - .env_local

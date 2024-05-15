@@ -53,5 +53,5 @@ ENV HOME /data
 WORKDIR /data
 
 # entrypoint shell script that by default starts runserver
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+ENTRYPOINT ["sh", "/app/docker-entrypoint.sh"]
 CMD ["runserver_plus"]
