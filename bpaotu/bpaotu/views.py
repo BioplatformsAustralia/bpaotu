@@ -762,6 +762,108 @@ def otu_search_sample_sites_comparison(request):
 
     abundance_matrix = comparison_query(params)
 
+    # otu_index, sample_index, count
+    # [[4221, 0, 55], [12519, 0, 7], [5416, 0, 23], [9678, 0, 27],
+
+    data = abundance_matrix['matrix']
+    sample_ids = abundance_matrix['sample_ids']
+
+    print(sample_ids)
+
+    ## either check every item in list or just detemrine from list of sample ids?
+    # max_sample_index = max(i[1] for i in data) 
+    max_sample_index = len(sample_ids) - 1
+    jaccard_matrix = [[] for _ in range(max_sample_index + 1)]
+    for elm in data:
+        taxon_idx, sample_idx, abundance = elm
+        jaccard_matrix[sample_idx].append(taxon_idx)
+
+    # print('jaccard_matrix', jaccard_matrix)
+
+    def process_data_jaccard(jaccard_matrix):
+        n = len(jaccard_matrix)
+        matrix = [[0] * n for _ in range(n)]  # Initialize the matrix with zeros
+
+        # Process each pair of records (i, j) where i < j
+        from datetime import datetime
+        print(f"Processing {n} records {str(datetime.now().time())}")
+        for i in range(n):
+            if i > 0 and i % 100 == 0:
+                print(f"Processed {i} records {str(datetime.now().time())}")
+
+            # Set distance to self always as 0
+            matrix[i][i] = 0
+
+            for j in range(i + 1, n):
+                # Calculate Jaccard index between jaccard_matrix[i] and jaccard_matrix[j]
+                idx = jaccard_index(jaccard_matrix[i], jaccard_matrix[j])
+
+                # Assign the calculated index to the corresponding positions in the matrix
+                matrix[i][j] = idx or 0
+                matrix[j][i] = idx or 0
+
+        return matrix
+
+    def jaccard_index(list1, list2):
+        set1 = set(list1)
+        set2 = set(list2)
+        intersection = len(set1 & set2)
+        union = len(set1 | set2)
+        if union == 0:
+            return 0
+        return intersection / union
+
+    # from collections import Counter
+    # def jaccard_index(list1, list2):
+    #     if not list1 or not list2:
+    #         return 0  # Handle empty sets
+
+    #     # Count occurrences of each element in list1 and list2
+    #     count1 = Counter(list1)
+    #     count2 = Counter(list2)
+
+    #     intersection = sum((count1 & count2).values())
+    #     union = sum((count1 | count2).values())
+
+    #     if union == 0:
+    #         return 0
+
+    #     return intersection / union
+
+
+    processed_data = process_data_jaccard(jaccard_matrix)
+
+    print('sample_ids', sample_ids)
+    print('processed_data', processed_data)
+
+    def classicMDS(distances, dimensions=2):
+        # Square distances
+        M = -0.5 * np.power(distances, 2)
+
+        # Double centre the rows/columns
+        rowMeans = np.mean(M, axis=1)
+        colMeans = np.mean(M, axis=0)
+        totalMean = np.mean(rowMeans)
+
+        for i in range(M.shape[0]):
+            for j in range(M.shape[1]):
+                M[i][j] += totalMean - rowMeans[i] - colMeans[j]
+
+        # Take the SVD of the double centred matrix
+        U, S, VT = np.linalg.svd(M)
+
+        # Compute the eigenvalues
+        eigenValues = np.sqrt(S)
+
+        # Return the points from the SVD
+        return (U[:, :dimensions] * eigenValues[:dimensions]).tolist()
+
+    result_jaccard = classicMDS(processed_data)
+    print(result_jaccard)
+
+    abundance_matrix['points'] = {}
+    abundance_matrix['points']['jaccard'] = result_jaccard
+
     sample_results = {}
 
     contextual_filtering = True
@@ -782,6 +884,9 @@ def otu_search_sample_sites_comparison(request):
             sample_id = x[sample_id_column]
             sample_data = dict(zip(all_headers_unique, x.tolist()))
             sample_results[sample_id] = sample_data
+
+    abundance_matrix.pop('matrix', None)
+    print(sample_results)
 
     return JsonResponse({
         'abundance_matrix': abundance_matrix,

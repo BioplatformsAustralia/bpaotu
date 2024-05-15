@@ -46,10 +46,10 @@ def _comparison_query(params):
 
         print('row_count', row_count)
 
-        if row_count > 1000000:
-            return {
-                'error': 'Too many rows'
-            }
+        # if row_count > 1000000:
+        #     return {
+        #         'error': 'Too many rows'
+        #     }
 
         for row in query.matching_sample_distance_matrix().yield_per(1000):
             sample_id, otu_id, count = row
@@ -58,7 +58,7 @@ def _comparison_query(params):
             otu_ids.add(otu_id)
             matrix_data.append([sample_id, otu_id, count])
 
-        # print('matrix_data', matrix_data)
+        print('matrix_data', matrix_data)
 
         sample_ids = sorted(sample_ids)
         otu_ids = sorted(otu_ids)

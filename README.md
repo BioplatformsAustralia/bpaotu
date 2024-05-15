@@ -357,11 +357,28 @@ State cleanup
 
 Convert updatePlot to start with dispatch
 Cache the calculations
-If filters change then reset plotData; or just when modal is opened/closed
+If filters change then reset plotData; or just when modal is opened/closed <--------------
 Auto update when method is changed
 Show a message when processing
+Delegate to service worker?
+
+Probably way better to do on the backend, just return x,y points and all contextual values
+Translate manually from the javascript code rather than using the inbuilt package?
+
+If
 
 MISC
 
 Multi boolean search paramaters
 And / Or between each option
+
+improve index calc:
+scipy
+https://stackoverflow.com/questions/53021522/how-to-speed-up-distance-matrix-calculation
+
+test cases
+
+different table / column for each amplicon
+bacteria: domain = bacteria, phylum != unclassified
+
+different section rather than same graph page

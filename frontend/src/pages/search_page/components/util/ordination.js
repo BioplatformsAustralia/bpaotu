@@ -8,6 +8,29 @@ const jaccard = Jaccard()
 export const executeSampleSitesComparisonProcessing = async (args) => {
   const { abundanceMatrix, contextual, plotData, selectedMethod } = args
 
+  const sample_ids = abundanceMatrix.sample_ids
+  const points = abundanceMatrix.points[selectedMethod]
+
+  const newPlotDataMethod = sample_ids.map((s, i) => {
+    return {
+      text: s,
+      x: points[i][0],
+      y: points[i][1],
+      ...contextual[s], // TODO: only include some (or better: only include some in response)
+    }
+  })
+
+  console.log('newPlotDataMethod', newPlotDataMethod)
+
+  const newPlotData = {
+    ...plotData,
+    [selectedMethod]: newPlotDataMethod,
+  }
+
+  console.log('newPlotData', newPlotData)
+
+  return newPlotData
+
   if (plotData[selectedMethod].length) {
     console.log(`Using cached ${selectedMethod} plot data`)
     // it should just update automatically because

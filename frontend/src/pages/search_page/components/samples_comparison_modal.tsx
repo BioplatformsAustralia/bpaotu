@@ -249,11 +249,22 @@ const SamplesComparisonModal = (props) => {
   const filterOptionKeys =
     Object.keys(contextual).length > 0 ? Object.keys(Object.values(contextual)[0]) : []
 
+  // Filter keys that have null values for all samples
+  const keysWithAllNullValues = filterOptionKeys.filter((key) => {
+    // Check if all samples have null value for the current key
+    return Object.values(contextual).every((sample) => sample[key] === null)
+  })
+
   const filterOptionsSubset = filterOptionKeys.sort().map((x) => {
     const filter = contextualFilters.find((y) => y.name === x)
 
-    if (filter && filter.type !== 'sample_id') {
-      return { value: filter.name, text: filter.display_name }
+    if (filter) {
+      const disabled = keysWithAllNullValues.includes(filter.name)
+      if (filter.type !== 'sample_id') {
+        return { value: filter.name, text: filter.display_name, disabled: disabled }
+      } else {
+        return null
+      }
     } else {
       return null
     }
@@ -423,7 +434,11 @@ const SamplesComparisonModal = (props) => {
                 <option value="">(Select a contextual filter)</option>
                 {filterOptions.map((filterOption) => {
                   return (
-                    <option key={filterOption.value} value={filterOption.value}>
+                    <option
+                      key={filterOption.value}
+                      value={filterOption.value}
+                      disabled={filterOption.disabled}
+                    >
                       {filterOption.text}
                     </option>
                   )

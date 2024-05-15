@@ -42,6 +42,7 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   SampleIntegrityWarnings, SampleVolumeNotes, SampleBioticRelationship,
                   SampleEnvironmentMedium,
                   SampleHostAssociatedMicrobiomeZone, SampleHostType,
+                  SampleSimilarity,
                   Taxonomy, taxonomy_otu, taxonomy_otu_export, create_partitions,
                   make_engine)
 from .sample_meta import update_from_ckan
