@@ -3,12 +3,14 @@ import time
 import pandas as pd
 import numpy as np
 from scipy.spatial import distance
-# import numba as nb
+import numba as nb
 
 from django.core.management.base import BaseCommand
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
+
+from itertools import combinations
 
 import time # for timing method
 
@@ -30,7 +32,7 @@ class Command(BaseCommand):
                 arr[i, :lengths[i]] = lis[i]
             return arr, lengths
 
-        # @nb.jit(nopython=True, cache=True)
+        @nb.jit(nopython=True, cache=True)
         def compute_jaccard(session1, session2, arr, lengths):
             """Jited funciton to calculate jaccard distance
             """
@@ -123,7 +125,7 @@ class Command(BaseCommand):
             return 0.0
 
         try:
-            start_time = time.time()
+            time_start = time.time()
 
             engine = make_engine()
             Session = sessionmaker(bind=engine)
@@ -132,8 +134,8 @@ class Command(BaseCommand):
             # (causes an error with a view, but it does create the table)
             # Base.metadata.create_all(engine, tables=[SampleSimilarity.__table__], checkfirst=True)
 
-            # sample_ids_to_test = ['7056', '7057', '7058', '7059']
-            # sample_ids_to_test = ['10601', '10602', '10603', '10604', '10605', '10606', '10607', '10608', '10609', '10610', '10611', '10612', '10613', '10614', '10615', '10616', '10617', '10618', '10619', '10620', '10621', '10622', '10623', '10624', '10625', '10626', '10627', '10628', '10629', '10630', '37001', '37002', '37003', '37004', '37005', '37006', '37007', '37008', '37009', '37010', '37011', '37012', '37013', '37014', '37015', '37016', '37017', '37018', '37019', '37020', '37021', '37022', '37023', '37024', '37025', '37026', '37027', '37028', '37029', '37030']
+            sample_ids_to_test = ['7056', '7057', '7058', '7059']
+            sample_ids_to_test = ['10601', '10602', '10603', '10604', '10605', '10606', '10607', '10608', '10609', '10610', '10611', '10612', '10613', '10614', '10615', '10616', '10617', '10618', '10619', '10620', '10621', '10622', '10623', '10624', '10625', '10626', '10627', '10628', '10629', '10630', '37001', '37002', '37003', '37004', '37005', '37006', '37007', '37008', '37009', '37010', '37011', '37012', '37013', '37014', '37015', '37016', '37017', '37018', '37019', '37020', '37021', '37022', '37023', '37024', '37025', '37026', '37027', '37028', '37029', '37030']
 
             with engine.begin() as conn:
                 conn.execute('TRUNCATE TABLE sample_similarities RESTART IDENTITY')
@@ -142,10 +144,13 @@ class Command(BaseCommand):
             session = Session()
             q = session.query(SampleOTU.sample_id, SampleOTU.otu_id, SampleOTU.count) \
                 .filter(OTU.id == SampleOTU.otu_id) \
-                .join(Taxonomy.otus) \
+                .filter(SampleOTU.sample_id.in_(sample_ids_to_test)) \
                 .order_by(SampleOTU.sample_id, SampleOTU.otu_id)
+                # .join(Taxonomy.otus) \
                 # .filter(OTU.id == SampleOTU.otu_id)
-                # .filter(SampleOTU.sample_id.in_(sample_ids_to_test)) \
+
+            time_query = time.time()
+            print(f"Elapsed time (query): {time_query - time_start} seconds")
 
             # otu_index, sample_index, count
             # [[4221, 0, 55], [12519, 0, 7], [5416, 0, 23], [9678, 0, 27],
@@ -164,17 +169,22 @@ class Command(BaseCommand):
             otu_ids = sorted(otu_ids)
 
             # print('matrix_data', matrix_data)
-            print('matrix_data done')
 
+            time_data = time.time()
+            print(f"Elapsed time (matrix_data done): {time_data - time_query} seconds")
+
+            # ## JIT way
 
             # columns = ['sample_id', 'otu_id', 'count']
             # stack_dataframe = pd.DataFrame(matrix_data, columns=columns)
             # x = calculate_sim_between(stack_dataframe)
             # print(x)
 
+            time_jit = time.time()
+            # print(f"Elapsed time (jit): {time_jit - time_data} seconds")
 
-            # print('sample_ids', sample_ids)
-            # print('otu_ids', otu_ids)
+            # # print('sample_ids', sample_ids)
+            # # print('otu_ids', otu_ids)
 
             # Map sample and OTU IDs to their corresponding indices
             sample_id_to_index = {sample_id: i for i, sample_id in enumerate(sample_ids)}
@@ -197,7 +207,6 @@ class Command(BaseCommand):
 
             # print('jaccard_matrix', jaccard_matrix)
 
-
             processed_data = process_data_jaccard(jaccard_matrix)
 
             # print('processed_data', processed_data)
@@ -205,9 +214,8 @@ class Command(BaseCommand):
             df = pd.DataFrame(processed_data, index=sample_ids, columns=sample_ids)
             print(df)
 
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-            print(f"Elapsed time: {elapsed_time} seconds")
+            time_gbif = time.time() - time_jit
+            print(f"Elapsed time (matrix): {time_gbif} seconds")
 
             self.stdout.write(self.style.SUCCESS('Sample similarities populated successfully'))
 
