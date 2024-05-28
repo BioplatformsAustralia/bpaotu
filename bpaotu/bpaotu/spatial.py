@@ -3,8 +3,9 @@ from collections import defaultdict
 from django.core.cache import caches
 from django.conf import settings
 
-import numpy as np
-from scipy.spatial.distance import pdist, squareform
+import pandas as pd
+
+from sklearn.metrics import pairwise_distances
 
 from .query import (
     OntologyInfo,
@@ -43,125 +44,39 @@ def _comparison_query(params):
         sample_ids = set()
 
         row_count = query.matching_sample_distance_matrix().count()
-
         print('row_count', row_count)
 
-        # if row_count > 1000000:
-        #     return {
-        #         'error': 'Too many rows'
-        #     }
+        if row_count > 10000000:
+            return {
+                'error': 'Too many rows'
+            }
 
-        for row in query.matching_sample_distance_matrix().yield_per(1000):
-            sample_id, otu_id, count = row
-            sample_id_selected.append(sample_id)
-            sample_ids.add(sample_id)
-            otu_ids.add(otu_id)
-            matrix_data.append([sample_id, otu_id, count])
+        # for row in query.matching_sample_distance_matrix().yield_per(1000):
+        #     sample_id, otu_id, count = row
+        #     sample_ids.add(sample_id)
+        #     otu_ids.add(otu_id)
+        #     matrix_data.append([sample_id, otu_id, count])
 
-        print('matrix_data', matrix_data)
+        results = query.matching_sample_distance_matrix().all()
 
-        sample_ids = sorted(sample_ids)
-        otu_ids = sorted(otu_ids)
+        df = pd.DataFrame(results, columns=['sample_id', 'otu_id', 'abundance'])
+        print('df.shape', df.shape)
 
-        # Map sample and OTU IDs to their corresponding indices
-        sample_id_to_index = {sample_id: i for i, sample_id in enumerate(sample_ids)}
-        otu_id_to_index = {otu_id: i for i, otu_id in enumerate(otu_ids)}
+        abundance_matrix = df.pivot_table(index='otu_id', columns='sample_id', values='abundance', fill_value=0).to_numpy().T
+        print('abundance_matrix.shape', abundance_matrix.shape)
 
-        # Create matrix with indices and abundance values
-        matrix = []
-        for entry in matrix_data:
-            sample_id, otu_id, value = entry
-            sample_index = sample_id_to_index[sample_id]
-            otu_index = otu_id_to_index[otu_id]
-            matrix.append([otu_index, sample_index, value])
+        matrix_jaccard = pairwise_distances(abundance_matrix, metric='jaccard')
+        matrix_braycurtis = pairwise_distances(abundance_matrix, metric='braycurtis')
 
+        sample_ids = df['sample_id'].unique().tolist()
+        otu_ids = df['otu_id'].unique().tolist()
 
-        ###
-        ###
-
-        # # Convert matrix_data into a numpy array
-        # matrix_array = np.array(matrix_data)
-
-        # # Extract sample IDs, OTU IDs, and counts
-        # sample_ids_2 = matrix_array[:, 0].astype(int)
-        # otu_ids_2 = matrix_array[:, 1].astype(int)
-        # counts = matrix_array[:, 2].astype(int)
-
-        # # Determine unique sample IDs and OTU IDs
-        # unique_sample_ids = np.unique(sample_ids_2)
-        # unique_otu_ids = np.unique(otu_ids_2)
-
-        # np.savetxt('unique_sample_ids.csv', unique_sample_ids, delimiter = ',')
-        # np.savetxt('unique_otu_ids.csv', unique_otu_ids, delimiter = ',')
-
-        # # Construct a matrix where rows represent samples and columns represent OTUs
-        # num_samples = len(unique_sample_ids)
-        # num_otus = len(unique_otu_ids)
-        # data_matrix = np.zeros((num_samples, num_otus))
-
-        # # Populate data_matrix with counts
-        # for i, sample_id in enumerate(unique_sample_ids):
-        #     sample_indices = np.where(sample_ids_2 == sample_id)[0]
-        #     for j in sample_indices:
-        #         otu_index = np.where(unique_otu_ids == otu_ids_2[j])[0][0]
-        #         data_matrix[i, otu_index] = counts[j]
-
-        # np.savetxt('matrix.csv', matrix, delimiter = ',')
-        # np.savetxt('data_matrix.csv', data_matrix, delimiter = ',')
-
-        # # Calculate Jaccard dissimilarity
-        # jaccard_dissimilarity = pdist(data_matrix, metric='jaccard')
-
-        # # Calculate Bray-Curtis dissimilarity
-        # braycurtis_dissimilarity = pdist(data_matrix, metric='braycurtis')
-
-        # # Convert pairwise distances to square matrices
-        # jaccard_matrix = squareform(jaccard_dissimilarity)
-        # braycurtis_matrix = squareform(braycurtis_dissimilarity)
-
-        # np.savetxt('jaccard_matrix.csv', jaccard_matrix, delimiter = ',')
-        # np.savetxt('braycurtis_matrix.csv', braycurtis_matrix, delimiter = ',')
-
-        # abundance_matrix = {
-        #     'sample_ids': unique_sample_ids.tolist(),
-        #     'otu_ids': unique_otu_ids.tolist(),
-        #     'matrix_jaccard': jaccard_matrix.tolist(),
-        #     'matrix_braycurtis': braycurtis_matrix.tolist(),
-        # }
-
-        ###
-        ###
-
-        # abundance_matrix = {
-        #     'sample_ids': sample_ids,
-        #     'otu_ids': otu_ids,
-        #     'matrix': matrix,
-        #     'sample_ids_2': sample_ids_2.tolist(),
-        #     'otu_ids_2': otu_ids_2.tolist(),
-        #     'matrix_jaccard': jaccard_matrix.tolist(),
-        #     'matrix_braycurtis': braycurtis_matrix.tolist(),
-        # }
-
-        ## js version
         abundance_matrix = {
             'sample_ids': sample_ids,
             'otu_ids': otu_ids,
-            'matrix': matrix,
-            # 'python': {
-            #     'sample_ids': unique_sample_ids,
-            #     'otu_ids': otu_ids_2.tolist(),
-            #     'matrix_jaccard': np.unique(jaccard_matrix).tolist(),
-            #     'matrix_braycurtis': np.unique(braycurtis_matrix).tolist(),
-            # }
+            'matrix_jaccard': matrix_jaccard,
+            'matrix_braycurtis': matrix_braycurtis,
         }
-
-        # ## python version
-        # abundance_matrix = {
-        #     'sample_ids': sample_ids_2.tolist(),
-        #     'otu_ids': otu_ids_2.tolist(),
-        #     'matrix_jaccard': np.unique(jaccard_matrix).tolist(),
-        #     'matrix_braycurtis': np.unique(braycurtis_matrix).tolist(),
-        # }
 
         return abundance_matrix
 

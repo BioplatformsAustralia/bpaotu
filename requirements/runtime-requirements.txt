@@ -42,3 +42,4 @@ mixpanel==4.10.0
 biopython==1.80
 matplotlib==3.8.3
 basemap==1.4.1
+scikit-learn==1.5.2

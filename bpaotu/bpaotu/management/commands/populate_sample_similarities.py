@@ -10,8 +10,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 
-from itertools import combinations
-
 import time # for timing method
 
 from ...otu import (Base, OTU, SampleOTU, SampleSimilarity, Taxonomy, make_engine)
@@ -175,13 +173,13 @@ class Command(BaseCommand):
 
             # ## JIT way
 
-            # columns = ['sample_id', 'otu_id', 'count']
-            # stack_dataframe = pd.DataFrame(matrix_data, columns=columns)
-            # x = calculate_sim_between(stack_dataframe)
-            # print(x)
+            columns = ['sample_id', 'otu_id', 'count']
+            stack_dataframe = pd.DataFrame(matrix_data, columns=columns)
+            x = calculate_sim_between(stack_dataframe)
+            print(x)
 
             time_jit = time.time()
-            # print(f"Elapsed time (jit): {time_jit - time_data} seconds")
+            print(f"Elapsed time (jit): {time_jit - time_data} seconds")
 
             # # print('sample_ids', sample_ids)
             # # print('otu_ids', otu_ids)

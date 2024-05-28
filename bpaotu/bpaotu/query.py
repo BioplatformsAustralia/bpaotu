@@ -532,9 +532,8 @@ class SampleQuery:
         return q
 
     def apply_sample_otu_filters(self, q):
-        print('self._taxonomy_filter', self._taxonomy_filter)
         q = self._taxonomy_filter.apply(q, Taxonomy)
-        print('q', q)
+
         if not self._sample_integrity_warnings_filter.is_empty():
             q = self._sample_integrity_warnings_filter.apply(
                 q.filter(SampleContext.id == SampleOTU.sample_id))
