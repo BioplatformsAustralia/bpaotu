@@ -57,6 +57,7 @@ class BlastWrapper:
             ['makeblastdb', '-in', 'search.fasta', '-dbtype', 'nucl', '-parse_seqids'])
 
     def _write_query(self):
+        logger.info('Making everything.fasta query file')
         with open(self._in('everything.fasta'), 'w') as fasta_fd:
             # write out the OTU database in FASTA format, as well a
             # mapping table to get back to the OTU strings
@@ -64,6 +65,7 @@ class BlastWrapper:
                 q = query.matching_otus()
                 for idx, otu in enumerate(q.yield_per(50)):
                     fasta_fd.write('>id_{}\n{}\n'.format(otu.id, otu.code))
+        logger.info('Completed making everything.fasta query file')
 
     def _blast_command(self):
         return [
@@ -71,15 +73,19 @@ class BlastWrapper:
             '-outfmt', '6 qseqid {}'.format(' '.join(self.BLAST_COLUMNS)), '-perc_identity', self.PERC_IDENTITY]
 
     def _execute_blast(self):
+        logger.info('Executing blast command')
         self._run(self._blast_command())
+        logger.info('Finished executing blast command')
 
     def _blast_results(self):
+        logger.info('Retrieving blast results')
         results = {}
         with open(self._in('results.out')) as results_fd:
             reader = csv.reader(results_fd, dialect='excel-tab')
             for row in reader:
                 otu_id = int(row[0][3:])  # strip id_
                 results[otu_id] = row[1:]
+        logger.info('Finished retrieving blast results')
         return results
 
     def _rewritten_blast_result_rows(self):
