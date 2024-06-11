@@ -509,6 +509,20 @@ class SampleQuery:
         # log_query(q)
         return q
 
+    def matching_sample_otus_blast(self, otu_ids):
+        q = self._session\
+                .query(OTU.id, OTU.code, Sequence.seq, SampleOTU.count, SampleContext.id, SampleContext.latitude, SampleContext.longitude)\
+                .join(Taxonomy.otus)\
+                .join(SampleOTU, SampleOTU.otu_id == OTU.id)\
+                .join(SampleContext, SampleContext.id == SampleOTU.sample_id)\
+                .join(Sequence, Sequence.id == OTU.id)\
+                .filter(OTU.id.in_(otu_ids))
+
+        q = self.apply_sample_otu_filters(q)
+
+        # log_query(q)
+        return q
+
     def apply_sample_otu_filters(self, q):
         q = self._taxonomy_filter.apply(q, Taxonomy)
         if not self._sample_integrity_warnings_filter.is_empty():

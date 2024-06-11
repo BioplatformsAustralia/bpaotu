@@ -109,28 +109,38 @@ class BlastWrapper:
 
         logger.info('Finished adding raw blast results')
 
+    def _rewritten_blast_result_rows_sample(self):
+        logger.info('Adding sample data to blast results')
+        fd = io.StringIO()
+        blast_rows = self._blast_results()
+
+        ## Adjusted original
+        ##
         with SampleQuery(self._params) as query:
-            q = query.matching_sample_otus(OTU, SampleOTU, SampleContext)
-            q = q.filter(OTU.id.in_(blast_rows.keys()))
+            otu_ids = blast_rows.keys()
+            q = query.matching_sample_otus_blast(otu_ids)
+
             writer = csv.writer(fd)
-            writer.writerow(['OTU', 'sample_id', 'abundance', 'latitude', 'longitude'] + self.BLAST_COLUMNS)
+            writer.writerow(['OTU Code', 'OTU', 'sample_id', 'abundance', 'latitude', 'longitude'] + self.BLAST_COLUMNS)
             yield fd.getvalue().encode('utf8')
             fd.seek(0)
             fd.truncate(0)
-            for otu, sample_otu, sample_context in q.yield_per(50):
-                blast_row = blast_rows[otu.id]
+            for OTU_id, OTU_code, OTU_seq, SampleOTU_count, SampleContext_id, SampleContext_latitude, SampleContext_longitude in q.yield_per(50):
+                blast_row = blast_rows[OTU_id]
                 writer.writerow(
-                    [otu.code, format_sample_id(sample_context.id), sample_otu.count,
-                     sample_context.latitude, sample_context.longitude] + blast_row)
+                    [OTU_code, OTU_seq, format_sample_id(SampleContext_id), SampleOTU_count,
+                     SampleContext_latitude, SampleContext_longitude] + blast_row)
                 yield fd.getvalue().encode('utf8')
                 fd.seek(0)
                 fd.truncate(0)
 
+        logger.info('Finished adding sample data to blast results')
+
     def _write_output(self):
         zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
         zf.writestr('info.txt', self._info_text(self._params))
-        zf.write_iter('blast_results.csv', self._rewritten_blast_result_rows())
         zf.write_iter('blast_results_raw.csv', self._rewritten_blast_result_rows_raw())
+        zf.write_iter('blast_results_sample.csv', self._rewritten_blast_result_rows_sample())
 
         with suppress(FileExistsError, PermissionError):
             os.mkdir(settings.BLAST_RESULTS_PATH)
