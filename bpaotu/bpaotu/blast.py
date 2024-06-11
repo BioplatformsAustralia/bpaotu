@@ -62,9 +62,9 @@ class BlastWrapper:
             # write out the OTU database in FASTA format, as well a
             # mapping table to get back to the OTU strings
             with SampleQuery(self._params) as query:
-                q = query.matching_otus()
-                for idx, otu in enumerate(q.yield_per(50)):
-                    fasta_fd.write('>id_{}\n{}\n'.format(otu.id, otu.code))
+                q = query.matching_otus_blast()
+                for otu_id, otu_code, seq in q.yield_per(50):
+                    fasta_fd.write('>id_{}\n{}\n'.format(otu_id, seq))
         logger.info('Completed making everything.fasta query file')
 
     def _blast_command(self):
