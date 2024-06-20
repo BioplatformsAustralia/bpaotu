@@ -453,15 +453,23 @@ class SampleQuery:
         q = self._assemble_otu_query(q, subq).order_by(OTU.id)
         return q
 
-    def matching_otus_blast(self):
+    def matching_otu_ids_blast(self):
         q = self._session\
-                .query(OTU.id, OTU.code, Sequence.seq)\
+                .query(OTU.id)\
                 .filter(OTU.id == SampleOTU.otu_id)\
                 .join(Taxonomy.otus)\
-                .join(Sequence, Sequence.id == OTU.id)\
                 .distinct()
 
         q = self.apply_sample_otu_filters(q)
+
+        # log_query(q)
+        return q
+
+    def matching_otus_blast(self, otu_ids):
+        q = self._session\
+                .query(OTU.id, OTU.code, Sequence.seq)\
+                .join(Sequence, Sequence.id == OTU.id)\
+                .filter(OTU.id.in_(otu_ids))
 
         # log_query(q)
         return q

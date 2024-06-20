@@ -49,28 +49,70 @@ class BlastWrapper:
         subprocess.run(args, check=True, cwd=self._cwd)
 
     def _make_database(self):
-        # write user-provided search string into FASTA file
-        with open(self._in('search.fasta'), 'w') as fd:
-            fd.write('>user_provided_search_string\n{}\n'.format(self._search_string))
-        # generate a blast database
-        self._run(
-            ['makeblastdb', '-in', 'search.fasta', '-dbtype', 'nucl', '-parse_seqids'])
+        """
+        First we find all otu ids needed in the fasta file
+        Then we get the sequences for those otu_ids
+        This is done in separate steps because we must use the distinct clause
+        for the otu_ids, and if we join to Sequence table and use the distinct
+        clause it takes ages because the DB has to check all sequences
+
+        Note: this should be improved to use a temporary table
+        instead of a huge array of otu_ids
+        """
+
+        logger.info('Finding all needed otu ids')
+        otu_ids = []
+        with SampleQuery(self._params) as query:
+            for row in query.matching_otu_ids_blast().yield_per(1000):
+                otu_ids.append(row[0])
+        logger.info(f'Found all needed otu ids: {len(otu_ids)}')
+
+        logger.info('Making db.fasta file')
+        with open(self._in('db.fasta'), 'w') as fd:
+            # write out the OTU database in FASTA format,
+            # retain the otu id in the fasta id to use to get sample info later
+            with SampleQuery(self._params) as query:
+                for otu_id, otu_code, seq in query.matching_otus_blast(otu_ids).yield_per(1000):
+                    fd.write('>id_{}\n{}\n'.format(otu_id, seq))
+
+        ## debugging
+        # shutil.copy(os.path.join(settings.BLAST_RESULTS_PATH, 'db.fasta'), self._in('db.fasta'))
+
+        logger.info('Completed making db.fasta file')
+
+        logger.info('Making blastdb')
+        self._run([
+            'makeblastdb',
+            '-in', 'db.fasta',
+            '-dbtype', 'nucl',
+            '-parse_seqids'
+        ])
+        logger.info('Completed making blastdb')
+
+    def _max_target_seqs(self):
+        command = ['grep', '-c', '>', self._in('db.fasta')]
+        result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
+        return result.stdout.strip() # use strip() to remove trailing \n
 
     def _write_query(self):
-        logger.info('Making everything.fasta query file')
-        with open(self._in('everything.fasta'), 'w') as fasta_fd:
-            # write out the OTU database in FASTA format, as well a
-            # mapping table to get back to the OTU strings
-            with SampleQuery(self._params) as query:
-                q = query.matching_otus_blast()
-                for otu_id, otu_code, seq in q.yield_per(50):
-                    fasta_fd.write('>id_{}\n{}\n'.format(otu_id, seq))
-        logger.info('Completed making everything.fasta query file')
+        logger.info('Making query.fasta query file')
+        with open(self._in('query.fasta'), 'w') as fd:
+            fd.write('>user_provided_search_string\n{}\n'.format(self._search_string))
+        logger.info('Completed making query.fasta query file')
 
     def _blast_command(self):
         return [
-            'blastn', '-num_threads', '32', '-db', 'search.fasta', '-query', 'everything.fasta', '-out', 'results.out',
-            '-outfmt', '6 qseqid {}'.format(' '.join(self.BLAST_COLUMNS)), '-perc_identity', self.PERC_IDENTITY]
+            'blastn',
+            '-num_threads', '32',
+            '-db', 'db.fasta',
+            '-query', 'query.fasta',
+            '-out', 'results.out',
+            '-outfmt', '6 sseqid {}'.format(' '.join(self.BLAST_COLUMNS)),
+            '-perc_identity', self.PERC_IDENTITY,
+            '-strand', 'plus',
+            '-qcov_hsp_perc', '60',
+            '-max_target_seqs', self._max_target_seqs()
+        ]
 
     def _execute_blast(self):
         logger.info('Executing blast command')
@@ -83,7 +125,7 @@ class BlastWrapper:
         with open(self._in('results.out')) as results_fd:
             reader = csv.reader(results_fd, dialect='excel-tab')
             for row in reader:
-                otu_id = int(row[0][3:])  # strip id_
+                otu_id = int(row[0].replace('ref|id_', '').strip('|'))
                 results[otu_id] = row[1:]
         logger.info('Finished retrieving blast results')
         return results
