@@ -125,7 +125,10 @@ class BlastWrapper:
         with open(self._in('results.out')) as results_fd:
             reader = csv.reader(results_fd, dialect='excel-tab')
             for row in reader:
-                otu_id = int(row[0].replace('ref|id_', '').strip('|'))
+                # some versions of blastn put sseqid to `ref|<<fasta-id>>|`
+                # other versions put it to `<<fasta-id>>`
+                # this tries to account for both
+                otu_id = int(row[0].replace('ref|', '').replace('id_', '').strip('|'))
                 results[otu_id] = row[1:]
         logger.info('Finished retrieving blast results')
         return results
