@@ -1,4 +1,4 @@
-FROM bioplatformsaustralia/bpaotu-base
+FROM bioplatformsaustralia/bpaotu
 MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
 
 # Project specific deps

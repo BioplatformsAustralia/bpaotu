@@ -1,5 +1,5 @@
 # bpaotu production
-FROM bioplatformsaustralia/bpaotu-base
+FROM bioplatformsaustralia/bpaotu
 MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
 
 ARG BUILD_VERSION
