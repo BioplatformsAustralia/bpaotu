@@ -202,7 +202,7 @@ class DataImporter:
 
     def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True):
         self._engine = make_engine()
-        self._create_extensions()
+        self._create_extensions() # does this need to be after sessionmaker?
         self._session = sessionmaker(bind=self._engine)()
         self._import_base = import_base
         self._methodology = 'v1'
@@ -283,7 +283,7 @@ class DataImporter:
         for extension in extensions:
             try:
                 logger.info("creating extension: {}".format(extension))
-                self._engine.execute('CREATE EXTENSION {};'.format(extension))
+                self._engine.execute('CREATE EXTENSION IF NOT EXISTS {};'.format(extension))
             except sqlalchemy.exc.ProgrammingError as e:
                 if 'already exists' not in str(e):
                     logger.critical("couldn't create extension: {} ({})".format(extension, e))

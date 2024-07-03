@@ -112,6 +112,12 @@ These steps are performed in a separate terminal, i.e. not in the container, and
   - Once nvm is installed, install the required version of node, e.g.: `nvm install x.y.z`
   - There is also a file in the `frontend/` directory called `.nvmrc` that specifies the version of node to be used for this project in the event that the local system has multiple versions of node.
 
+- Install yarn
+
+  - This is the preferred package manager for node projects
+
+  `npm install -g yarn`
+
 - Install node modules for the web app
 
   - Run `yarn install` to install the node modules
