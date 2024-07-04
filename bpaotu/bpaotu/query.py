@@ -5,7 +5,7 @@ import logging
 import inspect
 
 import sqlalchemy
-from sqlalchemy import func, MetaData, Table, Column, Integer
+from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql import operators
@@ -465,45 +465,14 @@ class SampleQuery:
         # log_query(q)
         return q
 
-    def matching_otus_blast(self, temp_table_name):
-        metadata = MetaData()
-        temp_table = Table(
-            temp_table_name, metadata,
-            autoload_with=engine
-        )
-
+    def matching_otus_blast(self, otu_ids):
         q = self._session\
                 .query(OTU.id, OTU.code, Sequence.seq)\
                 .join(Sequence, Sequence.id == OTU.id)\
-                .join(temp_table, temp_table.c.otu_id == OTU.id)
+                .filter(OTU.id.in_(otu_ids))
 
         # log_query(q)
         return q
-
-    def create_temp_table(self, temp_table_name):
-        metadata = MetaData()
-        temp_table = Table(
-            temp_table_name, metadata,
-            Column('otu_id', Integer, primary_key=True)
-        )
-        metadata.create_all(engine)
-
-        return temp_table
-        
-    def drop_temp_table(self, temp_table_name):
-        metadata = MetaData()
-        temp_table = Table(
-            temp_table_name, metadata,
-            autoload_with=self._session.bind
-        )
-        temp_table.drop(self._session.bind)
-        
-        return True
-
-    def insert_otu_ids_to_temp_table(self, otu_ids, temp_table):
-        insert_query = temp_table.insert().values([{'otu_id': id} for id in otu_ids])
-        self._session.execute(insert_query)
-        self._session.commit()
 
     def otu_export(self):
         q = self._session.query(taxonomy_otu_export, SampleOTU, OTU).filter(

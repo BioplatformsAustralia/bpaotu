@@ -1,7 +1,6 @@
 import csv
 import io
 import logging
-import uuid
 import os.path
 import shutil
 import subprocess
@@ -55,21 +54,17 @@ class BlastWrapper:
         Then we get the sequences for those otu_ids
         This is done in separate steps because we must use the distinct clause
         for the otu_ids, and if we join to Sequence table and use the distinct
-        clause it takes ages because the DB has to check all sequences for distinctness
+        clause it takes ages because the DB has to check all sequences
+
+        Note: this should be improved to use a temporary table
+        instead of a huge array of otu_ids
         """
 
-        # Generate a unique temporary table name
-        temp_table_name = f"temp_otu_ids_{uuid.uuid4().hex}"
-
         logger.info('Finding all needed otu ids')
-
         otu_ids = []
         with SampleQuery(self._params) as query:
-            temp_table = query.create_temp_table(temp_table_name)
             for row in query.matching_otu_ids_blast().yield_per(1000):
                 otu_ids.append(row[0])
-            query.insert_otu_ids_to_temp_table(otu_ids, temp_table)
-
         logger.info(f'Found all needed otu ids: {len(otu_ids)}')
 
         logger.info('Making db.fasta file')
@@ -77,12 +72,8 @@ class BlastWrapper:
             # write out the OTU database in FASTA format,
             # retain the otu id in the fasta id to use to get sample info later
             with SampleQuery(self._params) as query:
-                for otu_id, otu_code, seq in query.matching_otus_blast(temp_table_name).yield_per(1000):
+                for otu_id, otu_code, seq in query.matching_otus_blast(otu_ids).yield_per(1000):
                     fd.write('>id_{}\n{}\n'.format(otu_id, seq))
-
-        # Drop the temporary table
-        with SampleQuery(self._params) as query:
-            query.drop_temp_table(temp_table_name)
 
         ## debugging
         # shutil.copy(os.path.join(settings.BLAST_RESULTS_PATH, 'db.fasta'), self._in('db.fasta'))
