@@ -63,7 +63,7 @@ class BlastWrapper:
         logger.info('Finding all needed otu ids')
         otu_ids = []
         with SampleQuery(self._params) as query:
-            for row in query.matching_otu_ids_blast().yield_per(1000):
+            for row in query.matching_otu_ids().yield_per(1000):
                 otu_ids.append(row[0])
         logger.info(f'Found all needed otu ids: {len(otu_ids)}')
 
@@ -72,7 +72,7 @@ class BlastWrapper:
             # write out the OTU database in FASTA format,
             # retain the otu id in the fasta id to use to get sample info later
             with SampleQuery(self._params) as query:
-                for otu_id, otu_code, seq in query.matching_otus_blast(otu_ids).yield_per(1000):
+                for otu_id, otu_code, seq in query.matching_otus(otu_ids).yield_per(1000):
                     fd.write('>id_{}\n{}\n'.format(otu_id, seq))
 
         ## debugging
