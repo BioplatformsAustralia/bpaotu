@@ -447,7 +447,7 @@ class SampleQuery:
             self._build_taxonomy_subquery(),
             entity)
 
-    def matching_otus(self):
+    def matching_otus_biom(self):
         q = self._session.query(OTU)
         subq = self._build_contextual_subquery()
         q = self._assemble_otu_query(q, subq).order_by(OTU.id)

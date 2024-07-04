@@ -80,7 +80,7 @@ def otu_rows(query, otu_to_row):
     taxonomy_fields = taxonomy_keys[1:]
     taxonomy_lookups = [joinedload(getattr(Taxonomy, rel))
                         for rel in (taxonomy_fields + ['amplicon'])]
-    q = query.matching_otus().add_entity(Taxonomy).options(taxonomy_lookups)
+    q = query.matching_otus_biom().add_entity(Taxonomy).options(taxonomy_lookups)
 
     for idx, row in enumerate(q.yield_per(50)):
         def get_value(obj, attr):
