@@ -447,10 +447,31 @@ class SampleQuery:
             self._build_taxonomy_subquery(),
             entity)
 
-    def matching_otus(self):
+    def matching_otus_biom(self):
         q = self._session.query(OTU)
         subq = self._build_contextual_subquery()
         q = self._assemble_otu_query(q, subq).order_by(OTU.id)
+        return q
+
+    def matching_otu_ids(self):
+        q = self._session\
+                .query(OTU.id)\
+                .filter(OTU.id == SampleOTU.otu_id)\
+                .join(Taxonomy.otus)\
+                .distinct()
+
+        q = self.apply_sample_otu_filters(q)
+
+        # log_query(q)
+        return q
+
+    def matching_otus(self, otu_ids):
+        q = self._session\
+                .query(OTU.id, OTU.code, Sequence.seq)\
+                .join(Sequence, Sequence.id == OTU.id)\
+                .filter(OTU.id.in_(otu_ids))
+
+        # log_query(q)
         return q
 
     def otu_export(self):
@@ -490,6 +511,20 @@ class SampleQuery:
                 .query(*args)\
                 .filter(OTU.id == SampleOTU.otu_id)\
                 .join(Taxonomy.otus)
+
+        q = self.apply_sample_otu_filters(q)
+
+        # log_query(q)
+        return q
+
+    def matching_sample_otus_blast(self, otu_ids):
+        q = self._session\
+                .query(OTU.id, OTU.code, Sequence.seq, SampleOTU.count, SampleContext.id, SampleContext.latitude, SampleContext.longitude)\
+                .join(Taxonomy.otus)\
+                .join(SampleOTU, SampleOTU.otu_id == OTU.id)\
+                .join(SampleContext, SampleContext.id == SampleOTU.sample_id)\
+                .join(Sequence, Sequence.id == OTU.id)\
+                .filter(OTU.id.in_(otu_ids))
 
         q = self.apply_sample_otu_filters(q)
 

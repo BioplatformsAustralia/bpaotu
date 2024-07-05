@@ -120,12 +120,20 @@ def sample_otu_csv_rows(taxonomy_labels, ids_to_names, q):
 def sanitise(filename):
     return re.sub(r'[\W]+', '-', filename)
 
-def fasta_rows(seq_q):
-    for otu_code, fasta_seq in seq_q.yield_per(50):
+def fasta_rows(query):
+    logger.info('Finding all needed otu ids')
+
+    otu_ids = []
+    for row in query.matching_otu_ids().yield_per(1000):
+        otu_ids.append(row[0])
+
+    logger.info(f'Found all needed otu ids: {len(otu_ids)}')
+
+    for otu_id, otu_code, seq in query.matching_otus(otu_ids).yield_per(1000):
         yield SeqRecord(
-            Seq(fasta_seq),
-            id=otu_code,
-            description='').format('fasta').encode('utf8')
+                Seq(seq),
+                id=otu_code,
+                description='').format('fasta').encode('utf8')
 
 def tabular_zip_file_generator(params, onlyContextual):
     taxonomy_source_id = params.taxonomy_filter.get_rank_equality_value(0)
@@ -139,7 +147,7 @@ def tabular_zip_file_generator(params, onlyContextual):
         if onlyContextual=='f':
             zf.write_iter(
                 "OTU.fasta",
-                fasta_rows(query.matching_sample_otu_sequences())
+                fasta_rows(query)
             )
 
             # Rank 1 is top level below taxonomy source, e.g. kingdom
