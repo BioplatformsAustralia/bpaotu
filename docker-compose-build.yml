@@ -1,6 +1,5 @@
-version: '3'
+version: "3"
 services:
-
   base:
     build:
       context: ./
@@ -14,7 +13,7 @@ services:
       args:
         BUILD_VERSION:
         GIT_BRANCH:
-    image: bioplatformsaustralia/bpaotu
+    image: bioplatformsaustralia/bpaotu-builder
     network_mode: host
 
   prod:
