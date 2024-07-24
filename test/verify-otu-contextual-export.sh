@@ -50,10 +50,11 @@ cmd_contextual_sample_ids > $verify_sample_ids_contextual_file
 count_contextual_sample_ids=$(cmd_contextual_sample_ids | wc -l)
 
 echo
-echo "Unique OTU hashes (OTU.fasta):			$count_otu_fasta_otus"
-echo "Unique Sample IDS (contextual.csv):		$count_contextual_sample_ids"
+echo "Unique OTU hashes (OTU.fasta):				$count_otu_fasta_otus"
+echo "Unique Sample IDS (contextual.csv):			$count_contextual_sample_ids"
 echo
 
+total_domain_csvs=0
 
 for f in $domain_csvs; do 
 	f_text=$(echo "$f" | sed 's|^\./||;s|\.csv$||')
@@ -64,10 +65,13 @@ for f in $domain_csvs; do
 	diff_sample_ids_file="verify_diff_sample_ids_otu_count_$f_text.txt"
 
 	cmd_cut_csv_otus $f > $verify_otus_file
-	echo "$f unique OTU hashes count:	$(cmd_cut_csv_otus $f | wc -l)"
+	
+	csv_otus_count=$(cmd_cut_csv_otus $f | wc -l)
+	total_domain_csvs=$(($total_domain_csvs + $csv_otus_count))
+	echo "$f unique OTU hashes count:		$csv_otus_count"
 
 	cmd_cut_csv_sample_ids $f > $verify_sample_ids_file
-	echo "$f unique Sample IDs count:	$(cmd_cut_csv_sample_ids $f | wc -l)"
+	echo "$f unique Sample IDs count:		$(cmd_cut_csv_sample_ids $f | wc -l)"
 	
 	echo
 
@@ -78,6 +82,7 @@ for f in $domain_csvs; do
 	diff $verify_sample_ids_contextual_file $verify_sample_ids_file -y --suppress-common-lines >> $diff_sample_ids_file
 done
 
+echo "Total unique OTU hashes for all domain .csv files:	$total_domain_csvs"
 
 # Restore the original file descriptors to disable logging
 exec 1>&3 2>&4
