@@ -104,7 +104,8 @@ rank_labels_lookup = (
     # taxonomy_keys[1:]. Entries can be shorter than r1...r8.
     ('Kingdom', 'Supergroup', 'Division', 'Class', 'Order', 'Family', 'Genus', 'Species'),
     ('Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species'),
-    ('Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus')
+    ('Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus'),
+    ('Domain', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species')
 )
 
 taxonomy_otu = Table(
