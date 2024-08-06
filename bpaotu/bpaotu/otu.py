@@ -105,7 +105,9 @@ rank_labels_lookup = (
     ('Kingdom', 'Supergroup', 'Division', 'Class', 'Order', 'Family', 'Genus', 'Species'),
     ('Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species'),
     ('Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus'),
-    ('Domain', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species')
+    ('Domain', 'Supergroup', 'Division', 'Class', 'Order', 'Family', 'Genus', 'Species'),
+    ('Domain', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species'),
+    ('Domain', 'Phylum', 'Class', 'Order', 'Family', 'Genus'),
 )
 
 taxonomy_otu = Table(
