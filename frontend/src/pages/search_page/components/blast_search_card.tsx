@@ -45,7 +45,7 @@ export class BlastSearchCard extends React.Component<any> {
     } as React.CSSProperties
     const imageStyle = {
       maxWidth: '100%',
-      maxHeight: '100%',
+      maxHeight: '500px',
     } as React.CSSProperties
 
     return (
