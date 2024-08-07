@@ -304,6 +304,14 @@ Then set the search path to the "otu" schema at the psql prompt
 SET search_path TO otu;
 ```
 
+## Testing
+
+There is a script to test the output of the `OTU and Contextual Download` feature. This counts and displays the number of unique OTU hashes in the OTU.fasta file, the number of unique Sample IDs in the contextual.csv file, and for each domain .csv file, counts and displays the number of unique OTU hashes and unique Sample IDs. The results can then be inspected to ensure they are as expected for the given search.
+
+To run, download a search, extract the results to a directory, cd to that directory and run the script:
+
+`. /path/to/bpaotu/test/verify-otu-contextual-export.sh`
+
 ## Deployments
 
 [Bioplatforms Australia - Australian Microbiome Search Facility](https://data.bioplatforms.com/bpa/otu/)
