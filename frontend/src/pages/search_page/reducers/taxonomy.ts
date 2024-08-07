@@ -150,10 +150,6 @@ function makeTaxonomyReducer(taxonomyName) {
           // initial value for rank1 select sent from backend
           const initialSelectedValue = { value: action.payload.data.initial, operator: 'is' }
 
-          // console.log('isSelectedStillInOptions', isSelectedStillInOptions(state.selected))
-          // console.log('isSelectedValueBlank', isSelectedValueBlank(state.selected))
-          // console.log('isInitialSelectedPresent', isInitialSelectedPresent())
-
           if (isSelectedStillInOptions(state.selected)) {
             selected = isSelectedValueBlank(state.selected)
               ? isInitialSelectedPresent()

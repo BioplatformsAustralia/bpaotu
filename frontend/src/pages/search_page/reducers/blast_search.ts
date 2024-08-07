@@ -8,6 +8,7 @@ import { describeSearch } from './search'
 import { BlastSubmission, ErrorList } from './types'
 
 export const HANDLE_BLAST_SEQUENCE = 'HANDLE_BLAST_SEQUENCE'
+export const HANDLE_BLAST_PARAMETERS = 'HANDLE_BLAST_PARAMETERS'
 export const RUN_BLAST_STARTED = 'RUN_BLAST_STARTED'
 export const RUN_BLAST_ENDED = 'RUN_BLAST_ENDED'
 export const BLAST_SUBMISSION_UPDATE_STARTED = 'BLAST_SUBMISSION_UPDATE_STARTED'
@@ -18,6 +19,7 @@ const BLAST_SUBMISSION_POLL_FREQUENCY_MS = 5000
 
 export const {
   handleBlastSequence,
+  handleBlastParameters,
 
   runBlastStarted,
   runBlastEnded,
@@ -28,6 +30,7 @@ export const {
   clearBlastAlert,
 } = createActions(
   HANDLE_BLAST_SEQUENCE,
+  HANDLE_BLAST_PARAMETERS,
 
   RUN_BLAST_STARTED,
   RUN_BLAST_ENDED,
@@ -40,8 +43,14 @@ export const {
 
 const blastInitialState = {
   sequenceValue: '',
+  blastParams: {
+    qcov_hsp_perc: '60',
+    perc_identity: '95',
+  },
   alerts: [],
+  imageSrc: '',
   isSubmitting: false,
+  isFinished: false,
   submissions: [],
 }
 
@@ -51,9 +60,10 @@ export const runBlast = () => (dispatch, getState) => {
   dispatch(runBlastStarted())
 
   const filters = describeSearch(state)
+  const searchParameters = state.searchPage.blastSearch.blastParams
   const searchString = state.searchPage.blastSearch.sequenceValue
 
-  executeBlast(searchString, filters)
+  executeBlast(searchString, searchParameters, filters)
     .then((data) => {
       if (_get(data, 'data.errors', []).length > 0) {
         dispatch(runBlastEnded(new ErrorList(data.data.errors)))
@@ -101,9 +111,17 @@ export default handleActions(
         ''
       ),
     }),
+    [handleBlastParameters as any]: (state, action: any) => {
+      return {
+        ...state,
+        blastParams: { ...state.blastParams, [action.payload.param]: action.payload.value },
+      }
+    },
     [runBlastStarted as any]: (state, action: any) => ({
       ...state,
       isSubmitting: true,
+      isFinished: false,
+      imageSrc: '',
     }),
     [runBlastEnded as any]: {
       next: (state, action: any) => {
@@ -117,14 +135,18 @@ export default handleActions(
         return {
           ...state,
           sequenceValue: state.sequenceValue,
+          blastParams: state.blastParams,
           alerts,
+          imageSrc: state.imageSrc,
           submissions: [...state.submissions, lastSubmission],
         }
       },
       throw: (state, action: any) => ({
         ...state,
         isSubmitting: false,
+        isFinished: false,
         alerts: [BLAST_ALERT_ERROR],
+        imageSrc: '',
       }),
     },
     [blastSubmissionUpdateEnded as any]: {
@@ -142,7 +164,9 @@ export default handleActions(
           }
           return newState
         })(lastSubmission)
+
         let newAlerts: any = state.alerts
+        let imageSrc: any
         if (newLastSubmissionState['finished'] && !lastSubmission['finished']) {
           const resultUrl = action.payload.data.submission.result_url
           const BLAST_ALERT_SUCCESS = alert(
@@ -155,11 +179,21 @@ export default handleActions(
           newAlerts.push(
             newLastSubmissionState['succeeded'] ? BLAST_ALERT_SUCCESS : BLAST_ALERT_ERROR
           )
+
+          const resultImg64 = action.payload.data.submission.image_contents
+          if (resultImg64) {
+            const imageUrl = `data:image/png;base64,${resultImg64}`
+            imageSrc = imageUrl
+          } else {
+            imageSrc = null
+          }
         }
 
         let isSubmitted: any = state.isSubmitting
+        let isFinished: any = false
         if (action.payload.data.submission.result_url) {
           isSubmitted = false
+          isFinished = true
         }
 
         return {
@@ -170,7 +204,9 @@ export default handleActions(
             (_) => newLastSubmissionState
           ),
           alerts: newAlerts,
+          imageSrc: imageSrc,
           isSubmitting: isSubmitted,
+          isFinished: isFinished,
         }
       },
       throw: (state, action) => {
@@ -187,6 +223,7 @@ export default handleActions(
             })
           ),
           alerts: [BLAST_ALERT_ERROR],
+          imageSrc: '',
           isSubmitting: false,
         }
       },

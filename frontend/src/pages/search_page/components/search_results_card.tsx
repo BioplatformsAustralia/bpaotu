@@ -13,6 +13,7 @@ import { clearTips, showPhinchTip } from '../reducers/tips'
 import { openMetagenomeModal, openMetagenomeModalSearch } from '../reducers/metagenome_modal'
 import { GalaxySubmission } from '../reducers/types'
 
+import BlastModal from './blast_modal'
 import SamplesMapModal from './samples_map_modal'
 import SamplesGraphModal from './samples_graph_modal'
 import MetagenomeModal from './metagenome_modal'
@@ -141,6 +142,7 @@ const _SearchResultsCard = (props) => {
         </CardBody>
       </Card>
 
+      <BlastModal />
       <SamplesMapModal />
       <SamplesGraphModal />
     </div>
@@ -183,6 +185,7 @@ const _MetagenomeSearchResultsCard = (props) => {
         </CardBody>
       </Card>
 
+      <BlastModal />
       <SamplesMapModal />
       <SamplesGraphModal />
       <MetagenomeModal />
