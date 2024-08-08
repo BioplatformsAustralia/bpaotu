@@ -228,6 +228,9 @@ class BlastWrapper:
         df_unique = df.drop_duplicates()
         df_unique = df.sort_values('pident') # sorting values so high pindent values are plotted last, and not obscured by low values (not they obscure the high values)
 
+        # Convert longitude from -180 to 180 range to 0 to 360 range
+        df_unique['longitude'] = df_unique['longitude'].apply(lambda x: x + 360 if x < 0 else x)
+
         # Get the min and max values for lat and lon, to set the map size
         min_lat, max_lat = df_unique['latitude'].min(), df_unique['latitude'].max()
         min_lon, max_lon = df_unique['longitude'].min(), df_unique['longitude'].max()
@@ -247,7 +250,11 @@ class BlastWrapper:
 
         # Plot each point point with color based on pident value
         x, y = m(df_unique['longitude'].values, df_unique['latitude'].values)
-        sc = m.scatter(x, y, c=df_unique['pident'].values, cmap=cmap, norm=norm, marker='o', zorder=5)
+
+        # Set dot size based on longitudinal range
+        range_lon = max_lon - min_lon
+        dot_size = self._calculate_dot_size(range_lon)
+        sc = m.scatter(x, y, s=dot_size, c=df_unique['pident'].values, cmap=cmap, norm=norm, marker='o', zorder=5)
 
         # colorbar and titles
         cbar = m.colorbar(sc, location='right', pad='5%')
@@ -271,6 +278,20 @@ class BlastWrapper:
         with open(file_path, 'r', encoding='utf-8') as file:
             return sum(1 for _ in file) - 1
 
+    def _calculate_dot_size(self, range_lon):
+        MIN_SIZE = 35
+        MAX_SIZE = 85
+        MIN_RANGE = 20
+        MAX_RANGE = 100
+
+        if range_lon <= MIN_RANGE:
+            return MAX_SIZE
+        elif range_lon >= MAX_RANGE:
+            return MIN_SIZE
+        else:
+            # linear interpolation
+            return MAX_SIZE - (MIN_RANGE * (range_lon - MIN_RANGE) / (MAX_RANGE - MIN_RANGE))
+
 
     def _info_text(self, params):
         return """\
@@ -291,4 +312,7 @@ https://www.australianmicrobiome.com/protocols/acknowledgements/
 
 Australian Microbiome data use policy:
 https://www.australianmicrobiome.com/protocols/data-policy/
+
+Code to make figure:
+https://github.com/AusMicrobiome/Maps
 """.format(self._search_string, ' '.join(self._blast_command()), params.describe()).encode('utf8')

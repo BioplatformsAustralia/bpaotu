@@ -74,8 +74,14 @@ export class BlastSearchCard extends React.Component<any> {
                   })
                 }
               >
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="40">40</option>
                 <option value="50">50</option>
                 <option value="60">60</option>
+                <option value="70">70</option>
+                <option value="80">80</option>
                 <option value="90">90</option>
               </Input>
             </Col>
@@ -87,7 +93,7 @@ export class BlastSearchCard extends React.Component<any> {
                 <Octicon name="info" />
               </span>
               <UncontrolledTooltip target="blastTipPercIdent" placement="auto">
-                Percent identity
+                Percent identity per hsp
               </UncontrolledTooltip>
             </Label>
             <Col sm={1}>
@@ -123,7 +129,6 @@ export class BlastSearchCard extends React.Component<any> {
             value={this.props.sequenceValue}
             disabled={!this.props.isAmpliconSelected}
             onChange={(evt) => this.props.handleBlastSequence(evt.target.value)}
-            style={{ height: '110px' }}
           />
           <div className="pt-2">
             {this.props.alerts.map((alert, idx) => (
