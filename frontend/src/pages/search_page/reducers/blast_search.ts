@@ -236,6 +236,8 @@ export default handleActions(
       return {
         ...state,
         alerts,
+        imageSrc: '',
+        isFinished: false,
       }
     },
   },

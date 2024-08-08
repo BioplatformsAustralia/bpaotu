@@ -8,6 +8,7 @@ import { TourContext } from 'providers/tour_provider'
 import BlastSearchCard from './blast_search_card'
 
 import { closeBlastModal } from '../reducers/blast_modal'
+import './blast_modal.css'
 
 import SearchFilters from './search_filters'
 
@@ -71,7 +72,12 @@ const BlastModal = (props) => {
   // ]
 
   return (
-    <Modal isOpen={isOpen} data-tut="reactour__BlastModal" id="reactour__BlastModal">
+    <Modal
+      isOpen={isOpen}
+      data-tut="reactour__BlastModal"
+      id="reactour__BlastModal"
+      contentClassName="modalContentStyle"
+    >
       <ModalHeader
         toggle={closeBlastModal}
         data-tut="reactour__CloseBlastModal"
