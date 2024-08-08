@@ -6,6 +6,7 @@ import selectedTraitReducer from './trait'
 import blastSearchReducer from './blast_search'
 import contextualReducer from './contextual'
 import sampleIntegrityWarningReducer from './sample_integrity_warning'
+import blastModalReducer from './blast_modal'
 import samplesMapModalReducer from './samples_map_modal'
 import samplesGraphModalReducer from './samples_graph_modal'
 import metagenomeModalReducer from './metagenome_modal'
@@ -35,6 +36,7 @@ const filtersReducer = combineReducers({
 
 const pageReducer = combineReducers({
   filters: filtersReducer,
+  blastModal: blastModalReducer,
   samplesMapModal: samplesMapModalReducer,
   samplesGraphModal: samplesGraphModalReducer,
   metagenomeModal: metagenomeModalReducer,

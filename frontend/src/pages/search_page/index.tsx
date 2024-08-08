@@ -12,11 +12,13 @@ import SearchButton from 'components/search_button'
 import { TourContext } from 'providers/tour_provider'
 
 import { AmpliconTaxonomyFilterCard } from './components/amplicon_taxonomy_filter_card'
-import BlastSearchCard from './components/blast_search_card'
 import ContextualFilterCard from './components/contextual_filter_card'
 import SearchErrors from './components/search_errors'
+import SearchRunningIcon from './components/search_running_icon'
+import SearchFinishedIcon from './components/search_finished_icon'
 import { SearchResultsCard, MetagenomeSearchResultsCard } from './components/search_results_card'
 
+import { openBlastModal } from './reducers/blast_modal'
 import { openSamplesMapModal } from './reducers/samples_map_modal'
 import { openSamplesGraphModal } from './reducers/samples_graph_modal'
 import { search } from './reducers/search'
@@ -40,6 +42,10 @@ const SearchPage = (props) => {
   const newSearch = () => {
     props.clearSearchResults()
     props.search(track)
+  }
+  const blastSearch = () => {
+    track('otu_blast_search')
+    props.openBlastModal()
   }
   const interactiveMapSearch = () => {
     track('otu_interactive_map_search')
@@ -82,13 +88,23 @@ const SearchPage = (props) => {
           </Col>
         ) : (
           <>
-            <Col sm={{ size: 2, offset: 3 }}>
+            <Col sm={{ size: 2, offset: 2 }}>
               <SearchButton
                 id="SampleSearchButton"
                 octicon="search"
                 text="Sample search"
                 onClick={newSearch}
               />
+            </Col>
+            <Col sm={{ size: 2 }} style={{ position: 'relative' }}>
+              <SearchButton
+                id="BLASTSearchButton"
+                octicon="beaker"
+                text="BLAST search"
+                onClick={blastSearch}
+              />
+              {props.isBlastSearchRunning && <SearchRunningIcon />}
+              {props.isBlastSearchFinished && <SearchFinishedIcon />}
             </Col>
             <Col sm={{ size: 2 }}>
               <SearchButton
@@ -118,6 +134,8 @@ const SearchPage = (props) => {
 function mapStateToProps(state) {
   return {
     isSearchInProgress: state.searchPage.results.isLoading,
+    isBlastSearchRunning: state.searchPage.blastSearch.isSubmitting,
+    isBlastSearchFinished: state.searchPage.blastSearch.isFinished,
     errors: state.searchPage.results.errors,
     auth: state.auth,
   }
@@ -126,6 +144,7 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
+      openBlastModal,
       openSamplesMapModal,
       openSamplesGraphModal,
       search,
@@ -145,9 +164,7 @@ export function SampleSearchPage() {
       </Col>
 
       <Row className="space-above">
-        <Col>
-          <BlastSearchCard />
-        </Col>
+        <Col></Col>
       </Row>
 
       <Col sm={12} data-tut="reactour__SearchResultsCard">

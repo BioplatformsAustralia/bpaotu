@@ -42,6 +42,9 @@ export interface PageState {
     contextual: any // TODO
     sampleIntegrityWarning: any
   }
+  blastModal: {
+    isOpen: boolean
+  }
   samplesMapModal: {
     isOpen: boolean
     isLoading: boolean
@@ -108,6 +111,9 @@ export const searchPageInitialState: PageState = {
       filtersMode: 'and',
       filters: [],
     },
+  },
+  blastModal: {
+    isOpen: false,
   },
   samplesMapModal: {
     isOpen: false,

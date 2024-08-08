@@ -204,10 +204,11 @@ const makeArray = (length, fillValue) => map(Array(length), () => fillValue)
 const completeArray = (arr, length, fillValue) =>
   arr.concat(makeArray(length - arr.length, fillValue))
 
-export function executeBlast(searchString, filters) {
+export function executeBlast(searchString, blastParams, filters) {
   const formData = new FormData()
   formData.append('query', JSON.stringify(filters))
   formData.append('search_string', searchString)
+  formData.append('blast_params', JSON.stringify(blastParams))
 
   return axios({
     method: 'post',

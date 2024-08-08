@@ -909,8 +909,12 @@ def submit_blast(request):
             raise OTUError(*errors)
 
         search_string = normalise_blast_search_string(request.POST['search_string'])
+        blast_params_string = request.POST['blast_params']
+        params_object = json.loads(blast_params_string)
+
         submission_id = tasks.submit_blast(
             search_string,
+            blast_params_string,
             request.POST['query'])
 
         return JsonResponse({
@@ -940,6 +944,7 @@ def blast_submission(request):
         'submission': {
             'id': submission_id,
             'result_url': submission.result_url,
+            'image_contents': submission.image_contents,
             'state': state,
         }
     })
