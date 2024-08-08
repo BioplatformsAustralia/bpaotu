@@ -327,3 +327,10 @@ BPA OTU is released under the GNU Affero GPL. See source for a licence copy.
 - Fork next_release branch
 - Make changes on a feature branch
 - Submit pull request
+
+for strand both
+
+        qstart means Start of alignment in query
+          qend means End of alignment in query
+        sstart means Start of alignment in subject
+          send means End of alignment in subject

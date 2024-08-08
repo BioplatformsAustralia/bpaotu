@@ -90,15 +90,18 @@ const BlastModal = (props) => {
           The BLAST search tool implements a blastn search over sequences returned by the taxonomy
           search implemented. For best results, submit a query that spans only the amplicon region,
           or set <span style={codeStyle}>qcov_hsp_perc</span> to sensible value given your query
-          sequence. We've set the default value to <span style={codeStyle}>60</span>, which will for
-          query length ~= amplicon length omit usually unwanted short local alignments.
+          sequence. We've set the default value to <span style={codeStyle}>60</span>, which will
+          (for query length ~= amplicon length) omit usually unwanted short local alignments.
         </p>
         <p>
           The download provides: 1) the blast search details, 2) the blast table results, 3) a table
           with hit sequences, their match details, their locations and sample attributes, and 4) a
-          map showing hit locations and sequence similarities. Note that the figure is sorted to
-          plot the highest scoring points last, so any symbols occurring at the same location will
-          only be visible as the highest scoring alignment value.
+          map showing hit locations and sequence similarities.
+        </p>
+        <p>
+          Note that the figure is sorted to plot the highest scoring points last, so any symbols
+          occurring at the same location will only be visible as the highest scoring alignment
+          value.
         </p>
         <BlastSearchCard />
       </ModalBody>
