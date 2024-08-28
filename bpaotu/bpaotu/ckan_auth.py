@@ -23,19 +23,22 @@ class OTUVerificationError(Exception):
 def require_CKAN_auth(func):  # noqa N802
     @wraps(func)
     def inner(request, *args, **kwargs):
-        token = request.META.get(settings.CKAN_AUTH_TOKEN_HEADER_NAME)
-        if token is None:
-            token = request.POST.get('token') if request.method == 'POST' else request.GET.get('token')
-        if token is None:
-            return HttpResponseForbidden(FORBIDDEN_RESPONSE_MSG)
-        try:
-            ckan_data = _otu_endpoint_verification(token)
-        except OTUVerificationError:
-            logger.exception('OTU Verification Failed')
-            return HttpResponseForbidden(FORBIDDEN_RESPONSE_MSG)
+        if settings.CKAN_ENABLE_AUTH:
+            token = request.META.get(settings.CKAN_AUTH_TOKEN_HEADER_NAME)
+            if token is None:
+                token = request.POST.get('token') if request.method == 'POST' else request.GET.get('token')
+            if token is None:
+                return HttpResponseForbidden(FORBIDDEN_RESPONSE_MSG)
+            try:
+                ckan_data = _otu_endpoint_verification(token)
+            except OTUVerificationError:
+                logger.exception('OTU Verification Failed')
+                return HttpResponseForbidden(FORBIDDEN_RESPONSE_MSG)
+            
+            request.ckan_data = ckan_data
 
-        request.ckan_data = ckan_data
         return func(request, *args, **kwargs)
+
     return inner
 
 
