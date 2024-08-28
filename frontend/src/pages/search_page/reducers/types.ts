@@ -44,6 +44,7 @@ export interface PageState {
   }
   blastModal: {
     isOpen: boolean
+    rowsCount: number
   }
   samplesMapModal: {
     isOpen: boolean
@@ -114,6 +115,7 @@ export const searchPageInitialState: PageState = {
   },
   blastModal: {
     isOpen: false,
+    rowsCount: -1, // to prevent clash with "0" which prevents running blast search
   },
   samplesMapModal: {
     isOpen: false,

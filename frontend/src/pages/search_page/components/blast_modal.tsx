@@ -7,13 +7,13 @@ import { Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
 import { TourContext } from 'providers/tour_provider'
 import BlastSearchCard from './blast_search_card'
 
-import { closeBlastModal } from '../reducers/blast_modal'
+import { closeBlastModal, fetchBlastModalSamples } from '../reducers/blast_modal'
 import './blast_modal.css'
 
 import SearchFilters from './search_filters'
 
 const BlastModal = (props) => {
-  const { isOpen, closeBlastModal, fetchBlastModalSamples } = props
+  const { isOpen, isLoading, rowsCount, closeBlastModal, fetchBlastModalSamples } = props
 
   const codeStyle = {
     fontFamily: 'monospace',
@@ -50,6 +50,12 @@ const BlastModal = (props) => {
     mainTourStep,
     setMainTourStep,
   ])
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchBlastModalSamples()
+    }
+  }, [isOpen])
 
   // const steps = [
   //   {
@@ -104,7 +110,7 @@ const BlastModal = (props) => {
           occurring at the same location will only be visible as the highest scoring alignment
           value.
         </p>
-        <BlastSearchCard />
+        <BlastSearchCard isLoading={isLoading} rowsCount={rowsCount} />
       </ModalBody>
       <ModalFooter>
         <SearchFilters handleSearchFilterClick={fetchBlastModalSamples} />
@@ -114,9 +120,11 @@ const BlastModal = (props) => {
 }
 
 const mapStateToProps = (state) => {
-  const { isOpen } = state.searchPage.blastModal
+  const { isOpen, isLoading, rowsCount } = state.searchPage.blastModal
   return {
     isOpen,
+    isLoading,
+    rowsCount,
   }
 }
 
@@ -124,6 +132,7 @@ const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       closeBlastModal,
+      fetchBlastModalSamples,
     },
     dispatch
   )

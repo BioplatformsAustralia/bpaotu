@@ -162,13 +162,19 @@ export class BlastSearchCard extends React.Component<any> {
           </div>
         </CardBody>
         <CardFooter className="text-center">
-          <Button
-            color="warning"
-            disabled={this.props.isSearchDisabled}
-            onClick={this.props.runBlast}
-          >
-            Run BLAST
-          </Button>
+          {this.props.isLoading ? (
+            <AnimateHelix scale={0.2} />
+          ) : this.props.rowsCount === 0 ? (
+            <div>No Sample OTUs found for these search parameters</div>
+          ) : (
+            <Button
+              color="warning"
+              disabled={this.props.isSearchDisabled}
+              onClick={this.props.runBlast}
+            >
+              Run BLAST
+            </Button>
+          )}
         </CardFooter>
       </Card>
     )
