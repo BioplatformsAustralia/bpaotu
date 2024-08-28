@@ -7,13 +7,13 @@ import { Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
 import { TourContext } from 'providers/tour_provider'
 import BlastSearchCard from './blast_search_card'
 
-import { closeBlastModal } from '../reducers/blast_modal'
+import { closeBlastModal, fetchBlastModalSamples } from '../reducers/blast_modal'
 import './blast_modal.css'
 
 import SearchFilters from './search_filters'
 
 const BlastModal = (props) => {
-  const { isOpen, closeBlastModal, fetchBlastModalSamples } = props
+  const { isOpen, isLoading, rowsCount, closeBlastModal, fetchBlastModalSamples } = props
 
   const codeStyle = {
     fontFamily: 'monospace',
@@ -50,6 +50,12 @@ const BlastModal = (props) => {
     mainTourStep,
     setMainTourStep,
   ])
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchBlastModalSamples()
+    }
+  }, [isOpen])
 
   // const steps = [
   //   {
@@ -88,10 +94,11 @@ const BlastModal = (props) => {
       <ModalBody>
         <p>
           The BLAST search tool implements a blastn search over sequences returned by the taxonomy
-          search implemented. For best results, submit a query that spans only the amplicon region,
-          or set <span style={codeStyle}>qcov_hsp_perc</span> to sensible value given your query
-          sequence. We've set the default value to <span style={codeStyle}>60</span>, which will
-          (for query length ~= amplicon length) omit usually unwanted short local alignments.
+          search and contextual filters implemented. For best results, submit a query that spans
+          only the amplicon region, or set <span style={codeStyle}>qcov_hsp_perc</span> to sensible
+          value given your query sequence. We've set the default value to{' '}
+          <span style={codeStyle}>60</span>, which will (for query length ~= amplicon length) omit
+          usually unwanted short local alignments.
         </p>
         <p>
           The download provides: 1) the blast search details, 2) the blast table results, 3) a table
@@ -103,7 +110,7 @@ const BlastModal = (props) => {
           occurring at the same location will only be visible as the highest scoring alignment
           value.
         </p>
-        <BlastSearchCard />
+        <BlastSearchCard isLoading={isLoading} rowsCount={rowsCount} />
       </ModalBody>
       <ModalFooter>
         <SearchFilters handleSearchFilterClick={fetchBlastModalSamples} />
@@ -113,9 +120,11 @@ const BlastModal = (props) => {
 }
 
 const mapStateToProps = (state) => {
-  const { isOpen } = state.searchPage.blastModal
+  const { isOpen, isLoading, rowsCount } = state.searchPage.blastModal
   return {
     isOpen,
+    isLoading,
+    rowsCount,
   }
 }
 
@@ -123,6 +132,7 @@ const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       closeBlastModal,
+      fetchBlastModalSamples,
     },
     dispatch
   )

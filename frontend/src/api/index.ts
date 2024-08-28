@@ -154,6 +154,11 @@ function executeOtuSearch(url, filters) {
   })
 }
 
+export const executeBlastOtuSearch = partial(
+  executeOtuSearch,
+  window.otu_search_config.search_blast_otus_endpoint
+)
+
 export const executeSampleSitesSearch = partial(
   executeOtuSearch,
   window.otu_search_config.search_sample_sites_endpoint

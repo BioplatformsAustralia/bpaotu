@@ -168,6 +168,7 @@ def api_config(request):
         'submit_blast_endpoint': reverse('submit_blast'),
         'blast_submission_endpoint': reverse('blast_submission'),
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
+        'search_blast_otus_endpoint': reverse('otu_search_blast_otus'),
         'required_table_headers_endpoint': reverse('required_table_headers'),
         'contextual_csv_download_endpoint': reverse('contextual_csv_download_endpoint'),
         'contextual_schema_definition': reverse('contextual_schema_definition'),
@@ -735,6 +736,26 @@ def otu_search_sample_sites(request):
         key = (str(d['latitude']), str(d['longitude']))
         d['site_images'] = site_image_lookup_table.get(key)
     return JsonResponse({'data': data, 'sample_otus': sample_otus})
+
+
+@require_CKAN_auth
+@require_POST
+def otu_search_blast_otus(request):
+    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=True)
+    if errors:
+        return JsonResponse({
+            'errors': [str(e) for e in errors],
+            'rowsCount': 0,
+        })
+
+    with SampleQuery(params) as query:
+        results = query.matching_sample_headers()
+
+    result_count = len(results)
+
+    return JsonResponse({
+        'rowsCount': result_count,
+    })
 
 
 # technically we should be using GET, but the specification

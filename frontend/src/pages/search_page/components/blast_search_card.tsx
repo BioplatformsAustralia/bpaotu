@@ -47,6 +47,11 @@ export class BlastSearchCard extends React.Component<any> {
       maxWidth: '100%',
       maxHeight: '500px',
     } as React.CSSProperties
+    const fetchingSamplesStyle = {
+      paddingTop: '1em',
+      paddingBottom: '0px',
+      marginBottom: '0px',
+    } as React.CSSProperties
 
     return (
       <Card>
@@ -162,13 +167,22 @@ export class BlastSearchCard extends React.Component<any> {
           </div>
         </CardBody>
         <CardFooter className="text-center">
-          <Button
-            color="warning"
-            disabled={this.props.isSearchDisabled}
-            onClick={this.props.runBlast}
-          >
-            Run BLAST
-          </Button>
+          {this.props.isLoading ? (
+            <div>
+              <AnimateHelix scale={0.2} />
+              <p style={fetchingSamplesStyle}>Fetching samples</p>
+            </div>
+          ) : this.props.rowsCount === 0 ? (
+            <div>No Sample OTUs found for these search parameters</div>
+          ) : (
+            <Button
+              color="warning"
+              disabled={this.props.isSearchDisabled}
+              onClick={this.props.runBlast}
+            >
+              Run BLAST
+            </Button>
+          )}
         </CardFooter>
       </Card>
     )
