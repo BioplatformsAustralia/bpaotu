@@ -88,10 +88,11 @@ const BlastModal = (props) => {
       <ModalBody>
         <p>
           The BLAST search tool implements a blastn search over sequences returned by the taxonomy
-          search implemented. For best results, submit a query that spans only the amplicon region,
-          or set <span style={codeStyle}>qcov_hsp_perc</span> to sensible value given your query
-          sequence. We've set the default value to <span style={codeStyle}>60</span>, which will
-          (for query length ~= amplicon length) omit usually unwanted short local alignments.
+          search and contextual filters implemented. For best results, submit a query that spans
+          only the amplicon region, or set <span style={codeStyle}>qcov_hsp_perc</span> to sensible
+          value given your query sequence. We've set the default value to{' '}
+          <span style={codeStyle}>60</span>, which will (for query length ~= amplicon length) omit
+          usually unwanted short local alignments.
         </p>
         <p>
           The download provides: 1) the blast search details, 2) the blast table results, 3) a table
