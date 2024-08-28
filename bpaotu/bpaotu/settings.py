@@ -404,6 +404,8 @@ DOWNLOADS_CHECKER_PASS = env.get('downloads_checker_pass', 'ch3ck3r')
 DOWNLOADS_CHECKER_SLEEP = env.get('downloads_checker_sleep', 0.0)
 
 # enable integration with CKAN authentication (specific to the Bioplatforms data portal)
+CKAN_ENABLE_AUTH = env.get('ckan_enable_auth', True)
+
 CKAN_CHECK_PERMISSIONS_URL = env.get('ckan_check_permissions_url', '/user/private/api/bpa/check_permissions')
 
 # email to use in development when CKAN auth integration is enabled

@@ -91,10 +91,12 @@ function defaults {
     : "${TEST_SELENIUM_HUB:=http://hub:4444/wd/hub}"
 
     : "${DJANGO_FIXTURES:=none}"
+    
+    : "${SKIP_WARMCACHE:=0}"
 
     export DBSERVER DBPORT DBUSER DBNAME DBPASS MEMCACHE DOCKER_ROUTE
     export TEST_APP_URL TEST_APP_SCHEME TEST_APP_HOST TEST_APP_PORT TEST_APP_PATH TEST_BROWSER TEST_WAIT TEST_SELENIUM_HUB
-    export DJANGO_FIXTURES
+    export DJANGO_FIXTURES SKIP_WARMCACHE
 }
 
 
@@ -123,10 +125,14 @@ function _django_collectstatic {
 
 
 function _warmcache {
-    info "running warmcache"
-    set -x
-    django-admin.py warmcache --settings="${DJANGO_SETTINGS_MODULE}"
-    set +x
+    if [ "${SKIP_WARMCACHE}" = 'yes' ]; then
+        info "skipping warmcache"
+    else
+        info "running warmcache"
+        set -x
+        django-admin.py warmcache --settings="${DJANGO_SETTINGS_MODULE}"
+        set +x
+    fi
 }
 
 
@@ -165,7 +171,7 @@ function _runserver() {
     _django_collectstatic
     _django_migrate
     _django_fixtures
-    [ -f  "$(dirname "$0")/_skip_warmcache" ] || _warmcache
+    _warmcache
 
     info "RUNSERVER_OPTS is ${RUNSERVER_OPTS}"
     set -x
