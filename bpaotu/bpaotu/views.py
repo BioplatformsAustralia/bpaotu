@@ -383,7 +383,7 @@ def contextual_fields(request):
 @require_POST
 def contextual_graph_fields(request, contextual_filtering=True):
     additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
-    all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
+    all_headers = ['id', 'am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
                    'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
                    'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
     params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
@@ -409,6 +409,8 @@ def contextual_graph_fields(request, contextual_filtering=True):
                             if (x != None and not
                             (skip_sentinels and math.isclose(x, settings.BPAOTU_MISSING_VALUE_SENTINEL)))]
             graph_results[h] = [xy.tolist() for xy in np.unique(cleaned_data, return_counts=True)]
+
+
 
         for x in ndata:
             sample_id_column = all_headers.index('id')

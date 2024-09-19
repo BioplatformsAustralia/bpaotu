@@ -93,7 +93,7 @@ const SearchPage = (props) => {
           </Col>
         ) : (
           <>
-            <Col sm={{ size: 2, offset: 2 }}>
+            <Col sm={{ size: 2, offset: 1 }}>
               <SearchButton
                 id="SampleSearchButton"
                 octicon="search"
