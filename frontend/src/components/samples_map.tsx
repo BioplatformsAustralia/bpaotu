@@ -60,11 +60,6 @@ import 'react-leaflet-fullscreen/dist/styles.css'
 import 'react-leaflet-markercluster/dist/styles.min.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 
-import _ from 'lodash'
-import numeric from 'numeric'
-import Jaccard from 'jaccard-index'
-const jaccard = Jaccard()
-
 // Initial Viewport is Australia
 const MapInitialViewport = {
   lat: -25.27,
@@ -386,8 +381,6 @@ class SamplesMap extends React.Component<any> {
       )
       this.featureCollectionData = this.makeFeatureCollection(cellAggregatedData)
     }
-    console.log('this.props', this.props)
-
     const PrintControl: any = withLeaflet(PrintControlDefault)
     const loadingstyle = {
       display: 'flex',
@@ -598,157 +591,8 @@ class SamplesMap extends React.Component<any> {
           {loadingSpinner}
           {mapControls}
         </Map>
-        <div
-          onClick={() => {
-            console.log('samplePoints', this.samplePoints)
-            console.log('siteAggregatedData', this.siteAggregatedData)
-            console.log('markers', this.props.markers)
-            console.log('abundance_matrix', this.props.abundance_matrix)
-          }}
-        >
-          Debug click
-        </div>
-        <div
-          onClick={() => {
-            // const sparseMatrix = this.getSparseMatrix(
-            //   this.props.abundance_matrix.matrix,
-            //   this.props.abundance_matrix.otu_ids
-            // )
-            // console.log('sparseMatrix', sparseMatrix)
-
-            const processedData = this.getJaccardDistanceMatrix(
-              this.props.abundance_matrix.matrix,
-              this.props.abundance_matrix.sample_ids
-            )
-            console.log('processedData', processedData)
-
-            const mds = this.classicMDS(processedData.matrix, 2)
-            console.log('mds', mds)
-
-            const positions = numeric.transpose(mds)
-            console.log('positions', positions)
-
-            const plotData = processedData.samples.map((s, i) => {
-              return { Sample: s, x: positions[0][i], y: positions[1][i] }
-            })
-            console.log('plotData', plotData)
-          }}
-        >
-          Abundance to Jaccard click
-        </div>
       </div>
     )
-  }
-
-  getSparseMatrix = (matrix, indices) => {
-    return matrix
-
-    // const data = matrix
-    // // const indices = indices // f.get('observation/matrix/indices').to_array()
-    // const indptr = f.get('observation/matrix/indptr').to_array()
-
-    // let indptrIdx = 0
-    // let numRows = indptr[indptrIdx + 1] - indptr[indptrIdx]
-    // const sparseMatrix = data.map((d, idx) => {
-    //   let res = [indptrIdx, indices[idx], d]
-    //   numRows--
-    //   if (numRows === 0) {
-    //     indptrIdx++
-    //     numRows = indptr[indptrIdx + 1] - indptr[indptrIdx]
-    //   }
-    //   return res
-    // })
-    // const idx = Number(sampleIndex)
-    // return !isNaN(idx) ? sparseMatrix.filter((row) => row[1] === idx) : sparseMatrix
-  }
-
-  // sparseToJaccardMatrix = (data) => {
-  //   const sampleIdsCol = data.map((d) => d[1])
-  //   const sampleIds = sampleIdsCol.sort().filter((el, i, a) => i === a.indexOf(el))
-
-  //   const maxSampleIndex = sampleIds.length - 1
-  //   const matrix = new Array(maxSampleIndex + 1).fill(0).map(() => [])
-
-  //   data.forEach((elm, idx) => {
-  //     const [taxonIdx, sampleId, abundance] = elm
-  //     const sampleIdx = sampleIds.indexOf(sampleId)
-  //     matrix[sampleIdx].push(taxonIdx)
-  //     // denseData[sampleIdx][taxonIdx] = abundance;
-  //   })
-
-  //   return matrix
-  // }
-
-  sparseToJaccardMatrix = (data) => {
-    const maxSampleIndex: number = _.max(data.map((d) => d[1]))
-    const matrix = new Array(maxSampleIndex + 1).fill(0).map(() => [])
-    data.forEach((elm, idx) => {
-      const [taxonIdx, sampleIdx, abundance] = elm
-      matrix[sampleIdx].push(taxonIdx)
-      // denseData[sampleIdx][taxonIdx] = abundance;
-    })
-    return matrix
-  }
-
-  getJaccardDistanceMatrix = (sparseMatrix, samples) => {
-    console.log('getJaccardDistanceMatrix')
-    // let samples = Object.keys(data)
-
-    // create a dataframe
-    const data = this.sparseToJaccardMatrix(sparseMatrix)
-    const matrix = [...data.map(() => new Array(data.length))]
-
-    for (let i = 0; i < data.length; i++) {
-      if (i % 100 === 0) {
-        console.log(`Processed ${i} records`)
-      }
-      const res = matrix[i]
-      res[i] = 0 // dist to self always 0
-      // const sample1 = samples[i]
-      for (let j = i + 1; j < data.length; j++) {
-        //   const sample2 = samples[j]
-        let idx = jaccard.index(data[i], data[j]) /* || 0 */ // * 10000;
-
-        res[j] = idx || 0
-        matrix[j][i] = idx || 0
-      }
-    }
-    return {
-      matrix,
-      samples,
-    }
-  }
-
-  /// given a matrix of distances between some points, returns the
-  /// point coordinates that best approximate the distances using
-  /// classic multidimensional scaling
-  classicMDS = (distances, dimensions) => {
-    dimensions = dimensions || 2
-
-    // square distances
-    var M = numeric.mul(-0.5, numeric.pow(distances, 2))
-
-    // double centre the rows/columns
-    function mean(A) {
-      return numeric.div(numeric.add.apply(null, A), A.length)
-    }
-    var rowMeans = mean(M),
-      colMeans = mean(numeric.transpose(M)),
-      totalMean = mean(rowMeans)
-
-    for (var i = 0; i < M.length; ++i) {
-      for (var j = 0; j < M[0].length; ++j) {
-        M[i][j] += totalMean - rowMeans[i] - colMeans[j]
-      }
-    }
-
-    // take the SVD of the double centred matrix, and return the
-    // points from it
-    var ret = numeric.svd(M),
-      eigenValues = numeric.sqrt(ret.S)
-    return ret.U.map(function (row) {
-      return numeric.mul(row, eigenValues).splice(0, dimensions)
-    })
   }
 
   public componentDidMount() {

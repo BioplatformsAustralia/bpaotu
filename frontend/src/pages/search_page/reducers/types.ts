@@ -51,8 +51,6 @@ export interface PageState {
     isLoading: boolean
     markers: SampleMarker[]
     sample_otus: any[]
-    abundance_matrix: any
-    contextual: any
   }
   samplesGraphModal: {
     isOpen: boolean
@@ -135,8 +133,6 @@ export const searchPageInitialState: PageState = {
     isLoading: false,
     markers: [],
     sample_otus: [],
-    abundance_matrix: {},
-    contextual: {},
   },
   samplesGraphModal: {
     isOpen: false,

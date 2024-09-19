@@ -581,7 +581,7 @@ class SampleQuery:
             q = apply_op_and_val_filter(getattr(OTUSampleOTU, taxonomy_attr), q, taxonomy)
         q = self._sample_integrity_warnings_filter.apply(q)
         q = self._contextual_filter.apply(q)
-        log_query(q)
+        # log_query(q)
         return q
 
     def _build_taxonomy_subquery(self):
