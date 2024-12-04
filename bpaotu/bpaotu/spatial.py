@@ -46,7 +46,7 @@ def _comparison_query(params):
         row_count = query.matching_sample_distance_matrix().count()
         print('row_count', row_count)
 
-        if row_count > 10000000:
+        if row_count > 2000000:
             return {
                 'error': 'Too many rows'
             }

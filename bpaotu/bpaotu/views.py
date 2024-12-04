@@ -766,6 +766,13 @@ def otu_search_sample_sites_comparison(request):
 
     abundance_matrix = comparison_query(params)
 
+    if "error" in abundance_matrix:
+        return JsonResponse({
+            'abundance_matrix': abundance_matrix,
+            'contextual': {}
+        })
+
+
     # otu_index, sample_index, count
     # [[4221, 0, 55], [12519, 0, 7], [5416, 0, 23], [9678, 0, 27],
 

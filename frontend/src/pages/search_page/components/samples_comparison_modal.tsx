@@ -195,6 +195,8 @@ const SamplesComparisonModal = (props) => {
     return transformedObject
   }
 
+  const tooManyRowsError = !!abundanceMatrix.error
+
   var plotDataTransformed
   if (isContinuous) {
     const plotDataRestructured = arrayifyData(plotData[selectedMethod])
@@ -391,6 +393,40 @@ const SamplesComparisonModal = (props) => {
     )
   }
 
+  const ErrorOverlay = () => {
+    const loadingstyle = {
+      display: 'flex',
+      height: '100%',
+      width: '100%',
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      background: 'rgba(0,0,0,0.4)',
+      zIndex: 99999,
+    } as React.CSSProperties
+
+    return (
+      <div style={loadingstyle}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{
+              display: 'inline-block',
+              textAlign: 'center',
+              margin: 12,
+              padding: 6,
+              background: 'white',
+              width: '100%',
+            }}
+          >
+            Too many rows in search space, please change the search parameters
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <Modal isOpen={isOpen} data-tut="reactour__SamplesComparison" id="reactour__SamplesComparison">
       <ModalHeader
@@ -401,6 +437,7 @@ const SamplesComparisonModal = (props) => {
         Interactive Sample Comparison Search
       </ModalHeader>
       <ModalBody>
+        {tooManyRowsError && <ErrorOverlay />}
         {isLoading && <LoadingSpinnerOverlay />}
         {isProcessing && <LoadingSpinnerOverlay />}
         <Container>
