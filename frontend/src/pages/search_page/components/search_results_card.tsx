@@ -181,6 +181,7 @@ const _MetagenomeSearchResultsCard = (props) => {
           <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
           <SearchResultsTable
             cell_func={(cell_props) => cell_button(cell_props, props.openMetagenomeModal)}
+            metagenome={true}
           />
         </CardBody>
       </Card>
