@@ -90,7 +90,9 @@ export class SearchResultsTable extends React.Component<any> {
       page: pageIndex,
     })
 
-    this.props.search()
+    if (this.props.results.pages > 0) {
+      this.props.search()
+    }
   }
 
   public onPageSizeChange(pageSize) {
@@ -99,7 +101,9 @@ export class SearchResultsTable extends React.Component<any> {
       pageSize,
     })
 
-    this.props.search()
+    if (this.props.results.pages > 0) {
+      this.props.search()
+    }
   }
 
   public onSortedChange(sorted) {
@@ -108,7 +112,9 @@ export class SearchResultsTable extends React.Component<any> {
       sorted,
     })
 
-    this.props.search()
+    if (this.props.results.pages > 0) {
+      this.props.search()
+    }
   }
 }
 
