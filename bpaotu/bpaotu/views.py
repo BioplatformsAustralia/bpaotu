@@ -49,6 +49,8 @@ from .spatial import spatial_query
 from .tabular import tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_time, parse_float
 
+from .sample_run_id_dict import sample_run_id_dict
+
 from mixpanel import Mixpanel
 
 logger = logging.getLogger("rainbow")
@@ -806,6 +808,7 @@ def otu_search(request, contextual_filtering=True):
     def map_result(row):
         d = dict(zip(all_headers, row))
         d['environment'] = get_environment(d['environment'])
+        d['run_id'] = sample_run_id_dict.get(d['sample_id'])
         return d
 
     return JsonResponse({
