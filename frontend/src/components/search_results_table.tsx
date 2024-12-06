@@ -48,15 +48,16 @@ export class SearchResultsTable extends React.Component<any> {
   public runIdColumn = {
     Header: () => (
       <div>
-        <a href={'https://github.com/wwood/singlem'} target="_blank" rel="noopener noreferrer">
-          SingleM
-        </a>{' '}
-        community profile{' '}
+        SingleM community profile{' '}
         <span id="singleMTipTab">
           <Octicon name="info" />
         </span>
         <UncontrolledTooltip target="singleMTipTab" autohide={false} placement="left">
-          Link to SingleM community profiles from shotgun metagenome datasets at{' '}
+          Link to{' '}
+          <a href={'https://github.com/wwood/singlem'} target="_blank" rel="noopener noreferrer">
+            SingleM
+          </a>{' '}
+          community profiles from shotgun metagenome datasets at{' '}
           <a href="https://sandpiper.qut.edu.au/" target="_blank" rel="noopener noreferrer">
             Sandpiper Database
           </a>

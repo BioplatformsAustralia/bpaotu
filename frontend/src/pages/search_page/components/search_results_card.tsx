@@ -13,6 +13,8 @@ import { clearTips, showPhinchTip } from '../reducers/tips'
 import { openMetagenomeModal, openMetagenomeModalSearch } from '../reducers/metagenome_modal'
 import { GalaxySubmission } from '../reducers/types'
 
+import { metaxaAmpliconStringMatch } from 'app/constants'
+
 import BlastModal from './blast_modal'
 import SamplesMapModal from './samples_map_modal'
 import SamplesGraphModal from './samples_graph_modal'
@@ -138,7 +140,7 @@ const _SearchResultsCard = (props) => {
         <CardBody>
           <AlertBoxes alerts={props.galaxy.alerts} clearAlerts={props.clearGalaxyAlert} />
           <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
-          <SearchResultsTable />
+          <SearchResultsTable metagenome={props.metaxaAmpliconSelected} />
         </CardBody>
       </Card>
 
@@ -195,10 +197,17 @@ const _MetagenomeSearchResultsCard = (props) => {
 }
 
 function mapStateToProps(state) {
+  const selectedAmpliconId = state.searchPage.filters.selectedAmplicon.value
+  const metaxaOption = state.referenceData.amplicons.values.find((x) =>
+    x.value.startsWith(metaxaAmpliconStringMatch)
+  )
+  const metaxaOptionId = !!metaxaOption ? metaxaOption.id : undefined
+
   return {
     ckanAuthToken: state.auth.ckanAuthToken,
     galaxy: state.searchPage.galaxy,
     tips: state.searchPage.tips,
+    metaxaAmpliconSelected: metaxaOptionId === selectedAmpliconId,
     describeSearch: () => describeSearch(state),
   }
 }
