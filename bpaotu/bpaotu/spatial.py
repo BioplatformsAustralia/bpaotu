@@ -6,6 +6,7 @@ from django.conf import settings
 import pandas as pd
 
 from sklearn.metrics import pairwise_distances
+from fastdist import fastdist
 
 from .query import (
     OntologyInfo,
@@ -38,18 +39,13 @@ def _comparison_query(params):
     with SampleQuery(params) as query:
         sample_id_selected = []
 
-        # Create a matrix with default values set to 0
-        matrix_data = []
-        otu_ids = set()
-        sample_ids = set()
+        # row_count = query.matching_sample_distance_matrix().count()
+        # print('row_count', row_count)
 
-        row_count = query.matching_sample_distance_matrix().count()
-        print('row_count', row_count)
-
-        if row_count > 2000000:
-            return {
-                'error': 'Too many rows'
-            }
+        # if row_count > 2000000:
+        #     return {
+        #         'error': 'Too many rows'
+        #     }
 
         # for row in query.matching_sample_distance_matrix().yield_per(1000):
         #     sample_id, otu_id, count = row
@@ -62,20 +58,29 @@ def _comparison_query(params):
         df = pd.DataFrame(results, columns=['sample_id', 'otu_id', 'abundance'])
         print('df.shape', df.shape)
 
-        abundance_matrix = df.pivot_table(index='otu_id', columns='sample_id', values='abundance', fill_value=0).to_numpy().T
-        print('abundance_matrix.shape', abundance_matrix.shape)
+        df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])  # Both columns in ascending order
+        print('df.shape', df.shape)
 
-        matrix_jaccard = pairwise_distances(abundance_matrix, metric='jaccard')
-        matrix_braycurtis = pairwise_distances(abundance_matrix, metric='braycurtis')
+        rectangular_df = df.pivot(index='sample_id', columns='otu_id', values='abundance').fillna(0)
+        print('rectangular_df.shape', rectangular_df.shape)
+
+        dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
+        dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
+
+        # abundance_matrix = df.pivot_table(index='otu_id', columns='sample_id', values='abundance', fill_value=0).to_numpy().T
+        # print('abundance_matrix.shape', abundance_matrix.shape)
 
         sample_ids = df['sample_id'].unique().tolist()
         otu_ids = df['otu_id'].unique().tolist()
 
+        print('sample_ids: ', len(sample_ids))
+        print('otu_ids: ', len(otu_ids))
+
         abundance_matrix = {
             'sample_ids': sample_ids,
             'otu_ids': otu_ids,
-            'matrix_jaccard': matrix_jaccard,
-            'matrix_braycurtis': matrix_braycurtis,
+            'matrix_jaccard': dist_matrix_jaccard,
+            'matrix_braycurtis': dist_matrix_braycurtis,
         }
 
         return abundance_matrix

@@ -764,6 +764,7 @@ def otu_search_sample_sites_comparison(request):
             'sample_otus': []
         })
 
+    print(time.ctime(), 'start abundance_matrix')
     abundance_matrix = comparison_query(params)
 
     if "error" in abundance_matrix:
@@ -772,59 +773,74 @@ def otu_search_sample_sites_comparison(request):
             'contextual': {}
         })
 
+    #compute MDS
+    #dist_matrix_df
+    #dist_matrix
 
-    # otu_index, sample_index, count
-    # [[4221, 0, 55], [12519, 0, 7], [5416, 0, 23], [9678, 0, 27],
+    dist_matrix_braycurtis = abundance_matrix['matrix_braycurtis']
+    dist_matrix_jaccard = abundance_matrix['matrix_jaccard']
 
-    def classicMDS(distances, dimensions=2):
-        # Square distances
-        M = -0.5 * np.power(distances, 2)
+    def new_mds(dist_matrix):
+        RANDOMSEED = np.random.RandomState(seed=2)
 
-        # Double centre the rows/columns
-        rowMeans = np.mean(M, axis=1)
-        colMeans = np.mean(M, axis=0)
-        totalMean = np.mean(rowMeans)
+        mds = MDS(n_components=2, max_iter=1000, random_state=RANDOMSEED, dissimilarity="precomputed")
+        mds_result = mds.fit_transform(dist_matrix)
+        MDS_x_scores = mds_result[:,0]
+        MDS_y_scores = mds_result[:,1]
 
-        for i in range(M.shape[0]):
-            for j in range(M.shape[1]):
-                M[i][j] += totalMean - rowMeans[i] - colMeans[j]
+        # calculate the normalized stress from sklearn stress
+        # (https://stackoverflow.com/questions/36428205/stress-attribute-sklearn-manifold-mds-python)
+        stress_norm_MDS = np.sqrt(mds.stress_ / (0.5 * np.sum(dist_matrix**2)))
 
-        # Take the SVD of the double centred matrix
-        U, S, VT = np.linalg.svd(M)
+        # compute NMDS  ***inititial the start position of the nmds as the mds solution!!!!
+        # dissimilarities = pairwise_distances(df.drop('class', axis=1), metric='euclidean')
+        nmds = MDS(n_components=2, metric=False, max_iter=1000, dissimilarity="precomputed")
+        nmds_result = nmds.fit_transform(dist_matrix, init=mds_result)
+        NMDS_x_scores = nmds_result[:,0]
+        NMDS_y_scores = nmds_result[:,1]
 
-        # Compute the eigenvalues
-        eigenValues = np.sqrt(S)
+        # calculate the normalized stress from sklearn stress
+        stress_norm_NMDS = np.sqrt(nmds.stress_ / (0.5 * np.sum(dist_matrix**2)))
 
-        # Return the points from the SVD
-        return (U[:, :dimensions] * eigenValues[:dimensions]).tolist()
+        return {
+            'MDS_x_scores': MDS_x_scores,
+            'MDS_y_scores': MDS_y_scores,
+            'NMDS_x_scores': NMDS_x_scores,
+            'NMDS_y_scores': NMDS_y_scores,
+            'stress_norm_MDS': stress_norm_MDS,
+            'stress_norm_NMDS': stress_norm_NMDS,
+        }
 
+    print(time.ctime(), 'start braycurtis MDS')
+    results_braycurtis = new_mds(dist_matrix_braycurtis)
+    pairs_braycurtis_MDS = list(zip(results_braycurtis['MDS_x_scores'], results_braycurtis['MDS_y_scores']))
+    pairs_braycurtis_NMDS = list(zip(results_braycurtis['NMDS_x_scores'], results_braycurtis['NMDS_y_scores']))
+    stress_norm_braycurtis_MDS = results_braycurtis['stress_MDS']
+    stress_norm_braycurtis_NMDS = results_braycurtis['stress_NMDS']
 
-    print('len(abundance_matrix)', len(abundance_matrix))
-    # print("abundance_matrix['matrix_jaccard']", abundance_matrix['matrix_jaccard'])
+    print(time.ctime(), 'start jaccard MDS')
+    results_jaccard = new_mds(dist_matrix_jaccard)
+    pairs_jaccard_MDS = list(zip(results_jaccard['MDS_x_scores'], results_jaccard['MDS_y_scores']))
+    pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
+    stress_norm_jaccard_MDS = results_jaccard['stress_MDS']
+    stress_norm_jaccard_NMDS = results_jaccard['stress_NMDS']
 
-    MDS_plots = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
-    
-    result_jaccard_1 = classicMDS(abundance_matrix['matrix_jaccard'])
-    print("len(result_jaccard_1)", len(result_jaccard_1))
-
-    # result_jaccard_2 = MDS_plots.fit_transform(abundance_matrix['matrix_jaccard']).tolist()
-    # print("len(result_jaccard_2)", len(result_jaccard_2))
-
-    # result_braycurtis = MDS_plots.fit_transform(abundance_matrix['matrix_braycurtis']).tolist()
-    result_braycurtis = classicMDS(abundance_matrix['matrix_braycurtis'])
-    print("len(result_braycurtis)", len(result_braycurtis))
-
-    abundance_matrix['points'] = {}
-    abundance_matrix['points']['jaccard'] = result_jaccard_1
-    abundance_matrix['points']['braycurtis'] = result_braycurtis
-
-    print('abundance_matrix MDS finished')
+    abundance_matrix['points'] = {
+        'braycurtis': pairs_braycurtis_MDS,
+        'braycurtis_NMDS': pairs_braycurtis_NMDS,
+        'stress_norm_braycurtis_MDS': stress_norm_braycurtis_MDS,
+        'stress_norm_braycurtis_NMDS': stress_norm_braycurtis_NMDS,
+        'jaccard': pairs_jaccard_MDS,
+        'jaccard_NMDS': pairs_jaccard_NMDS,
+        'stress_norm_jaccard_MDS': stress_norm_jaccard_MDS,
+        'stress_norm_jaccard_NMDS': stress_norm_jaccard_NMDS,
+    }
 
     sample_results = {}
 
     contextual_filtering = True
     additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
-    all_headers = ['id', 'am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
+    all_headers = ['id', 'am_environment_id', 'vegetation_type_id', 'imos_site_code', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
                    'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
                    'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
     all_headers_unique = list(set(all_headers))

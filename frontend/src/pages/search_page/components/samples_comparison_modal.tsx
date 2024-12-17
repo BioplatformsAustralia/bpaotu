@@ -91,20 +91,23 @@ const SamplesComparisonModal = (props) => {
     contextualFilters,
   } = props
 
-  const isContinuous = selectedFilter != '' && !selectedFilter.endsWith('_id')
+  const discreteFields = ['imos_site_code']
+  const isContinuous =
+    selectedFilter != '' &&
+    !selectedFilter.endsWith('_id') &&
+    !discreteFields.includes(selectedFilter)
 
   console.log('SamplesComparisonModal', 'props', props)
   console.log('SamplesComparisonModal', 'plotData', plotData)
   console.log('SamplesComparisonModal', 'plotData[selectedMethod]', plotData[selectedMethod])
+  console.log('SamplesComparisonModal', 'isContinuous', isContinuous)
+
+  const findContextualFilter = contextualFilters.find((x) => x.name === selectedFilter)
+  console.log('SamplesComparisonModal', 'findContextualFilter', findContextualFilter)
 
   const transformPlotData = (data, contextualFilters) => {
     // exclude null values (or maybe make size tiny?)
     const groupValues = Object.keys(data).filter((x) => x !== 'null')
-
-    // is the selectedFilter discrete or continuous?
-    const size = groupValues.map((key) => {
-      return parseFloat(key)
-    })
 
     const transformedData = groupValues.map((key) => {
       const keyData = data[key]
@@ -125,27 +128,43 @@ const SamplesComparisonModal = (props) => {
       })
 
       const desired_maximum_marker_size = 40
-
-      var marker = {}
-      if (isContinuous) {
-        marker = {
-          color: '#abcdef', // make all same colour
-          size: size,
-          sizemode: 'area',
-          sizeref: (2.0 * Math.max(...size)) / desired_maximum_marker_size ** 2,
-        }
-      }
-
       const findFilter = contextualFilters.find((x) => x.name === selectedFilter)
+
+      var marker = {
+        size: 20,
+      }
+      const isString = findFilter && findFilter.type === 'string'
+      const isOntology = findFilter && findFilter.type === 'ontology'
+
       let name
-      if (findFilter) {
-        const entry = findFilter.values.find((x) => parseInt(x[0]) === parseInt(key))
-        name = entry[1]
-        if (name === '') {
-          name = 'N/A'
-        }
-      } else {
+      if (isString) {
+        console.log('inside isString')
+        console.log('groupValues', groupValues)
+        console.log('key', key)
+
         name = key
+
+        // // is the selectedFilter free text?
+        // const size = groupValues.map((key) => {
+        //   return parseFloat(key)
+        // })
+
+        // marker = {
+        // color: '#abcdef', // make all same colour
+        // size: size,
+        // sizemode: 'area',
+        // sizeref: (2.0 * Math.max(...size)) / desired_maximum_marker_size ** 2,
+        // }
+      } else if (isOntology) {
+        if (findFilter) {
+          const entry = findFilter.values.find((x) => parseInt(x[0]) === parseInt(key))
+          name = entry[1]
+          if (name === '') {
+            name = 'N/A'
+          }
+        } else {
+          name = key
+        }
       }
 
       return {
@@ -160,6 +179,7 @@ const SamplesComparisonModal = (props) => {
     return transformedData
   }
 
+  //
   const arrayifyData = (data) => {
     const propsToKeep = ['x', 'y', 'text']
     const transformedObject = {}
@@ -238,7 +258,7 @@ const SamplesComparisonModal = (props) => {
 
     // // TODO use better way that includes groups with no entries for categories
     // const plotGroups = Object.keys(plotDataGrouped)
-    // console.log('SamplesComparisonModal', 'plotGroups', plotGroups)
+    console.log('SamplesComparisonModal', 'plotDataGrouped', plotDataGrouped)
 
     // TODO sub in values from contextualFilters lookups
 
@@ -246,6 +266,7 @@ const SamplesComparisonModal = (props) => {
   }
 
   console.log('SamplesComparisonModal', 'plotDataTransformed', plotDataTransformed)
+
   console.log('SamplesComparisonModal', 'contextual', contextual)
 
   const filterOptionKeys =
@@ -496,6 +517,26 @@ const SamplesComparisonModal = (props) => {
               height: chartHeight,
               title: 'MDS Plot',
               legend: { orientation: 'h' },
+              xaxis: {
+                tickmode: 'linear',
+                tick0: 0,
+                dtick: 0.2,
+                // nticks: 10,
+                // domain: [0, 0.45],
+                title: {
+                  // text: 'shared X axis',
+                },
+              },
+              yaxis: {
+                scaleanchor: 'x',
+                tickmode: 'linear',
+                tick0: 0,
+                dtick: 0.2,
+                // domain: [0, 0.45],
+                title: {
+                  // text: '1:1',
+                },
+              },
             }}
             config={{ displayLogo: false, scrollZoom: false }}
           />
