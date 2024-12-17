@@ -552,6 +552,8 @@ class SampleQuery:
 
         q = self.apply_sample_otu_filters(q)
 
+        q = q.order_by(SampleOTU.sample_id, SampleOTU.otu_id)
+
         log_query(q)
         return q
 
