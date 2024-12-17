@@ -127,11 +127,15 @@ const SamplesComparisonModal = (props) => {
         })
       })
 
+      // Jitter
+      // transformedKeyData['x'] = transformedKeyData['x'] + (Math.random() * 2 - 1) / 10
+      // transformedKeyData['y'] = transformedKeyData['y'] + (Math.random() * 2 - 1) / 10
+
       const desired_maximum_marker_size = 40
       const findFilter = contextualFilters.find((x) => x.name === selectedFilter)
 
       var marker = {
-        size: 20,
+        size: 12,
       }
       const isString = findFilter && findFilter.type === 'string'
       const isOntology = findFilter && findFilter.type === 'ontology'
@@ -199,11 +203,14 @@ const SamplesComparisonModal = (props) => {
       propsToLoop.forEach((key) => {
         var val = obj[key]
 
-        // add the value to text if a filter is selected
-        // TODO make this look better
-        if (key === 'text' && selectedFilter != '') {
-          val = `${obj[selectedFilter]} (Sample ID: ${val})`
-        }
+        // // add the value to text if a filter is selected
+        // // TODO make this look better
+        // if (key === 'text' && selectedFilter != '') {
+        //   val = `${obj[selectedFilter]} (Sample ID: ${val})`
+        // }
+        // if (key === 'text') {
+        //   val = `${obj[selectedFilter]} (Sample ID: ${val})`
+        // }
 
         if (!transformedObject[key]) {
           transformedObject[key] = []
@@ -448,6 +455,47 @@ const SamplesComparisonModal = (props) => {
     )
   }
 
+  // apply a jitter so that points aren't put on the same place (makes graph misleading)
+  // need to put the original value in the tooltip though
+  const jitterAmount = 0.005
+  const plotDataTransformedJitter = plotDataTransformed.map((z) => {
+    const xj = z.x.map((value) => value + (Math.random() * 2 - 1) * jitterAmount)
+    const yj = z.y.map((value) => value + (Math.random() * 2 - 1) * jitterAmount)
+
+    return {
+      ...z,
+      // Use jittered x, y values for plotting
+      x: xj,
+      y: yj,
+      // Attach original x and y to custom data
+      customdata: z.x.map((xi, i) => {
+        const point = {
+          x: xi.toPrecision(7),
+          y: z.y[i].toPrecision(7),
+          xj: xj[i],
+          yj: yj[i],
+          text: z.text[i], // Sample ID:
+        }
+
+        // if (z.name) {
+        //   point['name'] = z.name
+        // }
+        if (selectedFilter != '') {
+          if (z.name) {
+            point['value'] = z.name
+          } else {
+            // continuous
+            point['value'] = z[selectedFilter][i]
+          }
+        }
+
+        return point
+      }),
+      hovertemplate:
+        '(%{customdata.x}, %{customdata.y})<br />Sample ID: %{customdata.text}<br />Value: %{customdata.value}<extra></extra>',
+    }
+  })
+
   return (
     <Modal isOpen={isOpen} data-tut="reactour__SamplesComparison" id="reactour__SamplesComparison">
       <ModalHeader
@@ -507,7 +555,7 @@ const SamplesComparisonModal = (props) => {
         </Container>
         <Container>
           <Plot
-            data={plotDataTransformed}
+            data={plotDataTransformedJitter}
             onClick={(e) => {
               const { points } = e
               // handlePointClick(points)
@@ -521,21 +569,14 @@ const SamplesComparisonModal = (props) => {
                 tickmode: 'linear',
                 tick0: 0,
                 dtick: 0.2,
-                // nticks: 10,
-                // domain: [0, 0.45],
-                title: {
-                  // text: 'shared X axis',
-                },
+                // range: [-1, 1],
               },
               yaxis: {
                 scaleanchor: 'x',
                 tickmode: 'linear',
                 tick0: 0,
                 dtick: 0.2,
-                // domain: [0, 0.45],
-                title: {
-                  // text: '1:1',
-                },
+                // range: [-1, 1],
               },
             }}
             config={{ displayLogo: false, scrollZoom: false }}

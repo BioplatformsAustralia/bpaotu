@@ -815,15 +815,15 @@ def otu_search_sample_sites_comparison(request):
     results_braycurtis = new_mds(dist_matrix_braycurtis)
     pairs_braycurtis_MDS = list(zip(results_braycurtis['MDS_x_scores'], results_braycurtis['MDS_y_scores']))
     pairs_braycurtis_NMDS = list(zip(results_braycurtis['NMDS_x_scores'], results_braycurtis['NMDS_y_scores']))
-    stress_norm_braycurtis_MDS = results_braycurtis['stress_MDS']
-    stress_norm_braycurtis_NMDS = results_braycurtis['stress_NMDS']
+    stress_norm_braycurtis_MDS = results_braycurtis['stress_norm_MDS']
+    stress_norm_braycurtis_NMDS = results_braycurtis['stress_norm_NMDS']
 
     print(time.ctime(), 'start jaccard MDS')
     results_jaccard = new_mds(dist_matrix_jaccard)
     pairs_jaccard_MDS = list(zip(results_jaccard['MDS_x_scores'], results_jaccard['MDS_y_scores']))
     pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
-    stress_norm_jaccard_MDS = results_jaccard['stress_MDS']
-    stress_norm_jaccard_NMDS = results_jaccard['stress_NMDS']
+    stress_norm_jaccard_MDS = results_jaccard['stress_norm_MDS']
+    stress_norm_jaccard_NMDS = results_jaccard['stress_norm_NMDS']
 
     abundance_matrix['points'] = {
         'braycurtis': pairs_braycurtis_MDS,
