@@ -48,7 +48,7 @@ export class SearchResultsTable extends React.Component<any> {
   public runIdColumn = {
     Header: () => (
       <div>
-        SingleM community profile{' '}
+        Sandpiper community profile{' '}
         <span id="singleMTipTab">
           <Octicon name="info" />
         </span>
@@ -57,7 +57,7 @@ export class SearchResultsTable extends React.Component<any> {
           <a href={'https://github.com/wwood/singlem'} target="_blank" rel="noopener noreferrer">
             SingleM
           </a>{' '}
-          community profiles from shotgun metagenome datasets at{' '}
+          community profiles from shotgun metagenome datasets at the{' '}
           <a href="https://sandpiper.qut.edu.au/" target="_blank" rel="noopener noreferrer">
             Sandpiper Database
           </a>
