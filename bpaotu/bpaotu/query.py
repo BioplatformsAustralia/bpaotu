@@ -462,7 +462,7 @@ class SampleQuery:
 
         q = self.apply_sample_otu_filters(q)
 
-        # log_query(q)
+        log_query(q)
         return q
 
     def matching_otus(self, otu_ids):
@@ -471,7 +471,7 @@ class SampleQuery:
                 .join(Sequence, Sequence.id == OTU.id)\
                 .filter(OTU.id.in_(otu_ids))
 
-        # log_query(q)
+        log_query(q)
         return q
 
     def otu_export(self):
@@ -514,7 +514,7 @@ class SampleQuery:
 
         q = self.apply_sample_otu_filters(q)
 
-        # log_query(q)
+        log_query(q)
         return q
 
     def matching_sample_otus_blast(self, otu_ids):

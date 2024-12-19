@@ -773,16 +773,13 @@ def otu_search_sample_sites_comparison(request):
             'contextual': {}
         })
 
-    #compute MDS
-    #dist_matrix_df
-    #dist_matrix
-
     dist_matrix_braycurtis = abundance_matrix['matrix_braycurtis']
     dist_matrix_jaccard = abundance_matrix['matrix_jaccard']
 
-    def new_mds(dist_matrix):
+    def mds_results(dist_matrix):
         RANDOMSEED = np.random.RandomState(seed=2)
 
+        print(time.ctime(), '  MDS')
         mds = MDS(n_components=2, max_iter=1000, random_state=RANDOMSEED, dissimilarity="precomputed")
         mds_result = mds.fit_transform(dist_matrix)
         MDS_x_scores = mds_result[:,0]
@@ -791,6 +788,8 @@ def otu_search_sample_sites_comparison(request):
         # calculate the normalized stress from sklearn stress
         # (https://stackoverflow.com/questions/36428205/stress-attribute-sklearn-manifold-mds-python)
         stress_norm_MDS = np.sqrt(mds.stress_ / (0.5 * np.sum(dist_matrix**2)))
+
+        print(time.ctime(), '  NMDS')
 
         # compute NMDS  ***inititial the start position of the nmds as the mds solution!!!!
         # dissimilarities = pairwise_distances(df.drop('class', axis=1), metric='euclidean')
@@ -812,14 +811,14 @@ def otu_search_sample_sites_comparison(request):
         }
 
     print(time.ctime(), 'start braycurtis MDS')
-    results_braycurtis = new_mds(dist_matrix_braycurtis)
+    results_braycurtis = mds_results(dist_matrix_braycurtis)
     pairs_braycurtis_MDS = list(zip(results_braycurtis['MDS_x_scores'], results_braycurtis['MDS_y_scores']))
     pairs_braycurtis_NMDS = list(zip(results_braycurtis['NMDS_x_scores'], results_braycurtis['NMDS_y_scores']))
     stress_norm_braycurtis_MDS = results_braycurtis['stress_norm_MDS']
     stress_norm_braycurtis_NMDS = results_braycurtis['stress_norm_NMDS']
 
     print(time.ctime(), 'start jaccard MDS')
-    results_jaccard = new_mds(dist_matrix_jaccard)
+    results_jaccard = mds_results(dist_matrix_jaccard)
     pairs_jaccard_MDS = list(zip(results_jaccard['MDS_x_scores'], results_jaccard['MDS_y_scores']))
     pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
     stress_norm_jaccard_MDS = results_jaccard['stress_norm_MDS']

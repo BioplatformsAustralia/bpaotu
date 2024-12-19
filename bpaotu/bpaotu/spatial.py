@@ -7,6 +7,7 @@ import pandas as pd
 
 from sklearn.metrics import pairwise_distances
 from fastdist import fastdist
+import time
 
 from .query import (
     OntologyInfo,
@@ -47,28 +48,26 @@ def _comparison_query(params):
         #         'error': 'Too many rows'
         #     }
 
-        # for row in query.matching_sample_distance_matrix().yield_per(1000):
-        #     sample_id, otu_id, count = row
-        #     sample_ids.add(sample_id)
-        #     otu_ids.add(otu_id)
-        #     matrix_data.append([sample_id, otu_id, count])
-
         results = query.matching_sample_distance_matrix().all()
 
         df = pd.DataFrame(results, columns=['sample_id', 'otu_id', 'abundance'])
         print('df.shape', df.shape)
 
-        df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])  # Both columns in ascending order
+        df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
         print('df.shape', df.shape)
 
         rectangular_df = df.pivot(index='sample_id', columns='otu_id', values='abundance').fillna(0)
         print('rectangular_df.shape', rectangular_df.shape)
 
+        print(time.ctime(), 'start jaccard matrix_pairwise_distance')
         dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
+
+        print(time.ctime(), 'start braycurtis matrix_pairwise_distance')
         dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
 
-        # abundance_matrix = df.pivot_table(index='otu_id', columns='sample_id', values='abundance', fill_value=0).to_numpy().T
-        # print('abundance_matrix.shape', abundance_matrix.shape)
+        print(time.ctime(), 'matrix_pairwise_distance done')
+        print('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape)
+        print('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape)
 
         sample_ids = df['sample_id'].unique().tolist()
         otu_ids = df['otu_id'].unique().tolist()
