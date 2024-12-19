@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import {
@@ -52,82 +52,75 @@ const TaxonomySourceInfo =
   'wang=rdp_bayesian. Further information on taxonomy assignment can be found ' +
   'at: https://github.com/AusMicrobiome/amplicon/tree/master/docs'
 
-class TaxonomyFilterCard extends React.Component<any> {
-  prevAmplicon = { ...EmptyOperatorAndValue }
+const TaxonomyFilterCard = (props) => {
+  const prevAmplicon = useRef({ ...EmptyOperatorAndValue })
 
-  constructor(props) {
-    super(props)
-    this.clearFilters = this.clearFilters.bind(this)
-  }
+  useEffect(() => {
+    prevAmplicon.current = { ...EmptyOperatorAndValue }
+    props.setMetagenomeMode(props.metagenomeMode)
+    props.clearSearchResults()
+    props.fetchReferenceData()
+  }, [])
 
-  componentDidMount() {
-    this.prevAmplicon = { ...EmptyOperatorAndValue }
-    this.props.setMetagenomeMode(this.props.metagenomeMode)
-    this.props.clearSearchResults()
-    this.props.fetchReferenceData()
-  }
-
-  componentDidUpdate() {
-    // (re)fetch taxonomy and traits when the amplicon selection becomes available or changes
+  // (re)fetch taxonomy and traits when the amplicon selection becomes available or changes
+  useEffect(() => {
     if (
-      this.props.amplicons.values.length > 0 &&
-      this.props.selectedAmplicon.value !== '' &&
-      (this.prevAmplicon.value !== this.props.selectedAmplicon.value ||
-        this.prevAmplicon.operator !== this.props.selectedAmplicon.operator)
+      props.amplicons.values.length > 0 &&
+      props.selectedAmplicon.value !== '' &&
+      (prevAmplicon.current.value !== props.selectedAmplicon.value ||
+        prevAmplicon.current.operator !== props.selectedAmplicon.operator)
     ) {
-      this.prevAmplicon = { ...this.props.selectedAmplicon }
-      this.props.fetchTraits()
-      this.props.selectTrait('')
-      this.props.updateTaxonomy()
+      prevAmplicon.current = { ...props.selectedAmplicon }
+      props.fetchTraits()
+      props.selectTrait('')
+      props.updateTaxonomy()
     }
+  }, [props.selectedAmplicon, props.amplicons.values])
+
+  const clearFilters = () => {
+    props.clearAllTaxonomyFilters()
+    prevAmplicon.current = { ...EmptyOperatorAndValue }
   }
 
-  public render() {
-    return (
-      <Card>
-        <CardHeader tag="h5">Filter by amplicon, taxonomy and traits</CardHeader>
-        <CardBody className="filters">
-          <AmpliconFilter info={AmpliconFilterInfo} metagenomeMode={this.props.metagenomeMode} />
-          <hr />
-          <h5 className="text-center">
-            Taxonomy{' '}
-            <span id="taxonomyTip1">
-              <Octicon name="info" />
-            </span>
-          </h5>
-          <UncontrolledTooltip target="taxonomyTip1" placement="auto">
-            {TaxonomyFilterInfo}
-          </UncontrolledTooltip>
-          <Row>
-            <Col>
-              <p className="text-center">{TaxonomyNoAmpliconInfo}</p>
-            </Col>
-          </Row>
-          {this.props.selectedAmplicon.value !== '' && (
-            <>
-              <TaxonomySelector
-                info={TaxonomySourceInfo}
-                placeholder="Select database and method&hellip;"
-              />
-              {TaxonomyDropDowns}
-              <hr />
-              <TraitFilter info={TraitFilterInfo} />
-            </>
-          )}
-        </CardBody>
-        <CardFooter className="text-center">
-          <Button color="warning" onClick={this.clearFilters}>
-            Clear
-          </Button>
-        </CardFooter>
-      </Card>
-    )
-  }
-
-  public clearFilters() {
-    this.props.clearAllTaxonomyFilters()
-    this.prevAmplicon = { ...EmptyOperatorAndValue }
-  }
+  return (
+    <Card>
+      <CardHeader tag="h5">Filter by amplicon, taxonomy and traits</CardHeader>
+      <CardBody className="filters">
+        <AmpliconFilter info={AmpliconFilterInfo} metagenomeMode={props.metagenomeMode} />
+        <hr />
+        <h5 className="text-center">
+          Taxonomy{' '}
+          <span id="taxonomyTip1">
+            <Octicon name="info" />
+          </span>
+        </h5>
+        <UncontrolledTooltip target="taxonomyTip1" placement="auto">
+          {TaxonomyFilterInfo}
+        </UncontrolledTooltip>
+        <Row>
+          <Col>
+            <p className="text-center">{TaxonomyNoAmpliconInfo}</p>
+          </Col>
+        </Row>
+        {props.selectedAmplicon.value !== '' && (
+          <>
+            <TaxonomySelector
+              info={TaxonomySourceInfo}
+              placeholder="Select database and method&hellip;"
+            />
+            {TaxonomyDropDowns}
+            <hr />
+            <TraitFilter info={TraitFilterInfo} />
+          </>
+        )}
+      </CardBody>
+      <CardFooter className="text-center">
+        <Button color="warning" onClick={clearFilters}>
+          Clear
+        </Button>
+      </CardFooter>
+    </Card>
+  )
 }
 
 function mapStateToProps(state, ownProps) {
@@ -138,7 +131,7 @@ function mapStateToProps(state, ownProps) {
   }
 }
 
-function mapDispatchToProps(dispatch: any) {
+function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
       fetchReferenceData,
