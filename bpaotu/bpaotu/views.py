@@ -164,6 +164,7 @@ def api_config(request):
         'contextual_endpoint': reverse('contextual_fields'),
         'contextual_graph_endpoint': reverse('contextual_graph_fields'),
         'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),
+        'taxonomy_search_endpoint': reverse('taxonomy_search'),
         'search_endpoint': reverse('otu_search'),
         'export_endpoint': reverse('otu_export'),
         'export_biom_endpoint': reverse('otu_biom_export'),
@@ -559,6 +560,31 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
             "traits_am_environment_non_selected": traits_am_environment_results_non_selected
         }
     })
+
+
+@require_CKAN_auth
+@require_GET
+def taxonomy_search(request):
+    """
+    private API: given taxonomy constraints, return the possible options
+    """
+
+    # TODO validate no string
+
+    with TaxonomyOptions() as options:
+        taxonomy_search_string = json.loads(request.GET['taxonomy_search_string']),
+        results = options.search(taxonomy_search_string[0]) # because result is a tuple
+        serialized_results = [serialize_taxa_search_result(result) for result in results]
+
+    return JsonResponse({
+        'results': serialized_results,
+    })
+
+
+def serialize_taxa_search_result(result):
+    return {
+        'taxonomy': result[0].to_dict(),
+    }
 
 def _parse_contextual_term(filter_spec):
     field_name = filter_spec['field']

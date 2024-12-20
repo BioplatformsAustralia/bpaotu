@@ -69,6 +69,8 @@ export function getTaxonomyDataForGraph(filters, options) {
 
 export function getTaxonomy(selectedAmplicon = { value: '' }, selectedTaxonomies, selectedTrait) {
   const taxonomies = completeArray(selectedTaxonomies, taxonomy_keys.length, { value: '' })
+  console.log('getTaxonomy', 'selectedTaxonomies', selectedTaxonomies)
+  console.log('getTaxonomy', 'taxonomies', taxonomies)
 
   return axios.get(window.otu_search_config.taxonomy_endpoint, {
     params: {
@@ -173,6 +175,25 @@ export const executeMetagenomeSearch = partial(
   executeOtuSearch,
   join([window.otu_search_config.base_url, 'private/metagenome-search'], '/')
 )
+
+export const executeTaxonomySearch = (searchString) => {
+  // const formData = new FormData()
+  // formData.append('taxonomy_search_string', JSON.stringify(searchString))
+  // return axios({
+  //   method: 'post',
+  //   url: window.otu_search_config.taxonomy_search_endpoint,
+  //   data: formData,
+  //   headers: {
+  //     'Content-Type': 'multipart/form-data',
+  //   },
+  // })
+
+  return axios.get(window.otu_search_config.taxonomy_search_endpoint, {
+    params: {
+      taxonomy_search_string: JSON.stringify(searchString),
+    },
+  })
+}
 
 export function executeSubmitToGalaxy(filters) {
   const formData = new FormData()

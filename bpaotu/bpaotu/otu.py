@@ -143,8 +143,54 @@ class Taxonomy(SchemaMixin, Base):
         return "<Taxonomy(%d: amp. %d %s,%s)>" % (
             self.id,
             self.amplicon_id,
-            ','.join(getattr(self, a) for a in taxonomy_key_id_names),
+            ','.join(str(getattr(self, a)) for a in taxonomy_key_id_names),
             self.traits)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'amplicon': {
+                'id': self.amplicon_id,
+                'value': self.amplicon.value,
+            },
+            'taxonomy_source': {
+                'id': self.taxonomy_source_id,
+                'value': self.taxonomy_source.value,
+            },
+            'r1': {
+                'id': self.r1_id,
+                'value': self.r1.value,
+            },
+            'r2': {
+                'id': self.r2_id,
+                'value': self.r2.value,
+            },
+            'r3': {
+                'id': self.r3_id,
+                'value': self.r3.value,
+            },
+            'r4': {
+                'id': self.r4_id,
+                'value': self.r4.value,
+            },
+            'r5': {
+                'id': self.r5_id,
+                'value': self.r5.value,
+            },
+            'r6': {
+                'id': self.r6_id,
+                'value': self.r6.value,
+            },
+            'r7': {
+                'id': self.r7_id,
+                'value': self.r7.value,
+            },
+            'r8': {
+                'id': self.r8_id,
+                'value': self.r8.value,
+            },
+        }
+
 
     @classmethod
     def _add_taxonomy_attrs(cls):

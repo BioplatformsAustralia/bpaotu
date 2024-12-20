@@ -189,6 +189,73 @@ class TaxonomyOptions:
     def __exit__(self, exec_type, exc_value, traceback):
         self._session.close()
 
+    def search(self, search_string):
+        # search for the search in each ontology class
+        # and return all taxonomies where
+
+        results = []
+        taxonomy_ids = []
+
+        for (OntologyClass) in taxonomy_ontology_classes[1:]:
+            q1 = (
+                self._session
+                    .query(OntologyClass.id)
+                    .filter(OntologyClass.value.like(f"%{search_string}%"))
+            )
+            # log_query(q1)
+
+            ids = [result[0] for result in q1.all()]
+            print(OntologyClass, 'ids', ids)
+
+            q2 = (
+                self._session
+                    .query(Taxonomy.id, OntologyClass.id, OntologyClass.value)
+                    .join(OntologyClass)
+                    .filter(OntologyClass.id.in_(ids))
+            )
+
+            # find the highest independent order (i.e. to prevent duplicates)
+
+            taxonomy_ids.extend([result[0] for result in q2.all()])
+            taxonomies = [result for result in q2.all()]
+
+            print(taxonomies)
+
+            results.extend(taxonomy_ids)
+
+        import time
+        time.sleep(0.2)
+
+        if taxonomy_ids:
+            order_by_fields = [Taxonomy.amplicon_id] + [cls.id for cls in taxonomy_ontology_classes]
+
+            qtax = (
+                self._session
+                    .query(Taxonomy, *taxonomy_ontology_classes)
+                    .join(*taxonomy_ontology_classes)
+                    .filter(Taxonomy.id.in_(taxonomy_ids))
+                    .order_by(*order_by_fields)
+            )
+            log_query(qtax)
+
+            taxonomy_records = [result for result in qtax.all()]
+            taxonomy_records_lcd = [result[0] for result in qtax.all()]
+
+            print('taxonomy_records')
+            print(taxonomy_records)
+
+            print('taxonomy_records_lcd')
+            print(taxonomy_records_lcd)
+
+            results = taxonomy_records
+
+            # for tr in taxonomy_records:
+            #     print(type(tr))
+            #     print(tr)
+            #     # results.extend(tr)
+
+        return results
+
     def possibilities(self, taxonomy_filter, force_cache=False):
         cache = caches['search_results']
         key = make_cache_key(
