@@ -19,11 +19,14 @@ import { fetchTraits } from 'reducers/reference_data/traits'
 import { setMetagenomeMode, getAmpliconFilter } from '../reducers/amplicon'
 import { clearSearchResults } from '../reducers/search'
 import { clearAllTaxonomyFilters, updateTaxonomyDropDowns } from '../reducers/taxonomy'
+import { openTaxonomySearchModal } from '../reducers/taxonomy_search_modal'
+
 import { selectTrait } from '../reducers/trait'
 import { EmptyOperatorAndValue } from '../reducers/types'
 
 import TraitFilter from './trait_filter'
 import AmpliconFilter from './amplicon_filter'
+import TaxonomySearchModal from './taxonomy_search_modal'
 import { TaxonomySelector, TaxonomyDropDowns } from './taxonomy_filters'
 
 export const AmpliconFilterInfo =
@@ -99,9 +102,15 @@ const TaxonomyFilterCard = (props) => {
         </UncontrolledTooltip>
         <Row>
           <Col>
-            <p className="text-center">{TaxonomyNoAmpliconInfo}</p>
+            <p className="text-center">
+              {TaxonomyNoAmpliconInfo}, or{' '}
+              <Button style={{ marginTop: -4 }} onClick={props.openTaxonomySearchModal}>
+                search for a taxonomy
+              </Button>
+            </p>
           </Col>
         </Row>
+
         {props.selectedAmplicon.value !== '' && (
           <>
             <TaxonomySelector
@@ -119,6 +128,7 @@ const TaxonomyFilterCard = (props) => {
           Clear
         </Button>
       </CardFooter>
+      <TaxonomySearchModal />
     </Card>
   )
 }
@@ -141,6 +151,7 @@ function mapDispatchToProps(dispatch) {
       clearSearchResults,
       selectTrait,
       clearAllTaxonomyFilters,
+      openTaxonomySearchModal,
     },
     dispatch
   )

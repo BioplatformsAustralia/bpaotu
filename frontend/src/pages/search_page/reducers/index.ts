@@ -13,6 +13,7 @@ import metagenomeModalReducer from './metagenome_modal'
 import searchResultsReducer from './search'
 import submitToGalaxyReducer from './submit_to_galaxy'
 import taxonomyReducer, { taxonomyOptionsLoading } from './taxonomy'
+import taxonomySearchModalReducer from './taxonomy_search_modal'
 import tipsReducer from './tips'
 
 const taxonomyLoadingReducer = handleActions(
@@ -37,6 +38,7 @@ const filtersReducer = combineReducers({
 const pageReducer = combineReducers({
   filters: filtersReducer,
   blastModal: blastModalReducer,
+  taxonomySearchModal: taxonomySearchModalReducer,
   samplesMapModal: samplesMapModalReducer,
   samplesGraphModal: samplesGraphModalReducer,
   metagenomeModal: metagenomeModalReducer,

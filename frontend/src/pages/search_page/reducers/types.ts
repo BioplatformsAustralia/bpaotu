@@ -46,6 +46,12 @@ export interface PageState {
     isOpen: boolean
     rowsCount: number
   }
+  taxonomySearchModal: {
+    searchString: string
+    isOpen: boolean
+    isLoading: boolean
+    results: any[]
+  }
   samplesMapModal: {
     isOpen: boolean
     isLoading: boolean
@@ -116,6 +122,12 @@ export const searchPageInitialState: PageState = {
   blastModal: {
     isOpen: false,
     rowsCount: -1, // to prevent clash with "0" which prevents running blast search
+  },
+  taxonomySearchModal: {
+    searchString: 'Skeletonema',
+    isOpen: false,
+    isLoading: false,
+    results: [],
   },
   samplesMapModal: {
     isOpen: false,
