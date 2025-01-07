@@ -564,8 +564,6 @@ class SampleQuery:
             (sqlalchemy.null(), sqlalchemy.null())
             if self._taxonomy_filter.state_vector[0] is None else (
                 func.sum(OTUSampleOTU.richness_20k),
-                # Note: in OTUSampleOTU class label for func.sum(SampleOTU.count) is 'count' and not 'sum_count'
-                func.sum(OTUSampleOTU.count),
                 # Note: sum(OTUSampleOTU.sum_count_20k) can be NULL (Python None)
                 func.sum(OTUSampleOTU.sum_count_20k)))
 
