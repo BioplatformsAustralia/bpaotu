@@ -33,10 +33,6 @@ export const fetchSampleComparisonModalSamples = () => (dispatch, getState) => {
   const state = getState()
   const filters = describeSearch(state)
 
-  // todo limit the number of results
-  console.log('fetchSampleComparisonModalSamples', 'state', state)
-  console.log('fetchSampleComparisonModalSamples', 'filters', filters)
-
   dispatch(samplesComparisonModalFetchSamplesStarted())
   handleSimpleAPIResponse(
     dispatch,
@@ -48,8 +44,6 @@ export const fetchSampleComparisonModalSamples = () => (dispatch, getState) => {
 export const processSampleComparisonModalSamples = () => (dispatch, getState) => {
   const state = getState()
   const args = state.searchPage.samplesComparisonModal
-
-  console.log('processSampleComparisonModalSamples', 'args', args)
 
   // not actually an API call, but we can use handleSimpleAPIResponse to yield values to the reducer
   dispatch(samplesComparisonModalProcessingStarted())
@@ -79,8 +73,6 @@ export default handleActions(
       isOpen: false,
     }),
     [samplesComparisonModalFetchSamplesStarted as any]: (state, action) => {
-      // console.log('samplesComparisonModalFetchSamplesStarted', 'state', state)
-      // console.log('samplesComparisonModalFetchSamplesStarted', 'action', action)
       return {
         ...state,
         isLoading: true,
@@ -91,8 +83,6 @@ export default handleActions(
       }
     },
     [samplesComparisonModalFetchSamplesEnded as any]: (state, action: any) => {
-      console.log('samplesComparisonModalFetchSamplesEnded', 'state', state)
-      console.log('samplesComparisonModalFetchSamplesEnded', 'action', action)
       return {
         ...state,
         isLoading: false,
@@ -108,14 +98,12 @@ export default handleActions(
       }
     },
     [samplesComparisonModalProcessingStarted as any]: (state, action) => {
-      console.log('samplesComparisonModalProcessingStarted')
       return {
         ...state,
         isProcessing: true,
       }
     },
     [samplesComparisonModalProcessingEnded as any]: (state, action: any) => {
-      console.log('samplesComparisonModalProcessingEnded')
       return {
         ...state,
         isProcessing: false,

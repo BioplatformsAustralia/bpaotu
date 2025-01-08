@@ -34,15 +34,6 @@ import {
 import SearchFilters from './search_filters'
 import ComparisonDashboard from './comparison_dashboard'
 
-import {
-  sparseToJaccardMatrix,
-  sparseToDense,
-  getJaccardDistanceMatrix,
-  getBrayCurtisDistanceMatrix,
-  classicMDS,
-} from './util/ordination'
-import numeric from 'numeric'
-
 import Plot from 'react-plotly.js'
 
 interface ModalSample {
@@ -68,7 +59,6 @@ const SamplesComparisonModal = (props) => {
   const [selectedSample, setSelectedSample] = useState<ModalSample>(initialModalSample)
 
   const [selectedFilter, setSelectedFilter] = useState('')
-  // const [filterOptions, setFilterOptions] = useState([])
 
   const chartWidth = window.innerWidth * 0.7
   const chartHeight = window.innerHeight * 0.7
@@ -91,6 +81,7 @@ const SamplesComparisonModal = (props) => {
     contextualFilters,
   } = props
 
+  const tooManyRowsError = !!abundanceMatrix.error
   const discreteFields = ['imos_site_code']
   const isContinuous =
     selectedFilter != '' &&
@@ -104,6 +95,34 @@ const SamplesComparisonModal = (props) => {
 
   const findContextualFilter = contextualFilters.find((x) => x.name === selectedFilter)
   console.log('SamplesComparisonModal', 'findContextualFilter', findContextualFilter)
+
+  console.log('SamplesComparisonModal', 'contextual', contextual)
+
+  const filterOptionKeys =
+    Object.keys(contextual).length > 0 ? Object.keys(Object.values(contextual)[0]) : []
+
+  // Filter keys that have null values for all samples
+  const keysWithAllNullValues = filterOptionKeys.filter((key) => {
+    // Check if all samples have null value for the current key
+    return Object.values(contextual).every((sample) => sample[key] === null)
+  })
+
+  const filterOptionsSubset = filterOptionKeys.sort().map((x) => {
+    const filter = contextualFilters.find((y) => y.name === x)
+
+    if (filter) {
+      const disabled = keysWithAllNullValues.includes(filter.name)
+      if (filter.type !== 'sample_id') {
+        return { value: filter.name, text: filter.display_name, disabled: disabled }
+      } else {
+        return null
+      }
+    } else {
+      return null
+    }
+  })
+
+  const filterOptions = filterOptionsSubset.filter((x) => x != null)
 
   const transformPlotData = (data, contextualFilters) => {
     // exclude null values (or maybe make size tiny?)
@@ -127,10 +146,6 @@ const SamplesComparisonModal = (props) => {
         })
       })
 
-      // Jitter
-      // transformedKeyData['x'] = transformedKeyData['x'] + (Math.random() * 2 - 1) / 10
-      // transformedKeyData['y'] = transformedKeyData['y'] + (Math.random() * 2 - 1) / 10
-
       const desired_maximum_marker_size = 40
       const findFilter = contextualFilters.find((x) => x.name === selectedFilter)
 
@@ -142,23 +157,7 @@ const SamplesComparisonModal = (props) => {
 
       let name
       if (isString) {
-        console.log('inside isString')
-        console.log('groupValues', groupValues)
-        console.log('key', key)
-
         name = key
-
-        // // is the selectedFilter free text?
-        // const size = groupValues.map((key) => {
-        //   return parseFloat(key)
-        // })
-
-        // marker = {
-        // color: '#abcdef', // make all same colour
-        // size: size,
-        // sizemode: 'area',
-        // sizeref: (2.0 * Math.max(...size)) / desired_maximum_marker_size ** 2,
-        // }
       } else if (isOntology) {
         if (findFilter) {
           const entry = findFilter.values.find((x) => parseInt(x[0]) === parseInt(key))
@@ -222,8 +221,6 @@ const SamplesComparisonModal = (props) => {
     return transformedObject
   }
 
-  const tooManyRowsError = !!abundanceMatrix.error
-
   var plotDataTransformed
   if (isContinuous) {
     const plotDataRestructured = arrayifyData(plotData[selectedMethod])
@@ -274,38 +271,6 @@ const SamplesComparisonModal = (props) => {
 
   console.log('SamplesComparisonModal', 'plotDataTransformed', plotDataTransformed)
 
-  console.log('SamplesComparisonModal', 'contextual', contextual)
-
-  const filterOptionKeys =
-    Object.keys(contextual).length > 0 ? Object.keys(Object.values(contextual)[0]) : []
-
-  // Filter keys that have null values for all samples
-  const keysWithAllNullValues = filterOptionKeys.filter((key) => {
-    // Check if all samples have null value for the current key
-    return Object.values(contextual).every((sample) => sample[key] === null)
-  })
-
-  const filterOptionsSubset = filterOptionKeys.sort().map((x) => {
-    const filter = contextualFilters.find((y) => y.name === x)
-
-    if (filter) {
-      const disabled = keysWithAllNullValues.includes(filter.name)
-      if (filter.type !== 'sample_id') {
-        return { value: filter.name, text: filter.display_name, disabled: disabled }
-      } else {
-        return null
-      }
-    } else {
-      return null
-    }
-  })
-
-  const filterOptions = filterOptionsSubset.filter((x) => x != null)
-
-  console.log('filterOptions', filterOptions)
-
-  // contextualFilters
-
   // desired format
   //
   // data={[
@@ -338,6 +303,7 @@ const SamplesComparisonModal = (props) => {
   // Fetch data if the modal is opened
   useEffect(() => {
     if (isOpen) {
+      console.log('[isOpen] isOpen')
       fetchSampleComparisonModalSamples()
     }
   }, [isOpen])
@@ -347,6 +313,7 @@ const SamplesComparisonModal = (props) => {
   useEffect(() => {
     if (isOpen) {
       if (isLoading) {
+        console.log('[isOpen, isLoading] isOpen isLoading')
         clearPlotData()
       }
     }
@@ -354,6 +321,7 @@ const SamplesComparisonModal = (props) => {
 
   useEffect(() => {
     if (isOpen) {
+      console.log('[isOpen, abundanceMatrix] isOpen')
       updatePlotSafe()
     }
   }, [isOpen, abundanceMatrix])
@@ -361,6 +329,7 @@ const SamplesComparisonModal = (props) => {
   useEffect(() => {
     if (isOpen) {
       if (selectedMethod) {
+        console.log('[isOpen, selectedMethod] isOpen selectedMethod')
         updatePlotSafe()
       }
     }
@@ -556,10 +525,6 @@ const SamplesComparisonModal = (props) => {
         <Container>
           <Plot
             data={plotDataTransformedJitter}
-            onClick={(e) => {
-              const { points } = e
-              // handlePointClick(points)
-            }}
             layout={{
               width: chartWidth,
               height: chartHeight,
@@ -569,14 +534,14 @@ const SamplesComparisonModal = (props) => {
                 tickmode: 'linear',
                 tick0: 0,
                 dtick: 0.2,
-                // range: [-1, 1],
+                range: [-1, 1],
               },
               yaxis: {
                 scaleanchor: 'x',
                 tickmode: 'linear',
                 tick0: 0,
                 dtick: 0.2,
-                // range: [-1, 1],
+                range: [-1, 1],
               },
             }}
             config={{ displayLogo: false, scrollZoom: false }}
