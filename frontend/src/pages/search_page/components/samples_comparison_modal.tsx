@@ -1,27 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react'
+import React, { useState, useEffect } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import {
-  Container,
-  Col,
-  Row,
-  Modal,
-  ModalBody,
-  ModalHeader,
-  ModalFooter,
-  ButtonGroup,
-  Button,
-  UncontrolledTooltip,
-} from 'reactstrap'
-import { groupBy, sortBy, isEmpty } from 'lodash'
+import { Container, Col, Row, Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
+import { groupBy, isEmpty } from 'lodash'
 
 import AnimateHelix from 'components/animate_helix'
-import Octicon from 'components/octicon'
-import { Tutorial, stepsStyle } from 'components/tutorial'
-import ComparisonTutorial from 'components/tutorials/comparison_tutorial'
-import { TourContext } from 'providers/tour_provider'
-import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
-import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
 
 import {
   closeSamplesComparisonModal,
@@ -41,22 +24,12 @@ interface ModalSample {
   y: number
 }
 
-const initialModalSample: ModalSample = {
-  id: null,
-  x: null,
-  y: null,
-}
-
 interface PlotData {
   jaccard: object
   braycurtis: object
 }
 
 const SamplesComparisonModal = (props) => {
-  const [tourStep, setTourStep] = useState(0)
-  const [scrollToSelected, setScrollToSelected] = useState('')
-  const [selectedSample, setSelectedSample] = useState<ModalSample>(initialModalSample)
-
   const [selectedFilter, setSelectedFilter] = useState('')
 
   const chartWidth = window.innerWidth * 0.7
@@ -72,8 +45,8 @@ const SamplesComparisonModal = (props) => {
     clearPlotData,
     isLoading,
     isProcessing,
-    markers,
-    sampleOtus,
+    // markers,
+    // sampleOtus,
     abundanceMatrix,
     contextual,
     plotData,
@@ -83,11 +56,9 @@ const SamplesComparisonModal = (props) => {
   const tooManyRowsError = !!abundanceMatrix.error
   const discreteFields = ['imos_site_code']
   const isContinuous =
-    selectedFilter != '' &&
+    selectedFilter !== '' &&
     !selectedFilter.endsWith('_id') &&
     !discreteFields.includes(selectedFilter)
-
-  const findContextualFilter = contextualFilters.find((x) => x.name === selectedFilter)
 
   const filterOptionKeys =
     Object.keys(contextual).length > 0 ? Object.keys(Object.values(contextual)[0]) : []
@@ -124,7 +95,7 @@ const SamplesComparisonModal = (props) => {
     var dataToLoop
     var propsToLoop
 
-    if (selectedFilter == '') {
+    if (selectedFilter === '') {
       dataToLoop = data
       propsToLoop = propsToKeep
     } else {
@@ -203,7 +174,6 @@ const SamplesComparisonModal = (props) => {
         })
       })
 
-      const desired_maximum_marker_size = 40
       const findFilter = contextualFilters.find((x) => x.name === selectedFilter)
 
       const isString = findFilter && findFilter.type === 'string'
@@ -270,12 +240,6 @@ const SamplesComparisonModal = (props) => {
   //   },
   // ]}
 
-  const handleSearchFilterClick = (selectedElement) => {
-    fetchContextualDataForGraph()
-    fetchTaxonomyDataForGraph()
-    setScrollToSelected(selectedElement)
-  }
-
   // Fetch data if the modal is opened
   useEffect(() => {
     if (isOpen) {
@@ -311,19 +275,6 @@ const SamplesComparisonModal = (props) => {
     if (!isEmpty(abundanceMatrix)) {
       processSampleComparisonModalSamples()
     }
-  }
-
-  const handlePointClick = (points) => {
-    // just take the first point if there are multiple
-    const point = points[0]
-    const pointSampleId = point.text
-
-    const sample = sampleOtus.find((x) => x[2] === pointSampleId)
-    setSelectedSample({
-      id: sample[2],
-      x: sample[0],
-      y: sample[1],
-    })
   }
 
   const LoadingSpinnerOverlay = () => {
@@ -421,7 +372,7 @@ const SamplesComparisonModal = (props) => {
         // if (z.name) {
         //   point['name'] = z.name
         // }
-        if (selectedFilter != '') {
+        if (selectedFilter !== '') {
           if (z.name) {
             point['value'] = z.name
           } else {
@@ -518,16 +469,6 @@ const SamplesComparisonModal = (props) => {
             }}
             config={{ displayLogo: false, scrollZoom: false }}
           />
-        </Container>
-        <Container>
-          {selectedSample.id && (
-            <>
-              <p>Sample Id: {selectedSample.id}</p>
-              <p>x: {selectedSample.x}</p>
-              <p>y: {selectedSample.y}</p>
-              <p>Env: {contextual[selectedSample.id]['Am Environment']}</p>
-            </>
-          )}
         </Container>
       </ModalBody>
       <ModalFooter>

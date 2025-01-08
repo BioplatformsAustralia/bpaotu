@@ -1,5 +1,3 @@
-import React from 'react'
-
 export const executeSampleSitesComparisonProcessing = async (args) => {
   const { abundanceMatrix, contextual, plotData, selectedMethod } = args
 
