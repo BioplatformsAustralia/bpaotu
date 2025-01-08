@@ -145,7 +145,7 @@ export const searchPageInitialState: PageState = {
     sampleOtus: [],
     abundanceMatrix: {},
     contextual: {},
-    selectedMethod: 'jaccard',
+    selectedMethod: 'braycurtis',
     plotData: { jaccard: [], braycurtis: [] },
   },
   metagenomeModal: {
