@@ -40,40 +40,44 @@ def _comparison_query(params):
     with SampleQuery(params) as query:
         sample_id_selected = []
 
-        # row_count = query.matching_sample_distance_matrix().count()
-        # print('row_count', row_count)
-
-        # if row_count > 2000000:
-        #     return {
-        #         'error': 'Too many rows'
-        #     }
-
-        results = query.matching_sample_distance_matrix().all()
+        results = []
+        for row in query.matching_sample_distance_matrix().yield_per(1000):
+            results.append((row[0], row[1], row[2]))
 
         df = pd.DataFrame(results, columns=['sample_id', 'otu_id', 'abundance'])
-        print('df.shape', df.shape)
+
+        # local dev: 4316539 crashes (Acidobacteria)
+
+        if df.shape[0] > 2000000:
+            return {
+                'error': 'Too many rows'
+            }
 
         df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
-        print('df.shape', df.shape)
+        
+        # print(time.ctime(), 'start df pivot')
 
+        # this next line uses a lot of memory for a large result set
         rectangular_df = df.pivot(index='sample_id', columns='otu_id', values='abundance').fillna(0)
-        print('rectangular_df.shape', rectangular_df.shape)
+        
+        # print(time.ctime(), 'finish df pivot')
+        # print('rectangular_df.shape', rectangular_df.shape)
 
-        print(time.ctime(), 'start jaccard matrix_pairwise_distance')
+        # print(time.ctime(), 'start jaccard matrix_pairwise_distance')
         dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
 
-        print(time.ctime(), 'start braycurtis matrix_pairwise_distance')
+        # print(time.ctime(), 'start braycurtis matrix_pairwise_distance')
         dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
 
-        print(time.ctime(), 'matrix_pairwise_distance done')
-        print('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape)
-        print('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape)
+        # print(time.ctime(), 'matrix_pairwise_distance done')
+        # print('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape)
+        # print('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape)
 
         sample_ids = df['sample_id'].unique().tolist()
         otu_ids = df['otu_id'].unique().tolist()
 
-        print('sample_ids: ', len(sample_ids))
-        print('otu_ids: ', len(otu_ids))
+        # print('sample_ids: ', len(sample_ids))
+        # print('otu_ids: ', len(otu_ids))
 
         abundance_matrix = {
             'sample_ids': sample_ids,
