@@ -366,12 +366,9 @@ const SamplesComparisonModal = (props) => {
           y: z.y[i].toPrecision(7),
           xj: xj[i],
           yj: yj[i],
-          text: z.text[i], // Sample ID:
+          text: z.text[i],
         }
 
-        // if (z.name) {
-        //   point['name'] = z.name
-        // }
         if (selectedFilter !== '') {
           if (z.name) {
             point['value'] = z.name
@@ -384,7 +381,10 @@ const SamplesComparisonModal = (props) => {
         return point
       }),
       hovertemplate:
-        '(%{customdata.x}, %{customdata.y})<br />Sample ID: %{customdata.text}<br />Value: %{customdata.value}<extra></extra>',
+        // if no filter selected, there will be no value, so prevent referencing an undefined customdata.value in that case
+        selectedFilter === ''
+          ? '(%{customdata.x}, %{customdata.y})<br />Sample ID: %{customdata.text}<extra></extra>'
+          : '(%{customdata.x}, %{customdata.y})<br />Sample ID: %{customdata.text}<br />Value: %{customdata.value}<extra></extra>',
     }
   })
 
