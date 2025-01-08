@@ -12,7 +12,6 @@ import HistogramChartContextual from './charts/histogram_chart_contextual'
 import StackChartTaxonomy from './charts/stack_chart_taxonomy'
 import StackChartTraits from './charts/stack_chart_traits'
 import SunBurstChartTaxonomy from './charts/sunburst_chart_taxonomy'
-import MdsChartTaxonomy from './charts/mds_chart_taxonomy'
 
 import {
   AmpliconFilterInfo,
@@ -37,7 +36,6 @@ const ContextualTab = (props) => {
   } = props
 
   const tablist = filter(Object.keys(contextualGraphdata), (val) => val !== 'am_environment_id')
-  console.log('tablist', tablist)
 
   const [activeContextualTab, setActiveContextualTab] = useState(() => {
     const initialTab = tablist.includes(scrollToSelected)
@@ -426,23 +424,6 @@ const GraphTabbed = (props) => {
                   selectToScroll(e)
                 }}
                 filter="taxonomy_am_environment_id"
-                taxonomyGraphdata={taxonomyGraphdata}
-                contextualGraphdata={contextualGraphdata}
-              />
-            </>
-          </TabPane>
-          <TabPane tabId="tab_mds_plots_id">
-            <>
-              <MdsChartTaxonomy
-                width={chartWidth}
-                height={chartHeight}
-                selectTab={(e) => {
-                  selectTab(e)
-                }}
-                selectToScroll={(e) => {
-                  selectToScroll(e)
-                }}
-                filter="taxonomy_mds_plots_id"
                 taxonomyGraphdata={taxonomyGraphdata}
                 contextualGraphdata={contextualGraphdata}
               />

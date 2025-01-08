@@ -32,7 +32,6 @@ import {
 } from '../reducers/samples_comparison_modal'
 
 import SearchFilters from './search_filters'
-import ComparisonDashboard from './comparison_dashboard'
 
 import Plot from 'react-plotly.js'
 
@@ -88,15 +87,7 @@ const SamplesComparisonModal = (props) => {
     !selectedFilter.endsWith('_id') &&
     !discreteFields.includes(selectedFilter)
 
-  console.log('SamplesComparisonModal', 'props', props)
-  console.log('SamplesComparisonModal', 'plotData', plotData)
-  console.log('SamplesComparisonModal', 'plotData[selectedMethod]', plotData[selectedMethod])
-  console.log('SamplesComparisonModal', 'isContinuous', isContinuous)
-
   const findContextualFilter = contextualFilters.find((x) => x.name === selectedFilter)
-  console.log('SamplesComparisonModal', 'findContextualFilter', findContextualFilter)
-
-  console.log('SamplesComparisonModal', 'contextual', contextual)
 
   const filterOptionKeys =
     Object.keys(contextual).length > 0 ? Object.keys(Object.values(contextual)[0]) : []
@@ -124,19 +115,85 @@ const SamplesComparisonModal = (props) => {
 
   const filterOptions = filterOptionsSubset.filter((x) => x != null)
 
-  const transformPlotData = (data, contextualFilters) => {
-    // exclude null values (or maybe make size tiny?)
-    const groupValues = Object.keys(data).filter((x) => x !== 'null')
+  // data will be an array of length 1
+  // but the size for each of the points will be different
+  const processContinuous = (data) => {
+    const propsToKeep = ['x', 'y', 'text']
+    const transformedObject = {}
+
+    var dataToLoop
+    var propsToLoop
+
+    if (selectedFilter == '') {
+      dataToLoop = data
+      propsToLoop = propsToKeep
+    } else {
+      dataToLoop = data.filter((x) => x[selectedFilter] != null)
+      propsToLoop = [...propsToKeep, selectedFilter]
+    }
+
+    dataToLoop.forEach((obj) => {
+      propsToLoop.forEach((key) => {
+        var val = obj[key]
+
+        if (!transformedObject[key]) {
+          transformedObject[key] = []
+        }
+        transformedObject[key].push(val)
+      })
+    })
+
+    let plotDataContinuous
+
+    // if data still needs to process then don't try to calculate everything
+    if (isEmpty(transformedObject)) {
+      plotDataContinuous = []
+    } else {
+      plotDataContinuous = [
+        {
+          ...transformedObject,
+          type: 'scatter',
+          mode: 'markers',
+        },
+      ]
+
+      const desiredMinimumMarkerSize = 20
+      const desiredMaximumMarkerSize = 100
+      const size = transformedObject[selectedFilter]
+      const maxDataValue = Math.max(...size)
+      const minDataValue = Math.min(...size)
+      const scaledSizes = size.map((value) => {
+        const scaledValue = (value - minDataValue) / (maxDataValue - minDataValue)
+        return (
+          scaledValue * (desiredMaximumMarkerSize - desiredMinimumMarkerSize) +
+          desiredMinimumMarkerSize
+        )
+      })
+
+      plotDataContinuous[0]['marker'] = {
+        size: scaledSizes,
+        sizemode: 'area',
+        sizeref: 0.5,
+      }
+    }
+
+    return plotDataContinuous
+  }
+
+  // data will be an array with an element for each group that is displayed
+  // also processes no filter selected
+  const processDiscrete = (data, contextualFilters, selectedFilter) => {
+    const plotDataGrouped = groupBy(data, selectedFilter)
+    const groupValues = Object.keys(plotDataGrouped).filter((x) => x !== 'null')
 
     const transformedData = groupValues.map((key) => {
-      const keyData = data[key]
+      const keyData = plotDataGrouped[key]
       const transformedKeyData = {}
 
-      // Extract all properties dynamically
+      // extract all properties dynamically
       const propsToKeep = ['x', 'y', 'text']
       keyData.forEach((item) => {
         Object.keys(item).forEach((prop) => {
-          // add important props only
           if (propsToKeep.includes(prop)) {
             if (!transformedKeyData[prop]) {
               transformedKeyData[prop] = []
@@ -149,9 +206,6 @@ const SamplesComparisonModal = (props) => {
       const desired_maximum_marker_size = 40
       const findFilter = contextualFilters.find((x) => x.name === selectedFilter)
 
-      var marker = {
-        size: 12,
-      }
       const isString = findFilter && findFilter.type === 'string'
       const isOntology = findFilter && findFilter.type === 'ontology'
 
@@ -175,101 +229,23 @@ const SamplesComparisonModal = (props) => {
         name: name,
         type: 'scatter',
         mode: 'markers',
-        marker: marker,
+        marker: { size: 12 },
       }
     })
 
     return transformedData
   }
 
-  //
-  const arrayifyData = (data) => {
-    const propsToKeep = ['x', 'y', 'text']
-    const transformedObject = {}
-
-    var dataToLoop
-    var propsToLoop
-
-    if (selectedFilter == '') {
-      dataToLoop = data
-      propsToLoop = propsToKeep
-    } else {
-      dataToLoop = data.filter((x) => x[selectedFilter] != null)
-      propsToLoop = [...propsToKeep, selectedFilter]
-    }
-
-    dataToLoop.forEach((obj) => {
-      propsToLoop.forEach((key) => {
-        var val = obj[key]
-
-        // // add the value to text if a filter is selected
-        // // TODO make this look better
-        // if (key === 'text' && selectedFilter != '') {
-        //   val = `${obj[selectedFilter]} (Sample ID: ${val})`
-        // }
-        // if (key === 'text') {
-        //   val = `${obj[selectedFilter]} (Sample ID: ${val})`
-        // }
-
-        if (!transformedObject[key]) {
-          transformedObject[key] = []
-        }
-        transformedObject[key].push(val)
-      })
-    })
-
-    return transformedObject
-  }
-
   var plotDataTransformed
   if (isContinuous) {
-    const plotDataRestructured = arrayifyData(plotData[selectedMethod])
-
-    plotDataTransformed = [
-      {
-        ...plotDataRestructured,
-        // name: key,
-        type: 'scatter',
-        mode: 'markers',
-      },
-    ]
-
-    // if data still needs to process then don't try to calculate everything
-    if (isEmpty(plotDataRestructured)) {
-      plotDataTransformed = []
-    } else {
-      const desiredMinimumMarkerSize = 20
-      const desiredMaximumMarkerSize = 100
-      const size = plotDataRestructured[selectedFilter]
-      const maxDataValue = Math.max(...size)
-      const minDataValue = Math.min(...size)
-      const scaledSizes = size.map((value) => {
-        const scaledValue = (value - minDataValue) / (maxDataValue - minDataValue)
-        return (
-          scaledValue * (desiredMaximumMarkerSize - desiredMinimumMarkerSize) +
-          desiredMinimumMarkerSize
-        )
-      })
-
-      plotDataTransformed[0]['marker'] = {
-        size: scaledSizes,
-        sizemode: 'area',
-        sizeref: 0.5, // (2.0 * Math.max(...size)) / desiredMaximumMarkerSize ** 2,
-      }
-    }
+    plotDataTransformed = processContinuous(plotData[selectedMethod])
   } else {
-    const plotDataGrouped = groupBy(plotData[selectedMethod], selectedFilter)
-
-    // // TODO use better way that includes groups with no entries for categories
-    // const plotGroups = Object.keys(plotDataGrouped)
-    console.log('SamplesComparisonModal', 'plotDataGrouped', plotDataGrouped)
-
-    // TODO sub in values from contextualFilters lookups
-
-    plotDataTransformed = transformPlotData(plotDataGrouped, contextualFilters)
+    plotDataTransformed = processDiscrete(
+      plotData[selectedMethod],
+      contextualFilters,
+      selectedFilter
+    )
   }
-
-  console.log('SamplesComparisonModal', 'plotDataTransformed', plotDataTransformed)
 
   // desired format
   //
@@ -303,7 +279,6 @@ const SamplesComparisonModal = (props) => {
   // Fetch data if the modal is opened
   useEffect(() => {
     if (isOpen) {
-      console.log('[isOpen] isOpen')
       fetchSampleComparisonModalSamples()
     }
   }, [isOpen])
@@ -313,7 +288,6 @@ const SamplesComparisonModal = (props) => {
   useEffect(() => {
     if (isOpen) {
       if (isLoading) {
-        console.log('[isOpen, isLoading] isOpen isLoading')
         clearPlotData()
       }
     }
@@ -321,7 +295,6 @@ const SamplesComparisonModal = (props) => {
 
   useEffect(() => {
     if (isOpen) {
-      console.log('[isOpen, abundanceMatrix] isOpen')
       updatePlotSafe()
     }
   }, [isOpen, abundanceMatrix])
@@ -329,7 +302,6 @@ const SamplesComparisonModal = (props) => {
   useEffect(() => {
     if (isOpen) {
       if (selectedMethod) {
-        console.log('[isOpen, selectedMethod] isOpen selectedMethod')
         updatePlotSafe()
       }
     }
