@@ -40,6 +40,9 @@ def _comparison_query(params):
     with SampleQuery(params) as query:
         sample_id_selected = []
 
+        # print(time.ctime(), 'start count')
+        # print(time.ctime(), query.matching_sample_distance_matrix().count())
+
         results = []
         for row in query.matching_sample_distance_matrix().yield_per(1000):
             results.append((row[0], row[1], row[2]))
@@ -48,7 +51,7 @@ def _comparison_query(params):
 
         # local dev: 4316539 crashes (Acidobacteria)
 
-        if df.shape[0] > 2000000:
+        if df.shape[0] > 1000000:
             return {
                 'error': 'Too many rows'
             }
