@@ -6144,11 +6144,6 @@ es6-iterator@2.0.3, es6-iterator@^2.0.3, es6-iterator@~2.0.3:
     es5-ext "^0.10.35"
     es6-symbol "^3.1.1"
 
-es6-promise@^3.0.2:
-  version "3.3.1"
-  resolved "https://registry.yarnpkg.com/es6-promise/-/es6-promise-3.3.1.tgz#a08cdde84ccdbf34d027a1451bc91d4bcd28a613"
-  integrity sha512-SOp9Phqvqn7jtEUxPWdWfWoLmyt2VaJ6MpvP9Comy1MceMXqE6bxvaTu4iaxpYYPzhny28Lc+M87/c2cPK6lDg==
-
 es6-symbol@^3.1.1, es6-symbol@~3.1.3:
   version "3.1.3"
   resolved "https://registry.yarnpkg.com/es6-symbol/-/es6-symbol-3.1.3.tgz#bad5d3c1bcdac28269f4cb331e431c78ac705d18"
@@ -8360,13 +8355,6 @@ istanbul-reports@^2.2.6:
   dependencies:
     html-escaper "^2.0.0"
 
-jaccard-index@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/jaccard-index/-/jaccard-index-0.2.0.tgz#636a8db9eab0b85ee53adbbbf3c5ce4108436636"
-  integrity sha512-V2foJg5GiLb16cXn2pc/6dwiu6VrPAkaV9CaQg9pM7Gpv3nt8WjjzIqA7JIdJCdKqe3f/ItjZMxS6T1fUMFnPA==
-  dependencies:
-    promisen "^0.1.1"
-
 jest-changed-files@^24.9.0:
   version "24.9.0"
   resolved "https://registry.yarnpkg.com/jest-changed-files/-/jest-changed-files-24.9.0.tgz#08d8c15eb79a7fa3fc98269bc14b451ee82f8039"
@@ -10017,11 +10005,6 @@ number-is-nan@^1.0.0:
   resolved "https://registry.yarnpkg.com/number-is-nan/-/number-is-nan-1.0.1.tgz#097b602b53422a522c1afb8790318336941a011d"
   integrity sha1-CXtgK1NCKlIsGvuHkDGDNpQaAR0=
 
-numeric@^1.2.6:
-  version "1.2.6"
-  resolved "https://registry.yarnpkg.com/numeric/-/numeric-1.2.6.tgz#765b02bef97988fcf880d4eb3f36b80fa31335aa"
-  integrity sha1-dlsCvvl5iPz4gNTrPza4D6MTNao=
-
 nwsapi@^2.0.7, nwsapi@^2.1.3:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/nwsapi/-/nwsapi-2.2.0.tgz#204879a9e3d068ff2a55139c2c772780681a38b7"
@@ -11444,13 +11427,6 @@ promise@^8.0.3:
   integrity sha512-W04AqnILOL/sPRXziNicCjSNRruLAuIHEOVBazepu0545DDNGYHz7ar9ZgZ1fMU8/MA4mVxp5rkBWRi6OXIy3Q==
   dependencies:
     asap "~2.0.6"
-
-promisen@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/promisen/-/promisen-0.1.1.tgz#29e113fec03722fd94399df59d1ca6f2ec728bbf"
-  integrity sha512-5MhG7VoIiRWuPBETs1NZJp+cTWd6SD4tESgUlUpczFaKGzM9NDgv92wrjf6CxUP/tCRP3il4+jc9wddVYLcCIw==
-  dependencies:
-    es6-promise "^3.0.2"
 
 prompts@^2.0.1:
   version "2.4.1"
