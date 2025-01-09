@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { Container, Col, Row, Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
+import { Container, Col, Row, Input, Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
 import { groupBy, isEmpty } from 'lodash'
 
 import AnimateHelix from 'components/animate_helix'
@@ -31,6 +31,7 @@ interface PlotData {
 
 const SamplesComparisonModal = (props) => {
   const [selectedFilter, setSelectedFilter] = useState('')
+  const [markerSize, setMarkerSize] = useState(12)
 
   const chartWidth = window.innerWidth * 0.7
   const chartHeight = window.innerHeight * 0.7
@@ -199,7 +200,7 @@ const SamplesComparisonModal = (props) => {
         name: name,
         type: 'scatter',
         mode: 'markers',
-        marker: { size: 12 },
+        marker: { size: markerSize },
       }
     })
 
@@ -347,6 +348,8 @@ const SamplesComparisonModal = (props) => {
     )
   }
 
+  const showExtraControls = plotData[selectedMethod].length > 0
+
   // apply a jitter so that points aren't put on the same place (makes graph misleading)
   // need to put the original value in the tooltip though
   const jitterAmount = 0.005
@@ -404,7 +407,7 @@ const SamplesComparisonModal = (props) => {
         <Container>
           <Row>
             <Col xs="2">Dissimilarity method:</Col>
-            <Col xs="auto" style={{ paddingLeft: 0, paddingRight: 0 }}>
+            <Col xs="4" style={{ paddingLeft: 0, paddingRight: 0 }}>
               <select
                 placeholder={'Select a method'}
                 value={selectedMethod}
@@ -416,12 +419,20 @@ const SamplesComparisonModal = (props) => {
                 <option value="braycurtis">Bray-Curtis</option>
               </select>
             </Col>
+            {showExtraControls && (
+              <>
+                <Col xs="2" style={{ textAlign: 'right' }}>
+                  Samples:
+                </Col>
+                {plotData[selectedMethod].length}
+              </>
+            )}
           </Row>
         </Container>
         <Container style={{ paddingTop: 3 }}>
           <Row>
             <Col xs="2"></Col>
-            <Col xs="auto" style={{ paddingLeft: 0, paddingRight: 0 }}>
+            <Col xs="4" style={{ paddingLeft: 0, paddingRight: 0 }}>
               <select
                 placeholder={'(Select a contextual filter)'}
                 value={selectedFilter}
@@ -443,6 +454,25 @@ const SamplesComparisonModal = (props) => {
                 })}
               </select>
             </Col>
+            {showExtraControls && !isContinuous && (
+              <>
+                <Col xs="2" style={{ textAlign: 'right' }}>
+                  Marker size:
+                </Col>
+                <select
+                  value={markerSize}
+                  onChange={(e) => setMarkerSize(parseInt(e.target.value))}
+                >
+                  {[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((v) => {
+                    return (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    )
+                  })}
+                </select>
+              </>
+            )}
           </Row>
         </Container>
         <Container>
