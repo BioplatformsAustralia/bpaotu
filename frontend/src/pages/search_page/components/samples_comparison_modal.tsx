@@ -348,7 +348,7 @@ const SamplesComparisonModal = (props) => {
     )
   }
 
-  const showExtraControls = plotData[selectedMethod].length > 0
+  const showExtraControls = plotData[selectedMethod] && plotData[selectedMethod].length > 0
 
   // apply a jitter so that points aren't put on the same place (makes graph misleading)
   // need to put the original value in the tooltip though
