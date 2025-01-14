@@ -45,3 +45,4 @@ basemap==1.4.1
 scikit-learn==1.5.2
 fastdist==1.1.6
 numba==0.60.0
+psutil

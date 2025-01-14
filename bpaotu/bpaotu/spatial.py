@@ -23,6 +23,7 @@ from .util import (
 import logging
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
+from .util import log_msg
 
 logger = logging.getLogger("rainbow")
 
@@ -43,44 +44,48 @@ def _comparison_query(params):
         # print(time.ctime(), 'start count')
         # print(time.ctime(), query.matching_sample_distance_matrix().count())
 
+        log_msg('start query fetch')
+
         results = []
         for row in query.matching_sample_distance_matrix().yield_per(1000):
             results.append((row[0], row[1], row[2]))
 
+        log_msg('start query results to df')
         df = pd.DataFrame(results, columns=['sample_id', 'otu_id', 'abundance'])
 
         # local dev: 4316539 crashes (Acidobacteria)
 
-        if df.shape[0] > 1000000:
-            return {
-                'error': 'Too many rows'
-            }
+        # if df.shape[0] > 1000000:
+        #     return {
+        #         'error': 'Too many rows'
+        #     }
 
+        log_msg('start df sort')
         df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
         
-        print(time.ctime(), 'start df pivot')
+        log_msg('start df pivot')
 
         # this next line uses a lot of memory for a large result set
         rectangular_df = df.pivot(index='sample_id', columns='otu_id', values='abundance').fillna(0)
         
-        print(time.ctime(), 'finish df pivot')
-        print('rectangular_df.shape', rectangular_df.shape)
+        log_msg('finish df pivot')
+        log_msg(f'rectangular_df.shape {rectangular_df.shape}', skip_mem=True)
 
-        print(time.ctime(), 'start jaccard matrix_pairwise_distance')
+        log_msg('start jaccard matrix_pairwise_distance')
         dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
 
-        print(time.ctime(), 'start braycurtis matrix_pairwise_distance')
+        log_msg('start braycurtis matrix_pairwise_distance')
         dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
 
-        print(time.ctime(), 'matrix_pairwise_distance done')
-        print('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape)
-        print('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape)
+        log_msg('matrix_pairwise_distance done')
+        log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape)
+        log_msg('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape)
 
         sample_ids = df['sample_id'].unique().tolist()
         otu_ids = df['otu_id'].unique().tolist()
 
-        print('sample_ids: ', len(sample_ids))
-        print('otu_ids: ', len(otu_ids))
+        log_msg('sample_ids: ', len(sample_ids), skip_mem=True)
+        log_msg('otu_ids: ', len(otu_ids), skip_mem=True)
 
         abundance_matrix = {
             'sample_ids': sample_ids,
