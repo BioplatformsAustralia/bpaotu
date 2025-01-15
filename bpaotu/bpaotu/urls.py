@@ -29,6 +29,8 @@ urlpatterns = [
     url(r'^private/api/v1/galaxy_submission$', views.galaxy_submission, name="galaxy_submission"),
     url(r'^private/api/v1/submit_blast$', views.submit_blast, name="submit_blast"),
     url(r'^private/api/v1/blast_submission$', views.blast_submission, name="blast_submission"),
+    url(r'^private/api/v1/submit_comparison$', views.submit_comparison, name="submit_comparison"),
+    url(r'^private/api/v1/comparison_submission$', views.comparison_submission, name="comparison_submission"),
     url(r'^private/api/v1/export$', views.otu_export, name="otu_export"),
     url(r'^private/api/v1/export_biom$', views.otu_biom_export, name="otu_biom_export"),
     url(

@@ -91,6 +91,13 @@ def mem_usage():
     print(f'SWAP: {pprint_ntuple(psutil.swap_memory())}')
     print(f'CPU:  {psutil.cpu_percent()}%')
 
+def mem_usage_obj():
+    return {
+        'mem': pprint_ntuple(psutil.virtual_memory()),
+        'swap': pprint_ntuple(psutil.swap_memory()),
+        'cpu': psutil.cpu_percent(),
+    }
+
 def pprint_ntuple(nt):
     _str = ""
     excluded_keys = ['shared', 'slab', 'wired', 'buffers']

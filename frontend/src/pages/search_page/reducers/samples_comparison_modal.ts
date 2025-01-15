@@ -42,16 +42,20 @@ export const fetchSampleComparisonModalSamples = () => (dispatch, getState) => {
 }
 
 export const processSampleComparisonModalSamples = () => (dispatch, getState) => {
-  const state = getState()
-  const args = state.searchPage.samplesComparisonModal
+  console.log('processSampleComparisonModalSamples')
+  // const state = getState()
 
-  // not actually an API call, but we can use handleSimpleAPIResponse to yield values to the reducer
-  dispatch(samplesComparisonModalProcessingStarted())
-  handleSimpleAPIResponse(
-    dispatch,
-    partial(executeSampleSitesComparisonProcessing, args),
-    samplesComparisonModalProcessingEnded
-  )
+  // const { plotData, selectedMethod } = state.searchPage.samplesComparisonModal
+  // const { abundanceMatrix, contextual } = state.searchPage.samplesComparisonSearch
+  // const args = { abundanceMatrix, contextual, plotData, selectedMethod }
+
+  // // not actually an API call, but we can use handleSimpleAPIResponse to yield values to the reducer
+  // dispatch(samplesComparisonModalProcessingStarted())
+  // handleSimpleAPIResponse(
+  //   dispatch,
+  //   partial(executeSampleSitesComparisonProcessing, args),
+  //   samplesComparisonModalProcessingEnded
+  // )
 }
 
 export const setSelectedMethod = (selectedMethod) => (dispatch, getState) => {
@@ -107,7 +111,7 @@ export default handleActions(
       return {
         ...state,
         isProcessing: false,
-        plotData: action.payload,
+        // plotData: action.payload,
       }
     },
     [samplesComparisonModalSetSelectedMethod as any]: (state, action: any) => ({

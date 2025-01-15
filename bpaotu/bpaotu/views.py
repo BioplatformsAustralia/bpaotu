@@ -47,7 +47,7 @@ from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilter
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
 from .spatial import comparison_query, spatial_query
 from .tabular import tabular_zip_file_generator
-from .util import make_timestamp, parse_date, parse_time, parse_float, log_msg
+from .util import make_timestamp, parse_date, parse_time, parse_float, log_msg, mem_usage_obj
 
 from sklearn.manifold import MDS
 
@@ -171,6 +171,8 @@ def api_config(request):
         'blast_submission_endpoint': reverse('blast_submission'),
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
         'search_sample_sites_comparison_endpoint': reverse('otu_search_sample_sites_comparison'),
+        'submit_comparison_endpoint': reverse('submit_comparison'),
+        'comparison_submission_endpoint': reverse('comparison_submission'),
         'search_blast_otus_endpoint': reverse('otu_search_blast_otus'),
         'required_table_headers_endpoint': reverse('required_table_headers'),
         'contextual_csv_download_endpoint': reverse('contextual_csv_download_endpoint'),
@@ -756,112 +758,132 @@ def otu_search_sample_sites(request):
 @require_CKAN_auth
 @require_POST
 def otu_search_sample_sites_comparison(request):
-    params, errors = param_to_filters(request.POST['otu_query'])
-    if errors:
+    try:
+        params, errors = param_to_filters(request.POST['otu_query'])
+        if errors:
+            raise OTUError(*errors)
+
+        submission_id = tasks.submit_sample_comparison(request.POST['otu_query'])
+
         return JsonResponse({
-            'errors': [str(e) for e in errors],
-            'data': [],
-            'sample_otus': []
+            'success': True,
+            'abundanceMatrix': [],
+            'contextual': {},
+            'submission_id': submission_id,
+        })
+    except OTUError as exc:
+        logger.exception('Error in submit to sample comparison')
+        return JsonResponse({
+            'success': False,
+            'errors': exc.errors,
         })
 
-    logger.info('start abundance_matrix comparison_query')
-    abundance_matrix = comparison_query(params)
+    # params, errors = param_to_filters(request.POST['otu_query'])
+    # if errors:
+    #     return JsonResponse({
+    #         'errors': [str(e) for e in errors],
+    #         'data': [],
+    #         'sample_otus': []
+    #     })
 
-    if "error" in abundance_matrix:
-        return JsonResponse({
-            'abundance_matrix': abundance_matrix,
-            'contextual': {}
-        })
+    # logger.info('start abundance_matrix comparison_query')
+    # abundance_matrix = comparison_query(params)
 
-    dist_matrix_braycurtis = abundance_matrix['matrix_braycurtis']
-    dist_matrix_jaccard = abundance_matrix['matrix_jaccard']
+    # if "error" in abundance_matrix:
+    #     return JsonResponse({
+    #         'abundance_matrix': abundance_matrix,
+    #         'contextual': {}
+    #     })
 
-    def mds_results(dist_matrix):
-        RANDOMSEED = np.random.RandomState(seed=2)
+    # dist_matrix_braycurtis = abundance_matrix['matrix_braycurtis']
+    # dist_matrix_jaccard = abundance_matrix['matrix_jaccard']
 
-        log_msg('  MDS')
-        mds = MDS(n_components=2, max_iter=1000, random_state=RANDOMSEED, dissimilarity="precomputed")
-        mds_result = mds.fit_transform(dist_matrix)
-        MDS_x_scores = mds_result[:,0]
-        MDS_y_scores = mds_result[:,1]
+    # def mds_results(dist_matrix):
+    #     RANDOMSEED = np.random.RandomState(seed=2)
 
-        # calculate the normalized stress from sklearn stress
-        # (https://stackoverflow.com/questions/36428205/stress-attribute-sklearn-manifold-mds-python)
-        stress_norm_MDS = np.sqrt(mds.stress_ / (0.5 * np.sum(dist_matrix**2)))
+    #     log_msg('  MDS')
+    #     mds = MDS(n_components=2, max_iter=1000, random_state=RANDOMSEED, dissimilarity="precomputed")
+    #     mds_result = mds.fit_transform(dist_matrix)
+    #     MDS_x_scores = mds_result[:,0]
+    #     MDS_y_scores = mds_result[:,1]
 
-        log_msg('  NMDS')
-        # compute NMDS  ***inititial the start position of the nmds as the mds solution!!!!
-        # dissimilarities = pairwise_distances(df.drop('class', axis=1), metric='euclidean')
-        nmds = MDS(n_components=2, metric=False, max_iter=1000, dissimilarity="precomputed")
-        nmds_result = nmds.fit_transform(dist_matrix, init=mds_result)
-        NMDS_x_scores = nmds_result[:,0]
-        NMDS_y_scores = nmds_result[:,1]
+    #     # calculate the normalized stress from sklearn stress
+    #     # (https://stackoverflow.com/questions/36428205/stress-attribute-sklearn-manifold-mds-python)
+    #     stress_norm_MDS = np.sqrt(mds.stress_ / (0.5 * np.sum(dist_matrix**2)))
 
-        # calculate the normalized stress from sklearn stress
-        stress_norm_NMDS = np.sqrt(nmds.stress_ / (0.5 * np.sum(dist_matrix**2)))
+    #     log_msg('  NMDS')
+    #     # compute NMDS  ***inititial the start position of the nmds as the mds solution!!!!
+    #     # dissimilarities = pairwise_distances(df.drop('class', axis=1), metric='euclidean')
+    #     nmds = MDS(n_components=2, metric=False, max_iter=1000, dissimilarity="precomputed")
+    #     nmds_result = nmds.fit_transform(dist_matrix, init=mds_result)
+    #     NMDS_x_scores = nmds_result[:,0]
+    #     NMDS_y_scores = nmds_result[:,1]
 
-        return {
-            'MDS_x_scores': MDS_x_scores,
-            'MDS_y_scores': MDS_y_scores,
-            'NMDS_x_scores': NMDS_x_scores,
-            'NMDS_y_scores': NMDS_y_scores,
-            'stress_norm_MDS': stress_norm_MDS,
-            'stress_norm_NMDS': stress_norm_NMDS,
-        }
+    #     # calculate the normalized stress from sklearn stress
+    #     stress_norm_NMDS = np.sqrt(nmds.stress_ / (0.5 * np.sum(dist_matrix**2)))
 
-    log_msg('start braycurtis calc')
-    results_braycurtis = mds_results(dist_matrix_braycurtis)
-    pairs_braycurtis_MDS = list(zip(results_braycurtis['MDS_x_scores'], results_braycurtis['MDS_y_scores']))
-    pairs_braycurtis_NMDS = list(zip(results_braycurtis['NMDS_x_scores'], results_braycurtis['NMDS_y_scores']))
-    stress_norm_braycurtis_MDS = results_braycurtis['stress_norm_MDS']
-    stress_norm_braycurtis_NMDS = results_braycurtis['stress_norm_NMDS']
+    #     return {
+    #         'MDS_x_scores': MDS_x_scores,
+    #         'MDS_y_scores': MDS_y_scores,
+    #         'NMDS_x_scores': NMDS_x_scores,
+    #         'NMDS_y_scores': NMDS_y_scores,
+    #         'stress_norm_MDS': stress_norm_MDS,
+    #         'stress_norm_NMDS': stress_norm_NMDS,
+    #     }
 
-    log_msg('start jaccard calc')
-    results_jaccard = mds_results(dist_matrix_jaccard)
-    pairs_jaccard_MDS = list(zip(results_jaccard['MDS_x_scores'], results_jaccard['MDS_y_scores']))
-    pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
-    stress_norm_jaccard_MDS = results_jaccard['stress_norm_MDS']
-    stress_norm_jaccard_NMDS = results_jaccard['stress_norm_NMDS']
+    # log_msg('start braycurtis calc')
+    # results_braycurtis = mds_results(dist_matrix_braycurtis)
+    # pairs_braycurtis_MDS = list(zip(results_braycurtis['MDS_x_scores'], results_braycurtis['MDS_y_scores']))
+    # pairs_braycurtis_NMDS = list(zip(results_braycurtis['NMDS_x_scores'], results_braycurtis['NMDS_y_scores']))
+    # stress_norm_braycurtis_MDS = results_braycurtis['stress_norm_MDS']
+    # stress_norm_braycurtis_NMDS = results_braycurtis['stress_norm_NMDS']
 
-    abundance_matrix['points'] = {
-        'braycurtis': pairs_braycurtis_MDS,
-        'braycurtis_NMDS': pairs_braycurtis_NMDS,
-        'stress_norm_braycurtis_MDS': stress_norm_braycurtis_MDS,
-        'stress_norm_braycurtis_NMDS': stress_norm_braycurtis_NMDS,
-        'jaccard': pairs_jaccard_MDS,
-        'jaccard_NMDS': pairs_jaccard_NMDS,
-        'stress_norm_jaccard_MDS': stress_norm_jaccard_MDS,
-        'stress_norm_jaccard_NMDS': stress_norm_jaccard_NMDS,
-    }
+    # log_msg('start jaccard calc')
+    # results_jaccard = mds_results(dist_matrix_jaccard)
+    # pairs_jaccard_MDS = list(zip(results_jaccard['MDS_x_scores'], results_jaccard['MDS_y_scores']))
+    # pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
+    # stress_norm_jaccard_MDS = results_jaccard['stress_norm_MDS']
+    # stress_norm_jaccard_NMDS = results_jaccard['stress_norm_NMDS']
 
-    sample_results = {}
+    # abundance_matrix['points'] = {
+    #     'braycurtis': pairs_braycurtis_MDS,
+    #     'braycurtis_NMDS': pairs_braycurtis_NMDS,
+    #     'stress_norm_braycurtis_MDS': stress_norm_braycurtis_MDS,
+    #     'stress_norm_braycurtis_NMDS': stress_norm_braycurtis_NMDS,
+    #     'jaccard': pairs_jaccard_MDS,
+    #     'jaccard_NMDS': pairs_jaccard_NMDS,
+    #     'stress_norm_jaccard_MDS': stress_norm_jaccard_MDS,
+    #     'stress_norm_jaccard_NMDS': stress_norm_jaccard_NMDS,
+    # }
 
-    contextual_filtering = True
-    additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
-    all_headers = ['id', 'am_environment_id', 'vegetation_type_id', 'imos_site_code', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
-                   'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
-                   'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
-    all_headers_unique = list(set(all_headers))
+    # sample_results = {}
 
-    with SampleQuery(params) as query:
-        results = query.matching_sample_graph_data(all_headers_unique)
+    # contextual_filtering = True
+    # additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+    # all_headers = ['id', 'am_environment_id', 'vegetation_type_id', 'imos_site_code', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
+    #                'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
+    #                'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
+    # all_headers_unique = list(set(all_headers))
 
-    if results:
-        ndata = np.array(results)
+    # with SampleQuery(params) as query:
+    #     results = query.matching_sample_graph_data(all_headers_unique)
 
-        for x in ndata:
-            sample_id_column = all_headers_unique.index('id')
-            sample_id = x[sample_id_column]
-            sample_data = dict(zip(all_headers_unique, x.tolist()))
-            sample_results[sample_id] = sample_data
+    # if results:
+    #     ndata = np.array(results)
 
-    abundance_matrix.pop('matrix_jaccard', None)
-    abundance_matrix.pop('matrix_braycurtis', None)
+    #     for x in ndata:
+    #         sample_id_column = all_headers_unique.index('id')
+    #         sample_id = x[sample_id_column]
+    #         sample_data = dict(zip(all_headers_unique, x.tolist()))
+    #         sample_results[sample_id] = sample_data
 
-    return JsonResponse({
-        'abundance_matrix': abundance_matrix,
-        'contextual': sample_results
-    })
+    # abundance_matrix.pop('matrix_jaccard', None)
+    # abundance_matrix.pop('matrix_braycurtis', None)
+
+    # return JsonResponse({
+    #     'abundance_matrix': abundance_matrix,
+    #     'contextual': sample_results
+    # })
 
 
 @require_CKAN_auth
@@ -1080,6 +1102,7 @@ def submit_blast(request):
 def blast_submission(request):
     submission_id = request.GET['submission_id']
     submission = tasks.Submission(submission_id)
+
     if not submission.result_url:
         state = 'pending'
     else:
@@ -1095,6 +1118,54 @@ def blast_submission(request):
         }
     })
 
+@require_CKAN_auth
+@require_POST
+def submit_comparison(request):
+    try:
+        params, errors = param_to_filters(request.POST['query'])
+        if errors:
+            raise OTUError(*errors)
+
+        submission_id = tasks.submit_sample_comparison(request.POST['query'])
+
+        return JsonResponse({
+            'success': True,
+            'submission_id': submission_id,
+            'state': "submit_comparison COMPLETED",
+            # 'data': data,
+        })
+    except OTUError as exc:
+        logger.exception('Error in submit to sample comparison')
+        return JsonResponse({
+            'success': False,
+            'errors': exc.errors,
+        })
+
+@require_CKAN_auth
+@require_GET
+def comparison_submission(request):
+    submission_id = request.GET['submission_id']
+    submission = tasks.Submission(submission_id)
+
+    state = submission.status
+
+    timestamps_ = submission.timestamps or json.dumps([])
+    timestamps = json.loads(timestamps_)
+    # timestamps = timestamps_
+    results = { 'abundanceMatrix': {}, 'contextual': {} }
+    if state == 'complete':
+        results = json.loads(submission.results)
+
+    return JsonResponse({
+        'success': True,
+        'mem_usage': mem_usage_obj(),
+        'submission': {
+            'id': submission_id,
+            'state': state,
+            'timestamps': timestamps,
+            'results': results,
+        }
+    })
 
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')

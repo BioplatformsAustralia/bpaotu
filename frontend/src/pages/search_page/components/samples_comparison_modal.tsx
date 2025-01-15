@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { Container, Col, Row, Input, Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
+import {
+  Button,
+  Container,
+  Col,
+  Row,
+  Input,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  ModalFooter,
+} from 'reactstrap'
 import { groupBy, isEmpty } from 'lodash'
 
 import AnimateHelix from 'components/animate_helix'
@@ -13,6 +23,11 @@ import {
   setSelectedMethod,
   clearPlotData,
 } from '../reducers/samples_comparison_modal'
+
+import {
+  // clearBlastAlert,
+  runComparison,
+} from '../reducers/samples_comparison_search'
 
 import SearchFilters from './search_filters'
 
@@ -38,21 +53,31 @@ const SamplesComparisonModal = (props) => {
 
   const {
     isOpen,
+    isLoading,
+    isProcessing,
     closeSamplesComparisonModal,
     fetchSampleComparisonModalSamples,
     processSampleComparisonModalSamples,
     selectedMethod,
     setSelectedMethod,
     clearPlotData,
-    isLoading,
-    isProcessing,
     // markers,
     // sampleOtus,
     abundanceMatrix,
     contextual,
     plotData,
     contextualFilters,
+    comparisonStatus,
+    comparisonResults,
+    mem_usage,
   } = props
+
+  // console.log('SamplesComparisonModal', 'comparisonStatus', comparisonStatus)
+  // console.log('SamplesComparisonModal', 'comparisonResults', comparisonResults)
+  // console.log('SamplesComparisonModal', 'abundanceMatrix', abundanceMatrix)
+  // console.log('SamplesComparisonModal', 'contextual', contextual)
+  // console.log('SamplesComparisonModal', 'plotData', plotData)
+  // console.log('SamplesComparisonModal', 'mem_usage', mem_usage)
 
   const tooManyRowsError = !!abundanceMatrix.error
   const discreteFields = ['imos_site_code']
@@ -241,12 +266,12 @@ const SamplesComparisonModal = (props) => {
   //   },
   // ]}
 
-  // Fetch data if the modal is opened
-  useEffect(() => {
-    if (isOpen) {
-      fetchSampleComparisonModalSamples()
-    }
-  }, [isOpen])
+  // // Fetch data if the modal is opened
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     fetchSampleComparisonModalSamples()
+  //   }
+  // }, [isOpen])
 
   // Clear the plot if data is being refetched
   // Update the plot if fetching has finished
@@ -500,6 +525,20 @@ const SamplesComparisonModal = (props) => {
             config={{ displayLogo: false, scrollZoom: false }}
           />
         </Container>
+        <Container>
+          <Button style={{ marginLeft: 20 }} onClick={props.runComparison}>
+            GO (state: <b>{comparisonStatus})</b>
+          </Button>
+          {mem_usage && (
+            <p>
+              {mem_usage.mem}
+              <br />
+              {mem_usage.swap}
+              <br />
+              {mem_usage.cpu}
+            </p>
+          )}
+        </Container>
       </ModalBody>
       <ModalFooter>
         <SearchFilters handleSearchFilterClick={fetchSampleComparisonModalSamples} />
@@ -525,17 +564,10 @@ const SamplesComparisonModal = (props) => {
 }
 
 const mapStateToProps = (state) => {
-  const {
-    isLoading,
-    isProcessing,
-    isOpen,
-    markers,
-    sampleOtus,
-    abundanceMatrix,
-    contextual,
-    selectedMethod,
-    plotData,
-  } = state.searchPage.samplesComparisonModal
+  const { isLoading, isProcessing, isOpen, markers, sampleOtus, selectedMethod, plotData } =
+    state.searchPage.samplesComparisonModal
+
+  const { abundanceMatrix, contextual } = state.searchPage.samplesComparisonSearch.results
 
   return {
     isLoading,
@@ -546,8 +578,11 @@ const mapStateToProps = (state) => {
     abundanceMatrix,
     contextual,
     selectedMethod,
-    plotData,
+    plotData: state.searchPage.samplesComparisonSearch.plotData,
     contextualFilters: state.contextualDataDefinitions.filters,
+    comparisonStatus: state.searchPage.samplesComparisonSearch.status,
+    comparisonResults: state.searchPage.samplesComparisonSearch.results,
+    mem_usage: state.searchPage.samplesComparisonSearch.mem_usage,
   }
 }
 
@@ -559,6 +594,7 @@ const mapDispatchToProps = (dispatch) => {
       processSampleComparisonModalSamples,
       setSelectedMethod,
       clearPlotData,
+      runComparison,
     },
     dispatch
   )

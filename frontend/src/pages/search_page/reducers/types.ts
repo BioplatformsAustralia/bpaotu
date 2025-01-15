@@ -27,6 +27,13 @@ export interface BlastSubmission {
   error?: string
 }
 
+export interface ComparisonSubmission {
+  submissionId: string
+  finished: boolean
+  succeeded: boolean
+  error?: string
+}
+
 export interface Alert {
   color: string
   text: string

@@ -3,10 +3,6 @@ from collections import defaultdict
 from django.core.cache import caches
 from django.conf import settings
 
-import pandas as pd
-
-from sklearn.metrics import pairwise_distances
-from fastdist import fastdist
 import time
 
 from .query import (
@@ -38,6 +34,9 @@ def _comparison_query(params):
     (see below)
     """
     # abundance matrix
+
+    # TODO: could the blast otu_id approach be useful here?
+
     with SampleQuery(params) as query:
         sample_id_selected = []
 
@@ -50,51 +49,7 @@ def _comparison_query(params):
         for row in query.matching_sample_distance_matrix().yield_per(1000):
             results.append((row[0], row[1], row[2]))
 
-        log_msg('start query results to df')
-        df = pd.DataFrame(results, columns=['sample_id', 'otu_id', 'abundance'])
-
-        # local dev: 4316539 crashes (Acidobacteria)
-
-        # if df.shape[0] > 1000000:
-        #     return {
-        #         'error': 'Too many rows'
-        #     }
-
-        log_msg('start df sort')
-        df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
-        
-        log_msg('start df pivot')
-
-        # this next line uses a lot of memory for a large result set
-        rectangular_df = df.pivot(index='sample_id', columns='otu_id', values='abundance').fillna(0)
-        
-        log_msg('finish df pivot')
-        log_msg(f'rectangular_df.shape {rectangular_df.shape}', skip_mem=True)
-
-        log_msg('start jaccard matrix_pairwise_distance')
-        dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
-
-        log_msg('start braycurtis matrix_pairwise_distance')
-        dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
-
-        log_msg('matrix_pairwise_distance done')
-        log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape)
-        log_msg('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape)
-
-        sample_ids = df['sample_id'].unique().tolist()
-        otu_ids = df['otu_id'].unique().tolist()
-
-        log_msg('sample_ids: ', len(sample_ids), skip_mem=True)
-        log_msg('otu_ids: ', len(otu_ids), skip_mem=True)
-
-        abundance_matrix = {
-            'sample_ids': sample_ids,
-            'otu_ids': otu_ids,
-            'matrix_jaccard': dist_matrix_jaccard,
-            'matrix_braycurtis': dist_matrix_braycurtis,
-        }
-
-        return abundance_matrix
+        return results
 
 
 def comparison_query(params, cache_duration=CACHE_7DAYS, force_cache=True):
@@ -176,7 +131,7 @@ def _spatial_query(params):
                 latlng['longitude'] = longitude
                 latlng['bpa_data'][sample.id] = samples_contextual_data(sample)
 
-            return list(result.values()), sample_otus_all #, abundance_matrix, contextual
+            return list(result.values()), sample_otus_all
 
 
 def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=False):

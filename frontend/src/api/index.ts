@@ -238,6 +238,28 @@ export function getBlastSubmission(submissionId) {
   })
 }
 
+export function executeComparison(filters) {
+  const formData = new FormData()
+  formData.append('query', JSON.stringify(filters))
+
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.submit_comparison_endpoint,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+}
+
+export function getComparisonSubmission(submissionId) {
+  return axios.get(window.otu_search_config.comparison_submission_endpoint, {
+    params: {
+      submission_id: submissionId,
+    },
+  })
+}
+
 export function apiCookieConsentAccepted() {
   return axios
     .get(window.otu_search_config.cookie_consent_accepted_endpoint.toString())
