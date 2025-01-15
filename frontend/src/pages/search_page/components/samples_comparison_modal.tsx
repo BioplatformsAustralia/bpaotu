@@ -70,6 +70,7 @@ const SamplesComparisonModal = (props) => {
     comparisonStatus,
     comparisonResults,
     mem_usage,
+    timestamps,
   } = props
 
   // console.log('SamplesComparisonModal', 'comparisonStatus', comparisonStatus)
@@ -78,6 +79,7 @@ const SamplesComparisonModal = (props) => {
   // console.log('SamplesComparisonModal', 'contextual', contextual)
   // console.log('SamplesComparisonModal', 'plotData', plotData)
   // console.log('SamplesComparisonModal', 'mem_usage', mem_usage)
+  // console.log('SamplesComparisonModal', 'timestamps', timestamps)
 
   const tooManyRowsError = !!abundanceMatrix.error
   const discreteFields = ['imos_site_code']
@@ -525,19 +527,50 @@ const SamplesComparisonModal = (props) => {
             config={{ displayLogo: false, scrollZoom: false }}
           />
         </Container>
-        <Container>
-          <Button style={{ marginLeft: 20 }} onClick={props.runComparison}>
-            GO (state: <b>{comparisonStatus})</b>
-          </Button>
-          {mem_usage && (
-            <p>
-              {mem_usage.mem}
-              <br />
-              {mem_usage.swap}
-              <br />
-              {mem_usage.cpu}
-            </p>
+        <Container
+          style={{
+            position: 'absolute',
+            left: '10px',
+            top: '20px',
+            width: '300px',
+            backgroundColor: '#eee',
+          }}
+        >
+          <h6>Timestamps</h6>
+          {timestamps && (
+            <ul style={{ paddingLeft: 20 }}>
+              {timestamps.map((obj, index) => {
+                const [key, value] = Object.entries(obj)[0]
+                const timestamp = Number(value) // Ensure value is a number
+                const date = new Date(timestamp * 1000) // Convert to milliseconds
+                const timeString =
+                  date.toLocaleTimeString('en-GB', { hour12: false }) +
+                  '.' +
+                  String(date.getMilliseconds()).padStart(3, '0')
+                return <li key={index}>{`${timeString} : ${key}`}</li>
+              })}
+            </ul>
           )}
+        </Container>
+        <Container style={{ marginTop: -10 }}>
+          <Row>
+            <Col xs="3">
+              <Button style={{ marginLeft: 20 }} onClick={props.runComparison}>
+                GO (state: <b>{comparisonStatus})</b>
+              </Button>
+            </Col>
+            <Col>
+              {mem_usage && (
+                <p>
+                  {mem_usage.mem}
+                  <br />
+                  {mem_usage.swap}
+                  <br />
+                  {mem_usage.cpu}
+                </p>
+              )}
+            </Col>
+          </Row>
         </Container>
       </ModalBody>
       <ModalFooter>
@@ -583,6 +616,7 @@ const mapStateToProps = (state) => {
     comparisonStatus: state.searchPage.samplesComparisonSearch.status,
     comparisonResults: state.searchPage.samplesComparisonSearch.results,
     mem_usage: state.searchPage.samplesComparisonSearch.mem_usage,
+    timestamps: state.searchPage.samplesComparisonSearch.timestamps,
   }
 }
 

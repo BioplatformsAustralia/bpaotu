@@ -48,6 +48,7 @@ const comparisonInitialState = {
   submissions: [],
   status: 'init',
   mem_usage: { mem: '', swap: '', cpu: '' },
+  timestamps: [],
   results: { abundanceMatrix: {}, contextual: {} },
   plotData: { jaccard: [], braycurtis: [] },
 }
@@ -200,6 +201,8 @@ export default handleActions(
           }
         }
 
+        console.log(action.payload.data.submission.timestamps)
+
         return {
           ...state,
           submissions: changeElementAtIndex(
@@ -211,6 +214,7 @@ export default handleActions(
           isSubmitting: isSubmitted,
           isFinished: isFinished,
           mem_usage: action.payload.data.mem_usage,
+          timestamps: action.payload.data.submission.timestamps,
           status: actionSubmissionState,
           results: results,
           plotData: plotData,

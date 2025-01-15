@@ -42,13 +42,11 @@ export const fetchSampleComparisonModalSamples = () => (dispatch, getState) => {
 }
 
 export const processSampleComparisonModalSamples = () => (dispatch, getState) => {
-  console.log('processSampleComparisonModalSamples')
+  // console.log('processSampleComparisonModalSamples')
   // const state = getState()
-
   // const { plotData, selectedMethod } = state.searchPage.samplesComparisonModal
   // const { abundanceMatrix, contextual } = state.searchPage.samplesComparisonSearch
   // const args = { abundanceMatrix, contextual, plotData, selectedMethod }
-
   // // not actually an API call, but we can use handleSimpleAPIResponse to yield values to the reducer
   // dispatch(samplesComparisonModalProcessingStarted())
   // handleSimpleAPIResponse(
