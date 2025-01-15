@@ -201,8 +201,6 @@ export default handleActions(
           }
         }
 
-        console.log(action.payload.data.submission.timestamps)
-
         return {
           ...state,
           submissions: changeElementAtIndex(
