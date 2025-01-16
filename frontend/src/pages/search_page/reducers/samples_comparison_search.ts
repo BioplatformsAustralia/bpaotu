@@ -49,6 +49,7 @@ const comparisonInitialState = {
   status: 'init',
   mem_usage: { mem: '', swap: '', cpu: '' },
   timestamps: [],
+  error: null,
   results: { abundanceMatrix: {}, contextual: {} },
   plotData: { jaccard: [], braycurtis: [] },
 }
@@ -213,6 +214,7 @@ export default handleActions(
           isFinished: isFinished,
           mem_usage: action.payload.data.mem_usage,
           timestamps: action.payload.data.submission.timestamps,
+          error: action.payload.data.submission.error,
           status: actionSubmissionState,
           results: results,
           plotData: plotData,
@@ -234,6 +236,7 @@ export default handleActions(
           alerts: [COMPARISON_ALERT_ERROR],
           isSubmitting: false,
           status: 'error 2',
+          error: action.payload.data.error,
         }
       },
     },

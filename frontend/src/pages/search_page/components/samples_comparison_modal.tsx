@@ -71,6 +71,7 @@ const SamplesComparisonModal = (props) => {
     comparisonResults,
     mem_usage,
     timestamps,
+    error,
   } = props
 
   // console.log('SamplesComparisonModal', 'comparisonStatus', comparisonStatus)
@@ -80,6 +81,10 @@ const SamplesComparisonModal = (props) => {
   // console.log('SamplesComparisonModal', 'plotData', plotData)
   // console.log('SamplesComparisonModal', 'mem_usage', mem_usage)
   // console.log('SamplesComparisonModal', 'timestamps', timestamps)
+
+  if (error) {
+    console.log('SamplesComparisonModal', 'error', error)
+  }
 
   const tooManyRowsError = !!abundanceMatrix.error
   const discreteFields = ['imos_site_code']
@@ -551,6 +556,12 @@ const SamplesComparisonModal = (props) => {
               })}
             </ul>
           )}
+          {error && (
+            <div>
+              <p style={{ color: 'red' }}>Error</p>
+              <p style={{ color: 'red' }}>{error}</p>
+            </div>
+          )}
         </Container>
         <Container style={{ marginTop: -10 }}>
           <Row>
@@ -617,6 +628,7 @@ const mapStateToProps = (state) => {
     comparisonResults: state.searchPage.samplesComparisonSearch.results,
     mem_usage: state.searchPage.samplesComparisonSearch.mem_usage,
     timestamps: state.searchPage.samplesComparisonSearch.timestamps,
+    error: state.searchPage.samplesComparisonSearch.error,
   }
 }
 

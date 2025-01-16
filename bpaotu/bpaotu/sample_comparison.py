@@ -72,6 +72,8 @@ class SampleComparisonWrapper:
         #         'error': 'Too many rows'
         #     }
 
+        self._status_update(submission, 'fetched -> df')
+
         log_msg('start query results to df')
         df = pd.DataFrame(results, columns=['sample_id', 'otu_id', 'abundance'])
         log_msg(f'df.shape {df.shape}', skip_mem=True)

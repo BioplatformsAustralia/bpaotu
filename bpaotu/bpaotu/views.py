@@ -1156,7 +1156,7 @@ def comparison_submission(request):
     if state == 'complete':
         results = json.loads(submission.results)
 
-    return JsonResponse({
+    response_data = {
         'success': True,
         'mem_usage': mem_usage_obj(),
         'submission': {
@@ -1165,7 +1165,12 @@ def comparison_submission(request):
             'timestamps': timestamps,
             'results': results,
         }
-    })
+    }
+
+    if state == 'error':
+        response_data['submission']['error'] = submission.error
+
+    return JsonResponse(response_data)
 
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')

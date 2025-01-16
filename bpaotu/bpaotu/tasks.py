@@ -210,9 +210,9 @@ def run_comparison(submission_id):
         submission.results = json.dumps(results, cls=NumpyEncoder)
     except Exception as e:
         submission.status = 'error'
+        submission.error = "%s" % (e)
         logger.warn("Error running sample comparison: %s" % (e))
         return submission_id
-        # return { 'error': e }
 
     return submission_id
 
