@@ -140,13 +140,10 @@ export default handleActions(
       ...state,
       selectedFilter: action.payload,
     }),
-    [samplesComparisonModalSetSelectedFilterExtra as any]: (state, action: any) => {
-      console.log('samplesComparisonModalSetSelectedFilterExtra', 'action.payload', action.payload)
-      return {
-        ...state,
-        selectedFilterExtra: action.payload,
-      }
-    },
+    [samplesComparisonModalSetSelectedFilterExtra as any]: (state, action: any) => ({
+      ...state,
+      selectedFilterExtra: action.payload,
+    }),
     [samplesComparisonModalClearPlotData as any]: (state, action: any) => ({
       ...state,
       // plotData: searchPageInitialState.samplesComparisonModal.plotData,
