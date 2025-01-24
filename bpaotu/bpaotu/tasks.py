@@ -250,6 +250,8 @@ def _make_sample_comparison_wrapper(submission):
         submission.submission_id, submission.status, submission.query)
 
 
+import datetime
+
 class NumpyEncoder(json.JSONEncoder):
     """ Special json encoder for numpy types """
     def default(self, obj):
@@ -259,5 +261,7 @@ class NumpyEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
+        elif isinstance(obj, (datetime.date, datetime.datetime)):
+            return obj.isoformat()
         return json.JSONEncoder.default(self, obj)
 

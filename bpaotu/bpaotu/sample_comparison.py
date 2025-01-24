@@ -58,13 +58,13 @@ class SampleComparisonWrapper:
         # access the submission so we can change the status
         submission = Submission(self._submission_id)
 
-        logger.info('Fetching sample data')
         self._status_update(submission, 'fetch')
+        log_msg('Fetching sample data', skip_mem=True)
  
         log_msg('start comparison_query')
         results = comparison_query(self._params)
 
-        logger.info(f'results length: {len(results)}')
+        log_msg(f'results length: {len(results)}', skip_mem=True)
 
         # local dev: 4316539 crashes (Acidobacteria)
         # if df.shape[0] > 1000000:
@@ -72,7 +72,7 @@ class SampleComparisonWrapper:
         #         'error': 'Too many rows'
         #     }
 
-        self._status_update(submission, 'fetched -> df')
+        self._status_update(submission, 'fetched_to_df')
 
         log_msg('start query results to df')
         df = pd.DataFrame(results, columns=['sample_id', 'otu_id', 'abundance'])
@@ -91,21 +91,17 @@ class SampleComparisonWrapper:
         rectangular_df = df.pivot(index='sample_id', columns='otu_id', values='abundance').fillna(0)
         log_msg(f'rectangular_df.shape {rectangular_df.shape}', skip_mem=True)
 
-        self._status_update(submission, 'calc_distances start')
-
+        self._status_update(submission, 'calc_distances_bc')
         log_msg('start braycurtis matrix_pairwise_distance')
         dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
 
-        self._status_update(submission, 'calc_distances 1/2')
-
+        self._status_update(submission, 'calc_distances_j')
         log_msg('start jaccard matrix_pairwise_distance')
         dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
 
-        self._status_update(submission, 'calc_distances 2/2')
-
         log_msg('matrix_pairwise_distance done')
-        log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape)
-        log_msg('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape)
+        log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape, skip_mem=True)
+        log_msg('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape, skip_mem=True)
 
         sample_ids = df['sample_id'].unique().tolist()
         otu_ids = df['otu_id'].unique().tolist()
@@ -119,8 +115,6 @@ class SampleComparisonWrapper:
             'matrix_braycurtis': dist_matrix_braycurtis,
             'matrix_jaccard': dist_matrix_jaccard,
         }
-
-        logger.info('Finished calculating distance matrices')
 
         dist_matrix_braycurtis = abundance_matrix['matrix_braycurtis']
         dist_matrix_jaccard = abundance_matrix['matrix_jaccard']
@@ -158,8 +152,7 @@ class SampleComparisonWrapper:
                 'stress_norm_NMDS': stress_norm_NMDS,
             }
 
-        self._status_update(submission, 'calc_mds start')
-
+        self._status_update(submission, 'calc_mds_bc')
         log_msg('start braycurtis calc')
         results_braycurtis = mds_results(dist_matrix_braycurtis)
         pairs_braycurtis_MDS = list(zip(results_braycurtis['MDS_x_scores'], results_braycurtis['MDS_y_scores']))
@@ -167,16 +160,13 @@ class SampleComparisonWrapper:
         stress_norm_braycurtis_MDS = results_braycurtis['stress_norm_MDS']
         stress_norm_braycurtis_NMDS = results_braycurtis['stress_norm_NMDS']
 
-        self._status_update(submission, 'calc_mds 1/2')
-
+        self._status_update(submission, 'calc_mds_j')
         log_msg('start jaccard calc')
         results_jaccard = mds_results(dist_matrix_jaccard)
         pairs_jaccard_MDS = list(zip(results_jaccard['MDS_x_scores'], results_jaccard['MDS_y_scores']))
         pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
         stress_norm_jaccard_MDS = results_jaccard['stress_norm_MDS']
         stress_norm_jaccard_NMDS = results_jaccard['stress_norm_NMDS']
-
-        self._status_update(submission, 'calc_mds 2/2')
 
         abundance_matrix['points'] = {
             'braycurtis': pairs_braycurtis_MDS,
@@ -189,7 +179,7 @@ class SampleComparisonWrapper:
             'stress_norm_jaccard_NMDS': stress_norm_jaccard_NMDS,
         }
 
-        self._status_update(submission, 'contextual start')
+        self._status_update(submission, 'contextual_start')
 
         contextual_filtering = True
         additional_headers = views.selected_contextual_filters(self._query, contextual_filtering=contextual_filtering)

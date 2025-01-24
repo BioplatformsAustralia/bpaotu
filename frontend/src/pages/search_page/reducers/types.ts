@@ -65,13 +65,30 @@ export interface PageState {
   samplesComparisonModal: {
     isOpen: boolean
     isLoading: boolean
-    isProcessing: boolean
-    markers: SampleMarker[]
-    sampleOtus: any[]
-    abundanceMatrix: any
-    contextual: any
+    isFinished: boolean
     selectedMethod: string
-    plotData: any
+    selectedFilter: string
+    selectedFilterExtra: string
+    status: string
+    alerts: any[]
+    errors: any[]
+    submissions: any[]
+    results: {
+      abundanceMatrix: any
+      contextual: any
+    }
+    plotData: {
+      jaccard: any[]
+      braycurtis: any[]
+      // jaccard: Array<{ x: number; y: number }>;
+      // braycurtis: Array<{ x: number; y: number }>;
+    }
+    mem_usage: {
+      mem: string
+      swap: string
+      cpu: string
+    }
+    timestamps: any[]
   }
   metagenomeModal: {
     isLoading: boolean
@@ -147,13 +164,18 @@ export const searchPageInitialState: PageState = {
   samplesComparisonModal: {
     isOpen: false,
     isLoading: false,
-    isProcessing: false,
-    markers: [],
-    sampleOtus: [],
-    abundanceMatrix: {},
-    contextual: {},
+    isFinished: false,
     selectedMethod: 'braycurtis',
+    selectedFilter: '',
+    selectedFilterExtra: '',
+    status: 'init',
+    alerts: [],
+    errors: [],
+    submissions: [],
+    results: { abundanceMatrix: {}, contextual: {} },
     plotData: { jaccard: [], braycurtis: [] },
+    mem_usage: { mem: '', swap: '', cpu: '' },
+    timestamps: [],
   },
   metagenomeModal: {
     isOpen: false,

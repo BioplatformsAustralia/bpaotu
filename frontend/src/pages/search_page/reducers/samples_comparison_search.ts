@@ -7,8 +7,6 @@ import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
 import { ComparisonSubmission, ErrorList } from './types'
 
-export const HANDLE_COMPARISON_SEQUENCE = 'HANDLE_COMPARISON_SEQUENCE'
-export const HANDLE_COMPARISON_PARAMETERS = 'HANDLE_COMPARISON_PARAMETERS'
 export const RUN_COMPARISON_STARTED = 'RUN_COMPARISON_STARTED'
 export const RUN_COMPARISON_ENDED = 'RUN_COMPARISON_ENDED'
 export const COMPARISON_SUBMISSION_UPDATE_STARTED = 'COMPARISON_SUBMISSION_UPDATE_STARTED'
@@ -18,9 +16,6 @@ export const CLEAR_COMPARISON_ALERT = 'CLEAR_COMPARISON_ALERT'
 const COMPARISON_SUBMISSION_POLL_FREQUENCY_MS = 2000
 
 export const {
-  handleComparisonSequence,
-  handleComparisonParameters,
-
   runComparisonStarted,
   runComparisonEnded,
 
@@ -29,9 +24,6 @@ export const {
 
   clearComparisonAlert,
 } = createActions(
-  HANDLE_COMPARISON_SEQUENCE,
-  HANDLE_COMPARISON_PARAMETERS,
-
   RUN_COMPARISON_STARTED,
   RUN_COMPARISON_ENDED,
 
@@ -43,13 +35,13 @@ export const {
 
 const comparisonInitialState = {
   alerts: [],
-  isSubmitting: false,
+  isLoading: false,
   isFinished: false,
   submissions: [],
   status: 'init',
   mem_usage: { mem: '', swap: '', cpu: '' },
   timestamps: [],
-  error: null,
+  errors: [],
   results: { abundanceMatrix: {}, contextual: {} },
   plotData: { jaccard: [], braycurtis: [] },
 }
@@ -85,6 +77,8 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
       dispatch(comparisonSubmissionUpdateEnded(data))
       const newLastSubmission = getLastSubmission()
       if (!newLastSubmission.finished) {
+        // TODO: consider a variable poll frequency depending on estimated time of completion
+        // (based on how long initial states take)
         setTimeout(
           () => dispatch(autoUpdateComparisonSubmission()),
           COMPARISON_SUBMISSION_POLL_FREQUENCY_MS
@@ -95,20 +89,21 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
       dispatch(comparisonSubmissionUpdateEnded(new Error('Unhandled server-side error!')))
     })
 }
+
 function alert(text, color = 'primary') {
   return { color, text }
 }
 
 const COMPARISON_ALERT_IN_PROGRESS = alert(
-  'COMPARISON search is in progress, and may take several minutes. Do not close your browser - this status will update once the search is complete.'
+  'Comparison is in progress, and may take several minutes. Do not close your browser - this status will update once the search is complete.'
 )
-const COMPARISON_ALERT_ERROR = alert('An error occured while running COMPARISON.', 'danger')
+const COMPARISON_ALERT_ERROR = alert('An error occured while running comparison.', 'danger')
 
 export default handleActions(
   {
     [runComparisonStarted as any]: (state, action: any) => ({
       ...state,
-      isSubmitting: true,
+      isLoading: true,
       isFinished: false,
       status: 'init',
     }),
@@ -121,16 +116,17 @@ export default handleActions(
         }
         const alerts = [COMPARISON_ALERT_IN_PROGRESS]
 
+        console.log('runComparisonEnded')
+
         return {
           ...state,
-          // status: '???',
           alerts,
           submissions: [...state.submissions, lastSubmission],
         }
       },
       throw: (state, action: any) => ({
         ...state,
-        isSubmitting: false,
+        isLoading: false,
         isFinished: false,
         status: 'error 1',
         alerts: [COMPARISON_ALERT_ERROR],
@@ -168,12 +164,13 @@ export default handleActions(
           )
         }
 
-        let isSubmitted: any = state.isSubmitting
+        let isLoading: any = state.isLoading
         let isFinished: any = false
         let results: any = comparisonInitialState.results
-        let plotData: any = {}
+        let plotData: any = comparisonInitialState.plotData
+
         if (actionSubmissionState === 'complete') {
-          isSubmitted = false
+          isLoading = false
           isFinished = true
           results = action.payload.data.submission.results
 
@@ -202,6 +199,8 @@ export default handleActions(
           }
         }
 
+        console.log('comparisonSubmissionUpdateEnded', 'plotData', plotData)
+
         return {
           ...state,
           submissions: changeElementAtIndex(
@@ -210,11 +209,11 @@ export default handleActions(
             (_) => newLastSubmissionState
           ),
           alerts: newAlerts,
-          isSubmitting: isSubmitted,
+          isLoading: isLoading,
           isFinished: isFinished,
           mem_usage: action.payload.data.mem_usage,
           timestamps: action.payload.data.submission.timestamps,
-          error: action.payload.data.submission.error,
+          errors: action.payload.data.errors,
           status: actionSubmissionState,
           results: results,
           plotData: plotData,
@@ -234,7 +233,7 @@ export default handleActions(
             })
           ),
           alerts: [COMPARISON_ALERT_ERROR],
-          isSubmitting: false,
+          isLoading: false,
           status: 'error 2',
           error: action.payload.data.error,
         }

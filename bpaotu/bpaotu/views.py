@@ -1131,8 +1131,6 @@ def submit_comparison(request):
         return JsonResponse({
             'success': True,
             'submission_id': submission_id,
-            'state': "submit_comparison COMPLETED",
-            # 'data': data,
         })
     except OTUError as exc:
         logger.exception('Error in submit to sample comparison')

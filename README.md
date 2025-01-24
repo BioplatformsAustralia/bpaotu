@@ -382,3 +382,8 @@ different table / column for each amplicon
 bacteria: domain = bacteria, phylum != unclassified
 
 different section rather than same graph page
+
+Reworking the isContinuous etc. stuff
+Parse dates; if 'date' type or in date list (i.e collection date)
+extra handling for collection date
+Breakdown into year, month, and season

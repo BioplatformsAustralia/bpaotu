@@ -1,68 +1,128 @@
 import { createActions, handleActions } from 'redux-actions'
 import { searchPageInitialState } from './types'
 
-import { map, partial } from 'lodash'
-import { executeSampleSitesComparisonSearch } from 'api'
-import { executeSampleSitesComparisonProcessing } from '../components/util/ordination'
-import { handleSimpleAPIResponse } from 'reducers/utils'
+import { executeComparison, getComparisonSubmission } from 'api'
+import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
+
 import { describeSearch } from './search'
+import { ComparisonSubmission, ErrorList } from './types'
+
+import { filter, get as _get, includes, isNumber, join, last, reject, upperCase } from 'lodash'
 
 export const {
   openSamplesComparisonModal,
   closeSamplesComparisonModal,
 
-  samplesComparisonModalFetchSamplesStarted,
-  samplesComparisonModalFetchSamplesEnded,
-  samplesComparisonModalProcessingStarted,
-  samplesComparisonModalProcessingEnded,
   samplesComparisonModalSetSelectedMethod,
+  samplesComparisonModalSetSelectedFilter,
+  samplesComparisonModalSetSelectedFilterExtra,
+
+  runComparisonStarted,
+  runComparisonEnded,
+
+  comparisonSubmissionUpdateStarted,
+  comparisonSubmissionUpdateEnded,
+
+  clearComparisonAlert,
+
   samplesComparisonModalClearPlotData,
 } = createActions(
-  'OPEN_SAMPLES_Comparison_MODAL',
-  'CLOSE_SAMPLES_Comparison_MODAL',
+  'OPEN_SAMPLES_COMPARISON_MODAL',
+  'CLOSE_SAMPLES_COMPARISON_MODAL',
 
-  'SAMPLES_COMPARISON_MODAL_FETCH_SAMPLES_STARTED',
-  'SAMPLES_COMPARISON_MODAL_FETCH_SAMPLES_ENDED',
-  'SAMPLES_COMPARISON_MODAL_PROCESSING_STARTED',
-  'SAMPLES_COMPARISON_MODAL_PROCESSING_ENDED',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_METHOD',
+  'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER',
+  'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER_EXTERA',
+
+  'RUN_COMPARISON_STARTED',
+  'RUN_COMPARISON_ENDED',
+  'COMPARISON_SUBMISSION_UPDATE_STARTED',
+  'COMPARISON_SUBMISSION_UPDATE_ENDED',
+  'CLEAR_COMPARISON_ALERT',
+
   'SAMPLES_COMPARISON_MODAL_CLEAR_PLOT_DATA'
 )
 
-export const fetchSampleComparisonModalSamples = () => (dispatch, getState) => {
-  const state = getState()
-  const filters = describeSearch(state)
-
-  dispatch(samplesComparisonModalFetchSamplesStarted())
-  handleSimpleAPIResponse(
-    dispatch,
-    partial(executeSampleSitesComparisonSearch, filters),
-    samplesComparisonModalFetchSamplesEnded
-  )
-}
-
-export const processSampleComparisonModalSamples = () => (dispatch, getState) => {
-  // console.log('processSampleComparisonModalSamples')
-  // const state = getState()
-  // const { plotData, selectedMethod } = state.searchPage.samplesComparisonModal
-  // const { abundanceMatrix, contextual } = state.searchPage.samplesComparisonSearch
-  // const args = { abundanceMatrix, contextual, plotData, selectedMethod }
-  // // not actually an API call, but we can use handleSimpleAPIResponse to yield values to the reducer
-  // dispatch(samplesComparisonModalProcessingStarted())
-  // handleSimpleAPIResponse(
-  //   dispatch,
-  //   partial(executeSampleSitesComparisonProcessing, args),
-  //   samplesComparisonModalProcessingEnded
-  // )
-}
+const COMPARISON_SUBMISSION_POLL_FREQUENCY_MS = 2000
 
 export const setSelectedMethod = (selectedMethod) => (dispatch, getState) => {
   dispatch(samplesComparisonModalSetSelectedMethod(selectedMethod))
 }
 
+export const setSelectedFilter = (selectedFilter) => (dispatch, getState) => {
+  dispatch(samplesComparisonModalSetSelectedFilter(selectedFilter))
+}
+
+export const setSelectedFilterExtra = (selectedFilterExtra) => (dispatch, getState) => {
+  dispatch(samplesComparisonModalSetSelectedFilterExtra(selectedFilterExtra))
+}
+
 export const clearPlotData = () => (dispatch, getState) => {
   dispatch(samplesComparisonModalClearPlotData())
 }
+
+export const runComparison = () => (dispatch, getState) => {
+  const state = getState()
+
+  dispatch(runComparisonStarted())
+
+  const filters = describeSearch(state)
+
+  executeComparison(filters)
+    .then((data) => {
+      if (_get(data, 'data.errors', []).length > 0) {
+        dispatch(runComparisonEnded(new ErrorList(data.data.errors)))
+        return
+      }
+      dispatch(runComparisonEnded(data))
+      dispatch(autoUpdateComparisonSubmission())
+    })
+    .catch((error) => {
+      dispatch(runComparisonEnded(new ErrorList('Unhandled server-side error!')))
+    })
+}
+
+export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
+  const state = getState()
+  const getLastSubmission: () => ComparisonSubmission = () =>
+    last(state.searchPage.samplesComparisonModal.submissions)
+  const lastSubmission = getLastSubmission()
+
+  getComparisonSubmission(lastSubmission.submissionId)
+    .then((data) => {
+      dispatch(comparisonSubmissionUpdateEnded(data))
+
+      //previous way
+      // const newLastSubmission = getLastSubmission()
+      // const continuePoll = !newLastSubmission.finished
+
+      // we need to check the state immediately to prevent another call
+      // because newLastSubmission.finished will lag due to race condition
+      const { state } = data.data.submission
+      const continuePoll = state !== 'complete'
+
+      if (continuePoll) {
+        // TODO: consider a variable poll frequency depending on estimated time of completion
+        // (based on how long initial states take)
+        setTimeout(
+          () => dispatch(autoUpdateComparisonSubmission()),
+          COMPARISON_SUBMISSION_POLL_FREQUENCY_MS
+        )
+      }
+    })
+    .catch((error) => {
+      dispatch(comparisonSubmissionUpdateEnded(new Error('Unhandled server-side error!')))
+    })
+}
+
+function alert(text, color = 'primary') {
+  return { color, text }
+}
+
+const COMPARISON_ALERT_IN_PROGRESS = alert(
+  'Comparison is in progress, and may take several minutes. Do not close your browser - this status will update once the search is complete.'
+)
+const COMPARISON_ALERT_ERROR = alert('An error occured while running comparison.', 'danger')
 
 export default handleActions(
   {
@@ -74,52 +134,176 @@ export default handleActions(
       ...state,
       isOpen: false,
     }),
-    [samplesComparisonModalFetchSamplesStarted as any]: (state, action) => {
-      return {
-        ...state,
-        isLoading: true,
-        markers: [],
-        sampleOtus: [],
-        abundanceMatrix: {},
-        contextual: {},
-      }
-    },
-    [samplesComparisonModalFetchSamplesEnded as any]: (state, action: any) => {
-      return {
-        ...state,
-        isLoading: false,
-        markers: map(action.payload.data.data, (sample) => ({
-          bpadata: sample.bpa_data,
-          lat: sample.latitude,
-          lng: sample.longitude,
-          site_images: sample.site_images,
-        })),
-        sampleOtus: action.payload.data.sample_otus,
-        abundanceMatrix: action.payload.data.abundance_matrix,
-        contextual: action.payload.data.contextual,
-      }
-    },
-    [samplesComparisonModalProcessingStarted as any]: (state, action) => {
-      return {
-        ...state,
-        isProcessing: true,
-      }
-    },
-    [samplesComparisonModalProcessingEnded as any]: (state, action: any) => {
-      return {
-        ...state,
-        isProcessing: false,
-        // plotData: action.payload,
-      }
-    },
     [samplesComparisonModalSetSelectedMethod as any]: (state, action: any) => ({
       ...state,
       selectedMethod: action.payload,
     }),
+    [samplesComparisonModalSetSelectedFilter as any]: (state, action: any) => ({
+      ...state,
+      selectedFilter: action.payload,
+    }),
+    [samplesComparisonModalSetSelectedFilterExtra as any]: (state, action: any) => ({
+      ...state,
+      selectedFilterExtra: action.payload,
+    }),
     [samplesComparisonModalClearPlotData as any]: (state, action: any) => ({
       ...state,
-      plotData: searchPageInitialState.samplesComparisonModal.plotData,
+      // plotData: searchPageInitialState.samplesComparisonModal.plotData,
     }),
+
+    [runComparisonStarted as any]: (state, action: any) => ({
+      ...state,
+      isLoading: true,
+      isFinished: false,
+      status: 'init',
+    }),
+    [runComparisonEnded as any]: {
+      next: (state, action: any) => {
+        const lastSubmission: ComparisonSubmission = {
+          submissionId: action.payload.data.submission_id,
+          finished: false,
+          succeeded: false,
+        }
+        // const alerts = [COMPARISON_ALERT_IN_PROGRESS]
+
+        return {
+          ...state,
+          // alerts,
+          submissions: [...state.submissions, lastSubmission],
+        }
+      },
+      throw: (state, action: any) => ({
+        ...state,
+        isLoading: false,
+        isFinished: false,
+        status: 'error',
+        errors: action.payload.data.errors,
+      }),
+    },
+    [comparisonSubmissionUpdateEnded as any]: {
+      next: (state, action: any) => {
+        const actionSubmissionState = action.payload.data.submission.state
+        const lastSubmission = last(state.submissions)
+        const newLastSubmissionState = ((submission) => {
+          const { state: status, error } = action.payload.data.submission
+          const newState = {
+            ...submission,
+            finished: status === 'complete' || status === 'error',
+            succeeded: status === 'complete',
+          }
+          if (status === 'error') {
+            newState['error'] = error
+          }
+          return newState
+        })(lastSubmission)
+
+        let newAlerts: any = state.alerts
+        if (newLastSubmissionState['finished'] && !lastSubmission['finished']) {
+          const resultUrl = action.payload.data.submission.result_url
+          const COMPARISON_ALERT_SUCCESS = alert(
+            'COMPARISON search executed successfully. ' +
+              `Click <a target="_blank" href="${resultUrl}" className="alert-link">` +
+              'here</a> to download the results.',
+            'success'
+          )
+          newAlerts = reject([state.alerts, COMPARISON_ALERT_IN_PROGRESS])
+          newAlerts.push(
+            newLastSubmissionState['succeeded'] ? COMPARISON_ALERT_SUCCESS : COMPARISON_ALERT_ERROR
+          )
+        }
+
+        let isLoading: any = state.isLoading
+        let isFinished: any = false
+        let results: any = searchPageInitialState.samplesComparisonModal.results
+        let plotData: any = searchPageInitialState.samplesComparisonModal.plotData
+
+        if (actionSubmissionState === 'complete') {
+          isLoading = false
+          isFinished = true
+          results = action.payload.data.submission.results
+
+          const { abundanceMatrix, contextual } = results
+          const sample_ids = abundanceMatrix.sample_ids
+          const pointsBC = abundanceMatrix.points['braycurtis']
+          const pointsJ = abundanceMatrix.points['jaccard']
+
+          // apply a jitter so that points aren't put on the same place (makes graph misleading)
+          // need to retain the original value to put in the tooltip though
+          const jitterAmount = 0.005
+          plotData = {
+            braycurtis: sample_ids.map((s, i) => {
+              return {
+                text: s,
+                x: pointsBC[i][0],
+                xj: pointsBC[i][0] + (Math.random() * 2 - 1) * jitterAmount,
+                y: pointsBC[i][1],
+                yj: pointsBC[i][1] + (Math.random() * 2 - 1) * jitterAmount,
+                ...contextual[s],
+              }
+            }),
+            jaccard: sample_ids.map((s, i) => {
+              return {
+                text: s,
+                x: pointsJ[i][0],
+                xj: pointsJ[i][0] + (Math.random() * 2 - 1) * jitterAmount,
+                y: pointsJ[i][1],
+                yj: pointsJ[i][1] + (Math.random() * 2 - 1) * jitterAmount,
+                ...contextual[s],
+              }
+            }),
+          }
+        }
+
+        return {
+          ...state,
+          submissions: changeElementAtIndex(
+            state.submissions,
+            state.submissions.length - 1,
+            (_) => newLastSubmissionState
+          ),
+          alerts: newAlerts,
+          isLoading: isLoading,
+          isFinished: isFinished,
+          mem_usage: action.payload.data.mem_usage,
+          timestamps: action.payload.data.submission.timestamps,
+          errors: action.payload.data.errors,
+          status: actionSubmissionState,
+          results: results,
+          plotData: plotData,
+        }
+      },
+      throw: (state, action) => {
+        return {
+          ...state,
+          submissions: changeElementAtIndex(
+            state.submissions,
+            state.submissions.length - 1,
+            (submission) => ({
+              ...submission,
+              finished: true,
+              succeeded: false,
+              error: action.error,
+            })
+          ),
+          alerts: [COMPARISON_ALERT_ERROR],
+          isLoading: false,
+          status: 'error 2',
+          error: action.payload.data.error,
+        }
+      },
+    },
+    [clearComparisonAlert as any]: (state, action) => {
+      const index = action.payload
+      const alerts = isNumber(index)
+        ? removeElementAtIndex(state.alerts, index)
+        : state.alerts.filter((a) => a.color === 'danger') // never auto-remove errors
+      return {
+        ...state,
+        alerts,
+        isFinished: false,
+        status: 'init',
+      }
+    },
   },
   searchPageInitialState.samplesComparisonModal
 )

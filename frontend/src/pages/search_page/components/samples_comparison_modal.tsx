@@ -12,273 +12,194 @@ import {
   ModalHeader,
   ModalFooter,
 } from 'reactstrap'
-import { groupBy, isEmpty } from 'lodash'
+import {
+  filterOptionsSubset,
+  fieldsDate,
+  processContinuous,
+  processDiscrete,
+} from '../components/util/comparison'
 
 import AnimateHelix from 'components/animate_helix'
 
 import {
-  closeSamplesComparisonModal,
-  fetchSampleComparisonModalSamples,
-  processSampleComparisonModalSamples,
-  setSelectedMethod,
   clearPlotData,
-} from '../reducers/samples_comparison_modal'
-
-import {
-  // clearBlastAlert,
+  closeSamplesComparisonModal,
   runComparison,
-} from '../reducers/samples_comparison_search'
+  setSelectedMethod,
+  setSelectedFilter,
+  setSelectedFilterExtra,
+} from '../reducers/samples_comparison_modal'
 
 import SearchFilters from './search_filters'
 
 import Plot from 'react-plotly.js'
 
-interface ModalSample {
-  id: number
-  x: number
-  y: number
+const comparisonStatusMapping = {
+  init: 'Initialising',
+  fetch: 'Fetching samples',
+  fetched_to_df: 'Loading samples into dataframe',
+  sort: 'Sorting samples',
+  pivot: 'Pivoting data',
+  calc_distances_bc: 'Calculating distance matrices (Bray-Curtis)',
+  calc_distances_j: 'Calculating distance matrices (Jaccard)',
+  calc_mds_bc: 'Calculating MDS points (Bray-Curtis)',
+  calc_mds_j: 'Calculating MDS points (Jaccard)',
+  contextual_start: 'Collating contextual data',
+  complete: 'Complete',
 }
 
-interface PlotData {
-  jaccard: object
-  braycurtis: object
+const LoadingSpinnerOverlay = ({ status }) => {
+  const loadingstyle = {
+    display: 'flex',
+    height: '100%',
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    background: 'rgba(0,0,0,0.4)',
+    zIndex: 99999,
+  } as React.CSSProperties
+
+  return (
+    <div style={loadingstyle}>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <AnimateHelix />
+        <div
+          style={{
+            display: 'inline-block',
+            textAlign: 'center',
+            margin: 12,
+            padding: 6,
+            background: 'white',
+            width: '100%',
+          }}
+        >
+          <>{comparisonStatusMapping[status] || 'Loading'}</>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const ErrorOverlay = ({ errors }) => {
+  console.log('ErrorOverlay', 'errors', errors)
+  const loadingstyle = {
+    display: 'flex',
+    height: '100%',
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    background: 'rgba(0,0,0,0.4)',
+    zIndex: 99999,
+  } as React.CSSProperties
+
+  return (
+    <div style={loadingstyle}>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div
+          style={{
+            display: 'inline-block',
+            textAlign: 'center',
+            margin: 12,
+            padding: 6,
+            background: 'white',
+            width: '100%',
+          }}
+        >
+          Too many rows in search space, please change the search parameters
+        </div>
+      </div>
+    </div>
+  )
 }
 
 const SamplesComparisonModal = (props) => {
-  const [selectedFilter, setSelectedFilter] = useState('')
   const [markerSize, setMarkerSize] = useState(12)
 
   const chartWidth = window.innerWidth * 0.7
   const chartHeight = window.innerHeight * 0.7
 
+  // console.log('SamplesComparisonModal', 'props', props)
+
   const {
     isOpen,
     isLoading,
-    isProcessing,
+    runComparison,
     closeSamplesComparisonModal,
-    fetchSampleComparisonModalSamples,
-    processSampleComparisonModalSamples,
+
     selectedMethod,
+    selectedFilter,
+    selectedFilterExtra,
     setSelectedMethod,
+    setSelectedFilter,
+    setSelectedFilterExtra,
+
     clearPlotData,
-    // markers,
-    // sampleOtus,
     abundanceMatrix,
     contextual,
     plotData,
     contextualFilters,
     comparisonStatus,
-    comparisonResults,
     mem_usage,
     timestamps,
-    error,
+    errors,
   } = props
 
   // console.log('SamplesComparisonModal', 'comparisonStatus', comparisonStatus)
-  // console.log('SamplesComparisonModal', 'comparisonResults', comparisonResults)
   // console.log('SamplesComparisonModal', 'abundanceMatrix', abundanceMatrix)
   // console.log('SamplesComparisonModal', 'contextual', contextual)
   // console.log('SamplesComparisonModal', 'plotData', plotData)
   // console.log('SamplesComparisonModal', 'mem_usage', mem_usage)
   // console.log('SamplesComparisonModal', 'timestamps', timestamps)
 
-  if (error) {
-    console.log('SamplesComparisonModal', 'error', error)
+  const isError = errors && errors.length
+  if (isError) {
+    console.log('SamplesComparisonModal', 'errors', errors)
   }
 
-  const tooManyRowsError = !!abundanceMatrix.error
-  const discreteFields = ['imos_site_code']
-  const isContinuous =
-    selectedFilter !== '' &&
-    !selectedFilter.endsWith('_id') &&
-    !discreteFields.includes(selectedFilter)
+  const selectedFilterObject = contextualFilters.find((x) => x.name === selectedFilter)
 
-  const filterOptionKeys =
-    Object.keys(contextual).length > 0 ? Object.keys(Object.values(contextual)[0]) : []
+  // console.log('SamplesComparisonModal', 'selectedMethod', selectedMethod)
+  // console.log('SamplesComparisonModal', 'selectedFilter', selectedFilter)
+  // console.log('SamplesComparisonModal', 'selectedFilterObject', selectedFilterObject)
 
-  // Filter keys that have null values for all samples
-  const keysWithAllNullValues = filterOptionKeys.filter((key) => {
-    // Check if all samples have null value for the current key
-    return Object.values(contextual).every((sample) => sample[key] === null)
-  })
+  const isContinuous = selectedFilterObject && selectedFilterObject.type === 'float'
+  const isDate =
+    selectedFilterObject &&
+    (selectedFilterObject.type === 'date' || fieldsDate.includes(selectedFilter))
 
-  const filterOptionsSubset = filterOptionKeys.sort().map((x) => {
-    const filter = contextualFilters.find((y) => y.name === x)
+  // Only show filter options that don't have null values for all samples
+  const filterOptions = filterOptionsSubset(contextual, contextualFilters)
 
-    if (filter) {
-      const disabled = keysWithAllNullValues.includes(filter.name)
-      if (filter.type !== 'sample_id') {
-        return { value: filter.name, text: filter.display_name, disabled: disabled }
-      } else {
-        return null
-      }
-    } else {
-      return null
-    }
-  })
-
-  const filterOptions = filterOptionsSubset.filter((x) => x != null)
-
-  // data will be an array of length 1
-  // but the size for each of the points will be different
-  const processContinuous = (data) => {
-    const propsToKeep = ['x', 'y', 'text']
-    const transformedObject = {}
-
-    var dataToLoop
-    var propsToLoop
-
-    if (selectedFilter === '') {
-      dataToLoop = data
-      propsToLoop = propsToKeep
-    } else {
-      dataToLoop = data.filter((x) => x[selectedFilter] != null)
-      propsToLoop = [...propsToKeep, selectedFilter]
-    }
-
-    dataToLoop.forEach((obj) => {
-      propsToLoop.forEach((key) => {
-        var val = obj[key]
-
-        if (!transformedObject[key]) {
-          transformedObject[key] = []
-        }
-        transformedObject[key].push(val)
-      })
-    })
-
-    let plotDataContinuous
-
-    // if data still needs to process then don't try to calculate everything
-    if (isEmpty(transformedObject)) {
-      plotDataContinuous = []
-    } else {
-      plotDataContinuous = [
-        {
-          ...transformedObject,
-          type: 'scatter',
-          mode: 'markers',
-        },
-      ]
-
-      const desiredMinimumMarkerSize = 20
-      const desiredMaximumMarkerSize = 100
-      const size = transformedObject[selectedFilter]
-      const maxDataValue = Math.max(...size)
-      const minDataValue = Math.min(...size)
-      const scaledSizes = size.map((value) => {
-        const scaledValue = (value - minDataValue) / (maxDataValue - minDataValue)
-        return (
-          scaledValue * (desiredMaximumMarkerSize - desiredMinimumMarkerSize) +
-          desiredMinimumMarkerSize
-        )
-      })
-
-      plotDataContinuous[0]['marker'] = {
-        size: scaledSizes,
-        sizemode: 'area',
-        sizeref: 0.5,
-      }
-    }
-
-    return plotDataContinuous
-  }
-
-  // data will be an array with an element for each group that is displayed
-  // also processes no filter selected
-  const processDiscrete = (data, contextualFilters, selectedFilter) => {
-    const plotDataGrouped = groupBy(data, selectedFilter)
-    const groupValues = Object.keys(plotDataGrouped).filter((x) => x !== 'null')
-
-    const transformedData = groupValues.map((key) => {
-      const keyData = plotDataGrouped[key]
-      const transformedKeyData = {}
-
-      // extract all properties dynamically
-      const propsToKeep = ['x', 'y', 'text']
-      keyData.forEach((item) => {
-        Object.keys(item).forEach((prop) => {
-          if (propsToKeep.includes(prop)) {
-            if (!transformedKeyData[prop]) {
-              transformedKeyData[prop] = []
-            }
-            transformedKeyData[prop].push(item[prop])
-          }
-        })
-      })
-
-      const findFilter = contextualFilters.find((x) => x.name === selectedFilter)
-
-      const isString = findFilter && findFilter.type === 'string'
-      const isOntology = findFilter && findFilter.type === 'ontology'
-
-      let name
-      if (isString) {
-        name = key
-      } else if (isOntology) {
-        if (findFilter) {
-          const entry = findFilter.values.find((x) => parseInt(x[0]) === parseInt(key))
-          name = entry[1]
-          if (name === '') {
-            name = 'N/A'
-          }
-        } else {
-          name = key
-        }
-      }
-
-      return {
-        ...transformedKeyData,
-        name: name,
-        type: 'scatter',
-        mode: 'markers',
-        marker: { size: markerSize },
-      }
-    })
-
-    return transformedData
-  }
-
+  // data is either continuous or not (i.e. discrete)
+  // if discrete, then different possibilities (ontology, string, date) are handled separately within
   var plotDataTransformed
   if (isContinuous) {
-    plotDataTransformed = processContinuous(plotData[selectedMethod])
+    plotDataTransformed = processContinuous(plotData[selectedMethod], selectedFilter)
   } else {
     plotDataTransformed = processDiscrete(
       plotData[selectedMethod],
       contextualFilters,
-      selectedFilter
+      selectedFilter,
+      selectedFilterObject,
+      selectedFilterExtra,
+      markerSize
     )
   }
 
-  // desired format
-  //
-  // data={[
-  //   {
-  //     x: plotData[selectedMethod].slice(0, 23).map((i) => i.x),
-  //     y: plotData[selectedMethod].slice(0, 23).map((i) => i.y),
-  //     text: plotData[selectedMethod].slice(0, 23).map((i) => i.text),
-  //     type: 'scatter',
-  //     mode: 'markers',
-  //     // color: 'env',
-  //     // marker: { color: 'env' },
-  //   },
-  //   {
-  //     x: plotData[selectedMethod].slice(23, 46).map((i) => i.x),
-  //     y: plotData[selectedMethod].slice(23, 46).map((i) => i.y),
-  //     text: plotData[selectedMethod].slice(23, 46).map((i) => i.text),
-  //     type: 'scatter',
-  //     mode: 'markers',
-  //     // color: 'env',
-  //     // marker: { color: 'env' },
-  //   },
-  // ]}
+  // console.log('SamplesComparisonModal', 'plotDataTransformed', plotDataTransformed)
 
-  // // Fetch data if the modal is opened
-  // useEffect(() => {
-  //   if (isOpen) {
-  //     fetchSampleComparisonModalSamples()
-  //   }
-  // }, [isOpen])
+  // Fetch data if the modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      // runComparison()
+    }
+  }, [isOpen])
 
   // Clear the plot if data is being refetched
   // Update the plot if fetching has finished
@@ -290,122 +211,41 @@ const SamplesComparisonModal = (props) => {
     }
   }, [isOpen, isLoading])
 
-  useEffect(() => {
-    if (isOpen) {
-      updatePlotSafe()
-    }
-  }, [isOpen, abundanceMatrix])
-
-  useEffect(() => {
-    if (isOpen) {
-      if (selectedMethod) {
-        updatePlotSafe()
-      }
-    }
-  }, [isOpen, selectedMethod])
-
-  const updatePlotSafe = () => {
-    if (!isEmpty(abundanceMatrix)) {
-      processSampleComparisonModalSamples()
-    }
-  }
-
-  const LoadingSpinnerOverlay = () => {
-    const loadingstyle = {
-      display: 'flex',
-      height: '100%',
-      width: '100%',
-      justifyContent: 'center',
-      alignItems: 'center',
-      position: 'absolute',
-      left: 0,
-      top: 0,
-      background: 'rgba(0,0,0,0.4)',
-      zIndex: 99999,
-    } as React.CSSProperties
-
-    return (
-      <div style={loadingstyle}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <AnimateHelix />
-          <div
-            style={{
-              display: 'inline-block',
-              textAlign: 'center',
-              margin: 12,
-              padding: 6,
-              background: 'white',
-              width: '100%',
-            }}
-          >
-            {isLoading && <>Fetching Sample Information</>}
-            {isProcessing && <>Calculating MDS Plot</>}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const ErrorOverlay = () => {
-    const loadingstyle = {
-      display: 'flex',
-      height: '100%',
-      width: '100%',
-      justifyContent: 'center',
-      alignItems: 'center',
-      position: 'absolute',
-      left: 0,
-      top: 0,
-      background: 'rgba(0,0,0,0.4)',
-      zIndex: 99999,
-    } as React.CSSProperties
-
-    return (
-      <div style={loadingstyle}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div
-            style={{
-              display: 'inline-block',
-              textAlign: 'center',
-              margin: 12,
-              padding: 6,
-              background: 'white',
-              width: '100%',
-            }}
-          >
-            Too many rows in search space, please change the search parameters
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const showExtraControls = plotData[selectedMethod] && plotData[selectedMethod].length > 0
+  const plotHasData = plotData[selectedMethod] && plotData[selectedMethod].length > 0
+  const showExtraControls = plotHasData
 
   // apply a jitter so that points aren't put on the same place (makes graph misleading)
   // need to put the original value in the tooltip though
+  // TODO: move to where
   const jitterAmount = 0.005
+
   const plotDataTransformedJitter = plotDataTransformed.map((z) => {
-    const xj = z.x.map((value) => value + (Math.random() * 2 - 1) * jitterAmount)
-    const yj = z.y.map((value) => value + (Math.random() * 2 - 1) * jitterAmount)
+    // const xj = z.x.map((value) => value + (Math.random() * 2 - 1) * jitterAmount)
+    // const yj = z.y.map((value) => value + (Math.random() * 2 - 1) * jitterAmount)
+
+    // console.log('plotDataTransformed', 'z', z)
 
     return {
       ...z,
       // Use jittered x, y values for plotting
-      x: xj,
-      y: yj,
+      x: z.xj,
+      y: z.yj,
       // Attach original x and y to custom data
       customdata: z.x.map((xi, i) => {
         const point = {
           x: xi.toPrecision(7),
           y: z.y[i].toPrecision(7),
-          xj: xj[i],
-          yj: yj[i],
+          xj: z.xj[i],
+          yj: z.yj[i],
           text: z.text[i],
         }
 
         if (selectedFilter !== '') {
-          if (z.name) {
+          // if a value key is provided (i.e. transformed date part), then use that
+          // otherwise default to ordered value (for continuous) name (for discrete)
+          if (z.value) {
+            point['value'] = z.value[i]
+          } else if (z.name) {
             point['value'] = z.name
           } else {
             // continuous
@@ -433,9 +273,9 @@ const SamplesComparisonModal = (props) => {
         Interactive Sample Comparison Search
       </ModalHeader>
       <ModalBody>
-        {tooManyRowsError && <ErrorOverlay />}
-        {isLoading && <LoadingSpinnerOverlay />}
-        {isProcessing && <LoadingSpinnerOverlay />}
+        {isError && <ErrorOverlay errors={errors} />}
+        {isLoading && <LoadingSpinnerOverlay status={comparisonStatus} />}
+        {/* controls layout is 2 rows, each in their own container, divided into 12 parts (set by xs prop) */}
         <Container>
           <Row>
             <Col xs="2">Dissimilarity method:</Col>
@@ -447,16 +287,19 @@ const SamplesComparisonModal = (props) => {
                   setSelectedMethod(e.target.value)
                 }}
               >
-                <option value="jaccard">Jaccard</option>
                 <option value="braycurtis">Bray-Curtis</option>
+                <option value="jaccard">Jaccard</option>
               </select>
             </Col>
+            <Col xs="3">&nbsp;</Col>
             {showExtraControls && (
               <>
                 <Col xs="2" style={{ textAlign: 'right' }}>
                   Samples:
                 </Col>
-                {plotData[selectedMethod].length}
+                <Col xs="1" style={{ paddingLeft: '6px', textAlign: 'left' }}>
+                  {plotData[selectedMethod].length}
+                </Col>
               </>
             )}
           </Row>
@@ -486,23 +329,50 @@ const SamplesComparisonModal = (props) => {
                 })}
               </select>
             </Col>
+            {isDate ? (
+              <>
+                <Col xs="2" style={{ textAlign: 'right' }}>
+                  Date grouping:
+                </Col>
+                <Col xs="1" style={{ paddingLeft: 0, paddingRight: 0 }}>
+                  <select
+                    value={selectedFilterExtra}
+                    onChange={(e) => setSelectedFilterExtra(e.target.value)}
+                  >
+                    {['year', 'season', 'month'].map((v) => {
+                      return (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </Col>
+              </>
+            ) : (
+              <>
+                <Col xs="3">&nbsp;</Col>
+              </>
+            )}
             {showExtraControls && !isContinuous && (
               <>
                 <Col xs="2" style={{ textAlign: 'right' }}>
                   Marker size:
                 </Col>
-                <select
-                  value={markerSize}
-                  onChange={(e) => setMarkerSize(parseInt(e.target.value))}
-                >
-                  {[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((v) => {
-                    return (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    )
-                  })}
-                </select>
+                <Col xs="1" style={{ paddingLeft: 0, paddingRight: 0 }}>
+                  <select
+                    value={markerSize}
+                    onChange={(e) => setMarkerSize(parseInt(e.target.value))}
+                  >
+                    {[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((v) => {
+                      return (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </Col>
               </>
             )}
           </Row>
@@ -519,14 +389,14 @@ const SamplesComparisonModal = (props) => {
                 tickmode: 'linear',
                 tick0: 0,
                 dtick: 0.2,
-                range: [-1, 1],
+                range: plotHasData ? undefined : [-1, 1],
               },
               yaxis: {
                 scaleanchor: 'x',
                 tickmode: 'linear',
                 tick0: 0,
                 dtick: 0.2,
-                range: [-1, 1],
+                range: plotHasData ? undefined : [-1, 1],
               },
             }}
             config={{ displayLogo: false, scrollZoom: false }}
@@ -536,7 +406,7 @@ const SamplesComparisonModal = (props) => {
           style={{
             position: 'absolute',
             left: '10px',
-            top: '20px',
+            top: '50px',
             width: '300px',
             backgroundColor: '#eee',
           }}
@@ -556,18 +426,12 @@ const SamplesComparisonModal = (props) => {
               })}
             </ul>
           )}
-          {error && (
-            <div>
-              <p style={{ color: 'red' }}>Error</p>
-              <p style={{ color: 'red' }}>{error}</p>
-            </div>
-          )}
         </Container>
         <Container style={{ marginTop: -10 }}>
           <Row>
             <Col xs="3">
-              <Button style={{ marginLeft: 20 }} onClick={props.runComparison}>
-                GO (state: <b>{comparisonStatus})</b>
+              <Button style={{ marginLeft: 20 }} onClick={runComparison}>
+                GO
               </Button>
             </Col>
             <Col>
@@ -585,7 +449,7 @@ const SamplesComparisonModal = (props) => {
         </Container>
       </ModalBody>
       <ModalFooter>
-        <SearchFilters handleSearchFilterClick={fetchSampleComparisonModalSamples} />
+        <SearchFilters handleSearchFilterClick={console.log} />
       </ModalFooter>
       {/*<Tutorial
         steps={steps}
@@ -608,39 +472,67 @@ const SamplesComparisonModal = (props) => {
 }
 
 const mapStateToProps = (state) => {
-  const { isLoading, isProcessing, isOpen, markers, sampleOtus, selectedMethod, plotData } =
-    state.searchPage.samplesComparisonModal
+  const {
+    isOpen,
+    isLoading,
+    isFinished,
 
-  const { abundanceMatrix, contextual } = state.searchPage.samplesComparisonSearch.results
+    selectedMethod,
+    setSelectedMethod,
+    selectedFilter,
+    setSelectedFilter,
+    selectedFilterExtra,
+    setSelectedFilterExtra,
+
+    status,
+    alerts,
+    errors,
+    submissions,
+    results,
+    plotData,
+    mem_usage,
+    timestamps,
+  } = state.searchPage.samplesComparisonModal
+
+  const { abundanceMatrix, contextual } = results
 
   return {
-    isLoading,
-    isProcessing,
     isOpen,
-    markers,
-    sampleOtus,
+    isLoading,
+    isFinished,
+
+    selectedMethod,
+    setSelectedMethod,
+    selectedFilter,
+    setSelectedFilter,
+    selectedFilterExtra,
+    setSelectedFilterExtra,
+
+    results,
+    plotData,
     abundanceMatrix,
     contextual,
-    selectedMethod,
-    plotData: state.searchPage.samplesComparisonSearch.plotData,
+
     contextualFilters: state.contextualDataDefinitions.filters,
-    comparisonStatus: state.searchPage.samplesComparisonSearch.status,
-    comparisonResults: state.searchPage.samplesComparisonSearch.results,
-    mem_usage: state.searchPage.samplesComparisonSearch.mem_usage,
-    timestamps: state.searchPage.samplesComparisonSearch.timestamps,
-    error: state.searchPage.samplesComparisonSearch.error,
+
+    comparisonStatus: status,
+    alerts,
+    errors,
+    submissions,
+    mem_usage,
+    timestamps,
   }
 }
 
 const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
-      closeSamplesComparisonModal,
-      fetchSampleComparisonModalSamples,
-      processSampleComparisonModalSamples,
-      setSelectedMethod,
       clearPlotData,
+      closeSamplesComparisonModal,
       runComparison,
+      setSelectedMethod,
+      setSelectedFilter,
+      setSelectedFilterExtra,
     },
     dispatch
   )
