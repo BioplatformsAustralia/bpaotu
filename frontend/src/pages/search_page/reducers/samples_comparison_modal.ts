@@ -19,10 +19,8 @@ export const {
 
   runComparisonStarted,
   runComparisonEnded,
-
   comparisonSubmissionUpdateStarted,
   comparisonSubmissionUpdateEnded,
-
   clearComparisonAlert,
 
   samplesComparisonModalClearPlotData,
@@ -32,7 +30,7 @@ export const {
 
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_METHOD',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER',
-  'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER_EXTERA',
+  'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER_EXTRA',
 
   'RUN_COMPARISON_STARTED',
   'RUN_COMPARISON_ENDED',
@@ -142,10 +140,13 @@ export default handleActions(
       ...state,
       selectedFilter: action.payload,
     }),
-    [samplesComparisonModalSetSelectedFilterExtra as any]: (state, action: any) => ({
-      ...state,
-      selectedFilterExtra: action.payload,
-    }),
+    [samplesComparisonModalSetSelectedFilterExtra as any]: (state, action: any) => {
+      console.log('samplesComparisonModalSetSelectedFilterExtra', 'action.payload', action.payload)
+      return {
+        ...state,
+        selectedFilterExtra: action.payload,
+      }
+    },
     [samplesComparisonModalClearPlotData as any]: (state, action: any) => ({
       ...state,
       // plotData: searchPageInitialState.samplesComparisonModal.plotData,

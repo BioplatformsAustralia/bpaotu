@@ -1,17 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import {
-  Button,
-  Container,
-  Col,
-  Row,
-  Input,
-  Modal,
-  ModalBody,
-  ModalHeader,
-  ModalFooter,
-} from 'reactstrap'
+import { Button, Container, Col, Row, Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
+import RangeSlider from 'react-bootstrap-range-slider'
 import {
   filterOptionsSubset,
   fieldsDate,
@@ -140,7 +131,6 @@ const SamplesComparisonModal = (props) => {
     setSelectedFilterExtra,
 
     clearPlotData,
-    abundanceMatrix,
     contextual,
     plotData,
     contextualFilters,
@@ -151,16 +141,10 @@ const SamplesComparisonModal = (props) => {
   } = props
 
   // console.log('SamplesComparisonModal', 'comparisonStatus', comparisonStatus)
-  // console.log('SamplesComparisonModal', 'abundanceMatrix', abundanceMatrix)
   // console.log('SamplesComparisonModal', 'contextual', contextual)
   // console.log('SamplesComparisonModal', 'plotData', plotData)
   // console.log('SamplesComparisonModal', 'mem_usage', mem_usage)
   // console.log('SamplesComparisonModal', 'timestamps', timestamps)
-
-  const isError = errors && errors.length
-  if (isError) {
-    console.log('SamplesComparisonModal', 'errors', errors)
-  }
 
   const selectedFilterObject = contextualFilters.find((x) => x.name === selectedFilter)
 
@@ -172,6 +156,10 @@ const SamplesComparisonModal = (props) => {
   const isDate =
     selectedFilterObject &&
     (selectedFilterObject.type === 'date' || fieldsDate.includes(selectedFilter))
+  const isError = errors && errors.length > 0
+  if (isError) {
+    console.log('SamplesComparisonModal', 'errors', errors)
+  }
 
   // Only show filter options that don't have null values for all samples
   const filterOptions = filterOptionsSubset(contextual, contextualFilters)
@@ -214,23 +202,12 @@ const SamplesComparisonModal = (props) => {
   const plotHasData = plotData[selectedMethod] && plotData[selectedMethod].length > 0
   const showExtraControls = plotHasData
 
-  // apply a jitter so that points aren't put on the same place (makes graph misleading)
-  // need to put the original value in the tooltip though
-  // TODO: move to where
-  const jitterAmount = 0.005
-
-  const plotDataTransformedJitter = plotDataTransformed.map((z) => {
-    // const xj = z.x.map((value) => value + (Math.random() * 2 - 1) * jitterAmount)
-    // const yj = z.y.map((value) => value + (Math.random() * 2 - 1) * jitterAmount)
-
-    // console.log('plotDataTransformed', 'z', z)
-
+  // use jittered x, y values for plotting and original values for tooltip (using customdata)
+  const plotDataTransformedTooltip = plotDataTransformed.map((z) => {
     return {
       ...z,
-      // Use jittered x, y values for plotting
       x: z.xj,
       y: z.yj,
-      // Attach original x and y to custom data
       customdata: z.x.map((xi, i) => {
         const point = {
           x: xi.toPrecision(7),
@@ -242,13 +219,15 @@ const SamplesComparisonModal = (props) => {
 
         if (selectedFilter !== '') {
           // if a value key is provided (i.e. transformed date part), then use that
-          // otherwise default to ordered value (for continuous) name (for discrete)
+          // otherwise default to ordered value (for continuous) or name (for discrete)
           if (z.value) {
+            // e.g. date
             point['value'] = z.value[i]
           } else if (z.name) {
+            // e.g. other discrete
             point['value'] = z.name
           } else {
-            // continuous
+            // e.g. continuous
             point['value'] = z[selectedFilter][i]
           }
         }
@@ -256,7 +235,8 @@ const SamplesComparisonModal = (props) => {
         return point
       }),
       hovertemplate:
-        // if no filter selected, there will be no value, so prevent referencing an undefined customdata.value in that case
+        // if no filter selected, there will be no value
+        // so prevent referencing an undefined customdata.value in that case
         selectedFilter === ''
           ? '(%{customdata.x}, %{customdata.y})<br />Sample ID: %{customdata.text}<extra></extra>'
           : '(%{customdata.x}, %{customdata.y})<br />Sample ID: %{customdata.text}<br />Value: %{customdata.value}<extra></extra>',
@@ -297,7 +277,7 @@ const SamplesComparisonModal = (props) => {
                 <Col xs="2" style={{ textAlign: 'right' }}>
                   Samples:
                 </Col>
-                <Col xs="1" style={{ paddingLeft: '6px', textAlign: 'left' }}>
+                <Col xs="1" style={{ paddingLeft: '0px', textAlign: 'left' }}>
                   {plotData[selectedMethod].length}
                 </Col>
               </>
@@ -360,18 +340,12 @@ const SamplesComparisonModal = (props) => {
                   Marker size:
                 </Col>
                 <Col xs="1" style={{ paddingLeft: 0, paddingRight: 0 }}>
-                  <select
+                  <RangeSlider
                     value={markerSize}
-                    onChange={(e) => setMarkerSize(parseInt(e.target.value))}
-                  >
-                    {[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((v) => {
-                      return (
-                        <option key={v} value={v}>
-                          {v}
-                        </option>
-                      )
-                    })}
-                  </select>
+                    onChange={(changeEvent) => setMarkerSize(parseInt(changeEvent.target.value))}
+                    min={5}
+                    max={20}
+                  />
                 </Col>
               </>
             )}
@@ -379,7 +353,7 @@ const SamplesComparisonModal = (props) => {
         </Container>
         <Container>
           <Plot
-            data={plotDataTransformedJitter}
+            data={plotDataTransformedTooltip}
             layout={{
               width: chartWidth,
               height: chartHeight,

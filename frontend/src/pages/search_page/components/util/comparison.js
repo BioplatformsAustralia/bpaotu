@@ -168,6 +168,8 @@ export const processDiscrete = (
       case 'season':
         const month = date.getMonth() + 1
 
+        // TODO make these always the same colour out of the 4 defaults
+        // i.e. Winter=blue, Spring=green, Autumn=red, Summer=orange
         if ([12, 1, 2].includes(month)) return 'Winter'
         if ([3, 4, 5].includes(month)) return 'Spring'
         if ([6, 7, 8].includes(month)) return 'Summer'

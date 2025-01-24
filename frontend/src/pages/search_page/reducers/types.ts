@@ -167,7 +167,7 @@ export const searchPageInitialState: PageState = {
     isFinished: false,
     selectedMethod: 'braycurtis',
     selectedFilter: '',
-    selectedFilterExtra: '',
+    selectedFilterExtra: 'year',
     status: 'init',
     alerts: [],
     errors: [],
