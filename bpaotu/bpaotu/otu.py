@@ -840,6 +840,7 @@ class SampleContext(SchemaMixin, Base):
             display_name = re.sub(r'^Url$', 'URL', display_name)
             display_name = re.sub(r'^Ph$', 'pH', display_name)
             display_name = re.sub(r'^Ph ', 'pH ', display_name)
+            display_name = re.sub(r'^Imos ', 'IMOS ', display_name)
             display_name = re.sub(r'H2o', 'H2O', display_name)
 
 

@@ -5,7 +5,7 @@ import { Button, Container, Col, Row, Modal, ModalBody, ModalHeader, ModalFooter
 import RangeSlider from 'react-bootstrap-range-slider'
 import {
   filterOptionsSubset,
-  fieldsDate,
+  isWhat,
   processContinuous,
   processDiscrete,
 } from '../components/util/comparison'
@@ -151,11 +151,13 @@ const SamplesComparisonModal = (props) => {
   // console.log('SamplesComparisonModal', 'selectedMethod', selectedMethod)
   // console.log('SamplesComparisonModal', 'selectedFilter', selectedFilter)
   // console.log('SamplesComparisonModal', 'selectedFilterObject', selectedFilterObject)
+  // console.log('SamplesComparisonModal', 'selectedFilterExtra', selectedFilterExtra)
 
-  const isContinuous = selectedFilterObject && selectedFilterObject.type === 'float'
-  const isDate =
-    selectedFilterObject &&
-    (selectedFilterObject.type === 'date' || fieldsDate.includes(selectedFilter))
+  const { isContinuous, isDate, isDiscrete } = isWhat({
+    selectedFilter,
+    selectedFilterObject,
+  })
+
   const isError = errors && errors.length > 0
   if (isError) {
     console.log('SamplesComparisonModal', 'errors', errors)
@@ -208,6 +210,7 @@ const SamplesComparisonModal = (props) => {
       ...z,
       x: z.xj,
       y: z.yj,
+      showlegend: isDiscrete || isDate,
       customdata: z.x.map((xi, i) => {
         const point = {
           x: xi.toPrecision(7),
@@ -242,6 +245,8 @@ const SamplesComparisonModal = (props) => {
           : '(%{customdata.x}, %{customdata.y})<br />Sample ID: %{customdata.text}<br />Value: %{customdata.value}<extra></extra>',
     }
   })
+
+  // console.log('SamplesComparisonModal', 'plotDataTransformedTooltip', plotDataTransformedTooltip)
 
   return (
     <Modal isOpen={isOpen} data-tut="reactour__SamplesComparison" id="reactour__SamplesComparison">
@@ -319,13 +324,11 @@ const SamplesComparisonModal = (props) => {
                     value={selectedFilterExtra}
                     onChange={(e) => setSelectedFilterExtra(e.target.value)}
                   >
-                    {['year', 'season', 'month'].map((v) => {
-                      return (
-                        <option key={v} value={v}>
-                          {v}
-                        </option>
-                      )
-                    })}
+                    {['year', 'season', 'month'].map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
                   </select>
                 </Col>
               </>
@@ -376,31 +379,6 @@ const SamplesComparisonModal = (props) => {
             config={{ displayLogo: false, scrollZoom: false }}
           />
         </Container>
-        <Container
-          style={{
-            position: 'absolute',
-            left: '10px',
-            top: '50px',
-            width: '300px',
-            backgroundColor: '#eee',
-          }}
-        >
-          <h6>Timestamps</h6>
-          {timestamps && (
-            <ul style={{ paddingLeft: 20 }}>
-              {timestamps.map((obj, index) => {
-                const [key, value] = Object.entries(obj)[0]
-                const timestamp = Number(value) // Ensure value is a number
-                const date = new Date(timestamp * 1000) // Convert to milliseconds
-                const timeString =
-                  date.toLocaleTimeString('en-GB', { hour12: false }) +
-                  '.' +
-                  String(date.getMilliseconds()).padStart(3, '0')
-                return <li key={index}>{`${timeString} : ${key}`}</li>
-              })}
-            </ul>
-          )}
-        </Container>
         <Container style={{ marginTop: -10 }}>
           <Row>
             <Col xs="3">
@@ -408,7 +386,7 @@ const SamplesComparisonModal = (props) => {
                 GO
               </Button>
             </Col>
-            <Col>
+            {/*<Col>
               {mem_usage && (
                 <p>
                   {mem_usage.mem}
@@ -418,7 +396,7 @@ const SamplesComparisonModal = (props) => {
                   {mem_usage.cpu}
                 </p>
               )}
-            </Col>
+            </Col>*/}
           </Row>
         </Container>
       </ModalBody>

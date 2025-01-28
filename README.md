@@ -330,47 +330,14 @@ BPA OTU is released under the GNU Affero GPL. See source for a licence copy.
 
 MDS TODO
 
-Clean up query and include contextual info
-
-Perhaps swap to the graph query rather tha spatial query, since it is faster
-Could maybe even just put the MDS plots on the graph page??
 Start without the map
 
 Why does the spatial query need to even be used? Why not just use the raw lat long components and if there are multiple samples for the same location, then collate them in the response, or after
 
-- want to incorporate info from the interactive graph modal
-- also will want spatial info for a responsive map
-
-Provide warning / prevent operations with too many samples - or fix query, might not need with graph data
-
 Click on points is currently messing wth the zoom
 
-Colour by factors
-
-- Anything in the search fields
-- Land use types
-- Some would be category colours; properties that are continuous (e.g. pH, salinity), change size of dot
-
-MDS DONE
-
-State cleanup
-
-Convert updatePlot to start with dispatch
 Cache the calculations
 If filters change then reset plotData; or just when modal is opened/closed <--------------
-Auto update when method is changed
-Show a message when processing
-Delegate to service worker?
-
-Probably way better to do on the backend, just return x,y points and all contextual values
-Translate manually from the javascript code rather than using the inbuilt package?
-
-If
-
-MISC
-
-Multi boolean search paramaters
-And / Or between each option
 
 improve index calc:
 scipy
@@ -382,8 +349,3 @@ different table / column for each amplicon
 bacteria: domain = bacteria, phylum != unclassified
 
 different section rather than same graph page
-
-Reworking the isContinuous etc. stuff
-Parse dates; if 'date' type or in date list (i.e collection date)
-extra handling for collection date
-Breakdown into year, month, and season

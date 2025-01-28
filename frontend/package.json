@@ -28,6 +28,7 @@
     "body-scroll-lock": "^3.1.5",
     "bootstrap": "4.3.1",
     "core-js": "3.2.1",
+    "d3": "^7.9.0",
     "eslint-utils": "^1.4.2",
     "jquery": "3.4.1",
     "leaflet": "^1.5.1",

@@ -1,4 +1,5 @@
 import { groupBy, isEmpty } from 'lodash'
+import * as d3 from 'd3'
 
 // string fields that should be grouped and coloured by values
 // i.e. not for fields with free text, but fields like site codes or other classifications
@@ -7,6 +8,25 @@ export const fieldsDiscrete = ['imos_site_code']
 // fields that are dates but don't have the date type
 // they should follow a safe format, but will need to be treated with caution
 export const fieldsDate = ['collection_date']
+
+export const isWhat = ({ selectedFilter, selectedFilterObject }) => {
+  const isOntology = selectedFilterObject && selectedFilterObject.type === 'ontology'
+  const isString = selectedFilterObject && selectedFilterObject.type === 'string'
+  const isContinuous = selectedFilterObject && selectedFilterObject.type === 'float'
+  const isDate =
+    selectedFilterObject &&
+    (selectedFilterObject.type === 'date' || fieldsDate.includes(selectedFilter))
+
+  const isDiscrete = isOntology || (isString && fieldsDiscrete.includes(selectedFilter))
+
+  return {
+    isContinuous,
+    isDate,
+    isDiscrete,
+    isOntology,
+    isString,
+  }
+}
 
 // Filter keys that have null values for all samples
 export const filterOptionsSubset = (contextual, contextualFilters) => {
@@ -115,12 +135,10 @@ export const processDiscrete = (
   selectedFilterExtra,
   markerSize
 ) => {
-  const isOntology = selectedFilterObject && selectedFilterObject.type === 'ontology'
-  const isString = selectedFilterObject && selectedFilterObject.type === 'string'
-  const isDiscrete = isString && fieldsDiscrete.includes(selectedFilter)
-  const isDate =
-    selectedFilterObject &&
-    (selectedFilterObject.type === 'date' || fieldsDate.includes(selectedFilter))
+  const { isOntology, isString, isDiscrete, isDate } = isWhat({
+    selectedFilter,
+    selectedFilterObject,
+  })
 
   const addValueToTransformedKeyData = isDate
 
@@ -168,12 +186,10 @@ export const processDiscrete = (
       case 'season':
         const month = date.getMonth() + 1
 
-        // TODO make these always the same colour out of the 4 defaults
-        // i.e. Winter=blue, Spring=green, Autumn=red, Summer=orange
-        if ([12, 1, 2].includes(month)) return 'Winter'
-        if ([3, 4, 5].includes(month)) return 'Spring'
-        if ([6, 7, 8].includes(month)) return 'Summer'
-        if ([9, 10, 11].includes(month)) return 'Autumn'
+        if ([12, 1, 2].includes(month)) return 'Summer'
+        if ([3, 4, 5].includes(month)) return 'Autumn'
+        if ([6, 7, 8].includes(month)) return 'Winter'
+        if ([9, 10, 11].includes(month)) return 'Spring'
     }
   }
 
@@ -183,7 +199,53 @@ export const processDiscrete = (
   const plotDataGrouped = groupBy(data, iteratee)
   const groupValues = Object.keys(plotDataGrouped).filter((x) => x !== 'null')
 
-  const transformedData = groupValues.map((key) => {
+  function makeColourScale(schemeName, numColours) {
+    const categoricalSchemes = {
+      Category10: d3.schemeCategory10,
+      Accent: d3.schemeAccent,
+      Dark2: d3.schemeDark2,
+      Set1: d3.schemeSet1,
+      Set2: d3.schemeSet2,
+      Set3: d3.schemeSet3,
+      Paired: d3.schemePaired,
+      Pastel1: d3.schemePastel1,
+      Pastel2: d3.schemePastel2,
+    }
+
+    const continuousSchemes = {
+      Viridis: d3.interpolateViridis,
+      Plasma: d3.interpolatePlasma,
+      Inferno: d3.interpolateInferno,
+      Cividis: d3.interpolateCividis,
+      Turbo: d3.interpolateTurbo,
+      Rainbow: d3.interpolateRainbow,
+    }
+
+    // For categorical schemes
+    if (categoricalSchemes[schemeName]) {
+      const scale = categoricalSchemes[schemeName]
+      return numColours <= scale.length
+        ? scale.slice(0, numColours)
+        : d3.scaleOrdinal(scale).range() // Repeat if more colors needed
+    }
+
+    // For continuous schemes (interpolate)
+    if (continuousSchemes[schemeName]) {
+      const interpolator = continuousSchemes[schemeName]
+      return Array.from({ length: numColours }, (_, i) =>
+        d3.rgb(interpolator(i / (numColours - 1))).toString()
+      )
+    }
+
+    throw new Error('Invalid color scheme name')
+  }
+
+  colourScaleLength = isDate && selectedFilterExtra === 'month'
+
+  const colourScale = makeColourScale('Viridis', groupValues.length)
+  console.log('colourScale', colourScale)
+
+  const transformedData = groupValues.map((key, index) => {
     const keyData = plotDataGrouped[key]
     const propsToKeep = ['x', 'y', 'xj', 'yj', 'text']
 
@@ -234,14 +296,48 @@ export const processDiscrete = (
       // console.log('processDiscrete no filter chosen')
     }
 
-    return {
+    const groupObject = {
       ...transformedKeyData,
       name: name,
       type: 'scatter',
       mode: 'markers',
       marker: { size: markerSize },
     }
+
+    if (isDate) {
+      if (selectedFilterExtra === 'season') {
+        const colourMapSeason = {
+          Winter: '#1f77b4', // muted blue
+          Spring: '#2ca02c', // cooked asparagus green
+          Autumn: '#d62728', // brick red
+          Summer: '#ff7f0e', // safety orange
+        }
+
+        groupObject.marker.color = colourMapSeason[name]
+      }
+
+      if (selectedFilterExtra === 'month') {
+        // use default (or another set based scheme), rather than a continuous one
+        // because the wraparound from 12(Dec) to 1(Jan) is very sharp
+      }
+
+      if (selectedFilterExtra === 'year') {
+        groupObject.marker.color = colourScale[index]
+      }
+    }
+
+    if (isDiscrete) {
+      groupObject.marker.color = colourScale[index]
+    }
+
+    return groupObject
   })
+
+  console.log('Object.keys(transformedData)', Object.keys(transformedData))
+
+  // TODO: does the order here matter?
+  // Could order by months if selectedFilterExtra === 'month'
+  // Or order by alphabetical if isDiscrete
 
   return transformedData
 }
