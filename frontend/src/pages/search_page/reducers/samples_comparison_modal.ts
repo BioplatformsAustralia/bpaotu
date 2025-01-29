@@ -1,7 +1,7 @@
 import { createActions, handleActions } from 'redux-actions'
 import { searchPageInitialState } from './types'
 
-import { executeComparison, getComparisonSubmission } from 'api'
+import { executeComparison, executeCancelComparison, getComparisonSubmission } from 'api'
 import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 
 import { describeSearch } from './search'
@@ -21,6 +21,8 @@ export const {
   runComparisonEnded,
   comparisonSubmissionUpdateStarted,
   comparisonSubmissionUpdateEnded,
+  cancelComparisonStarted,
+  cancelComparisonEnded,
   clearComparisonAlert,
 
   samplesComparisonModalClearPlotData,
@@ -36,6 +38,8 @@ export const {
   'RUN_COMPARISON_ENDED',
   'COMPARISON_SUBMISSION_UPDATE_STARTED',
   'COMPARISON_SUBMISSION_UPDATE_ENDED',
+  'CANCEL_COMPARISON_STARTED',
+  'CANCEL_COMPARISON_ENDED',
   'CLEAR_COMPARISON_ALERT',
 
   'SAMPLES_COMPARISON_MODAL_CLEAR_PLOT_DATA'
@@ -80,6 +84,27 @@ export const runComparison = () => (dispatch, getState) => {
     })
 }
 
+export const cancelComparison = () => (dispatch, getState) => {
+  const state = getState()
+
+  dispatch(cancelComparisonStarted())
+
+  const { submissions } = state.searchPage.samplesComparisonModal
+  const submissionId = submissions[0].submissionId
+
+  executeCancelComparison(submissionId)
+    .then((data) => {
+      if (_get(data, 'data.errors', []).length > 0) {
+        dispatch(cancelComparisonEnded(new ErrorList(data.data.errors)))
+        return
+      }
+      dispatch(cancelComparisonEnded(data))
+    })
+    .catch((error) => {
+      dispatch(cancelComparisonEnded(new ErrorList('Unhandled server-side error!')))
+    })
+}
+
 export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
   const state = getState()
   const getLastSubmission: () => ComparisonSubmission = () =>
@@ -90,18 +115,20 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
     .then((data) => {
       dispatch(comparisonSubmissionUpdateEnded(data))
 
-      //previous way
+      // previous way was this:
       // const newLastSubmission = getLastSubmission()
       // const continuePoll = !newLastSubmission.finished
-
-      // we need to check the state immediately to prevent another call
+      //
+      // however, we need to check the state immediately to prevent another API call
       // because newLastSubmission.finished will lag due to race condition
       const { state } = data.data.submission
-      const continuePoll = state !== 'complete'
+      const stopPoll = state === 'complete' || state === 'cancelled'
+      const continuePoll = !stopPoll
 
       if (continuePoll) {
-        // TODO: consider a variable poll frequency depending on estimated time of completion
-        // (based on how long initial states take)
+        // TODO:
+        // consider a variable poll frequency depending on estimated time of completion
+        // based on how long first few state changes take and what the current state is
         setTimeout(
           () => dispatch(autoUpdateComparisonSubmission()),
           COMPARISON_SUBMISSION_POLL_FREQUENCY_MS
@@ -148,7 +175,6 @@ export default handleActions(
       ...state,
       // plotData: searchPageInitialState.samplesComparisonModal.plotData,
     }),
-
     [runComparisonStarted as any]: (state, action: any) => ({
       ...state,
       isLoading: true,
@@ -290,6 +316,18 @@ export default handleActions(
         }
       },
     },
+    [cancelComparisonStarted as any]: (state, action: any) => ({
+      ...state,
+      isLoading: false,
+      isFinished: false,
+      status: 'cancelling',
+    }),
+    [cancelComparisonEnded as any]: (state, action: any) => ({
+      ...state,
+      isLoading: false,
+      isFinished: true,
+      status: 'cancelled',
+    }),
     [clearComparisonAlert as any]: (state, action) => {
       const index = action.payload
       const alerts = isNumber(index)

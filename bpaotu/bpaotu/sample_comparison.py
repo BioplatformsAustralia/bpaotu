@@ -16,6 +16,7 @@ from .query import SampleQuery
 from .spatial import comparison_query
 from .submission import Submission
 from .util import format_sample_id
+from celery.task.control import revoke
 
 import numpy as np
 import pandas as pd
@@ -51,8 +52,25 @@ class SampleComparisonWrapper:
     def run(self):
         return self._run()
 
+    def cancel(self):
+        return self._cancel()
+
     def cleanup(self):
         self._status_update(submission, 'complete')
+
+    def _cancel(self):
+        submission = Submission(self._submission_id)
+
+        try:
+            # celery task ID was stored when chain was started
+            task_id = submission.task_id
+            revoke(task_id, terminate=True)
+            self._status_update(submission, 'cancelled')
+            return True
+        except Exception as e:
+            print('error', e)
+            logger.exception('Error in cancel sample comparison')
+            return False
 
     def _run(self):
         # access the submission so we can change the status

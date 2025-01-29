@@ -179,19 +179,36 @@ def cleanup_blast(submission_id):
     return submission_id
 
 
-@shared_task
-def submit_sample_comparison(query):
+@shared_task(bind=True)
+def submit_sample_comparison(self, query):
     submission_id = str(uuid.uuid4())
 
     submission = Submission.create(submission_id)
     submission.query = query
     submission.status = 'init'
 
-    chain = setup_comparison.s() | run_comparison.s()
-
-    chain(submission_id)
+    # Ensure asynchronous execution and store the task ID
+    chain = (setup_comparison.s() | run_comparison.s()).apply_async(args=[submission_id])
+    submission.task_id = chain.id
 
     return submission_id
+
+
+@shared_task
+def cancel_sample_comparison(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_sample_comparison_wrapper(submission)
+
+    try:
+        results = wrapper.cancel()
+    except Exception as e:
+        submission.status = 'error'
+        submission.error = "%s" % (e)
+        logger.warn("Error running sample comparison: %s" % (e))
+        return submission_id
+
+    return results
+
 
 @shared_task
 def setup_comparison(submission_id):

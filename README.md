@@ -334,8 +334,6 @@ Start without the map
 
 Why does the spatial query need to even be used? Why not just use the raw lat long components and if there are multiple samples for the same location, then collate them in the response, or after
 
-Click on points is currently messing wth the zoom
-
 Cache the calculations
 If filters change then reset plotData; or just when modal is opened/closed <--------------
 
@@ -349,3 +347,8 @@ different table / column for each amplicon
 bacteria: domain = bacteria, phylum != unclassified
 
 different section rather than same graph page
+
+Note when search filters are different the the displayed results
+
+Change to cancel comparison
+have a cancel_subbmission endpoint

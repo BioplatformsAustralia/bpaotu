@@ -172,6 +172,7 @@ def api_config(request):
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
         'search_sample_sites_comparison_endpoint': reverse('otu_search_sample_sites_comparison'),
         'submit_comparison_endpoint': reverse('submit_comparison'),
+        'cancel_comparison_endpoint': reverse('cancel_comparison'),
         'comparison_submission_endpoint': reverse('comparison_submission'),
         'search_blast_otus_endpoint': reverse('otu_search_blast_otus'),
         'required_table_headers_endpoint': reverse('required_table_headers'),
@@ -1136,6 +1137,36 @@ def submit_comparison(request):
         logger.exception('Error in submit to sample comparison')
         return JsonResponse({
             'success': False,
+            'errors': exc.errors,
+        })
+
+@require_CKAN_auth
+@require_POST
+def cancel_comparison(request):
+    try:
+        body_unicode = request.body.decode('utf-8')
+        body_data = json.loads(body_unicode)
+        submission_id = body_data['submissionId']
+
+        result = tasks.cancel_sample_comparison(submission_id)
+
+        if result:
+            return JsonResponse({
+                'success': True,
+                'submission_id': submission_id,
+                'cancelled': True,
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'submission_id': submission_id,
+                'cancelled': False,
+            })
+    except OTUError as exc:
+        logger.exception('Error in cancel sample comparison')
+        return JsonResponse({
+            'success': False,
+            'cancelled': False,
             'errors': exc.errors,
         })
 

@@ -16,6 +16,7 @@ import {
   clearPlotData,
   closeSamplesComparisonModal,
   runComparison,
+  cancelComparison,
   setSelectedMethod,
   setSelectedFilter,
   setSelectedFilterExtra,
@@ -121,6 +122,7 @@ const SamplesComparisonModal = (props) => {
     isOpen,
     isLoading,
     runComparison,
+    cancelComparison,
     closeSamplesComparisonModal,
 
     selectedMethod,
@@ -256,6 +258,15 @@ const SamplesComparisonModal = (props) => {
         id="CloseSamplesComparisonModal"
       >
         Interactive Sample Comparison Search
+        {isLoading ? (
+          <Button style={{ marginLeft: 20 }} onClick={cancelComparison}>
+            Cancel
+          </Button>
+        ) : (
+          <Button style={{ marginLeft: 20 }} onClick={runComparison} color="primary">
+            Run Comparison
+          </Button>
+        )}
       </ModalHeader>
       <ModalBody>
         {isError && <ErrorOverlay errors={errors} />}
@@ -482,6 +493,7 @@ const mapDispatchToProps = (dispatch) => {
       clearPlotData,
       closeSamplesComparisonModal,
       runComparison,
+      cancelComparison,
       setSelectedMethod,
       setSelectedFilter,
       setSelectedFilterExtra,

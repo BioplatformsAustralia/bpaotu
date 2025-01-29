@@ -252,6 +252,14 @@ export function executeComparison(filters) {
   })
 }
 
+export function executeCancelComparison(submissionId) {
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.cancel_comparison_endpoint,
+    data: { submissionId: submissionId },
+  })
+}
+
 export function getComparisonSubmission(submissionId) {
   return axios.get(window.otu_search_config.comparison_submission_endpoint, {
     params: {
