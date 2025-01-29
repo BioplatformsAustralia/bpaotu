@@ -379,11 +379,11 @@ const SamplesComparisonModal = (props) => {
             )}
           </Row>
         </Container>
-        <Container>
+        <Container style={{ width: '100%', maxWidth: chartWidth }}>
           <Plot
             data={plotDataTransformedTooltip}
             layout={{
-              width: chartWidth,
+              // width: chartWidth,
               height: chartHeight,
               title: 'MDS Plot',
               legend: { orientation: 'h' },
@@ -402,27 +402,9 @@ const SamplesComparisonModal = (props) => {
               },
             }}
             config={{ displayLogo: false, scrollZoom: false }}
+            useResizeHandler
+            style={{ width: '100%', height: '100%', marginTop: '0px' }}
           />
-        </Container>
-        <Container style={{ marginTop: -10 }}>
-          <Row>
-            <Col xs="3">
-              <Button style={{ marginLeft: 20 }} onClick={runComparison}>
-                GO
-              </Button>
-            </Col>
-            {/*<Col>
-              {mem_usage && (
-                <p>
-                  {mem_usage.mem}
-                  <br />
-                  {mem_usage.swap}
-                  <br />
-                  {mem_usage.cpu}
-                </p>
-              )}
-            </Col>*/}
-          </Row>
         </Container>
       </ModalBody>
       <ModalFooter>
