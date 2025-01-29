@@ -401,7 +401,7 @@ const SamplesComparisonModal = (props) => {
         </Container>
       </ModalBody>
       <ModalFooter>
-        <SearchFilters handleSearchFilterClick={console.log} />
+        <SearchFilters static={true} handleSearchFilterClick={console.log} />
       </ModalFooter>
       {/*<Tutorial
         steps={steps}
