@@ -134,6 +134,8 @@ const SearchPage = (props) => {
                 text="Interactive sample comparison"
                 onClick={interactiveSampleComparison}
               />
+              {props.isComparisonRunning && <SearchRunningIcon />}
+              {props.isComparisonFinished && <SearchFinishedIcon />}
             </Col>
           </>
         )}
@@ -149,6 +151,8 @@ function mapStateToProps(state) {
     isSearchInProgress: state.searchPage.results.isLoading,
     isBlastSearchRunning: state.searchPage.blastSearch.isSubmitting,
     isBlastSearchFinished: state.searchPage.blastSearch.isFinished,
+    isComparisonRunning: state.searchPage.samplesComparisonModal.isLoading,
+    isComparisonFinished: state.searchPage.samplesComparisonModal.isFinished,
     errors: state.searchPage.results.errors,
     auth: state.auth,
   }

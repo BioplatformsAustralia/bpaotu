@@ -240,10 +240,13 @@ export const processDiscrete = (
     throw new Error('Invalid color scheme name')
   }
 
-  colourScaleLength = isDate && selectedFilterExtra === 'month'
-
-  const colourScale = makeColourScale('Viridis', groupValues.length)
-  console.log('colourScale', colourScale)
+  // Paired and Set3 are only schemes to have 12 categories
+  // Need to use a custom set scheme for 'month' because default colours cycle after 10 values
+  // And can't use continuous one because the wraparound from 12(Dec) to 1(Jan) is very abrupt
+  // Paired is good because it groups similar colours while being well spread out in the colour space
+  const colourScaleScheme = isDate && selectedFilterExtra === 'month' ? 'Paired' : 'Viridis'
+  const colourScaleLength = isDate && selectedFilterExtra === 'month' ? 12 : groupValues.length
+  const colourScale = makeColourScale(colourScaleScheme, colourScaleLength)
 
   const transformedData = groupValues.map((key, index) => {
     const keyData = plotDataGrouped[key]
@@ -293,7 +296,6 @@ export const processDiscrete = (
     } else {
       // no contextual filter is chosen
       // i.e. will be plotted as a discrete field with no categories
-      // console.log('processDiscrete no filter chosen')
     }
 
     const groupObject = {
@@ -306,6 +308,7 @@ export const processDiscrete = (
 
     if (isDate) {
       if (selectedFilterExtra === 'season') {
+        // use the default colours from plotly/d3
         const colourMapSeason = {
           Winter: '#1f77b4', // muted blue
           Spring: '#2ca02c', // cooked asparagus green
@@ -317,8 +320,8 @@ export const processDiscrete = (
       }
 
       if (selectedFilterExtra === 'month') {
-        // use default (or another set based scheme), rather than a continuous one
-        // because the wraparound from 12(Dec) to 1(Jan) is very sharp
+        // a different colourScale is chosen earlier for 'month'
+        groupObject.marker.color = colourScale[index]
       }
 
       if (selectedFilterExtra === 'year') {
@@ -333,11 +336,32 @@ export const processDiscrete = (
     return groupObject
   })
 
-  console.log('Object.keys(transformedData)', Object.keys(transformedData))
+  // if (selectedFilterExtra === 'month') {
+  //   const allMonths = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+  //   const monthsWithData = transformedData.map((x) => x.name)
+  //   // add "dummy" traces for months without data
+  //   allMonths.forEach((month) => {
+  //     if (!monthsWithData.includes(month)) {
+  //       transformedData.push({
+  //         x: [0],
+  //         y: [0],
+  //         xj: [0],
+  //         yj: [0],
+  //         text: '',
+  //         name: `${month}`,
+  //         mode: 'markers',
+  //         marker: { size: markerSize, opacity: 0 },
+  //         type: 'scatter',
+  //         showlegend: true, // Force this to appear in the legend
+  //       })
+  //     }
+  //   })
+  // }
 
-  // TODO: does the order here matter?
-  // Could order by months if selectedFilterExtra === 'month'
-  // Or order by alphabetical if isDiscrete
-
-  return transformedData
+  // for some reasons as yet tbd, date parts need an extra reverse after sorting
+  if (isDate) {
+    return transformedData.sort((x) => x.name).reverse()
+  } else {
+    return transformedData.sort((x) => x.name)
+  }
 }
