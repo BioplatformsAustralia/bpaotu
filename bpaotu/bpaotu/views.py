@@ -1137,7 +1137,7 @@ def submit_comparison(request):
         logger.exception('Error in submit to sample comparison')
         return JsonResponse({
             'success': False,
-            'errors': exc.errors,
+            'errors': [str(t) for t in exc.errors],
         })
 
 @require_CKAN_auth

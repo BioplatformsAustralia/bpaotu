@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { Button, Container, Col, Row, Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
+import {
+  Alert,
+  Button,
+  Container,
+  Col,
+  Row,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  ModalFooter,
+} from 'reactstrap'
 import RangeSlider from 'react-bootstrap-range-slider'
 import {
   filterOptionsSubset,
@@ -76,7 +86,6 @@ const LoadingSpinnerOverlay = ({ status }) => {
 }
 
 const ErrorOverlay = ({ errors }) => {
-  console.log('ErrorOverlay', 'errors', errors)
   const loadingstyle = {
     display: 'flex',
     height: '100%',
@@ -92,8 +101,7 @@ const ErrorOverlay = ({ errors }) => {
 
   return (
     <div style={loadingstyle}>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <div
+      {/*        <div
           style={{
             display: 'inline-block',
             textAlign: 'center',
@@ -102,10 +110,16 @@ const ErrorOverlay = ({ errors }) => {
             background: 'white',
             width: '100%',
           }}
-        >
-          Too many rows in search space, please change the search parameters
-        </div>
-      </div>
+        >*/}
+      <Alert color="danger">
+        <h4 className="alert-heading">Errors</h4>
+        <ul>
+          {errors.map((err, idx) => (
+            <li key={idx}>{err}</li>
+          ))}
+        </ul>
+      </Alert>
+      {/*</div>*/}
     </div>
   )
 }
@@ -258,15 +272,15 @@ const SamplesComparisonModal = (props) => {
         id="CloseSamplesComparisonModal"
       >
         Interactive Sample Comparison Search
-        {isLoading ? (
-          <Button style={{ marginLeft: 20 }} onClick={cancelComparison}>
-            Cancel
-          </Button>
-        ) : (
-          <Button style={{ marginLeft: 20 }} onClick={runComparison} color="primary">
-            Run Comparison
-          </Button>
-        )}
+        <div style={{ marginLeft: 30, display: 'inline-block' }}>
+          {isLoading ? (
+            <Button onClick={cancelComparison}>Cancel</Button>
+          ) : (
+            <Button onClick={runComparison} color="primary">
+              Run Comparison
+            </Button>
+          )}
+        </div>
       </ModalHeader>
       <ModalBody>
         {isError && <ErrorOverlay errors={errors} />}

@@ -73,7 +73,7 @@ export const runComparison = () => (dispatch, getState) => {
   executeComparison(filters)
     .then((data) => {
       if (_get(data, 'data.errors', []).length > 0) {
-        dispatch(runComparisonEnded(new ErrorList(data.data.errors)))
+        dispatch(runComparisonEnded(new ErrorList(...data.data.errors)))
         return
       }
       dispatch(runComparisonEnded(data))
@@ -188,11 +188,9 @@ export default handleActions(
           finished: false,
           succeeded: false,
         }
-        // const alerts = [COMPARISON_ALERT_IN_PROGRESS]
 
         return {
           ...state,
-          // alerts,
           submissions: [...state.submissions, lastSubmission],
         }
       },
@@ -201,7 +199,7 @@ export default handleActions(
         isLoading: false,
         isFinished: false,
         status: 'error',
-        errors: action.payload.data.errors,
+        errors: action.payload.msgs,
       }),
     },
     [comparisonSubmissionUpdateEnded as any]: {
