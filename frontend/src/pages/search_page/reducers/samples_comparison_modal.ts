@@ -122,7 +122,7 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
       // however, we need to check the state immediately to prevent another API call
       // because newLastSubmission.finished will lag due to race condition
       const { state } = data.data.submission
-      const stopPoll = state === 'complete' || state === 'cancelled'
+      const stopPoll = state === 'complete' || state === 'cancelled' || state === 'error'
       const continuePoll = !stopPoll
 
       if (continuePoll) {
@@ -214,25 +214,10 @@ export default handleActions(
             succeeded: status === 'complete',
           }
           if (status === 'error') {
-            newState['error'] = error
+            newState['errors'] = error
           }
           return newState
         })(lastSubmission)
-
-        let newAlerts: any = state.alerts
-        if (newLastSubmissionState['finished'] && !lastSubmission['finished']) {
-          const resultUrl = action.payload.data.submission.result_url
-          const COMPARISON_ALERT_SUCCESS = alert(
-            'COMPARISON search executed successfully. ' +
-              `Click <a target="_blank" href="${resultUrl}" className="alert-link">` +
-              'here</a> to download the results.',
-            'success'
-          )
-          newAlerts = reject([state.alerts, COMPARISON_ALERT_IN_PROGRESS])
-          newAlerts.push(
-            newLastSubmissionState['succeeded'] ? COMPARISON_ALERT_SUCCESS : COMPARISON_ALERT_ERROR
-          )
-        }
 
         let isLoading: any = state.isLoading
         let isFinished: any = false
@@ -283,7 +268,6 @@ export default handleActions(
             state.submissions.length - 1,
             (_) => newLastSubmissionState
           ),
-          alerts: newAlerts,
           isLoading: isLoading,
           isFinished: isFinished,
           mem_usage: action.payload.data.mem_usage,
@@ -307,10 +291,9 @@ export default handleActions(
               error: action.error,
             })
           ),
-          alerts: [COMPARISON_ALERT_ERROR],
           isLoading: false,
-          status: 'error 2',
-          error: action.payload.data.error,
+          status: 'error',
+          errors: action.payload.data.errors,
         }
       },
     },
