@@ -272,7 +272,7 @@ export default handleActions(
           isFinished: isFinished,
           mem_usage: action.payload.data.mem_usage,
           timestamps: action.payload.data.submission.timestamps,
-          errors: action.payload.data.errors,
+          errors: action.payload.data.submission.error,
           status: actionSubmissionState,
           results: results,
           plotData: plotData,
