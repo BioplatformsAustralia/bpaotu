@@ -349,6 +349,3 @@ bacteria: domain = bacteria, phylum != unclassified
 different section rather than same graph page
 
 Note when search filters are different the the displayed results
-
-Change to cancel comparison
-have a cancel_subbmission endpoint
