@@ -225,11 +225,16 @@ def run_comparison(submission_id):
     try:
         results = wrapper.run()
         submission.results = json.dumps(results, cls=NumpyEncoder)
+    except WorkerLostError as e:
+        submission.status = 'error'
+        submission.error = "%s" % (e)
+        logger.info("Error running sample comparison: %s" % (e))
+        print(e)
     except Exception as e:
         submission.status = 'error'
         submission.error = "%s" % (e)
-        logger.warn("Error running sample comparison: %s" % (e))
-        return submission_id
+        logger.info("Error running sample comparison: %s" % (e))
+        print(e)
 
     return submission_id
 

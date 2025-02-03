@@ -112,7 +112,7 @@ const ErrorOverlay = ({ errors }) => {
           }}
         >*/}
       <Alert color="danger">
-        <h4 className="alert-heading">Errors</h4>
+        <h4 className="alert-heading">Error</h4>
         <ul>
           {errors.map((err, idx) => (
             <li key={idx}>{err}</li>
