@@ -261,6 +261,10 @@ export default handleActions(
           }
         }
 
+        const errors = action.payload.data.submission.error
+          ? [action.payload.data.submission.error]
+          : []
+
         return {
           ...state,
           submissions: changeElementAtIndex(
@@ -272,7 +276,7 @@ export default handleActions(
           isFinished: isFinished,
           mem_usage: action.payload.data.mem_usage,
           timestamps: action.payload.data.submission.timestamps,
-          errors: [action.payload.data.submission.error],
+          errors: errors,
           status: actionSubmissionState,
           results: results,
           plotData: plotData,
