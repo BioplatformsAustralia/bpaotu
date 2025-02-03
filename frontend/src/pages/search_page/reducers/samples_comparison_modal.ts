@@ -265,6 +265,11 @@ export default handleActions(
           ? [action.payload.data.submission.error]
           : []
 
+        if (errors.length > 0) {
+          isLoading = false
+          isFinished = false
+        }
+
         return {
           ...state,
           submissions: changeElementAtIndex(
