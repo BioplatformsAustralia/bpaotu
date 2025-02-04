@@ -182,13 +182,14 @@ export default handleActions(
     }),
     [samplesComparisonModalClearPlotData as any]: (state, action: any) => ({
       ...state,
-      // plotData: searchPageInitialState.samplesComparisonModal.plotData,
+      plotData: searchPageInitialState.samplesComparisonModal.plotData,
     }),
     [runComparisonStarted as any]: (state, action: any) => ({
       ...state,
       isLoading: true,
       isFinished: false,
       status: 'init',
+      errors: [],
     }),
     [runComparisonEnded as any]: {
       next: (state, action: any) => {
