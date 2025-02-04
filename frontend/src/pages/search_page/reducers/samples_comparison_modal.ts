@@ -136,8 +136,16 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
       }
     })
     .catch((error) => {
-      console.log('getComparisonSubmission', 'error', error)
-      dispatch(comparisonSubmissionUpdateEnded(new Error('Unhandled server-side error!')))
+      if (error.response.status === 504) {
+        // status: 504, statusText: "Gateway Time-out"
+        dispatch(
+          comparisonSubmissionUpdateEnded(
+            new Error('Result set is too large. Please run a search with fewer samples.')
+          )
+        )
+      } else {
+        dispatch(comparisonSubmissionUpdateEnded(new Error('Unhandled server-side error!')))
+      }
     })
 }
 
@@ -289,10 +297,6 @@ export default handleActions(
         }
       },
       throw: (state, action) => {
-        // unknown error, like worker crashing
-        console.log('throw', 'state', state)
-        console.log('throw', 'action', action)
-
         return {
           ...state,
           submissions: changeElementAtIndex(
@@ -308,8 +312,7 @@ export default handleActions(
           isLoading: false,
           isFinished: false,
           status: 'error',
-          // errors: action.payload.data.errors,
-          errors: ['Error'],
+          errors: [action.payload.message],
         }
       },
     },

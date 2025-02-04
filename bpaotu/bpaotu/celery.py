@@ -1,9 +1,7 @@
 from celery import Celery
-from celery.signals import task_failure
 
 from django.conf import settings
 from . import sample_meta
-from .submission import Submission
 
 # set the default Django settings module for the 'celery' program.
 # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.settings')
@@ -33,16 +31,3 @@ def setup_periodic_tasks(sender, **kwargs):
 @app.task(ignore_result=True)
 def periodic_task():
     sample_meta.update_from_ckan()
-
-
-# Handle lost workers at the Celery app level
-@task_failure.connect
-def handle_task_failure(sender, task_id, exception, args, kwargs, traceback, einfo, **other):
-    print('handle_task_failure')
-    if isinstance(exception, WorkerLostError):
-        submission_id = args[0]  # Assuming first argument is submission_id
-        submission = Submission(submission_id)
-        submission.status = 'error'
-        submission.error = "Worker was killed (likely out of memory)"
-        logger.error(f"WorkerLostError: Task {task_id} failed due to worker being killed.")
-        print(exception)
