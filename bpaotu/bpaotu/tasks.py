@@ -9,7 +9,7 @@ import tempfile
 import base64
 from django.conf import settings
 
-from billiard.exceptions import WorkerLostError
+from celery.exceptions import WorkerLostError
 from .blast import BlastWrapper
 from .sample_comparison import SampleComparisonWrapper
 from .biom import save_biom_zip_file
@@ -218,8 +218,8 @@ def setup_comparison(submission_id):
     wrapper.setup()
     return submission_id
 
-@shared_task
-def run_comparison(submission_id):
+@shared_task(bind=True)
+def run_comparison(self, submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
 
@@ -230,11 +230,19 @@ def run_comparison(submission_id):
         submission.status = 'error'
         submission.error = "%s" % (e)
         logger.info("Error running sample comparison: %s" % (e))
+        print('WorkerLostError')
+        print(e)
+    except MemoryError as e:
+        submission.status = 'error'
+        submission.error = "Out of Memory: %s" % e
+        logger.error(f"MemoryError running comparison: {e}")
+        print('MemoryError')
         print(e)
     except Exception as e:
         submission.status = 'error'
         submission.error = "%s" % (e)
         logger.info("Error running sample comparison: %s" % (e))
+        print('Exception')
         print(e)
 
     return submission_id
