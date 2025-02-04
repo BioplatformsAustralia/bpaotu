@@ -9,6 +9,7 @@ import tempfile
 import base64
 from django.conf import settings
 
+from billiard.exceptions import WorkerLostError
 from .blast import BlastWrapper
 from .sample_comparison import SampleComparisonWrapper
 from .biom import save_biom_zip_file
