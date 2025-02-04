@@ -136,6 +136,7 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
       }
     })
     .catch((error) => {
+      console.log('getComparisonSubmission', 'error', error)
       dispatch(comparisonSubmissionUpdateEnded(new Error('Unhandled server-side error!')))
     })
 }
