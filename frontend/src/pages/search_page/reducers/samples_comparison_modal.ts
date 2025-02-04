@@ -288,6 +288,10 @@ export default handleActions(
         }
       },
       throw: (state, action) => {
+        // unknown error, like worker crashing
+        console.log('throw', 'state', state)
+        console.log('throw', 'action', action)
+
         return {
           ...state,
           submissions: changeElementAtIndex(
@@ -301,8 +305,10 @@ export default handleActions(
             })
           ),
           isLoading: false,
+          isFinished: false,
           status: 'error',
-          errors: action.payload.data.errors,
+          // errors: action.payload.data.errors,
+          errors: ['Error'],
         }
       },
     },
