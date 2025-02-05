@@ -1,4 +1,5 @@
 from celery import shared_task
+from billiard.exceptions import WorkerLostError
 import logging
 import json
 import numpy as np
@@ -9,7 +10,6 @@ import tempfile
 import base64
 from django.conf import settings
 
-from celery.exceptions import WorkerLostError
 from .blast import BlastWrapper
 from .sample_comparison import SampleComparisonWrapper
 from .biom import save_biom_zip_file
@@ -28,6 +28,19 @@ FILE_UPLOAD_STATUS_POLL_FREQUENCY = 5
 
 # maximum length of a Galaxy history name
 GALAXY_HISTORY_NAME_MAX = 255
+
+
+class BaseTask(Task):
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        logger.error("on_failure")
+        print("on_failure")
+
+        if isinstance(exc, WorkerLostError):
+            logger.error(f"Task {task_id} failed due to a worker crash: {exc}")
+            print(f"Task {task_id} failed due to a worker crash: {exc}")
+        else:
+            logger.error(f"Task {task_id} failed: {exc}")
+            print(f"Task {task_id} failed: {exc}")
 
 
 @shared_task(bind=True)
@@ -218,7 +231,7 @@ def setup_comparison(submission_id):
     wrapper.setup()
     return submission_id
 
-@shared_task(bind=True)
+@shared_task(base=BaseTask, bind=True)
 def run_comparison(self, submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)

@@ -37,7 +37,7 @@ def periodic_task():
 
 # Handle lost workers at the Celery app level
 @task_failure.connect
-def handle_task_failure(sender, task_id, exception, args, kwargs, traceback, einfo, **other):
+def handle_task_failure(sender=None, task_id=None, exception=None, args=None, kwargs=None, traceback=None, einfo=None, **other_kwargs):
     print('handle_task_failure')
     if isinstance(exception, WorkerLostError):
         submission_id = args[0]  # Assuming first argument is submission_id
