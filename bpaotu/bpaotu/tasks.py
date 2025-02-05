@@ -225,12 +225,6 @@ def run_comparison(self, submission_id):
     try:
         results = wrapper.run()
         submission.results = json.dumps(results, cls=NumpyEncoder)
-    except WorkerLostError as e:
-        submission.status = 'error'
-        submission.error = "%s" % (e)
-        logger.info("Error running sample comparison: %s" % (e))
-        print('WorkerLostError')
-        print(e)
     except MemoryError as e:
         submission.status = 'error'
         submission.error = "Out of Memory: %s" % e
