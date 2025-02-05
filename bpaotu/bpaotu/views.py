@@ -30,6 +30,8 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.core.cache import caches
 
+from celery.result import AsyncResult
+
 from . import tasks
 from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
@@ -1178,9 +1180,17 @@ def comparison_submission(request):
 
     state = submission.status
 
+    task_id = submission.task_id
+    task_status = None
+    if task_id:
+        task_status = AsyncResult(task_id).status
+
+    print('task_id', task_id)
+    print('task_status', task_status)
+
     timestamps_ = submission.timestamps or json.dumps([])
     timestamps = json.loads(timestamps_)
-    # timestamps = timestamps_
+
     results = { 'abundanceMatrix': {}, 'contextual': {} }
     if state == 'complete':
         results = json.loads(submission.results)
@@ -1193,11 +1203,16 @@ def comparison_submission(request):
             'state': state,
             'timestamps': timestamps,
             'results': results,
+            'task_status': task_status,
         }
     }
 
     if state == 'error':
         response_data['submission']['error'] = submission.error
+
+    if task_status == 'FAILURE':
+        response_data['submission']['state'] = 'error'
+        response_data['submission']['error'] = 'Task failure'
 
     return JsonResponse(response_data)
 
