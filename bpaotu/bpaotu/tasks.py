@@ -1,4 +1,4 @@
-from celery import shared_task
+from celery import Task, shared_task
 from billiard.exceptions import WorkerLostError
 import logging
 import json
