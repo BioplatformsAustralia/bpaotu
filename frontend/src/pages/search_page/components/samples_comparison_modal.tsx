@@ -15,7 +15,7 @@ import {
 import RangeSlider from 'react-bootstrap-range-slider'
 import {
   filterOptionsSubset,
-  isWhat,
+  filterDataType,
   processContinuous,
   processDiscrete,
 } from '../components/util/comparison'
@@ -169,15 +169,11 @@ const SamplesComparisonModal = (props) => {
   // console.log('SamplesComparisonModal', 'selectedFilterObject', selectedFilterObject)
   // console.log('SamplesComparisonModal', 'selectedFilterExtra', selectedFilterExtra)
 
-  const { isContinuous, isDate, isDiscrete } = isWhat({
+  const isError = errors && errors.length > 0
+  const { isContinuous, isDate, isDiscrete } = filterDataType({
     selectedFilter,
     selectedFilterObject,
   })
-
-  const isError = errors && errors.length > 0
-  if (isError) {
-    console.log('SamplesComparisonModal', 'errors', errors)
-  }
 
   // Only show filter options that don't have null values for all samples
   const filterOptions = filterOptionsSubset(contextual, contextualFilters)

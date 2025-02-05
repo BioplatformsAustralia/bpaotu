@@ -9,7 +9,7 @@ export const fieldsDiscrete = ['imos_site_code']
 // they should follow a safe format, but will need to be treated with caution
 export const fieldsDate = ['collection_date']
 
-export const isWhat = ({ selectedFilter, selectedFilterObject }) => {
+export const filterDataType = ({ selectedFilter, selectedFilterObject }) => {
   const isOntology = selectedFilterObject && selectedFilterObject.type === 'ontology'
   const isString = selectedFilterObject && selectedFilterObject.type === 'string'
   const isContinuous = selectedFilterObject && selectedFilterObject.type === 'float'
@@ -135,7 +135,7 @@ export const processDiscrete = (
   selectedFilterExtra,
   markerSize
 ) => {
-  const { isOntology, isString, isDiscrete, isDate } = isWhat({
+  const { isOntology, isString, isDiscrete, isDate } = filterDataType({
     selectedFilter,
     selectedFilterObject,
   })

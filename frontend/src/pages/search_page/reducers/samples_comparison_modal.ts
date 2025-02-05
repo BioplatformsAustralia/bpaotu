@@ -140,7 +140,9 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
         // status: 504, statusText: "Gateway Time-out"
         dispatch(
           comparisonSubmissionUpdateEnded(
-            new Error('Result set is too large. Please run a search with fewer samples.')
+            new Error(
+              'Server-side error. It is possible that the result set is too large. Please run a search with fewer samples.'
+            )
           )
         )
       } else {
