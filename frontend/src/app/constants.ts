@@ -13,3 +13,5 @@ export const taxonomy_keys = [
   'r8',
 ]
 export const taxonomy_ranks = taxonomy_keys.slice(1)
+
+export const metaxaAmpliconStringMatch = 'metaxa'

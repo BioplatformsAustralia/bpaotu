@@ -1,6 +1,8 @@
 import * as React from 'react'
 import { get as _get, isEmpty, map, reject } from 'lodash'
-import { Alert } from 'reactstrap'
+import { Alert, UncontrolledTooltip } from 'reactstrap'
+
+import Octicon from 'components/octicon'
 
 import ReactTable from 'react-table'
 import 'react-table/react-table.css'
@@ -13,14 +15,25 @@ const sample_link = (props) => (
   </div>
 )
 
+const sample_link_run_id = (props) => (
+  <div>
+    <a href={runIDToSandpiperURL(props.value)} target="_blank" rel="noopener noreferrer">
+      {props.value}
+    </a>
+  </div>
+)
+
 export class SearchResultsTable extends React.Component<any> {
   static defaultProps = {
     cell_func: sample_link,
+    cell_func_run_id: sample_link_run_id,
+    metagenome: false,
   }
 
   public defaultColumns = [
     {
-      Header: 'Sample ID',
+      // as function so that runIdcolumn works too
+      Header: () => <div>Sample ID</div>,
       accessor: 'sample_id',
       sortable: true,
       Cell: this.props.cell_func,
@@ -31,6 +44,30 @@ export class SearchResultsTable extends React.Component<any> {
       accessor: 'environment',
     },
   ]
+
+  public runIdColumn = {
+    Header: () => (
+      <div>
+        Sandpiper community profile{' '}
+        <span id="singleMTipTab">
+          <Octicon name="info" />
+        </span>
+        <UncontrolledTooltip target="singleMTipTab" autohide={false} placement="left">
+          Link to{' '}
+          <a href={'https://github.com/wwood/singlem'} target="_blank" rel="noopener noreferrer">
+            SingleM
+          </a>{' '}
+          community profiles from shotgun metagenome datasets at the{' '}
+          <a href="https://sandpiper.qut.edu.au/" target="_blank" rel="noopener noreferrer">
+            Sandpiper Database
+          </a>
+        </UncontrolledTooltip>
+      </div>
+    ),
+    accessor: 'run_id',
+    sortable: true,
+    Cell: this.props.cell_func_run_id,
+  }
 
   constructor(props) {
     super(props)
@@ -45,9 +82,12 @@ export class SearchResultsTable extends React.Component<any> {
       accessor: field.name,
       sortable: _get(field, 'sortable', true),
     }))
-    const columns = this.defaultColumns.concat(extraColumns)
 
-    return columns
+    if (this.props.metagenome) {
+      return this.defaultColumns.concat(this.runIdColumn).concat(extraColumns)
+    } else {
+      return this.defaultColumns.concat(extraColumns)
+    }
   }
 
   public render() {
@@ -79,6 +119,20 @@ export class SearchResultsTable extends React.Component<any> {
           onPageChange={this.onPageChange}
           onPageSizeChange={this.onPageSizeChange}
           noDataText={this.props.results.cleared ? 'No search performed yet' : 'No rows found'}
+          getTheadProps={(thead) => ({
+            // fix the header not aligning with cells, including the column separators
+            style: {
+              paddingLeft: 0,
+              paddingRight: 0,
+              paddingTop: '8px',
+              paddingBottom: '8px',
+            },
+          })}
+          getTdProps={(cellInfo) => ({
+            style: {
+              textAlign: 'center',
+            },
+          })}
         />
       </>
     )
@@ -90,7 +144,9 @@ export class SearchResultsTable extends React.Component<any> {
       page: pageIndex,
     })
 
-    this.props.search()
+    if (this.props.results.pages > 0) {
+      this.props.search()
+    }
   }
 
   public onPageSizeChange(pageSize) {
@@ -99,7 +155,9 @@ export class SearchResultsTable extends React.Component<any> {
       pageSize,
     })
 
-    this.props.search()
+    if (this.props.results.pages > 0) {
+      this.props.search()
+    }
   }
 
   public onSortedChange(sorted) {
@@ -108,7 +166,9 @@ export class SearchResultsTable extends React.Component<any> {
       sorted,
     })
 
-    this.props.search()
+    if (this.props.results.pages > 0) {
+      this.props.search()
+    }
   }
 }
 
@@ -118,6 +178,11 @@ function bpaIDToCKANURL(bpaId) {
   } else {
     return `${window.otu_search_config.ckan_base_url}/organization/australian-microbiome?q=sample_id:102.100.100/${bpaId}`
   }
+}
+
+const runIDToSandpiperURL = (runId) => {
+  const base_url = 'https://sandpiper.qut.edu.au/run'
+  return `${base_url}/${runId}`
 }
 
 const mapDefinitions = (fields) => {

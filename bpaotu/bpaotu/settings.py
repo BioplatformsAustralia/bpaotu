@@ -29,7 +29,7 @@ BPAOTU_MISSING_VALUE_SENTINEL = -9999  # Missing values in sample contextual dat
 # See "Confirmed missing value" in
 # https://github.com/AusMicrobiome/contextualdb_doc/blob/main/db_schema_definitions/db_schema_definitions.xlsx
 
-BPAOTU_SCIENTIFIC_MANUAL_URL = "https://confluence.csiro.au/display/ASM/Ausmicrobiome+Scientific+Manual"
+BPAOTU_SCIENTIFIC_MANUAL_URL = "https://research.csiro.au/ambsm/"
 
 BPAOTU_MAP_CENTRE_LONGITUDE = 133.775
 

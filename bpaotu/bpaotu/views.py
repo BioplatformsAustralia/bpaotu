@@ -53,6 +53,8 @@ from .util import make_timestamp, parse_date, parse_time, parse_float, log_msg, 
 
 from sklearn.manifold import MDS
 
+from .sample_run_id_dict import sample_run_id_dict
+
 from mixpanel import Mixpanel
 
 logger = logging.getLogger("rainbow")
@@ -956,6 +958,7 @@ def otu_search(request, contextual_filtering=True):
     def map_result(row):
         d = dict(zip(all_headers, row))
         d['environment'] = get_environment(d['environment'])
+        d['run_id'] = sample_run_id_dict.get(d['sample_id'])
         return d
 
     return JsonResponse({
