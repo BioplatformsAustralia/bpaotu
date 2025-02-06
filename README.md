@@ -327,3 +327,25 @@ BPA OTU is released under the GNU Affero GPL. See source for a licence copy.
 - Fork next_release branch
 - Make changes on a feature branch
 - Submit pull request
+
+MDS TODO
+
+Start without the map
+
+Why does the spatial query need to even be used? Why not just use the raw lat long components and if there are multiple samples for the same location, then collate them in the response, or after
+
+Cache the calculations
+If filters change then reset plotData; or just when modal is opened/closed <--------------
+
+improve index calc:
+scipy
+https://stackoverflow.com/questions/53021522/how-to-speed-up-distance-matrix-calculation
+
+test cases
+
+different table / column for each amplicon
+bacteria: domain = bacteria, phylum != unclassified
+
+different section rather than same graph page
+
+Note when search filters are different the the displayed results

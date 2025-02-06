@@ -18,6 +18,7 @@ import { metaxaAmpliconStringMatch } from 'app/constants'
 import BlastModal from './blast_modal'
 import SamplesMapModal from './samples_map_modal'
 import SamplesGraphModal from './samples_graph_modal'
+import SamplesComparisonModal from './samples_comparison_modal'
 import MetagenomeModal from './metagenome_modal'
 import SearchResultsTable from './search_results_table'
 
@@ -147,6 +148,7 @@ const _SearchResultsCard = (props) => {
       <BlastModal />
       <SamplesMapModal />
       <SamplesGraphModal />
+      <SamplesComparisonModal />
     </div>
   )
 }
@@ -191,6 +193,7 @@ const _MetagenomeSearchResultsCard = (props) => {
       <BlastModal />
       <SamplesMapModal />
       <SamplesGraphModal />
+      <SamplesComparisonModal />
       <MetagenomeModal />
     </div>
   )

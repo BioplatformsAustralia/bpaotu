@@ -1,4 +1,5 @@
 from celery import Celery
+
 from django.conf import settings
 from . import sample_meta
 

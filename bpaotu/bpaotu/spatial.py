@@ -3,6 +3,8 @@ from collections import defaultdict
 from django.core.cache import caches
 from django.conf import settings
 
+import time
+
 from .query import (
     OntologyInfo,
     log_query,
@@ -17,12 +19,56 @@ from .util import (
 import logging
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
+from .util import log_msg
 
 logger = logging.getLogger("rainbow")
 
 def rewrap_longitude(longitude):
     d = settings.BPAOTU_MAP_CENTRE_LONGITUDE - longitude
     return longitude + (360 if d > 180 else -360 if d < -180 else 0)
+
+
+def _comparison_query(params):
+    """
+    this code actually executes the query, wrapped with cache
+    (see below)
+    """
+    # abundance matrix
+
+    # TODO: could the blast otu_id approach be useful here?
+
+    with SampleQuery(params) as query:
+        sample_id_selected = []
+
+        # print(time.ctime(), 'start count')
+        # print(time.ctime(), query.matching_sample_distance_matrix().count())
+
+        log_msg('start query fetch')
+
+        results = []
+        for row in query.matching_sample_distance_matrix().yield_per(1000):
+            results.append((row[0], row[1], row[2]))
+
+        return results
+
+
+def comparison_query(params, cache_duration=CACHE_7DAYS, force_cache=True):
+    """
+    currently only used by the frontend mapping component.
+    note that there are some hard-coded workarounds (see below)
+    which will need to be removed if this is to be used more generally
+    """
+    cache = caches['search_results']
+    key = make_cache_key(
+        'comparison_query',
+        params.state_key)
+    result = None
+    if not force_cache:
+        result = cache.get(key)
+    if result is None:
+        result = _comparison_query(params)
+        cache.set(key, result, cache_duration)
+    return result
 
 def _spatial_query(params):
     """
@@ -75,6 +121,7 @@ def _spatial_query(params):
                 sample_id_selected.append(sample_id)
 
             result = defaultdict(lambda: defaultdict(dict))
+
             # It's typically faster to accumulate the sample_ids above and then
             # fetch the actual samples here.
             for sample in query.matching_selected_samples(sample_id_selected, SampleContext):

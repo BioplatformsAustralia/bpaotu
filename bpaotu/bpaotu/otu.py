@@ -13,7 +13,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy_utils import create_materialized_view
 
 logger = logging.getLogger("rainbow")
-# Base = declarative_base()
 SCHEMA = 'otu'
 Base = declarative_base(metadata=MetaData(schema=SCHEMA))
 
@@ -841,6 +840,7 @@ class SampleContext(SchemaMixin, Base):
             display_name = re.sub(r'^Url$', 'URL', display_name)
             display_name = re.sub(r'^Ph$', 'pH', display_name)
             display_name = re.sub(r'^Ph ', 'pH ', display_name)
+            display_name = re.sub(r'^Imos ', 'IMOS ', display_name)
             display_name = re.sub(r'H2o', 'H2O', display_name)
 
 
@@ -948,6 +948,19 @@ class ImportedFile(SchemaMixin, Base):
     file_size = Column(postgresql.BIGINT)
     rows_imported = Column(postgresql.BIGINT)
     rows_skipped = Column(postgresql.BIGINT)
+
+
+class SampleSimilarity(Base):
+    __tablename__ = 'sample_similarities'
+
+    id = Column(Integer, primary_key=True)
+    sample_id_1 = Column(String, nullable=False)
+    sample_id_2 = Column(String, nullable=False)
+    jaccard_similarity = Column(Float)
+    braycurtis_similarity = Column(Float)
+
+    def __repr__(self):
+        return f"<SampleSimilarity(id={self.id}, sample_id_1={self.sample_id_1}, sample_id_2={self.sample_id_2}, jaccard_similarity={self.jaccard_similarity}, braycurtis_similarity={self.braycurtis_similarity})>"
 
 
 def make_engine():

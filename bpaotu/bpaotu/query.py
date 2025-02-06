@@ -533,12 +533,25 @@ class SampleQuery:
 
     def apply_sample_otu_filters(self, q):
         q = self._taxonomy_filter.apply(q, Taxonomy)
+
         if not self._sample_integrity_warnings_filter.is_empty():
             q = self._sample_integrity_warnings_filter.apply(
                 q.filter(SampleContext.id == SampleOTU.sample_id))
         if not self._contextual_filter.is_empty():
             q = self._contextual_filter.apply(
                 q.filter(SampleContext.id == SampleOTU.sample_id))
+
+        # log_query(q)
+        return q
+
+    def matching_sample_distance_matrix(self):
+        q = self._session\
+                .query(SampleOTU.sample_id, SampleOTU.otu_id, SampleOTU.count)\
+                .filter(OTU.id == SampleOTU.otu_id)\
+                .join(Taxonomy.otus)
+
+        q = self.apply_sample_otu_filters(q)
+        q = q.order_by(SampleOTU.sample_id, SampleOTU.otu_id)
 
         # log_query(q)
         return q
@@ -552,6 +565,7 @@ class SampleQuery:
                 func.sum(OTUSampleOTU.richness_20k),
                 # Note: sum(OTUSampleOTU.sum_count_20k) can be NULL (Python None)
                 func.sum(OTUSampleOTU.sum_count_20k)))
+
         q = (self._session.query(
             SampleContext.latitude,
             SampleContext.longitude,

@@ -3,6 +3,8 @@ import os
 import datetime
 import tempfile
 import logging
+import psutil
+from psutil._common import bytes2human
 
 
 logger = logging.getLogger("rainbow")
@@ -83,3 +85,32 @@ def parse_float(s):
         return float(s)
     except ValueError:
         return None
+
+def mem_usage():
+    print(f'MEM:  {pprint_ntuple(psutil.virtual_memory())}')
+    print(f'SWAP: {pprint_ntuple(psutil.swap_memory())}')
+    print(f'CPU:  {psutil.cpu_percent()}%')
+
+def mem_usage_obj():
+    return {
+        'mem': pprint_ntuple(psutil.virtual_memory()),
+        'swap': pprint_ntuple(psutil.swap_memory()),
+        'cpu': psutil.cpu_percent(),
+    }
+
+def pprint_ntuple(nt):
+    _str = ""
+    excluded_keys = ['shared', 'slab', 'wired', 'buffers']
+    for name in nt._fields:
+        value = getattr(nt, name)
+        if name != 'percent':
+            value = bytes2human(value)
+        if name not in excluded_keys:
+            _str = _str + '{}={}, '.format(name, value)
+    return _str
+
+def log_msg(*args, skip_mem=False, **kwargs):
+    message = ' '.join(str(arg) for arg in args)
+    logger.info(message)
+    if not skip_mem:
+        mem_usage()

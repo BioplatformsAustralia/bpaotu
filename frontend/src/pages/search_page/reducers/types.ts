@@ -27,6 +27,13 @@ export interface BlastSubmission {
   error?: string
 }
 
+export interface ComparisonSubmission {
+  submissionId: string
+  finished: boolean
+  succeeded: boolean
+  error?: string
+}
+
 export interface Alert {
   color: string
   text: string
@@ -54,6 +61,34 @@ export interface PageState {
   }
   samplesGraphModal: {
     isOpen: boolean
+  }
+  samplesComparisonModal: {
+    isOpen: boolean
+    isLoading: boolean
+    isFinished: boolean
+    selectedMethod: string
+    selectedFilter: string
+    selectedFilterExtra: string
+    status: string
+    alerts: any[]
+    errors: any[]
+    submissions: any[]
+    results: {
+      abundanceMatrix: any
+      contextual: any
+    }
+    plotData: {
+      jaccard: any[]
+      braycurtis: any[]
+      // jaccard: Array<{ x: number; y: number }>;
+      // braycurtis: Array<{ x: number; y: number }>;
+    }
+    mem_usage: {
+      mem: string
+      swap: string
+      cpu: string
+    }
+    timestamps: any[]
   }
   metagenomeModal: {
     isLoading: boolean
@@ -125,6 +160,22 @@ export const searchPageInitialState: PageState = {
   },
   samplesGraphModal: {
     isOpen: false,
+  },
+  samplesComparisonModal: {
+    isOpen: false,
+    isLoading: false,
+    isFinished: false,
+    selectedMethod: 'braycurtis',
+    selectedFilter: '',
+    selectedFilterExtra: 'year',
+    status: 'init',
+    alerts: [],
+    errors: [],
+    submissions: [],
+    results: { abundanceMatrix: {}, contextual: {} },
+    plotData: { jaccard: [], braycurtis: [] },
+    mem_usage: { mem: '', swap: '', cpu: '' },
+    timestamps: [],
   },
   metagenomeModal: {
     isOpen: false,

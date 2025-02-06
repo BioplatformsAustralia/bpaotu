@@ -21,6 +21,7 @@ import { SearchResultsCard, MetagenomeSearchResultsCard } from './components/sea
 import { openBlastModal } from './reducers/blast_modal'
 import { openSamplesMapModal } from './reducers/samples_map_modal'
 import { openSamplesGraphModal } from './reducers/samples_graph_modal'
+import { openSamplesComparisonModal } from './reducers/samples_comparison_modal'
 import { search } from './reducers/search'
 import { clearSearchResults } from './reducers/search'
 
@@ -55,6 +56,10 @@ const SearchPage = (props) => {
     track('otu_interactive_graph_search')
     props.openSamplesGraphModal()
   }
+  const interactiveSampleComparison = () => {
+    track('otu_interactive_comparison_search')
+    props.openSamplesComparisonModal()
+  }
 
   const children = React.Children.toArray(props.children)
 
@@ -88,7 +93,7 @@ const SearchPage = (props) => {
           </Col>
         ) : (
           <>
-            <Col sm={{ size: 2, offset: 2 }}>
+            <Col sm={{ size: 2, offset: 1 }}>
               <SearchButton
                 id="SampleSearchButton"
                 octicon="search"
@@ -122,6 +127,16 @@ const SearchPage = (props) => {
                 onClick={interactiveGraphSearch}
               />
             </Col>
+            <Col sm={{ size: 2 }}>
+              <SearchButton
+                id="InteractiveSampleComparisonButton"
+                octicon="globe"
+                text="Interactive sample comparison"
+                onClick={interactiveSampleComparison}
+              />
+              {props.isComparisonRunning && <SearchRunningIcon />}
+              {props.isComparisonFinished && <SearchFinishedIcon />}
+            </Col>
           </>
         )}
       </Row>
@@ -136,6 +151,8 @@ function mapStateToProps(state) {
     isSearchInProgress: state.searchPage.results.isLoading,
     isBlastSearchRunning: state.searchPage.blastSearch.isSubmitting,
     isBlastSearchFinished: state.searchPage.blastSearch.isFinished,
+    isComparisonRunning: state.searchPage.samplesComparisonModal.isLoading,
+    isComparisonFinished: state.searchPage.samplesComparisonModal.isFinished,
     errors: state.searchPage.results.errors,
     auth: state.auth,
   }
@@ -147,6 +164,7 @@ function mapDispatchToProps(dispatch) {
       openBlastModal,
       openSamplesMapModal,
       openSamplesGraphModal,
+      openSamplesComparisonModal,
       search,
       clearSearchResults,
     },

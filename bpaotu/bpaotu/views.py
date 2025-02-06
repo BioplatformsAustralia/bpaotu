@@ -30,6 +30,8 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.core.cache import caches
 
+from celery.result import AsyncResult
+
 from . import tasks
 from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
@@ -45,9 +47,11 @@ from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilter
                     TaxonomyFilter, TaxonomyOptions, get_sample_ids,
                     SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
-from .spatial import spatial_query
+from .spatial import comparison_query, spatial_query
 from .tabular import tabular_zip_file_generator
-from .util import make_timestamp, parse_date, parse_time, parse_float
+from .util import make_timestamp, parse_date, parse_time, parse_float, log_msg, mem_usage_obj
+
+from sklearn.manifold import MDS
 
 from .sample_run_id_dict import sample_run_id_dict
 
@@ -170,6 +174,10 @@ def api_config(request):
         'submit_blast_endpoint': reverse('submit_blast'),
         'blast_submission_endpoint': reverse('blast_submission'),
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
+        'search_sample_sites_comparison_endpoint': reverse('otu_search_sample_sites_comparison'),
+        'submit_comparison_endpoint': reverse('submit_comparison'),
+        'cancel_comparison_endpoint': reverse('cancel_comparison'),
+        'comparison_submission_endpoint': reverse('comparison_submission'),
         'search_blast_otus_endpoint': reverse('otu_search_blast_otus'),
         'required_table_headers_endpoint': reverse('required_table_headers'),
         'contextual_csv_download_endpoint': reverse('contextual_csv_download_endpoint'),
@@ -382,7 +390,7 @@ def contextual_fields(request):
 @require_POST
 def contextual_graph_fields(request, contextual_filtering=True):
     additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
-    all_headers = ['am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
+    all_headers = ['id', 'am_environment_id', 'vegetation_type_id', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
                    'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
                    'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
     params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
@@ -392,11 +400,13 @@ def contextual_graph_fields(request, contextual_filtering=True):
             'graphdata': {}
         })
     graph_results = {}
+    sample_results = {}
 
     with SampleQuery(params) as query:
         results = query.matching_sample_graph_data(all_headers)
 
     if results:
+        ndata = np.array(results)
         tdata = np.array(results).T
         for i, h in enumerate(all_headers):
             column = SampleContext.__table__.columns[h]
@@ -407,8 +417,17 @@ def contextual_graph_fields(request, contextual_filtering=True):
                             (skip_sentinels and math.isclose(x, settings.BPAOTU_MISSING_VALUE_SENTINEL)))]
             graph_results[h] = [xy.tolist() for xy in np.unique(cleaned_data, return_counts=True)]
 
+
+
+        for x in ndata:
+            sample_id_column = all_headers.index('id')
+            sample_id = x[sample_id_column]
+            sample_data = dict(zip(all_headers, x.tolist()))
+            sample_results[sample_id] = sample_data
+
     return JsonResponse({
-        'graphdata': graph_results
+        'graphdata': graph_results,
+        'sampledata': sample_results,
     })
 
 @require_CKAN_auth
@@ -737,7 +756,139 @@ def otu_search_sample_sites(request):
     for d in data:
         key = (str(d['latitude']), str(d['longitude']))
         d['site_images'] = site_image_lookup_table.get(key)
-    return JsonResponse({'data': data, 'sample_otus': sample_otus})
+
+    return JsonResponse({ 'data': data, 'sample_otus': sample_otus })
+
+
+@require_CKAN_auth
+@require_POST
+def otu_search_sample_sites_comparison(request):
+    try:
+        params, errors = param_to_filters(request.POST['otu_query'])
+        if errors:
+            raise OTUError(*errors)
+
+        submission_id = tasks.submit_sample_comparison(request.POST['otu_query'])
+
+        return JsonResponse({
+            'success': True,
+            'abundanceMatrix': [],
+            'contextual': {},
+            'submission_id': submission_id,
+        })
+    except OTUError as exc:
+        logger.exception('Error in submit to sample comparison')
+        return JsonResponse({
+            'success': False,
+            'errors': exc.errors,
+        })
+
+    # params, errors = param_to_filters(request.POST['otu_query'])
+    # if errors:
+    #     return JsonResponse({
+    #         'errors': [str(e) for e in errors],
+    #         'data': [],
+    #         'sample_otus': []
+    #     })
+
+    # logger.info('start abundance_matrix comparison_query')
+    # abundance_matrix = comparison_query(params)
+
+    # if "error" in abundance_matrix:
+    #     return JsonResponse({
+    #         'abundance_matrix': abundance_matrix,
+    #         'contextual': {}
+    #     })
+
+    # dist_matrix_braycurtis = abundance_matrix['matrix_braycurtis']
+    # dist_matrix_jaccard = abundance_matrix['matrix_jaccard']
+
+    # def mds_results(dist_matrix):
+    #     RANDOMSEED = np.random.RandomState(seed=2)
+
+    #     log_msg('  MDS')
+    #     mds = MDS(n_components=2, max_iter=1000, random_state=RANDOMSEED, dissimilarity="precomputed")
+    #     mds_result = mds.fit_transform(dist_matrix)
+    #     MDS_x_scores = mds_result[:,0]
+    #     MDS_y_scores = mds_result[:,1]
+
+    #     # calculate the normalized stress from sklearn stress
+    #     # (https://stackoverflow.com/questions/36428205/stress-attribute-sklearn-manifold-mds-python)
+    #     stress_norm_MDS = np.sqrt(mds.stress_ / (0.5 * np.sum(dist_matrix**2)))
+
+    #     log_msg('  NMDS')
+    #     # compute NMDS  ***inititial the start position of the nmds as the mds solution!!!!
+    #     # dissimilarities = pairwise_distances(df.drop('class', axis=1), metric='euclidean')
+    #     nmds = MDS(n_components=2, metric=False, max_iter=1000, dissimilarity="precomputed")
+    #     nmds_result = nmds.fit_transform(dist_matrix, init=mds_result)
+    #     NMDS_x_scores = nmds_result[:,0]
+    #     NMDS_y_scores = nmds_result[:,1]
+
+    #     # calculate the normalized stress from sklearn stress
+    #     stress_norm_NMDS = np.sqrt(nmds.stress_ / (0.5 * np.sum(dist_matrix**2)))
+
+    #     return {
+    #         'MDS_x_scores': MDS_x_scores,
+    #         'MDS_y_scores': MDS_y_scores,
+    #         'NMDS_x_scores': NMDS_x_scores,
+    #         'NMDS_y_scores': NMDS_y_scores,
+    #         'stress_norm_MDS': stress_norm_MDS,
+    #         'stress_norm_NMDS': stress_norm_NMDS,
+    #     }
+
+    # log_msg('start braycurtis calc')
+    # results_braycurtis = mds_results(dist_matrix_braycurtis)
+    # pairs_braycurtis_MDS = list(zip(results_braycurtis['MDS_x_scores'], results_braycurtis['MDS_y_scores']))
+    # pairs_braycurtis_NMDS = list(zip(results_braycurtis['NMDS_x_scores'], results_braycurtis['NMDS_y_scores']))
+    # stress_norm_braycurtis_MDS = results_braycurtis['stress_norm_MDS']
+    # stress_norm_braycurtis_NMDS = results_braycurtis['stress_norm_NMDS']
+
+    # log_msg('start jaccard calc')
+    # results_jaccard = mds_results(dist_matrix_jaccard)
+    # pairs_jaccard_MDS = list(zip(results_jaccard['MDS_x_scores'], results_jaccard['MDS_y_scores']))
+    # pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
+    # stress_norm_jaccard_MDS = results_jaccard['stress_norm_MDS']
+    # stress_norm_jaccard_NMDS = results_jaccard['stress_norm_NMDS']
+
+    # abundance_matrix['points'] = {
+    #     'braycurtis': pairs_braycurtis_MDS,
+    #     'braycurtis_NMDS': pairs_braycurtis_NMDS,
+    #     'stress_norm_braycurtis_MDS': stress_norm_braycurtis_MDS,
+    #     'stress_norm_braycurtis_NMDS': stress_norm_braycurtis_NMDS,
+    #     'jaccard': pairs_jaccard_MDS,
+    #     'jaccard_NMDS': pairs_jaccard_NMDS,
+    #     'stress_norm_jaccard_MDS': stress_norm_jaccard_MDS,
+    #     'stress_norm_jaccard_NMDS': stress_norm_jaccard_NMDS,
+    # }
+
+    # sample_results = {}
+
+    # contextual_filtering = True
+    # additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+    # all_headers = ['id', 'am_environment_id', 'vegetation_type_id', 'imos_site_code', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
+    #                'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
+    #                'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
+    # all_headers_unique = list(set(all_headers))
+
+    # with SampleQuery(params) as query:
+    #     results = query.matching_sample_graph_data(all_headers_unique)
+
+    # if results:
+    #     ndata = np.array(results)
+
+    #     for x in ndata:
+    #         sample_id_column = all_headers_unique.index('id')
+    #         sample_id = x[sample_id_column]
+    #         sample_data = dict(zip(all_headers_unique, x.tolist()))
+    #         sample_results[sample_id] = sample_data
+
+    # abundance_matrix.pop('matrix_jaccard', None)
+    # abundance_matrix.pop('matrix_braycurtis', None)
+
+    # return JsonResponse({
+    #     'abundance_matrix': abundance_matrix,
+    #     'contextual': sample_results
+    # })
 
 
 @require_CKAN_auth
@@ -758,7 +909,6 @@ def otu_search_blast_otus(request):
     return JsonResponse({
         'rowsCount': result_count,
     })
-
 
 # technically we should be using GET, but the specification
 # of the query (plus the datatables params) is large: so we
@@ -958,6 +1108,7 @@ def submit_blast(request):
 def blast_submission(request):
     submission_id = request.GET['submission_id']
     submission = tasks.Submission(submission_id)
+
     if not submission.result_url:
         state = 'pending'
     else:
@@ -973,6 +1124,97 @@ def blast_submission(request):
         }
     })
 
+@require_CKAN_auth
+@require_POST
+def submit_comparison(request):
+    try:
+        params, errors = param_to_filters(request.POST['query'])
+        if errors:
+            raise OTUError(*errors)
+
+        submission_id = tasks.submit_sample_comparison(request.POST['query'])
+
+        return JsonResponse({
+            'success': True,
+            'submission_id': submission_id,
+        })
+    except OTUError as exc:
+        logger.exception('Error in submit to sample comparison')
+        return JsonResponse({
+            'success': False,
+            'errors': [str(t) for t in exc.errors],
+        })
+
+@require_CKAN_auth
+@require_POST
+def cancel_comparison(request):
+    try:
+        body_unicode = request.body.decode('utf-8')
+        body_data = json.loads(body_unicode)
+        submission_id = body_data['submissionId']
+
+        result = tasks.cancel_sample_comparison(submission_id)
+
+        if result:
+            return JsonResponse({
+                'success': True,
+                'submission_id': submission_id,
+                'cancelled': True,
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'submission_id': submission_id,
+                'cancelled': False,
+            })
+    except OTUError as exc:
+        logger.exception('Error in cancel sample comparison')
+        return JsonResponse({
+            'success': False,
+            'cancelled': False,
+            'errors': exc.errors,
+        })
+
+@require_CKAN_auth
+@require_GET
+def comparison_submission(request):
+    submission_id = request.GET['submission_id']
+    submission = tasks.Submission(submission_id)
+
+    state = submission.status
+
+    task_id = submission.task_id
+    task_status = None
+    if task_id:
+        task_status = AsyncResult(task_id).status
+
+    timestamps_ = submission.timestamps or json.dumps([])
+    timestamps = json.loads(timestamps_)
+
+    results = { 'abundanceMatrix': {}, 'contextual': {} }
+    if state == 'complete':
+        results = json.loads(submission.results)
+
+    response_data = {
+        'success': True,
+        'mem_usage': mem_usage_obj(),
+        'submission': {
+            'id': submission_id,
+            'state': state,
+            'timestamps': timestamps,
+            'results': results,
+            'task_status': task_status,
+        }
+    }
+
+    if state == 'error':
+        response_data['submission']['error'] = submission.error
+
+    if task_status == 'FAILURE':
+        response_data['submission']['state'] = 'error'
+        response_data['submission']['error'] = 'Server-side error. It is possible that the result set is too large. Please run a search with fewer samples.'
+
+    return JsonResponse(response_data)
 
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')

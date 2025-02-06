@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { useState } from 'react'
 import { first, join, keys, map, find } from 'lodash'
 import { Nav, NavItem, NavLink, TabContent, TabPane, UncontrolledTooltip, Alert } from 'reactstrap'
 
@@ -84,96 +84,84 @@ const tileLayer = {
 }
 
 // tslint:disable-next-line:max-classes-per-file
-class BPAImages extends React.Component<any, any> {
-  public render() {
-    const tnUrl = (packageId, resourceId) =>
-      join(
-        [window.otu_search_config.base_url, 'private/site-image-thumbnail', packageId, resourceId],
-        '/'
-      )
-    const rsUrl = (packageId, resourceId) =>
-      join(
-        [window.otu_search_config.ckan_base_url, 'dataset', packageId, 'resource', resourceId],
-        '/'
-      )
-    return (
-      <div>
-        {map(this.props.siteImages || [], ({ package_id, resource_id }, index) => (
-          <div key={index} className="bpaotu-map-popup-inner__images">
-            <a href={rsUrl(package_id, resource_id)} target="_other">
-              <img alt="Australian Microbiome" src={tnUrl(package_id, resource_id)} />
-            </a>
-          </div>
-        ))}
-      </div>
+const BPAImages = (props) => {
+  const tnUrl = (packageId, resourceId) =>
+    join(
+      [window.otu_search_config.base_url, 'private/site-image-thumbnail', packageId, resourceId],
+      '/'
     )
-  }
+  const rsUrl = (packageId, resourceId) =>
+    join(
+      [window.otu_search_config.ckan_base_url, 'dataset', packageId, 'resource', resourceId],
+      '/'
+    )
+
+  return (
+    <div>
+      {map(this.props.siteImages || [], ({ package_id, resource_id }, index) => (
+        <div key={index} className="bpaotu-map-popup-inner__images">
+          <a href={rsUrl(package_id, resource_id)} target="_other">
+            <img alt="Australian Microbiome" src={tnUrl(package_id, resource_id)} />
+          </a>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 // tslint:disable-next-line:max-classes-per-file
-class BPASamples extends React.Component<any, any> {
-  constructor(props: any) {
-    super(props)
+const BPASamples = (props) => {
+  const { bpadata } = props
+  const [activeTab, setActiveTab] = useState(first(keys(bpadata)))
 
-    this.state = {
-      bpadata: this.props.bpadata,
-      activeTab: first(keys(this.props.bpadata)),
-    }
-
-    this.toggle = this.toggle.bind(this)
-  }
-
-  public toggle(tab) {
-    if (this.state.activeTab !== tab) {
-      this.setState({
-        activeTab: tab,
-      })
+  const toggle = (tab) => {
+    if (activeTab !== tab) {
+      setActiveTab(tab)
     }
   }
 
-  public render() {
-    return (
-      <div className="bpaotu-samples">
-        <div className="bpaotu-samples__tabs">
-          <Nav tabs={true} className="flex-nowrap">
-            {map(this.props.bpadata, (data, index) => (
-              <NavItem key={index}>
-                <NavLink
-                  className={index === this.state.activeTab ? 'active' : ''}
-                  onClick={() => {
-                    this.toggle(index)
-                  }}
-                >
-                  Sample {index}
-                </NavLink>
-              </NavItem>
-            ))}
-          </Nav>
-        </div>
-
-        <TabContent activeTab={this.state.activeTab} className="bpaotu-samples__tab-content">
-          {map(this.props.bpadata, (data, index) => (
-            <TabPane key={index} tabId={index}>
-              <table>
-                <tbody>
-                  {map(data, (d, k) => (
-                    <tr key={k}>
-                      <th>{k}:</th>
-                      <td>{d}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TabPane>
+  return (
+    <div className="bpaotu-samples">
+      <div className="bpaotu-samples__tabs">
+        <Nav tabs={true} className="flex-nowrap">
+          {map(bpadata, (data, index) => (
+            <NavItem key={index}>
+              <NavLink
+                className={index === activeTab ? 'active' : ''}
+                onClick={() => {
+                  toggle(index)
+                }}
+              >
+                Sample {index}
+              </NavLink>
+            </NavItem>
           ))}
-        </TabContent>
+        </Nav>
       </div>
-    )
-  }
+
+      <TabContent activeTab={activeTab} className="bpaotu-samples__tab-content">
+        {map(bpadata, (data, index) => (
+          <TabPane key={index} tabId={index}>
+            <table>
+              <tbody>
+                {map(data, (d, k) => (
+                  <tr key={k}>
+                    <th>{k}:</th>
+                    <td>{d}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TabPane>
+        ))}
+      </TabContent>
+    </div>
+  )
 }
 
-function MarkerPopup(props) {
-  const [activeTab, setActiveTab] = React.useState('1')
+const MarkerPopup = (props) => {
+  const [activeTab, setActiveTab] = useState('1')
+
   if (!props.marker.site_images || props.marker.site_images.length === 0) {
     return <BPASamples bpadata={props.marker.bpadata} />
   }
@@ -612,7 +600,7 @@ class SamplesMap extends React.Component<any> {
     this.props.fetchSamples()
   }
 
-  public setUpMiniMap() {
+  public setUpMiniMap = () => {
     // There is no port of the MiniMap plugin to React so we use the JS plugin directly and wire it up manually using a `ref` to the L.Map object
     const layer = new L.TileLayer(ArcGIS.url, {
       minZoom: 0,
@@ -644,7 +632,7 @@ class SamplesMap extends React.Component<any> {
    * Function called when layer is selected.
    * @param {*} e
    */
-  public handleGridLayerClick(e) {
+  public handleGridLayerClick = (e) => {
     var layer = e.target
     let popup = layer.getPopup()
     let popupContent =
@@ -702,7 +690,7 @@ class SamplesMap extends React.Component<any> {
     // popup.bindPopup(popup);
   }
 
-  public layerStyle(feature, property) {
+  public layerStyle = (feature, property) => {
     return {
       fillColor: GridCellConstants.fillColor(feature.properties[property]),
       weight: 1,
@@ -712,7 +700,7 @@ class SamplesMap extends React.Component<any> {
     }
   }
 
-  public makeFeatureCollection(cellAggs: any) {
+  public makeFeatureCollection = (cellAggs: any) => {
     let maxes = calculateMaxes(cellAggs)
     let featureCollection: GeoJSON.FeatureCollection<any> = {
       type: 'FeatureCollection',
@@ -757,14 +745,14 @@ class SamplesMap extends React.Component<any> {
   }
 }
 
-function mapStateToProps(state) {
+const mapStateToProps = (state) => {
   return {
     filters: state.searchPage.filters,
     dataDefinitions: state.contextualDataDefinitions.filters,
   }
 }
 
-function mapDispatchToProps(dispatch) {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       selectContextualFilter,

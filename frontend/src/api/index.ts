@@ -164,6 +164,11 @@ export const executeSampleSitesSearch = partial(
   window.otu_search_config.search_sample_sites_endpoint
 )
 
+export const executeSampleSitesComparisonSearch = partial(
+  executeOtuSearch,
+  window.otu_search_config.search_sample_sites_comparison_endpoint
+)
+
 export const executeMetagenomeSearch = partial(
   executeOtuSearch,
   join([window.otu_search_config.base_url, 'private/metagenome-search'], '/')
@@ -227,6 +232,36 @@ export function executeBlast(searchString, blastParams, filters) {
 
 export function getBlastSubmission(submissionId) {
   return axios.get(window.otu_search_config.blast_submission_endpoint, {
+    params: {
+      submission_id: submissionId,
+    },
+  })
+}
+
+export function executeComparison(filters) {
+  const formData = new FormData()
+  formData.append('query', JSON.stringify(filters))
+
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.submit_comparison_endpoint,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+}
+
+export function executeCancelComparison(submissionId) {
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.cancel_comparison_endpoint,
+    data: { submissionId: submissionId },
+  })
+}
+
+export function getComparisonSubmission(submissionId) {
+  return axios.get(window.otu_search_config.comparison_submission_endpoint, {
     params: {
       submission_id: submissionId,
     },
