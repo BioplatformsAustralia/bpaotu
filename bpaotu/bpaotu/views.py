@@ -1185,9 +1185,6 @@ def comparison_submission(request):
     if task_id:
         task_status = AsyncResult(task_id).status
 
-    print('task_id', task_id)
-    print('task_status', task_status)
-
     timestamps_ = submission.timestamps or json.dumps([])
     timestamps = json.loads(timestamps_)
 
@@ -1212,7 +1209,7 @@ def comparison_submission(request):
 
     if task_status == 'FAILURE':
         response_data['submission']['state'] = 'error'
-        response_data['submission']['error'] = 'Task failure'
+        response_data['submission']['error'] = 'Server-side error. It is possible that the result set is too large. Please run a search with fewer samples.'
 
     return JsonResponse(response_data)
 
