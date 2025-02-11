@@ -32,7 +32,8 @@ logger = logging.getLogger('rainbow')
 
 
 class SampleComparisonWrapper:
-    def __init__(self, submission_id, status, query, query_results = None, distance_results = None, mds_results = None):
+    def __init__(self, cwd, submission_id, status, query, query_results = None, distance_results = None, mds_results = None):
+        self._cwd = cwd
         self._submission_id = submission_id
         self._status = status
         self._query = query
@@ -49,6 +50,10 @@ class SampleComparisonWrapper:
         timestamps_.append({ text: time() })
         submission.timestamps = json.dumps(timestamps_)
 
+    def _in(self, filename):
+        "return path to filename within cwd"
+        return os.path.join(self._cwd, filename)
+
     def run(self):
         return self._run()
 
@@ -56,7 +61,17 @@ class SampleComparisonWrapper:
         return self._cancel()
 
     def cleanup(self):
-        self._status_update(submission, 'complete')
+        self._cleanup();
+
+    def _make_abundance(self):
+        logger.info('Making abundance file')
+        results_file = self._in('abundance.csv')
+        print(results_file)
+        with open(results_file, 'w') as fd:
+            with SampleQuery(self._params) as query:
+                for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(1000):
+                    fd.write('{},{},{}\n'.format(sample_id, otu_id, count))
+        logger.info('Finished making abundance file')
 
     def _cancel(self):
         submission = Submission(self._submission_id)
@@ -72,6 +87,15 @@ class SampleComparisonWrapper:
             logger.exception('Error in cancel sample comparison')
             return False
 
+        self._cleanup();
+
+    def _cleanup(self):
+        try:
+            print('self._cwd', self._cwd)
+            shutil.rmtree(self._cwd)
+        except Exception:
+            logger.exception('Error when cleaning up cwd: ({})'.format(self._cwd))
+
     def _run(self):
         # access the submission so we can change the status
         submission = Submission(self._submission_id)
@@ -79,10 +103,12 @@ class SampleComparisonWrapper:
         self._status_update(submission, 'fetch')
         log_msg('Fetching sample data', skip_mem=True)
  
-        log_msg('start comparison_query')
-        results = comparison_query(self._params)
+        self._make_abundance()
 
-        log_msg(f'results length: {len(results)}', skip_mem=True)
+        # log_msg('start comparison_query')
+        # results = comparison_query(self._params)
+
+        # log_msg(f'results length: {len(results)}', skip_mem=True)
 
         # local dev: 4316539 crashes (Acidobacteria)
         # if df.shape[0] > 1000000:
@@ -92,8 +118,14 @@ class SampleComparisonWrapper:
 
         self._status_update(submission, 'fetched_to_df')
 
+        results_file = self._in('abundance.csv')
+        print(results_file)
+
         log_msg('start query results to df')
-        df = pd.DataFrame(results, columns=['sample_id', 'otu_id', 'abundance'])
+        column_names = ['sample_id', 'otu_id', 'abundance']
+        column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
+
+        df = pd.read_csv(results_file, header=None, names=column_names, dtype=column_dtypes)
         log_msg(f'df.shape {df.shape}', skip_mem=True)
 
         self._status_update(submission, 'sort')

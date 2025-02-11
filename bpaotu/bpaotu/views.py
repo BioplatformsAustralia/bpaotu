@@ -1212,7 +1212,8 @@ def comparison_submission(request):
 
     if task_status == 'FAILURE':
         response_data['submission']['state'] = 'error'
-        response_data['submission']['error'] = 'Server-side error. It is possible that the result set is too large. Please run a search with fewer samples.'
+        response_data['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
+        tasks.cleanup_comparison(submission_id)
 
     return JsonResponse(response_data)
 
