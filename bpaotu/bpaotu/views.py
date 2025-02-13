@@ -1186,7 +1186,10 @@ def comparison_submission(request):
     task_id = submission.task_id
     task_status = None
     if task_id:
-        task_status = AsyncResult(task_id).status
+        async_result = AsyncResult(task_id)
+        print(async_result)
+        logger.info(async_result)
+        task_status = async_result.status
 
     timestamps_ = submission.timestamps or json.dumps([])
     timestamps = json.loads(timestamps_)
@@ -1203,6 +1206,7 @@ def comparison_submission(request):
             'state': state,
             'timestamps': timestamps,
             'results': results,
+            'task_id': task_id,
             'task_status': task_status,
         }
     }

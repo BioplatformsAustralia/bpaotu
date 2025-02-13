@@ -153,21 +153,6 @@ class SampleComparisonWrapper:
         log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape, skip_mem=True)
         log_msg('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape, skip_mem=True)
 
-        sample_ids = df['sample_id'].unique().tolist()
-        otu_ids = df['otu_id'].unique().tolist()
-
-        log_msg('sample_ids: ', len(sample_ids), skip_mem=True)
-        log_msg('otu_ids: ', len(otu_ids), skip_mem=True)
-
-        abundance_matrix = {
-            'sample_ids': sample_ids,
-            'otu_ids': otu_ids,
-            'matrix_braycurtis': dist_matrix_braycurtis,
-            'matrix_jaccard': dist_matrix_jaccard,
-        }
-
-        dist_matrix_braycurtis = abundance_matrix['matrix_braycurtis']
-        dist_matrix_jaccard = abundance_matrix['matrix_jaccard']
 
         def mds_results(dist_matrix):
             RANDOMSEED = np.random.RandomState(seed=2)
@@ -217,6 +202,19 @@ class SampleComparisonWrapper:
         pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
         stress_norm_jaccard_MDS = results_jaccard['stress_norm_MDS']
         stress_norm_jaccard_NMDS = results_jaccard['stress_norm_NMDS']
+
+        sample_ids = df['sample_id'].unique().tolist()
+        otu_ids = df['otu_id'].unique().tolist()
+
+        log_msg('sample_ids: ', len(sample_ids), skip_mem=True)
+        log_msg('otu_ids: ', len(otu_ids), skip_mem=True)
+
+        abundance_matrix = {
+            'sample_ids': sample_ids,
+            'otu_ids': otu_ids,
+            'matrix_braycurtis': dist_matrix_braycurtis,
+            'matrix_jaccard': dist_matrix_jaccard,
+        }
 
         abundance_matrix['points'] = {
             'braycurtis': pairs_braycurtis_MDS,
