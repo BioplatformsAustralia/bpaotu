@@ -272,6 +272,11 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
+        'console_prod': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
         'shell': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
@@ -324,7 +329,7 @@ LOGGING = {
             'propagate': False,
         },
         'bpaotu': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console_prod', 'file'],
             'level': 'DEBUG',
             'propagate': False,
         },

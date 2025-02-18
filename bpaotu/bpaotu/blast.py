@@ -23,7 +23,7 @@ from .otu import OTU, SampleContext, SampleOTU
 from .query import SampleQuery
 from .util import format_sample_id
 
-logger = logging.getLogger('rainbow')
+logger = logging.getLogger('bpaotu')
 
 
 class BlastWrapper:

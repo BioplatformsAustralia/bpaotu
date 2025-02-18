@@ -28,7 +28,7 @@ from fastdist import fastdist
 from time import sleep, time
 from .util import log_msg
 
-logger = logging.getLogger('rainbow')
+logger = logging.getLogger('bpaotu')
 
 
 class SampleComparisonWrapper:

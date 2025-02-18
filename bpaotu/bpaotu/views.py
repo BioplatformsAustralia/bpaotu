@@ -57,7 +57,7 @@ from .sample_run_id_dict import sample_run_id_dict
 
 from mixpanel import Mixpanel
 
-logger = logging.getLogger("rainbow")
+logger = logging.getLogger('bpaotu')
 
 
 # See datatables.net serverSide documentation for details

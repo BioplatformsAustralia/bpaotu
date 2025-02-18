@@ -17,7 +17,7 @@ from .galaxy_client import get_users_galaxy
 from . import views
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('bpaotu')
 
 
 # Should be None but using a large number because task retrying forever aren't much fun

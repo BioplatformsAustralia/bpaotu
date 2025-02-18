@@ -21,7 +21,7 @@ from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContext
 
 from .util import log_msg
 
-logger = logging.getLogger("rainbow")
+logger = logging.getLogger('bpaotu')
 
 def rewrap_longitude(longitude):
     d = settings.BPAOTU_MAP_CENTRE_LONGITUDE - longitude
