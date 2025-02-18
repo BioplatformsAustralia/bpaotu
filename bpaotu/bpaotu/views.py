@@ -1216,7 +1216,7 @@ def comparison_submission(request):
             duration = timestamps[-1]['complet'] - timestamps[0]['init']
             response_data['submission']['duration'] = round(duration, 2)
         except Exception as e:
-            logger.warn("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
+            logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
 
     if state == 'error':
         response_data['submission']['error'] = submission.error
