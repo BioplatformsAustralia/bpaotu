@@ -1204,12 +1204,19 @@ def comparison_submission(request):
         'submission': {
             'id': submission_id,
             'state': state,
-            'timestamps': timestamps,
             'results': results,
+            'timestamps': timestamps,
             'task_id': task_id,
             'task_status': task_status,
         }
     }
+
+    if state == 'complete':
+        try:
+            duration = timestamps[-1]['complet'] - timestamps[0]['init']
+            response_data['submission']['duration'] = round(duration, 2)
+        except Exception as e:
+            logger.warn("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
 
     if state == 'error':
         response_data['submission']['error'] = submission.error
