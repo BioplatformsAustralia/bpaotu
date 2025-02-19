@@ -330,7 +330,7 @@ LOGGING = {
         },
         'bpaotu': {
             'handlers': ['console_prod', 'file'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': False,
         },
         'libs': {
