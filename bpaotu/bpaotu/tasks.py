@@ -188,8 +188,9 @@ def submit_sample_comparison(self, query):
     submission.status = 'init'
 
     # Ensure asynchronous execution and store the task ID
-    chain = (setup_comparison.s() | run_comparison.s() | cleanup_comparison.s()).apply_async(args=[submission_id])
-    submission.task_id = chain.id
+    chain = setup_comparison.s() | run_comparison.s() | cleanup_comparison.s()
+
+    chain(submission_id)
 
     return submission_id
 

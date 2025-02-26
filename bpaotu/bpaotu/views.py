@@ -30,7 +30,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.core.cache import caches
 
-from celery.result import AsyncResult
+from celery import current_app
 
 from . import tasks
 from .biom import biom_zip_file_generator
@@ -1180,16 +1180,12 @@ def cancel_comparison(request):
 def comparison_submission(request):
     submission_id = request.GET['submission_id']
     submission = tasks.Submission(submission_id)
-
     state = submission.status
 
-    task_id = submission.task_id
-    task_status = None
-    if task_id:
-        async_result = AsyncResult(task_id)
-        print(async_result)
-        logger.info(async_result)
-        task_status = async_result.status
+    # TODO: is there at all a possibility that this is checked in between tasks?!?
+    # look for an active task with the submission_id in the task args
+    active_tasks = get_active_celery_tasks()
+    task_found = any(submission_id in task["args"] for task in active_tasks)
 
     timestamps_ = submission.timestamps or json.dumps([])
     timestamps = json.loads(timestamps_)
@@ -1206,8 +1202,7 @@ def comparison_submission(request):
             'state': state,
             'results': results,
             'timestamps': timestamps,
-            'task_id': task_id,
-            'task_status': task_status,
+            'task_found': task_found,
         }
     }
 
@@ -1221,7 +1216,7 @@ def comparison_submission(request):
     if state == 'error':
         response_data['submission']['error'] = submission.error
 
-    if task_status == 'FAILURE':
+    if not task_found:
         response_data['submission']['state'] = 'error'
         response_data['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
         tasks.cleanup_comparison(submission_id)
@@ -1508,3 +1503,8 @@ def metagenome_request(request):
     except Exception as e:
         logger.critical("Error in metagenome_request", exc_info=True)
         return HttpResponseServerError(str(e), content_type="text/plain")
+
+def get_active_celery_tasks():
+    inspector = current_app.control.inspect()
+    active_tasks = inspector.active()
+    return [task for tasks in active_tasks.values() for task in tasks]
