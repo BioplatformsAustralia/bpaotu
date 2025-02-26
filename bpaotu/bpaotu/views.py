@@ -1213,13 +1213,18 @@ def comparison_submission(request):
         except Exception as e:
             logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
 
-    if state == 'error':
+    elif state == 'error':
         response_data['submission']['error'] = submission.error
 
-    if not task_found:
+    elif not task_found:
         response_data['submission']['state'] = 'error'
         response_data['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
         tasks.cleanup_comparison(submission_id)
+
+    else:
+        # still ongoing
+        pass
+
 
     return JsonResponse(response_data)
 
