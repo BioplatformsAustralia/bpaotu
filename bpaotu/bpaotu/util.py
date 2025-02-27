@@ -112,6 +112,5 @@ def pprint_ntuple(nt):
 def log_msg(*args, skip_mem=False, **kwargs):
     message = ' '.join(str(arg) for arg in args)
     logger.info(message)
-    print(message) # for production
     if not skip_mem:
         mem_usage()

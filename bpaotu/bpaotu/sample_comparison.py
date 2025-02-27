@@ -63,10 +63,29 @@ class SampleComparisonWrapper:
     def cleanup(self):
         self._cleanup();
 
+    def _check_result_size_ok(self):
+        max_rows = settings.MAX_ROWS_COMPARISON
+
+        with SampleQuery(self._params) as query:
+            rows = query.matching_sample_distance_matrix().count()
+
+        result = {
+            'valid': True,
+            'rows': rows,
+            'rows_max': max_rows,
+            'error': None,
+        }
+        
+        if rows > max_rows:
+            result['valid'] = False
+            result['error'] = f'Query returned too many rows ({rows} / {max_rows}). Please choose a smaller search space.'
+
+        return result
+
     def _make_abundance(self):
         logger.info('Making abundance file')
         results_file = self._in('abundance.csv')
-        print(results_file)
+        print('results_file', results_file)
         with open(results_file, 'w') as fd:
             with SampleQuery(self._params) as query:
                 for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(1000):
@@ -91,8 +110,10 @@ class SampleComparisonWrapper:
 
     def _cleanup(self):
         try:
-            print('self._cwd', self._cwd)
             shutil.rmtree(self._cwd)
+        except FileNotFoundError:
+            # directory doesn't exist
+            pass
         except Exception:
             logger.exception('Error when cleaning up cwd: ({})'.format(self._cwd))
 
@@ -103,25 +124,21 @@ class SampleComparisonWrapper:
         self._status_update(submission, 'fetch')
         log_msg('Fetching sample data', skip_mem=True)
  
+        # check if the file is too large
+        check = self._check_result_size_ok()
+        if not check['valid']:
+            self._status_update(submission, 'error')
+            submission.error = check['error']
+            return False
+
+        # make csv in /tmp dir with abundance data
         self._make_abundance()
 
-        # log_msg('start comparison_query')
-        # results = comparison_query(self._params)
-
-        # log_msg(f'results length: {len(results)}', skip_mem=True)
-
-        # local dev: 4316539 crashes (Acidobacteria)
-        # if df.shape[0] > 1000000:
-        #     return {
-        #         'error': 'Too many rows'
-        #     }
-
+        # read abundance data into a datagrame
         self._status_update(submission, 'fetched_to_df')
-
+        log_msg('start query results to df')
         results_file = self._in('abundance.csv')
         print(results_file)
-
-        log_msg('start query results to df')
         column_names = ['sample_id', 'otu_id', 'abundance']
         column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
 
@@ -129,28 +146,19 @@ class SampleComparisonWrapper:
         log_msg(f'df.shape {df.shape}', skip_mem=True)
 
         self._status_update(submission, 'sort')
-
-        log_msg('start df sort')
         df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
         log_msg(f'df.shape {df.shape}', skip_mem=True)
 
         self._status_update(submission, 'pivot')
-
-        log_msg('start df pivot')
-        # this next line uses a lot of memory for a large result set
         rectangular_df = df.pivot(index='sample_id', columns='otu_id', values='abundance').fillna(0)
         log_msg(f'rectangular_df.shape {rectangular_df.shape}', skip_mem=True)
 
         self._status_update(submission, 'calc_distances_bc')
-        log_msg('start braycurtis matrix_pairwise_distance')
         dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
+        log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape, skip_mem=True)
 
         self._status_update(submission, 'calc_distances_j')
-        log_msg('start jaccard matrix_pairwise_distance')
         dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
-
-        log_msg('matrix_pairwise_distance done')
-        log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape, skip_mem=True)
         log_msg('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape, skip_mem=True)
 
 
