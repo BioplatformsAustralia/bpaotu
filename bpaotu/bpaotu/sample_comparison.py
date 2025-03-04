@@ -78,7 +78,7 @@ class SampleComparisonWrapper:
         
         if rows > max_rows:
             result['valid'] = False
-            result['error'] = f'Query returned too many rows ({rows} / {max_rows}). Please choose a smaller search space.'
+            result['error'] = f'Query returned too many rows: {rows:,} (max is {max_rows:,}).<br />Please choose a smaller search space or download OTU data and perform analysis locally'
 
         return result
 
