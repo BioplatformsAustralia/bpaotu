@@ -82,7 +82,7 @@ class SampleComparisonWrapper:
 
         return result
 
-    def _make_abundance(self):
+    def _make_abundance_csv(self):
         logger.info('Making abundance file')
         results_file = self._in('abundance.csv')
         print('results_file', results_file)
@@ -132,11 +132,11 @@ class SampleComparisonWrapper:
             return False
 
         # make csv in /tmp dir with abundance data
-        self._make_abundance()
+        self._make_abundance_csv()
 
-        # read abundance data into a datagrame
+        # read abundance data into a dataframe
         self._status_update(submission, 'fetched_to_df')
-        log_msg('start query results to df')
+        log_msg('start query results to df', skip_mem=True)
         results_file = self._in('abundance.csv')
         print(results_file)
         column_names = ['sample_id', 'otu_id', 'abundance']
@@ -147,25 +147,25 @@ class SampleComparisonWrapper:
 
         self._status_update(submission, 'sort')
         df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
-        log_msg(f'df.shape {df.shape}', skip_mem=True)
 
         self._status_update(submission, 'pivot')
-        rectangular_df = df.pivot(index='sample_id', columns='otu_id', values='abundance').fillna(0)
-        log_msg(f'rectangular_df.shape {rectangular_df.shape}', skip_mem=True)
+        rect_df = df.pivot(index='sample_id', columns='otu_id', values='abundance').fillna(0)
+        log_msg(f'rect_df.shape {rect_df.shape}', skip_mem=True)
 
         self._status_update(submission, 'calc_distances_bc')
-        dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
-        log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape, skip_mem=True)
+        dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
 
         self._status_update(submission, 'calc_distances_j')
-        dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
+        dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
+
+        log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape, skip_mem=True)
         log_msg('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape, skip_mem=True)
 
 
-        def mds_results(dist_matrix):
-            RANDOMSEED = np.random.RandomState(seed=2)
+        RANDOMSEED = np.random.RandomState(seed=2)
 
-            log_msg('  MDS')
+        def mds_results(dist_matrix):
+            log_msg('  MDS', skip_mem=True)
             mds = MDS(n_components=2, max_iter=1000, random_state=RANDOMSEED, dissimilarity="precomputed")
             mds_result = mds.fit_transform(dist_matrix)
             MDS_x_scores = mds_result[:,0]
@@ -175,7 +175,7 @@ class SampleComparisonWrapper:
             # (https://stackoverflow.com/questions/36428205/stress-attribute-sklearn-manifold-mds-python)
             stress_norm_MDS = np.sqrt(mds.stress_ / (0.5 * np.sum(dist_matrix**2)))
 
-            log_msg('  NMDS')
+            log_msg('  NMDS', skip_mem=True)
             # compute NMDS  ***inititial the start position of the nmds as the mds solution!!!!
             # dissimilarities = pairwise_distances(df.drop('class', axis=1), metric='euclidean')
             nmds = MDS(n_components=2, metric=False, max_iter=1000, dissimilarity="precomputed")
@@ -196,7 +196,7 @@ class SampleComparisonWrapper:
             }
 
         self._status_update(submission, 'calc_mds_bc')
-        log_msg('start braycurtis calc')
+        log_msg('start braycurtis calc', skip_mem=True)
         results_braycurtis = mds_results(dist_matrix_braycurtis)
         pairs_braycurtis_MDS = list(zip(results_braycurtis['MDS_x_scores'], results_braycurtis['MDS_y_scores']))
         pairs_braycurtis_NMDS = list(zip(results_braycurtis['NMDS_x_scores'], results_braycurtis['NMDS_y_scores']))
@@ -204,7 +204,7 @@ class SampleComparisonWrapper:
         stress_norm_braycurtis_NMDS = results_braycurtis['stress_norm_NMDS']
 
         self._status_update(submission, 'calc_mds_j')
-        log_msg('start jaccard calc')
+        log_msg('start jaccard calc', skip_mem=True)
         results_jaccard = mds_results(dist_matrix_jaccard)
         pairs_jaccard_MDS = list(zip(results_jaccard['MDS_x_scores'], results_jaccard['MDS_y_scores']))
         pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
