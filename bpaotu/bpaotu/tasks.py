@@ -17,7 +17,7 @@ from .galaxy_client import get_users_galaxy
 from . import views
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('bpaotu')
 
 
 # Should be None but using a large number because task retrying forever aren't much fun
@@ -188,8 +188,9 @@ def submit_sample_comparison(self, query):
     submission.status = 'init'
 
     # Ensure asynchronous execution and store the task ID
-    chain = (setup_comparison.s() | run_comparison.s()).apply_async(args=[submission_id])
-    submission.task_id = chain.id
+    chain = setup_comparison.s() | run_comparison.s() | cleanup_comparison.s()
+
+    chain(submission_id)
 
     return submission_id
 
@@ -213,6 +214,7 @@ def cancel_sample_comparison(submission_id):
 @shared_task
 def setup_comparison(submission_id):
     submission = Submission(submission_id)
+    submission.cwd = tempfile.mkdtemp()
     wrapper = _make_sample_comparison_wrapper(submission)
     wrapper.setup()
     return submission_id
@@ -229,14 +231,12 @@ def run_comparison(self, submission_id):
         submission.status = 'error'
         submission.error = "Out of Memory: %s" % e
         logger.error(f"MemoryError running comparison: {e}")
-        print('MemoryError')
-        print(e)
-    except Exception as e:
-        submission.status = 'error'
-        submission.error = "%s" % (e)
-        logger.info("Error running sample comparison: %s" % (e))
-        print('Exception')
-        print(e)
+    # except Exception as e:
+    #     print('Exception')
+    #     print(e)
+    #     submission.status = 'error'
+    #     submission.error = "%s" % (e)
+    #     logger.info("Error running sample comparison: %s" % (e))
 
     return submission_id
 
@@ -271,7 +271,7 @@ def _make_blast_wrapper(submission):
 
 def _make_sample_comparison_wrapper(submission):
     return SampleComparisonWrapper(
-        submission.submission_id, submission.status, submission.query)
+        submission.cwd, submission.submission_id, submission.status, submission.query)
 
 
 import datetime

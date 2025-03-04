@@ -90,6 +90,13 @@ DATABASES = {
         'PASSWORD': env.get("dbpass", "webapp"),
         'HOST': env.get("dbserver", ""),
         'PORT': env.get("dbport", ""),
+        'OPTIONS': {
+            'connect_timeout': 60,  # Connect timeout (not query execution timeout)
+            'keepalives': 1,        # Enable TCP keepalives
+            'keepalives_idle': 600,  # Send keepalive after
+            'keepalives_interval': 60, # Retry every
+            'keepalives_count': 100,    # Retry times before closing
+        }
     }
 }
 
@@ -265,6 +272,11 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
+        'console_prod': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
         'shell': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
@@ -317,8 +329,8 @@ LOGGING = {
             'propagate': False,
         },
         'bpaotu': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
+            'handlers': ['console_prod', 'file'],
+            'level': 'INFO',
             'propagate': False,
         },
         'libs': {
@@ -431,5 +443,7 @@ DEFAULT_TAXONOMIES = [
     ['unite8', 'wang']]
 
 MIXPANEL_TOKEN = env.get("MIXPANEL_TOKEN", "")
+
+MAX_ROWS_COMPARISON = env.get('MAX_ROWS_COMPARISON', 30000)
 
 VERSION = __version__

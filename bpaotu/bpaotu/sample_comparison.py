@@ -28,11 +28,12 @@ from fastdist import fastdist
 from time import sleep, time
 from .util import log_msg
 
-logger = logging.getLogger('rainbow')
+logger = logging.getLogger('bpaotu')
 
 
 class SampleComparisonWrapper:
-    def __init__(self, submission_id, status, query, query_results = None, distance_results = None, mds_results = None):
+    def __init__(self, cwd, submission_id, status, query, query_results = None, distance_results = None, mds_results = None):
+        self._cwd = cwd
         self._submission_id = submission_id
         self._status = status
         self._query = query
@@ -49,6 +50,10 @@ class SampleComparisonWrapper:
         timestamps_.append({ text: time() })
         submission.timestamps = json.dumps(timestamps_)
 
+    def _in(self, filename):
+        "return path to filename within cwd"
+        return os.path.join(self._cwd, filename)
+
     def run(self):
         return self._run()
 
@@ -56,7 +61,36 @@ class SampleComparisonWrapper:
         return self._cancel()
 
     def cleanup(self):
-        self._status_update(submission, 'complete')
+        self._cleanup();
+
+    def _check_result_size_ok(self):
+        max_rows = settings.MAX_ROWS_COMPARISON
+
+        with SampleQuery(self._params) as query:
+            rows = query.matching_sample_distance_matrix().count()
+
+        result = {
+            'valid': True,
+            'rows': rows,
+            'rows_max': max_rows,
+            'error': None,
+        }
+        
+        if rows > max_rows:
+            result['valid'] = False
+            result['error'] = f'Query returned too many rows: {rows:,} (max is {max_rows:,}).<br />Please choose a smaller search space or download OTU data and perform analysis locally'
+
+        return result
+
+    def _make_abundance_csv(self):
+        logger.info('Making abundance file')
+        results_file = self._in('abundance.csv')
+        print('results_file', results_file)
+        with open(results_file, 'w') as fd:
+            with SampleQuery(self._params) as query:
+                for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(1000):
+                    fd.write('{},{},{}\n'.format(sample_id, otu_id, count))
+        logger.info('Finished making abundance file')
 
     def _cancel(self):
         submission = Submission(self._submission_id)
@@ -72,6 +106,17 @@ class SampleComparisonWrapper:
             logger.exception('Error in cancel sample comparison')
             return False
 
+        self._cleanup();
+
+    def _cleanup(self):
+        try:
+            shutil.rmtree(self._cwd)
+        except FileNotFoundError:
+            # directory doesn't exist
+            pass
+        except Exception:
+            logger.exception('Error when cleaning up cwd: ({})'.format(self._cwd))
+
     def _run(self):
         # access the submission so we can change the status
         submission = Submission(self._submission_id)
@@ -79,68 +124,48 @@ class SampleComparisonWrapper:
         self._status_update(submission, 'fetch')
         log_msg('Fetching sample data', skip_mem=True)
  
-        log_msg('start comparison_query')
-        results = comparison_query(self._params)
+        # check if the file is too large
+        check = self._check_result_size_ok()
+        if not check['valid']:
+            self._status_update(submission, 'error')
+            submission.error = check['error']
+            return False
 
-        log_msg(f'results length: {len(results)}', skip_mem=True)
+        # make csv in /tmp dir with abundance data
+        self._make_abundance_csv()
 
-        # local dev: 4316539 crashes (Acidobacteria)
-        # if df.shape[0] > 1000000:
-        #     return {
-        #         'error': 'Too many rows'
-        #     }
-
+        # read abundance data into a dataframe
         self._status_update(submission, 'fetched_to_df')
+        log_msg('start query results to df', skip_mem=True)
+        results_file = self._in('abundance.csv')
+        print(results_file)
+        column_names = ['sample_id', 'otu_id', 'abundance']
+        column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
 
-        log_msg('start query results to df')
-        df = pd.DataFrame(results, columns=['sample_id', 'otu_id', 'abundance'])
+        df = pd.read_csv(results_file, header=None, names=column_names, dtype=column_dtypes)
         log_msg(f'df.shape {df.shape}', skip_mem=True)
 
         self._status_update(submission, 'sort')
-
-        log_msg('start df sort')
         df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
-        log_msg(f'df.shape {df.shape}', skip_mem=True)
 
         self._status_update(submission, 'pivot')
-
-        log_msg('start df pivot')
-        # this next line uses a lot of memory for a large result set
-        rectangular_df = df.pivot(index='sample_id', columns='otu_id', values='abundance').fillna(0)
-        log_msg(f'rectangular_df.shape {rectangular_df.shape}', skip_mem=True)
+        rect_df = df.pivot(index='sample_id', columns='otu_id', values='abundance').fillna(0)
+        log_msg(f'rect_df.shape {rect_df.shape}', skip_mem=True)
 
         self._status_update(submission, 'calc_distances_bc')
-        log_msg('start braycurtis matrix_pairwise_distance')
-        dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
+        dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
 
         self._status_update(submission, 'calc_distances_j')
-        log_msg('start jaccard matrix_pairwise_distance')
-        dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rectangular_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
+        dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
 
-        log_msg('matrix_pairwise_distance done')
         log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape, skip_mem=True)
         log_msg('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape, skip_mem=True)
 
-        sample_ids = df['sample_id'].unique().tolist()
-        otu_ids = df['otu_id'].unique().tolist()
 
-        log_msg('sample_ids: ', len(sample_ids), skip_mem=True)
-        log_msg('otu_ids: ', len(otu_ids), skip_mem=True)
-
-        abundance_matrix = {
-            'sample_ids': sample_ids,
-            'otu_ids': otu_ids,
-            'matrix_braycurtis': dist_matrix_braycurtis,
-            'matrix_jaccard': dist_matrix_jaccard,
-        }
-
-        dist_matrix_braycurtis = abundance_matrix['matrix_braycurtis']
-        dist_matrix_jaccard = abundance_matrix['matrix_jaccard']
+        RANDOMSEED = np.random.RandomState(seed=2)
 
         def mds_results(dist_matrix):
-            RANDOMSEED = np.random.RandomState(seed=2)
-
-            log_msg('  MDS')
+            log_msg('  MDS', skip_mem=True)
             mds = MDS(n_components=2, max_iter=1000, random_state=RANDOMSEED, dissimilarity="precomputed")
             mds_result = mds.fit_transform(dist_matrix)
             MDS_x_scores = mds_result[:,0]
@@ -150,7 +175,7 @@ class SampleComparisonWrapper:
             # (https://stackoverflow.com/questions/36428205/stress-attribute-sklearn-manifold-mds-python)
             stress_norm_MDS = np.sqrt(mds.stress_ / (0.5 * np.sum(dist_matrix**2)))
 
-            log_msg('  NMDS')
+            log_msg('  NMDS', skip_mem=True)
             # compute NMDS  ***inititial the start position of the nmds as the mds solution!!!!
             # dissimilarities = pairwise_distances(df.drop('class', axis=1), metric='euclidean')
             nmds = MDS(n_components=2, metric=False, max_iter=1000, dissimilarity="precomputed")
@@ -171,7 +196,7 @@ class SampleComparisonWrapper:
             }
 
         self._status_update(submission, 'calc_mds_bc')
-        log_msg('start braycurtis calc')
+        log_msg('start braycurtis calc', skip_mem=True)
         results_braycurtis = mds_results(dist_matrix_braycurtis)
         pairs_braycurtis_MDS = list(zip(results_braycurtis['MDS_x_scores'], results_braycurtis['MDS_y_scores']))
         pairs_braycurtis_NMDS = list(zip(results_braycurtis['NMDS_x_scores'], results_braycurtis['NMDS_y_scores']))
@@ -179,12 +204,25 @@ class SampleComparisonWrapper:
         stress_norm_braycurtis_NMDS = results_braycurtis['stress_norm_NMDS']
 
         self._status_update(submission, 'calc_mds_j')
-        log_msg('start jaccard calc')
+        log_msg('start jaccard calc', skip_mem=True)
         results_jaccard = mds_results(dist_matrix_jaccard)
         pairs_jaccard_MDS = list(zip(results_jaccard['MDS_x_scores'], results_jaccard['MDS_y_scores']))
         pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
         stress_norm_jaccard_MDS = results_jaccard['stress_norm_MDS']
         stress_norm_jaccard_NMDS = results_jaccard['stress_norm_NMDS']
+
+        sample_ids = df['sample_id'].unique().tolist()
+        otu_ids = df['otu_id'].unique().tolist()
+
+        log_msg('sample_ids: ', len(sample_ids), skip_mem=True)
+        log_msg('otu_ids: ', len(otu_ids), skip_mem=True)
+
+        abundance_matrix = {
+            'sample_ids': sample_ids,
+            'otu_ids': otu_ids,
+            'matrix_braycurtis': dist_matrix_braycurtis,
+            'matrix_jaccard': dist_matrix_jaccard,
+        }
 
         abundance_matrix['points'] = {
             'braycurtis': pairs_braycurtis_MDS,

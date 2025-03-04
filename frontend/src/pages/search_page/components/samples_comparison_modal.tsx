@@ -13,6 +13,7 @@ import {
   ModalFooter,
 } from 'reactstrap'
 import RangeSlider from 'react-bootstrap-range-slider'
+import SanitizedHTML from 'react-sanitized-html'
 import {
   filterOptionsSubset,
   filterDataType,
@@ -101,21 +102,13 @@ const ErrorOverlay = ({ errors }) => {
 
   return (
     <div style={loadingstyle}>
-      {/*        <div
-          style={{
-            display: 'inline-block',
-            textAlign: 'center',
-            margin: 12,
-            padding: 6,
-            background: 'white',
-            width: '100%',
-          }}
-        >*/}
       <Alert color="danger">
         <h4 className="alert-heading">Error</h4>
         <ul>
           {errors.map((err, idx) => (
-            <li key={idx}>{err}</li>
+            <li key={idx}>
+              <SanitizedHTML allowedTags={['b', 'br', 'em']} html={err} />
+            </li>
           ))}
         </ul>
       </Alert>

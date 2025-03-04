@@ -30,7 +30,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.core.cache import caches
 
-from celery.result import AsyncResult
+from celery import current_app
 
 from . import tasks
 from .biom import biom_zip_file_generator
@@ -57,7 +57,7 @@ from .sample_run_id_dict import sample_run_id_dict
 
 from mixpanel import Mixpanel
 
-logger = logging.getLogger("rainbow")
+logger = logging.getLogger('bpaotu')
 
 
 # See datatables.net serverSide documentation for details
@@ -1180,13 +1180,12 @@ def cancel_comparison(request):
 def comparison_submission(request):
     submission_id = request.GET['submission_id']
     submission = tasks.Submission(submission_id)
-
     state = submission.status
 
-    task_id = submission.task_id
-    task_status = None
-    if task_id:
-        task_status = AsyncResult(task_id).status
+    # TODO: is there at all a possibility that this is checked in between tasks?!?
+    # look for an active task with the submission_id in the task args
+    active_tasks = get_active_celery_tasks()
+    task_found = any(submission_id in task["args"] for task in active_tasks)
 
     timestamps_ = submission.timestamps or json.dumps([])
     timestamps = json.loads(timestamps_)
@@ -1201,18 +1200,31 @@ def comparison_submission(request):
         'submission': {
             'id': submission_id,
             'state': state,
-            'timestamps': timestamps,
             'results': results,
-            'task_status': task_status,
+            'timestamps': timestamps,
+            'task_found': task_found,
         }
     }
 
-    if state == 'error':
+    if state == 'complete':
+        try:
+            duration = timestamps[-1]['complete'] - timestamps[0]['init']
+            response_data['submission']['duration'] = round(duration, 2)
+        except Exception as e:
+            logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
+
+    elif state == 'error':
         response_data['submission']['error'] = submission.error
 
-    if task_status == 'FAILURE':
+    elif not task_found:
         response_data['submission']['state'] = 'error'
-        response_data['submission']['error'] = 'Server-side error. It is possible that the result set is too large. Please run a search with fewer samples.'
+        response_data['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
+        tasks.cleanup_comparison(submission_id)
+
+    else:
+        # still ongoing
+        pass
+
 
     return JsonResponse(response_data)
 
@@ -1496,3 +1508,8 @@ def metagenome_request(request):
     except Exception as e:
         logger.critical("Error in metagenome_request", exc_info=True)
         return HttpResponseServerError(str(e), content_type="text/plain")
+
+def get_active_celery_tasks():
+    inspector = current_app.control.inspect()
+    active_tasks = inspector.active()
+    return [task for tasks in active_tasks.values() for task in tasks]
