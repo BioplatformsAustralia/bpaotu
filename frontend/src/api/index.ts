@@ -81,6 +81,24 @@ export function getTaxonomy(selectedAmplicon = { value: '' }, selectedTaxonomies
   })
 }
 
+export function getTaxonomyMultiple(
+  selectedAmplicon = { value: '' },
+  selectedTaxonomies,
+  selectedTrait
+) {
+  const taxonomies = completeArray(selectedTaxonomies, taxonomy_keys.length, { value: '' })
+  console.log('getTaxonomyMultiple', 'selectedTaxonomies', selectedTaxonomies)
+  console.log('getTaxonomyMultiple', 'taxonomies', taxonomies)
+
+  // return axios.get(window.otu_search_config.taxonomy_endpoint, {
+  //   params: {
+  //     amplicon: JSON.stringify(selectedAmplicon),
+  //     selected: JSON.stringify(taxonomies),
+  //     trait: JSON.stringify(selectedTrait),
+  //   },
+  // })
+}
+
 function doSearch(url, filters, options) {
   const formData = new FormData()
   formData.append('start', (options.page * options.pageSize).toString())

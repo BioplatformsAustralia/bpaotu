@@ -41,7 +41,6 @@ export const selectedAmpliconReducer = handleActions(
       return EmptyOperatorAndValue
     },
     [selectAmplicon as any]: (state, action: any) => {
-      console.log('selectAmplicon', 'action', action)
       return {
         ...state,
         value: action.payload,

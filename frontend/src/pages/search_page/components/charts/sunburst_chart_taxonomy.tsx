@@ -54,6 +54,10 @@ class SunBurstChartTaxonomy extends React.Component<any> {
   }
 
   public onSelectTaxonomy = (taxa, value) => {
+    console.log('onSelectTaxonomy', 'this.props', this.props)
+    console.log('onSelectTaxonomy', 'taxa', taxa)
+    console.log('onSelectTaxonomy', 'value', value)
+
     const taxa_id = find(
       this.props.taxonomy[taxa].options,
       (obj) => String(obj.value) === String(value)

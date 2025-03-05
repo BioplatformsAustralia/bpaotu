@@ -20,6 +20,7 @@ export interface SearchConfig {
   contextual_graph_endpoint: string
   taxonomy_graph_endpoint: string
   taxonomy_search_endpoint: string
+  taxonomy_set_endpoint: string
   search_endpoint: string
   export_endpoint: string
   export_biom_endpoint: string

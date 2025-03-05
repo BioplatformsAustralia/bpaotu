@@ -320,6 +320,25 @@ def taxonomy_options(request):
 
 @require_CKAN_auth
 @require_GET
+def taxonomy_options_multiple(request):
+    """
+    private API: given taxonomy values, return all the nested possibilities
+    """
+
+    # TODO validate no string
+
+    with TaxonomyOptions() as options:
+        taxonomy_search_string = json.loads(request.GET['taxonomy_search_string']),
+        results = options.search(taxonomy_search_string[0]) # because result is a tuple
+        serialized_results = [serialize_taxa_search_result(result) for result in results]
+
+    return JsonResponse({
+        'results': serialized_results,
+    })
+
+
+@require_CKAN_auth
+@require_GET
 def contextual_fields(request):
     """
     private API: return the available fields, and their types, so that

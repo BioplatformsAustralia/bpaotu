@@ -36,7 +36,7 @@ import {
 } from '../reducers/taxonomy_search_modal'
 
 const TaxonomySearchModal = (props) => {
-  console.log('TaxonomySearchModal', 'props', props)
+  // console.log('TaxonomySearchModal', 'props', props)
 
   const { isOpen, isLoading, searchString, results, closeTaxonomySearchModal } = props
 
@@ -144,7 +144,7 @@ const TaxonomySearchModal = (props) => {
   let resultsAdjusted
   if (results.length) {
     const groups = groupByHighestCommonRank(results)
-    console.log('groups', groups)
+    // console.log('groups', groups)
 
     // TODO, the object values includes everything, and needs to instead
     // filter out the dupes (deermine HCR when making the key and store elsewhere?)
@@ -195,6 +195,22 @@ const TaxonomySearchModal = (props) => {
     // props.selectTaxonomyValue('r2', 'p__Apicomplexa')
     // props.updateTaxonomyDropDown(taxa)
   }
+
+  // onSelectTaxonomy taxa r2
+  // onSelectTaxonomy value p__Apicomplexa
+
+  /*
+  public onSelectTaxonomy = (taxa, value) => {
+    const taxa_id = find(
+      this.props.taxonomy[taxa].options,
+      (obj) => String(obj.value) === String(value)
+    ).id
+    this.props.selectTaxonomyValue(taxa, taxa_id)
+    this.props.updateTaxonomyDropDown(taxa)
+    this.props.fetchContextualDataForGraph()
+    this.props.fetchTaxonomyDataForGraph()
+  }
+*/
 
   return (
     <Modal
@@ -336,6 +352,7 @@ function mapDispatchToProps(dispatch) {
       closeTaxonomySearchModal,
       selectAmplicon,
       selectTaxonomyValue: (taxa, id) => createAction('SELECT_' + taxa.toUpperCase())(id),
+      selectTaxonomyValueMultiple: (taxonomy) => createAction('SELECT_TAXONOMY_MULTIPLE')(taxonomy),
       updateTaxonomyDropDown: (taxa) => updateTaxonomyDropDowns(taxa)(),
     },
     dispatch
