@@ -161,6 +161,7 @@ def api_config(request):
         'reference_data_endpoint': reverse('reference_data_options'),
         'trait_endpoint': reverse('trait_options'),
         'taxonomy_endpoint': reverse('taxonomy_options'),
+        'taxonomy_multiple_endpoint': reverse('taxonomy_options_multiple'),
         'contextual_endpoint': reverse('contextual_fields'),
         'contextual_graph_endpoint': reverse('contextual_graph_fields'),
         'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),

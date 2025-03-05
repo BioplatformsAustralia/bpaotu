@@ -153,19 +153,46 @@ const TaxonomySearchModal = (props) => {
     resultsAdjusted = []
   }
 
-  console.log('resultsAdjusted', resultsAdjusted)
+  // console.log('resultsAdjusted', resultsAdjusted)
 
   // need to use the same mechanism when clicking on a slice of the taxonomy pie chart in Interactive Graph Search
   const setTaxonomy = (taxonomy) => {
     console.log('setTaxonomy', 'taxonomy', taxonomy)
+    console.log('setTaxonomy', 'props', props)
+    console.log('setTaxonomy', 'props.taxonomy', props.taxonomy)
+
+    // todo, only as deep as the taxonomy goes if it is truncated to fewer levels
+    props.selectAmplicon(taxonomy.amplicon.id)
+
+    console.log('START setTaxonomy')
+    props.selectTaxonomyValue('taxonomy_source', taxonomy.taxonomy_source.id)
+    props.updateTaxonomyDropDown('taxonomy_source')
+    props.selectTaxonomyValue('r1', taxonomy.r1.id)
+    props.selectTaxonomyValue('r2', taxonomy.r2.id)
+    props.selectTaxonomyValue('r3', taxonomy.r3.id)
+    props.selectTaxonomyValue('r4', taxonomy.r4.id)
+    props.selectTaxonomyValue('r5', taxonomy.r5.id)
+    props.selectTaxonomyValue('r6', taxonomy.r6.id)
+    props.selectTaxonomyValue('r7', taxonomy.r7.id)
+    props.selectTaxonomyValue('r8', taxonomy.r8.id)
+
+    // props.selectTaxonomyValueMultiple(taxonomy)
+    // props.updateTaxonomyDropDown('r1')
+    // props.updateTaxonomyDropDown('r2')
+    // props.updateTaxonomyDropDown('r3')
+    // props.updateTaxonomyDropDown('r4')
+    // props.updateTaxonomyDropDown('r5')
+    // props.updateTaxonomyDropDown('r6')
+    // props.updateTaxonomyDropDown('r7')
+    // props.updateTaxonomyDropDown('r8')
+
+    console.log('FINISH setTaxonomy')
 
     // const taxa_id = find(
     //   props.taxonomy[taxa].options,
     //   (obj) => String(obj.value) === String(value)
     // ).id
-    console.log('selectAmplicon', selectAmplicon)
-    props.selectAmplicon(taxonomy.amplicon.id)
-    // props.selectTaxonomyValue(taxa, taxa_id)
+    // props.selectTaxonomyValue('r2', 'p__Apicomplexa')
     // props.updateTaxonomyDropDown(taxa)
   }
 
@@ -296,6 +323,7 @@ function mapStateToProps(state) {
     isLoading,
     searchString,
     results,
+    taxonomy: state.searchPage.filters.taxonomy,
   }
 }
 
