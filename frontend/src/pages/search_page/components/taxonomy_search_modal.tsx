@@ -103,7 +103,9 @@ const TaxonomySearchModal = (props) => {
         taxonomy.r8.value,
       ]
 
-      let index = keyArray.findIndex((level) => level.includes(searchString))
+      let index = keyArray.findIndex((level) =>
+        level.toLowerCase().includes(searchString.toLowerCase())
+      )
       if (index !== -1) {
         let group = keyArray.slice(0, index + 1).join(',')
 
@@ -256,27 +258,32 @@ const TaxonomySearchModal = (props) => {
         Taxonomy Search
       </ModalHeader>
       <ModalBody style={{ overflowY: 'scroll' }}>
-        <p>
-          The Taxonomy Search tool will search each taxonomy source in the Australian Microbiome
-          database for occurances of a given search string. Use it if you are unsure which taxonomy
-          source a particular taxonomic rank belongs to.
-        </p>
-        <p>
-          Results will be grouped at the lowest common rank containing the search string. Note that
-          the names for ranks change depending on the taxonomy source. The name of the rank
-          associated with a value can be seen by hovering over the value.
-        </p>
-        <p>
-          When viewing the search results, click the "Select" button to set the taxonomy search
-          filters for that taxonomy.
-        </p>
-        <Row>
+        <Row style={{ margin: 4, width: '860px' }}>
+          <p>
+            The Taxonomy Search tool will search each taxonomy source in the Australian Microbiome
+            database for occurances of a given search string. Use this tool if you are unsure which
+            taxonomy source a particular taxonomic rank of interest belongs to.
+          </p>
+          <p>
+            Results will be grouped at the lowest common rank containing the search string (case
+            insensitive). Note that the rank labels change depending on the taxonomy source. The
+            Australian Microbiome Project has a convention that preceedes each rank with the
+            lowercase first letter of the label before the value, e.g. "p__" for Phylum. The rank
+            label associated with a given taxonomy can be also seen by hovering over the value.
+          </p>
+          <p>
+            When viewing the search results, click the "Select" button to set the taxonomy search
+            filters for that taxonomy.
+          </p>
+        </Row>
+        <Row style={{ margin: 1 }}>
           <Col>
             <Input
               name="searchStringInput"
               id="searchStringInput"
               width="250px"
               value={searchStringInput}
+              placeholder="e.g. Skeletonema"
               disabled={isLoading}
               onChange={(evt) => props.handleTaxonomySearchString(evt.target.value)}
             />
@@ -293,14 +300,18 @@ const TaxonomySearchModal = (props) => {
               <AnimateHelix />
             </div>
           )}
-          {searchString && resultsAdjusted.length > 0 && (
-            <div>
-              <p>Search results for: {searchString}</p>
+          {searchString && (
+            <div style={{ margin: 1 }}>
+              {resultsAdjusted.length > 0 ? (
+                <p>Search results for: {searchString}</p>
+              ) : (
+                <p>No results for: {searchString}</p>
+              )}
             </div>
           )}
         </Col>
-        <Col>
-          {resultsAdjusted.length > 0 ? (
+        {resultsAdjusted.length > 0 && (
+          <Col>
             <div style={{ overflowX: 'auto' }}>
               <Table>
                 <thead>
@@ -395,21 +406,15 @@ const TaxonomySearchModal = (props) => {
                 </tbody>
               </Table>
             </div>
-          ) : (
-            !isLoading && (
-              <Row>
-                <p>No results</p>
-              </Row>
-            )
-          )}
-          {searchString && resultsAdjusted.length > 0 && (
             <div>
               <p>
-                <em>Scroll sideways to see all results</em>
+                <em>
+                  Scroll sideways to see all <strong>{resultsAdjusted.length}</strong> results
+                </em>
               </p>
             </div>
-          )}
-        </Col>
+          </Col>
+        )}
       </ModalBody>
     </Modal>
   )

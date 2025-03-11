@@ -200,8 +200,9 @@ class TaxonomyOptions:
             q1 = (
                 self._session
                     .query(OntologyClass.id)
-                    .filter(OntologyClass.value.like(f"%{search_string}%"))
+                    .filter(func.lower(OntologyClass.value).like(f"%{search_string.lower()}%"))
             )
+            # log_query(q1)
 
             ids = [result[0] for result in q1.all()]
 
@@ -211,6 +212,7 @@ class TaxonomyOptions:
                     .join(OntologyClass)
                     .filter(OntologyClass.id.in_(ids))
             )
+            # log_query(q2)
 
             # find the highest independent order (i.e. to prevent duplicates)
             taxonomy_ids.extend([result[0] for result in q2.all()])
