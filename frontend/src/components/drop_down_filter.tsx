@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { concat, map } from 'lodash'
+import { map } from 'lodash'
 import { Col, FormGroup, Input, Label, UncontrolledTooltip } from 'reactstrap'
 import Octicon from 'components/octicon'
 

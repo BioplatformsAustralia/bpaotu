@@ -69,8 +69,6 @@ export function getTaxonomyDataForGraph(filters, options) {
 
 export function getTaxonomy(selectedAmplicon = { value: '' }, selectedTaxonomies, selectedTrait) {
   const taxonomies = completeArray(selectedTaxonomies, taxonomy_keys.length, { value: '' })
-  console.log('getTaxonomy', 'selectedTaxonomies', selectedTaxonomies)
-  console.log('getTaxonomy', 'taxonomies', taxonomies)
 
   return axios.get(window.otu_search_config.taxonomy_endpoint, {
     params: {

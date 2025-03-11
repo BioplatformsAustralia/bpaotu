@@ -54,6 +54,7 @@ export interface PageState {
     rowsCount: number
   }
   taxonomySearchModal: {
+    searchStringInput: string
     searchString: string
     isOpen: boolean
     isLoading: boolean
@@ -159,7 +160,8 @@ export const searchPageInitialState: PageState = {
     rowsCount: -1, // to prevent clash with "0" which prevents running blast search
   },
   taxonomySearchModal: {
-    searchString: 'Skeletonema',
+    searchStringInput: 'Skeletonema',
+    searchString: null,
     isOpen: false,
     isLoading: false,
     results: [],

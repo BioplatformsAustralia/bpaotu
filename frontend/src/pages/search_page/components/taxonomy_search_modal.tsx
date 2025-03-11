@@ -1,216 +1,245 @@
-import { find } from 'lodash'
-import * as React from 'react'
+import React, { useState } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { createAction } from 'redux-actions'
 
 import {
   Button,
-  Card,
-  CardBody,
-  CardFooter,
-  CardHeader,
   Col,
-  Form,
-  FormGroup,
   Modal,
   ModalBody,
   ModalHeader,
-  ModalFooter,
   Input,
   Row,
   Table,
-  Label,
   UncontrolledTooltip,
-  Badge,
-  Alert,
 } from 'reactstrap'
 
-import { selectAmplicon, selectAmpliconOperator } from '../reducers/amplicon'
+import AnimateHelix from 'components/animate_helix'
+import { selectAmplicon } from '../reducers/amplicon'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import {
   handleTaxonomySearchString,
   runTaxonomySearch,
-  // setTaxonomy,
   closeTaxonomySearchModal,
 } from '../reducers/taxonomy_search_modal'
 
+const LowerRankList = ({ list }) => {
+  const [show, setShow] = useState(false)
+  const text = show ? 'hide' : 'show'
+
+  if (list.length === 0) {
+    return null
+  }
+
+  // list contains an array of the remaining taxonomy ranks
+  const uniqueList = [...Array.from(new Set(list.map((text) => text[0])).values())]
+
+  return (
+    <div>
+      <p>
+        <em>
+          {uniqueList.length} items{' '}
+          <span
+            style={{ cursor: 'pointer' }}
+            onClick={() => {
+              setShow(!show)
+            }}
+          >
+            (<u>{text}</u>)
+          </span>
+        </em>
+      </p>
+      <div style={{ display: show ? '' : 'none' }}>
+        <ul style={{ paddingLeft: '16px' }}>
+          {uniqueList.map((item, i) => {
+            return <li key={i}>{item}</li>
+          })}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+const loadingstyle = {
+  display: 'flex',
+  height: '100%',
+  width: '100%',
+  justifyContent: 'center',
+  alignItems: 'center',
+  position: 'absolute',
+  top: '40px',
+  zIndex: 99999,
+} as React.CSSProperties
+
 const TaxonomySearchModal = (props) => {
-  // console.log('TaxonomySearchModal', 'props', props)
+  const {
+    isOpen,
+    isLoading,
+    searchStringInput,
+    searchString,
+    results,
+    rankLabelsLookup,
+    closeTaxonomySearchModal,
+  } = props
 
-  const { isOpen, isLoading, searchString, results, closeTaxonomySearchModal } = props
+  const rankOrder = ['amplicon', 'taxonomy_source', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8']
+  const rankOrderLookup = Object.fromEntries(rankOrder.map((key, index) => [key, index]))
 
-  function groupByHighestCommonRank(taxonomies) {
-    const groups = {}
-    taxonomies.forEach(({ taxonomy }) => {
-      let key
+  const groupByRank = (taxonomies, searchString) => {
+    let groups = {}
+    for (const taxonomyObj of taxonomies) {
+      const taxonomy = taxonomyObj.taxonomy
+      const keyArray = [
+        taxonomy.amplicon.value,
+        taxonomy.taxonomy_source.value,
+        taxonomy.r1.value,
+        taxonomy.r2.value,
+        taxonomy.r3.value,
+        taxonomy.r4.value,
+        taxonomy.r5.value,
+        taxonomy.r6.value,
+        taxonomy.r7.value,
+        taxonomy.r8.value,
+      ]
 
-      if (taxonomy.r8.value) {
-        key = [
-          taxonomy.amplicon.value,
-          taxonomy.taxonomy_source.value,
-          taxonomy.r1.value,
-          taxonomy.r2.value,
-          taxonomy.r3.value,
-          taxonomy.r4.value,
-          taxonomy.r5.value,
-          taxonomy.r6.value,
-          taxonomy.r7.value,
-        ].join(',')
-      } else if (taxonomy.r7.value) {
-        key = [
-          taxonomy.amplicon.value,
-          taxonomy.taxonomy_source.value,
-          taxonomy.r1.value,
-          taxonomy.r2.value,
-          taxonomy.r3.value,
-          taxonomy.r4.value,
-          taxonomy.r5.value,
-          taxonomy.r6.value,
-        ].join(',')
-      } else if (taxonomy.r6.value) {
-        key = [
-          taxonomy.amplicon.value,
-          taxonomy.taxonomy_source.value,
-          taxonomy.r1.value,
-          taxonomy.r2.value,
-          taxonomy.r3.value,
-          taxonomy.r4.value,
-          taxonomy.r5.value,
-        ].join(',')
-      }
+      let index = keyArray.findIndex((level) => level.includes(searchString))
+      if (index !== -1) {
+        let group = keyArray.slice(0, index + 1).join(',')
 
-      if (!groups[key]) {
-        groups[key] = []
-      }
-
-      groups[key].push({ taxonomy })
-    })
-
-    // if a group only has one element, then unwind the key by one element
-    // (since the matched string only occurs once, and it may be at the top level)
-    const unwindGroups = (groups) => {
-      const newGroups = {}
-      for (const key in groups) {
-        if (groups[key].length === 1) {
-          const newKey = key.split(',').slice(0, -1).join(',')
-          if (!newGroups[newKey]) {
-            newGroups[newKey] = []
+        if (!groups[group]) {
+          groups[group] = {
+            members: [],
+            uniqueRanks: {},
+            maxIndex: index,
           }
-          newGroups[newKey].push(...groups[key])
-        } else {
-          newGroups[key] = groups[key]
         }
-      }
-      return newGroups
-    }
 
-    let currentGroups = groups
-    let previousGroups
-    do {
-      previousGroups = currentGroups
-      currentGroups = unwindGroups(currentGroups)
-    } while (Object.keys(currentGroups).length !== Object.keys(previousGroups).length)
+        let lowerLevelRanks = keyArray.slice(index + 1).filter((rank) => rank !== '')
 
-    return currentGroups
-  }
-
-  function findCommonValuesR7(groups) {
-    const commonValues = {}
-    for (const key in groups) {
-      const group = groups[key]
-      const r7Values = new Set(group.map((taxonomy) => taxonomy.r7.value))
-      // const r8Values = new Set(group.map((taxonomy) => taxonomy.r8.value))
-      commonValues[key] = {
-        commonR7: r7Values.size === 1 ? Array.from(r7Values)[0] : null,
-        // commonR8: r8Values.size === 1 ? Array.from(r8Values)[0] : null,
+        groups[group].members.push({
+          fullObject: taxonomyObj,
+          lowerLevelRanks: lowerLevelRanks.length ? [lowerLevelRanks] : [],
+        })
       }
     }
-    return commonValues
-  }
+    for (let group in groups) {
+      const fullObject = groups[group].members[0].fullObject.taxonomy
+      const index = groups[group].maxIndex
+      const allowedKeys = rankOrder.slice(0, index + 1)
+      const subTaxa = Object.fromEntries(
+        Object.entries(fullObject).filter(([key]) => allowedKeys.includes(key))
+      )
 
-  function findCommonValuesR6(groups) {
-    const commonValues = {}
-    for (const key in groups) {
-      const group = groups[key]
-      const r6Values = new Set(group.map((taxonomy) => taxonomy.r6.value))
-      commonValues[key] = {
-        commonR6: r6Values.size === 1 ? Array.from(r6Values)[0] : null,
-      }
+      groups[group].uniqueRanks = subTaxa
     }
-    return commonValues
+
+    return groups
   }
 
   let resultsAdjusted
   if (results.length) {
-    const groups = groupByHighestCommonRank(results)
-    // console.log('groups', groups)
-
-    // TODO, the object values includes everything, and needs to instead
-    // filter out the dupes (deermine HCR when making the key and store elsewhere?)
-    resultsAdjusted = Object.values(groups).flat()
+    const groups = groupByRank(results, searchString)
+    resultsAdjusted = Object.values(groups).map((group: any) => {
+      return {
+        taxonomy: group.uniqueRanks,
+        list: group.members.map((m) => m.lowerLevelRanks).flat(),
+        maxIndex: group.maxIndex,
+      }
+    })
   } else {
     resultsAdjusted = []
   }
 
-  // console.log('resultsAdjusted', resultsAdjusted)
-
-  // need to use the same mechanism when clicking on a slice of the taxonomy pie chart in Interactive Graph Search
+  // uses the same mechanism when clicking on a slice of the taxonomy pie chart in Interactive Graph Search
+  // TODO: move to a redux action so can close the window when it's done
   const setTaxonomy = (taxonomy) => {
-    console.log('setTaxonomy', 'taxonomy', taxonomy)
-    console.log('setTaxonomy', 'props', props)
-    console.log('setTaxonomy', 'props.taxonomy', props.taxonomy)
+    // TODO: setLoading
 
-    // todo, only as deep as the taxonomy goes if it is truncated to fewer levels
-    props.selectAmplicon(taxonomy.amplicon.id)
+    const currentAmplicon = props.amplicon
+    const currentTaxonomy = props.taxonomy
 
-    console.log('START setTaxonomy')
-    props.selectTaxonomyValue('taxonomy_source', taxonomy.taxonomy_source.id)
-    props.updateTaxonomyDropDown('taxonomy_source')
-    props.selectTaxonomyValue('r1', taxonomy.r1.id)
-    props.selectTaxonomyValue('r2', taxonomy.r2.id)
-    props.selectTaxonomyValue('r3', taxonomy.r3.id)
-    props.selectTaxonomyValue('r4', taxonomy.r4.id)
-    props.selectTaxonomyValue('r5', taxonomy.r5.id)
-    props.selectTaxonomyValue('r6', taxonomy.r6.id)
-    props.selectTaxonomyValue('r7', taxonomy.r7.id)
-    props.selectTaxonomyValue('r8', taxonomy.r8.id)
-
-    // props.selectTaxonomyValueMultiple(taxonomy)
-    // props.updateTaxonomyDropDown('r1')
-    // props.updateTaxonomyDropDown('r2')
-    // props.updateTaxonomyDropDown('r3')
-    // props.updateTaxonomyDropDown('r4')
-    // props.updateTaxonomyDropDown('r5')
-    // props.updateTaxonomyDropDown('r6')
-    // props.updateTaxonomyDropDown('r7')
-    // props.updateTaxonomyDropDown('r8')
-
-    console.log('FINISH setTaxonomy')
-
-    // const taxa_id = find(
-    //   props.taxonomy[taxa].options,
-    //   (obj) => String(obj.value) === String(value)
-    // ).id
-    // props.selectTaxonomyValue('r2', 'p__Apicomplexa')
-    // props.updateTaxonomyDropDown(taxa)
+    // check to see if any ranks are present in the selected taxonomy before calling selectTaxonomyValue
+    if (taxonomy.amplicon) {
+      // if amplicon value is already the same, using selectAmplicon again messes with dropdowns
+      if (currentAmplicon.value !== taxonomy.amplicon.id) {
+        props.selectAmplicon(taxonomy.amplicon.id)
+      }
+    }
+    if (taxonomy.taxonomy_source) {
+      if (currentTaxonomy.taxonomy_source.selected.value !== taxonomy.taxonomy_source.id) {
+        // need to use updateTaxonomyDropDown if taxonomy source has changed
+        props.selectTaxonomyValue('taxonomy_source', taxonomy.taxonomy_source.id)
+        props.updateTaxonomyDropDown('taxonomy_source')
+      }
+    }
+    if (taxonomy.r1) {
+      if (currentTaxonomy.r1.selected.value !== taxonomy.r1.id) {
+        props.selectTaxonomyValue('r1', taxonomy.r1.id)
+      }
+    }
+    if (taxonomy.r2) {
+      if (currentTaxonomy.r2.selected.value !== taxonomy.r2.id) {
+        props.selectTaxonomyValue('r2', taxonomy.r2.id)
+      }
+    }
+    if (taxonomy.r3) {
+      if (currentTaxonomy.r3.selected.value !== taxonomy.r3.id) {
+        props.selectTaxonomyValue('r3', taxonomy.r3.id)
+      }
+    }
+    if (taxonomy.r4) {
+      if (currentTaxonomy.r4.selected.value !== taxonomy.r4.id) {
+        props.selectTaxonomyValue('r4', taxonomy.r4.id)
+      }
+    }
+    if (taxonomy.r5) {
+      if (currentTaxonomy.r5.selected.value !== taxonomy.r5.id) {
+        props.selectTaxonomyValue('r5', taxonomy.r5.id)
+      }
+    }
+    if (taxonomy.r6) {
+      if (currentTaxonomy.r6.selected.value !== taxonomy.r6.id) {
+        props.selectTaxonomyValue('r6', taxonomy.r6.id)
+      }
+    }
+    if (taxonomy.r7) {
+      if (currentTaxonomy.r7.selected.value !== taxonomy.r7.id) {
+        props.selectTaxonomyValue('r7', taxonomy.r7.id)
+      }
+    }
+    if (taxonomy.r8) {
+      if (currentTaxonomy.r7.selected.value !== taxonomy.r7.id) {
+        props.selectTaxonomyValue('r8', taxonomy.r8.id)
+      }
+    }
   }
 
-  // onSelectTaxonomy taxa r2
-  // onSelectTaxonomy value p__Apicomplexa
-
-  /*
-  public onSelectTaxonomy = (taxa, value) => {
-    const taxa_id = find(
-      this.props.taxonomy[taxa].options,
-      (obj) => String(obj.value) === String(value)
-    ).id
-    this.props.selectTaxonomyValue(taxa, taxa_id)
-    this.props.updateTaxonomyDropDown(taxa)
-    this.props.fetchContextualDataForGraph()
-    this.props.fetchTaxonomyDataForGraph()
+  const RankCell = ({ taxonomy, rank, list, maxIndex, index }) => {
+    const id = `rankCell-${index}-${rank}`
+    return (
+      <>
+        <span id={id}>{taxonomy[rank] && taxonomy[rank].value}</span>
+        {maxIndex === rankOrderLookup[rank] - 1 && <LowerRankList list={list} />}
+        <RankLabel {...{ id, taxonomy, rank }} />
+      </>
+    )
   }
-*/
+
+  const RankLabel = ({ id, taxonomy, rank }) => {
+    const thisRankOrder = rankOrderLookup[rank]
+    const thisRankIndex = thisRankOrder - 2
+
+    if (taxonomy[rank]) {
+      return (
+        <UncontrolledTooltip target={id} placement="auto">
+          {rankLabelsLookup[taxonomy.taxonomy_source.id][thisRankIndex]}
+        </UncontrolledTooltip>
+      )
+    } else {
+      return null
+    }
+  }
 
   return (
     <Modal
@@ -226,34 +255,59 @@ const TaxonomySearchModal = (props) => {
       >
         Taxonomy Search
       </ModalHeader>
-      <ModalBody>
-        <p>The taxonomy search tool ...</p>
+      <ModalBody style={{ overflowY: 'scroll' }}>
+        <p>
+          The Taxonomy Search tool will search each taxonomy source in the Australian Microbiome
+          database for occurances of a given search string. Use it if you are unsure which taxonomy
+          source a particular taxonomic rank belongs to.
+        </p>
+        <p>
+          Results will be grouped at the lowest common rank containing the search string. Note that
+          the names for ranks change depending on the taxonomy source. The name of the rank
+          associated with a value can be seen by hovering over the value.
+        </p>
+        <p>
+          When viewing the search results, click the "Select" button to set the taxonomy search
+          filters for that taxonomy.
+        </p>
         <Row>
           <Col>
             <Input
-              name="searchString"
-              id="searchString"
-              value={props.searchString}
-              disabled={props.isLoading}
+              name="searchStringInput"
+              id="searchStringInput"
+              width="250px"
+              value={searchStringInput}
+              disabled={isLoading}
               onChange={(evt) => props.handleTaxonomySearchString(evt.target.value)}
             />
           </Col>
           <Col>
-            <Button color="warning" disabled={props.isLoading} onClick={props.runTaxonomySearch}>
+            <Button color="warning" disabled={isLoading} onClick={props.runTaxonomySearch}>
               Taxonomy Search
             </Button>
           </Col>
         </Row>
-        {isLoading && <p>SEARCHING</p>}
+        <Col style={{ marginTop: 10, marginBottom: 10 }}>
+          {isLoading && (
+            <div style={loadingstyle}>
+              <AnimateHelix />
+            </div>
+          )}
+          {searchString && resultsAdjusted.length > 0 && (
+            <div>
+              <p>Search results for: {searchString}</p>
+            </div>
+          )}
+        </Col>
         <Col>
-          {resultsAdjusted.length ? (
+          {resultsAdjusted.length > 0 ? (
             <div style={{ overflowX: 'auto' }}>
               <Table>
                 <thead>
                   <tr>
                     <th></th>
-                    {resultsAdjusted.map(({ taxonomy }) => (
-                      <th key={taxonomy.id}>
+                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                      <th key={index}>
                         <Button onClick={() => setTaxonomy(taxonomy)}>Select</Button>
                       </th>
                     ))}
@@ -262,69 +316,98 @@ const TaxonomySearchModal = (props) => {
                 <tbody>
                   <tr>
                     <th scope="row">Amplicon</th>
-                    {resultsAdjusted.map(({ taxonomy }) => (
-                      <td key={taxonomy.id}>{taxonomy.amplicon.value}</td>
+                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                      <td key={index}>{taxonomy.amplicon && taxonomy.amplicon.value}</td>
                     ))}
                   </tr>
                   <tr>
                     <th scope="row">Taxonomy Source</th>
-                    {resultsAdjusted.map(({ taxonomy }) => (
-                      <td key={taxonomy.id}>{taxonomy.taxonomy_source.value}</td>
+                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                      <td key={index}>
+                        {taxonomy.taxonomy_source && taxonomy.taxonomy_source.value}
+                      </td>
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">r1_id</th>
-                    {resultsAdjusted.map(({ taxonomy }) => (
-                      <td key={taxonomy.id}>{taxonomy.r1.value}</td>
+                    <th scope="row">Rank 1</th>
+                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                      <td key={index}>
+                        <RankCell rank="r1" {...{ taxonomy, list, maxIndex, index }} />
+                      </td>
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">r2_id</th>
-                    {resultsAdjusted.map(({ taxonomy }) => (
-                      <td key={taxonomy.id}>{taxonomy.r2.value}</td>
+                    <th scope="row">Rank 2</th>
+                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                      <td key={index}>
+                        <RankCell rank="r2" {...{ taxonomy, list, maxIndex, index }} />
+                      </td>
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">r3_id</th>
-                    {resultsAdjusted.map(({ taxonomy }) => (
-                      <td key={taxonomy.id}>{taxonomy.r3.value}</td>
+                    <th scope="row">Rank 3</th>
+                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                      <td key={index}>
+                        <RankCell rank="r3" {...{ taxonomy, list, maxIndex, index }} />
+                      </td>
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">r4_id</th>
-                    {resultsAdjusted.map(({ taxonomy }) => (
-                      <td key={taxonomy.id}>{taxonomy.r4.value}</td>
+                    <th scope="row">Rank 4</th>
+                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                      <td key={index}>
+                        <RankCell rank="r4" {...{ taxonomy, list, maxIndex, index }} />
+                      </td>
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">r5_id</th>
-                    {resultsAdjusted.map(({ taxonomy }) => (
-                      <td key={taxonomy.id}>{taxonomy.r5.value}</td>
+                    <th scope="row">Rank 5</th>
+                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                      <td key={index}>
+                        <RankCell rank="r5" {...{ taxonomy, list, maxIndex, index }} />
+                      </td>
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">r6_id</th>
-                    {resultsAdjusted.map(({ taxonomy }) => (
-                      <td key={taxonomy.id}>{taxonomy.r6.value}</td>
+                    <th scope="row">Rank 6</th>
+                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                      <td key={index}>
+                        <RankCell rank="r6" {...{ taxonomy, list, maxIndex, index }} />
+                      </td>
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">r7_id</th>
-                    {resultsAdjusted.map(({ taxonomy }) => (
-                      <td key={taxonomy.id}>{taxonomy.r7.value}</td>
+                    <th scope="row">Rank 7</th>
+                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                      <td key={index}>
+                        <RankCell rank="r7" {...{ taxonomy, list, maxIndex, index }} />
+                      </td>
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">r8_id</th>
-                    {resultsAdjusted.map(({ taxonomy }) => (
-                      <td key={taxonomy.id}>{taxonomy.r8.value}</td>
+                    <th scope="row">Rank 8</th>
+                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                      <td key={index}>
+                        <RankCell rank="r8" {...{ taxonomy, list, maxIndex, index }} />
+                      </td>
                     ))}
                   </tr>
                 </tbody>
               </Table>
             </div>
           ) : (
-            !isLoading && <Row>No results</Row>
+            !isLoading && (
+              <Row>
+                <p>No results</p>
+              </Row>
+            )
+          )}
+          {searchString && resultsAdjusted.length > 0 && (
+            <div>
+              <p>
+                <em>Scroll sideways to see all results</em>
+              </p>
+            </div>
           )}
         </Col>
       </ModalBody>
@@ -333,13 +416,18 @@ const TaxonomySearchModal = (props) => {
 }
 
 function mapStateToProps(state) {
-  const { isOpen, isLoading, searchString, results } = state.searchPage.taxonomySearchModal
+  const { isOpen, isLoading, searchStringInput, searchString, results } =
+    state.searchPage.taxonomySearchModal
+
   return {
     isOpen,
     isLoading,
+    searchStringInput,
     searchString,
     results,
+    amplicon: state.searchPage.filters.selectedAmplicon,
     taxonomy: state.searchPage.filters.taxonomy,
+    rankLabelsLookup: state.referenceData.ranks.rankLabelsLookup,
   }
 }
 

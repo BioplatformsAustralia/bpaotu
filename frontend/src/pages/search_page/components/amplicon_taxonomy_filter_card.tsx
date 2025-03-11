@@ -104,7 +104,17 @@ const TaxonomyFilterCard = (props) => {
           <Col>
             <p className="text-center">
               {TaxonomyNoAmpliconInfo}, or{' '}
-              <Button style={{ marginTop: -4 }} onClick={props.openTaxonomySearchModal}>
+              <Button
+                style={{
+                  marginTop: -4,
+                  marginLeft: 2,
+                  paddingLeft: '0.5rem',
+                  paddingRight: '0.5rem',
+                  paddingTop: '0.3rem',
+                  paddingBottom: '0.3rem',
+                }}
+                onClick={props.openTaxonomySearchModal}
+              >
                 search for a taxonomy
               </Button>
             </p>

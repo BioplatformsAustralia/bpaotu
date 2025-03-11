@@ -1,8 +1,7 @@
-import { filter, get as _get, includes, isNumber, join, last, reject, upperCase } from 'lodash'
+import { get as _get } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
 
 import { executeTaxonomySearch } from 'api'
-import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 
 import { describeSearch } from './search'
 import { searchPageInitialState, ErrorList } from './types'
@@ -28,8 +27,7 @@ export const runTaxonomySearch = () => (dispatch, getState) => {
   dispatch(runTaxonomySearchStarted())
 
   const filters = describeSearch(state)
-  const searchString = state.searchPage.taxonomySearchModal.searchString
-  console.log('runTaxonomySearch', 'searchString', searchString)
+  const searchString = state.searchPage.taxonomySearchModal.searchStringInput
 
   executeTaxonomySearch(searchString)
     .then((data) => {
@@ -64,12 +62,13 @@ export default handleActions(
     [handleTaxonomySearchString as any]: (state, action: any) => {
       return {
         ...state,
-        searchString: action.payload,
+        searchStringInput: action.payload,
       }
     },
     [runTaxonomySearchStarted as any]: (state, action: any) => ({
       ...state,
       isLoading: true,
+      searchString: null,
       results: [],
     }),
     [runTaxonomySearchEnded as any]: {
@@ -77,7 +76,7 @@ export default handleActions(
         return {
           ...state,
           isLoading: false,
-          searchString: state.searchString,
+          searchString: state.searchStringInput,
           results: action.payload.data.results,
         }
       },
