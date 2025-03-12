@@ -50,7 +50,7 @@ const LowerRankList = ({ list }) => {
           </span>
         </em>
       </p>
-      <div style={{ display: show ? '' : 'none' }}>
+      <div style={{ visibility: show ? 'visible' : 'hidden', height: show ? 'auto' : 0 }}>
         <ul style={{ paddingLeft: '16px' }}>
           {uniqueList.map((item, i) => {
             return <li key={i}>{item}</li>
@@ -61,7 +61,7 @@ const LowerRankList = ({ list }) => {
   )
 }
 
-const loadingstyle = {
+const loadingStyle = {
   display: 'flex',
   height: '100%',
   width: '100%',
@@ -70,6 +70,12 @@ const loadingstyle = {
   position: 'absolute',
   top: '40px',
   zIndex: 99999,
+} as React.CSSProperties
+
+const stickyStyle = {
+  position: 'sticky',
+  left: 0,
+  backgroundColor: '#eee',
 } as React.CSSProperties
 
 const TaxonomySearchModal = (props) => {
@@ -296,7 +302,7 @@ const TaxonomySearchModal = (props) => {
         </Row>
         <Col style={{ marginTop: 10, marginBottom: 10 }}>
           {isLoading && (
-            <div style={loadingstyle}>
+            <div style={loadingStyle}>
               <AnimateHelix />
             </div>
           )}
@@ -316,7 +322,7 @@ const TaxonomySearchModal = (props) => {
               <Table>
                 <thead>
                   <tr>
-                    <th></th>
+                    <th scope="row" style={stickyStyle}></th>
                     {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
                       <th key={index}>
                         <Button onClick={() => setTaxonomy(taxonomy)}>Select</Button>
@@ -326,13 +332,17 @@ const TaxonomySearchModal = (props) => {
                 </thead>
                 <tbody>
                   <tr>
-                    <th scope="row">Amplicon</th>
+                    <th scope="row" style={stickyStyle}>
+                      Amplicon
+                    </th>
                     {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
                       <td key={index}>{taxonomy.amplicon && taxonomy.amplicon.value}</td>
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">Taxonomy Source</th>
+                    <th scope="row" style={stickyStyle}>
+                      Taxonomy Source
+                    </th>
                     {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
                       <td key={index}>
                         {taxonomy.taxonomy_source && taxonomy.taxonomy_source.value}
@@ -340,7 +350,9 @@ const TaxonomySearchModal = (props) => {
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">Rank 1</th>
+                    <th scope="row" style={stickyStyle}>
+                      Rank 1
+                    </th>
                     {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
                       <td key={index}>
                         <RankCell rank="r1" {...{ taxonomy, list, maxIndex, index }} />
@@ -348,7 +360,9 @@ const TaxonomySearchModal = (props) => {
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">Rank 2</th>
+                    <th scope="row" style={stickyStyle}>
+                      Rank 2
+                    </th>
                     {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
                       <td key={index}>
                         <RankCell rank="r2" {...{ taxonomy, list, maxIndex, index }} />
@@ -356,7 +370,9 @@ const TaxonomySearchModal = (props) => {
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">Rank 3</th>
+                    <th scope="row" style={stickyStyle}>
+                      Rank 3
+                    </th>
                     {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
                       <td key={index}>
                         <RankCell rank="r3" {...{ taxonomy, list, maxIndex, index }} />
@@ -364,7 +380,9 @@ const TaxonomySearchModal = (props) => {
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">Rank 4</th>
+                    <th scope="row" style={stickyStyle}>
+                      Rank 4
+                    </th>
                     {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
                       <td key={index}>
                         <RankCell rank="r4" {...{ taxonomy, list, maxIndex, index }} />
@@ -372,7 +390,9 @@ const TaxonomySearchModal = (props) => {
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">Rank 5</th>
+                    <th scope="row" style={stickyStyle}>
+                      Rank 5
+                    </th>
                     {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
                       <td key={index}>
                         <RankCell rank="r5" {...{ taxonomy, list, maxIndex, index }} />
@@ -380,7 +400,9 @@ const TaxonomySearchModal = (props) => {
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">Rank 6</th>
+                    <th scope="row" style={stickyStyle}>
+                      Rank 6
+                    </th>
                     {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
                       <td key={index}>
                         <RankCell rank="r6" {...{ taxonomy, list, maxIndex, index }} />
@@ -388,7 +410,9 @@ const TaxonomySearchModal = (props) => {
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">Rank 7</th>
+                    <th scope="row" style={stickyStyle}>
+                      Rank 7
+                    </th>
                     {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
                       <td key={index}>
                         <RankCell rank="r7" {...{ taxonomy, list, maxIndex, index }} />
@@ -396,7 +420,9 @@ const TaxonomySearchModal = (props) => {
                     ))}
                   </tr>
                   <tr>
-                    <th scope="row">Rank 8</th>
+                    <th scope="row" style={stickyStyle}>
+                      Rank 8
+                    </th>
                     {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
                       <td key={index}>
                         <RankCell rank="r8" {...{ taxonomy, list, maxIndex, index }} />
