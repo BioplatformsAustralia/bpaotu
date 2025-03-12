@@ -35,28 +35,45 @@ const LowerRankList = ({ list }) => {
   // list contains an array of the remaining taxonomy ranks
   const uniqueList = [...Array.from(new Set(list.map((text) => text[0])).values())]
 
+  // need to have ghost content to preserve the horizontal space taken up by the list
+  // but don't want it to reserve any vertical space so the scroll message is not pushed down
+
   return (
     <div>
       <p>
         <em>
           {uniqueList.length} items{' '}
-          <span
-            style={{ cursor: 'pointer' }}
-            onClick={() => {
-              setShow(!show)
-            }}
-          >
+          <span style={{ cursor: 'pointer' }} onClick={() => setShow(!show)}>
             (<u>{text}</u>)
           </span>
         </em>
       </p>
-      <div style={{ visibility: show ? 'visible' : 'hidden', height: show ? 'auto' : 0 }}>
+
+      {show && (
         <ul style={{ paddingLeft: '16px' }}>
-          {uniqueList.map((item, i) => {
-            return <li key={i}>{item}</li>
-          })}
+          {uniqueList.map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
         </ul>
-      </div>
+      )}
+
+      <span
+        style={{
+          color: 'red',
+          display: 'inline-block',
+          height: 0,
+          lineHeight: 0,
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          paddingLeft: '16px',
+        }}
+      >
+        <ul style={{ margin: 0 }}>
+          {uniqueList.map((item, i) => (
+            <li key={`ghost-${i}`}>{item}</li>
+          ))}
+        </ul>
+      </span>
     </div>
   )
 }
@@ -264,7 +281,7 @@ const TaxonomySearchModal = (props) => {
         Taxonomy Search
       </ModalHeader>
       <ModalBody style={{ overflowY: 'scroll' }}>
-        <Row style={{ margin: 4, width: '860px' }}>
+        <Row style={{ margin: 4, width: '900px' }}>
           <p>
             The Taxonomy Search tool will search each taxonomy source in the Australian Microbiome
             database for occurances of a given search string. Use this tool if you are unsure which
