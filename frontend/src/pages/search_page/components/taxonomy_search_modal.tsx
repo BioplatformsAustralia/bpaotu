@@ -34,15 +34,15 @@ const LowerRankList = ({ list }) => {
 
   // list contains an array of the remaining taxonomy ranks
   const uniqueList = [...Array.from(new Set(list.map((text) => text[0])).values())]
+  const numUniqueItems = uniqueList.length
 
   // need to have ghost content to preserve the horizontal space taken up by the list
   // but don't want it to reserve any vertical space so the scroll message is not pushed down
-
   return (
     <div>
       <p>
         <em>
-          {uniqueList.length} items{' '}
+          {numUniqueItems} items{' '}
           <span style={{ cursor: 'pointer' }} onClick={() => setShow(!show)}>
             (<u>{text}</u>)
           </span>
@@ -148,15 +148,34 @@ const TaxonomySearchModal = (props) => {
         })
       }
     }
+
     for (let group in groups) {
       const fullObject = groups[group].members[0].fullObject.taxonomy
       const index = groups[group].maxIndex
       const allowedKeys = rankOrder.slice(0, index + 1)
-      const subTaxa = Object.fromEntries(
+
+      // start with the groupTaxonomy as keys up to the first sighting of the searchString
+      let groupTaxonomy
+      groupTaxonomy = Object.fromEntries(
         Object.entries(fullObject).filter(([key]) => allowedKeys.includes(key))
       )
 
-      groups[group].uniqueRanks = subTaxa
+      // if a group only has one member then absorb that into the group unique key
+      if (groups[group].members.length === 1) {
+        const member = groups[group].members[0]
+
+        if (member.lowerLevelRanks.length === 0) {
+          // it's already condensed because searchString was found at lowest rank
+        } else {
+          // remove the entry from lowerLevelRanks so show/hide not shown
+          // promote the full version of the only taxonomy to populate table and Select button
+          // (not the one grouped at earliest sighting of searchString)
+          member.lowerLevelRanks = []
+          groupTaxonomy = fullObject
+        }
+      }
+
+      groups[group].uniqueRanks = groupTaxonomy
     }
 
     return groups
@@ -177,10 +196,8 @@ const TaxonomySearchModal = (props) => {
   }
 
   // uses the same mechanism when clicking on a slice of the taxonomy pie chart in Interactive Graph Search
-  // TODO: move to a redux action so can close the window when it's done
+  // TODO: move to a redux action so can close the window when it's done?
   const setTaxonomy = (taxonomy) => {
-    // TODO: setLoading
-
     const currentAmplicon = props.amplicon
     const currentTaxonomy = props.taxonomy
 
