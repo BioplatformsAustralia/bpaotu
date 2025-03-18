@@ -169,51 +169,41 @@ const TaxonomySearchModal = (props) => {
       // console.log('allowedKeys', allowedKeys)
       // console.log('groupTaxonomy', groupTaxonomy)
 
-      // if a group only has one member
-      // absorb that into the group unique key
-      if (members.length === 1) {
-        groupTaxonomy = members[0].fullObject.taxonomy
+      // if all members share the same next rank, absorb that too, process recursively
+      // note, this always will apply to a situation where there is only 1 member, which is when 2 or more consecutive ranks match the searchString
+      let canAbsorb = true
+      while (canAbsorb) {
+        const currentIndex = groups[group].maxIndex
+        const nextRank = rankOrder[currentIndex + 1]
 
-        // update the members (there is only 1, but use same code as other condition)
-        members.forEach((member) => {
-          if (member.lowerLevelRanks.length > 0 && member.lowerLevelRanks[0].length > 0) {
-            // remove first rank, if no ranks left set empty array so no bullet point list
-            member.lowerLevelRanks[0].shift()
-            if (member.lowerLevelRanks[0].length === 0) {
-              member.lowerLevelRanks = []
-            }
-          }
+        if (!nextRank) break // no more ranks left
+
+        const firstTax = members[0].fullObject.taxonomy
+
+        // skip if first taxonomy is missing the next rank
+        if (!firstTax || !firstTax[nextRank] || !firstTax[nextRank].value) break
+        const firstValue = firstTax[nextRank].value
+
+        canAbsorb = members.every((m) => {
+          const tax = m.fullObject.taxonomy
+          return tax && tax[nextRank] && tax[nextRank].value === firstValue
         })
-      } else {
-        // if all members share the same next rank, absorb that too
-        const nextRank = rankOrder[maxIndex + 1]
-        if (nextRank) {
-          const nextRankAllSame = members.every(
-            (m) =>
-              m.fullObject.taxonomy[nextRank] &&
-              members[0].fullObject.taxonomy[nextRank] &&
-              m.fullObject.taxonomy[nextRank].value ===
-                members[0].fullObject.taxonomy[nextRank].value
-          )
 
-          if (nextRankAllSame && members[0].fullObject.taxonomy[nextRank]) {
-            // update the uniqueRanks
-            groupTaxonomy[nextRank] = members[0].fullObject.taxonomy[nextRank]
+        if (canAbsorb) {
+          // absorb the rank and up the maxIndex
+          groupTaxonomy[nextRank] = members[0].fullObject.taxonomy[nextRank]
+          groups[group].maxIndex += 1
 
-            // update the members
-            members.forEach((member) => {
-              if (member.lowerLevelRanks.length > 0 && member.lowerLevelRanks[0].length > 0) {
-                // remove first rank, if no ranks left set empty array so no bullet point list
-                member.lowerLevelRanks[0].shift()
-                if (member.lowerLevelRanks[0].length === 0) {
-                  member.lowerLevelRanks = []
-                }
+          // update the members
+          members.forEach((member) => {
+            if (member.lowerLevelRanks.length > 0 && member.lowerLevelRanks[0].length > 0) {
+              // remove first rank, if no ranks left set empty array so no bullet point list
+              member.lowerLevelRanks[0].shift()
+              if (member.lowerLevelRanks[0].length === 0) {
+                member.lowerLevelRanks = []
               }
-            })
-
-            // up the maxIndex
-            groups[group].maxIndex += 1
-          }
+            }
+          })
         }
       }
 
