@@ -150,28 +150,70 @@ const TaxonomySearchModal = (props) => {
     }
 
     for (let group in groups) {
-      const fullObject = groups[group].members[0].fullObject.taxonomy
-      const index = groups[group].maxIndex
-      const allowedKeys = rankOrder.slice(0, index + 1)
+      const { members, maxIndex } = groups[group]
+      const firstTaxonomy = members[0].fullObject.taxonomy
+      let allowedKeys = rankOrder.slice(0, maxIndex + 1)
 
       // start with the groupTaxonomy as keys up to the first sighting of the searchString
-      let groupTaxonomy
-      groupTaxonomy = Object.fromEntries(
-        Object.entries(fullObject).filter(([key]) => allowedKeys.includes(key))
+      let groupTaxonomy = Object.fromEntries(
+        Object.entries(firstTaxonomy).filter(([key]) => allowedKeys.includes(key))
       )
 
-      // if a group only has one member then absorb that into the group unique key
-      if (groups[group].members.length === 1) {
-        const member = groups[group].members[0]
+      // console.log('group', group)
+      // console.log('groups[group]', groups[group])
+      // console.log('members', members)
+      // console.log('members.length', members.length)
+      // console.log('maxIndex', maxIndex)
+      // console.log('rankOrder[maxIndex]', rankOrder[maxIndex])
+      // console.log('firstTaxonomy', firstTaxonomy)
+      // console.log('allowedKeys', allowedKeys)
+      // console.log('groupTaxonomy', groupTaxonomy)
 
-        if (member.lowerLevelRanks.length === 0) {
-          // it's already condensed because searchString was found at lowest rank
-        } else {
-          // remove the entry from lowerLevelRanks so show/hide not shown
-          // promote the full version of the only taxonomy to populate table and Select button
-          // (not the one grouped at earliest sighting of searchString)
-          member.lowerLevelRanks = []
-          groupTaxonomy = fullObject
+      // if a group only has one member
+      // absorb that into the group unique key
+      if (members.length === 1) {
+        groupTaxonomy = members[0].fullObject.taxonomy
+
+        // update the members (there is only 1, but use same code as other condition)
+        members.forEach((member) => {
+          if (member.lowerLevelRanks.length > 0 && member.lowerLevelRanks[0].length > 0) {
+            // remove first rank, if no ranks left set empty array so no bullet point list
+            member.lowerLevelRanks[0].shift()
+            if (member.lowerLevelRanks[0].length === 0) {
+              member.lowerLevelRanks = []
+            }
+          }
+        })
+      } else {
+        // if all members share the same next rank, absorb that too
+        const nextRank = rankOrder[maxIndex + 1]
+        if (nextRank) {
+          const nextRankAllSame = members.every(
+            (m) =>
+              m.fullObject.taxonomy[nextRank] &&
+              members[0].fullObject.taxonomy[nextRank] &&
+              m.fullObject.taxonomy[nextRank].value ===
+                members[0].fullObject.taxonomy[nextRank].value
+          )
+
+          if (nextRankAllSame && members[0].fullObject.taxonomy[nextRank]) {
+            // update the uniqueRanks
+            groupTaxonomy[nextRank] = members[0].fullObject.taxonomy[nextRank]
+
+            // update the members
+            members.forEach((member) => {
+              if (member.lowerLevelRanks.length > 0 && member.lowerLevelRanks[0].length > 0) {
+                // remove first rank, if no ranks left set empty array so no bullet point list
+                member.lowerLevelRanks[0].shift()
+                if (member.lowerLevelRanks[0].length === 0) {
+                  member.lowerLevelRanks = []
+                }
+              }
+            })
+
+            // up the maxIndex
+            groups[group].maxIndex += 1
+          }
         }
       }
 
