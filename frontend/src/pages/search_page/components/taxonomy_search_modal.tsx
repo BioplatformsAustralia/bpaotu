@@ -337,11 +337,12 @@ const TaxonomySearchModal = (props) => {
             taxonomy source a particular taxonomic rank of interest belongs to.
           </p>
           <p>
-            Results will be grouped at the lowest common rank containing the search string (case
+            Results will be grouped at the highest common rank containing the search string (case
             insensitive). Note that the rank labels change depending on the taxonomy source. The
-            Australian Microbiome Project has a convention that preceedes each rank with the
-            lowercase first letter of the label before the value, e.g. "p__" for Phylum. The rank
-            label associated with a given taxonomy can be also seen by hovering over the value.
+            Australian Microbiome database uses a convention that preceedes each rank with a
+            lowercase abbreviation of the label before the value, e.g. "p__" for Phylum, "sg__" for
+            Supergroup. The rank label associated with a given taxonomy can be also seen by hovering
+            over the value.
           </p>
           <p>
             When viewing the search results, click the "Select" button to set the taxonomy search

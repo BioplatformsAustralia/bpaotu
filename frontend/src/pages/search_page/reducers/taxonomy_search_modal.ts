@@ -6,8 +6,6 @@ import { executeTaxonomySearch } from 'api'
 import { describeSearch } from './search'
 import { searchPageInitialState, ErrorList } from './types'
 
-import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
-
 export const {
   openTaxonomySearchModal,
   closeTaxonomySearchModal,
@@ -26,7 +24,6 @@ export const runTaxonomySearch = () => (dispatch, getState) => {
   const state = getState()
   dispatch(runTaxonomySearchStarted())
 
-  const filters = describeSearch(state)
   const searchString = state.searchPage.taxonomySearchModal.searchStringInput
 
   executeTaxonomySearch(searchString)

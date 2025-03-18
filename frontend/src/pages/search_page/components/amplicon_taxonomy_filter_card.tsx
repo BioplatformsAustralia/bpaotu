@@ -108,10 +108,10 @@ const TaxonomyFilterCard = (props) => {
                 style={{
                   marginTop: -4,
                   marginLeft: 2,
-                  paddingLeft: '0.5rem',
-                  paddingRight: '0.5rem',
-                  paddingTop: '0.3rem',
-                  paddingBottom: '0.3rem',
+                  paddingLeft: '0.45rem',
+                  paddingRight: '0.45rem',
+                  paddingTop: '0.15rem',
+                  paddingBottom: '0.15rem',
                 }}
                 onClick={props.openTaxonomySearchModal}
               >
