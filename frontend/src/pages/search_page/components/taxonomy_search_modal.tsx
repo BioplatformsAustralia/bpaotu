@@ -104,6 +104,7 @@ const TaxonomySearchModal = (props) => {
     results,
     rankLabelsLookup,
     closeTaxonomySearchModal,
+    amplicon,
   } = props
 
   const rankOrder = ['amplicon', 'taxonomy_source', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8']
@@ -158,16 +159,6 @@ const TaxonomySearchModal = (props) => {
       let groupTaxonomy = Object.fromEntries(
         Object.entries(firstTaxonomy).filter(([key]) => allowedKeys.includes(key))
       )
-
-      // console.log('group', group)
-      // console.log('groups[group]', groups[group])
-      // console.log('members', members)
-      // console.log('members.length', members.length)
-      // console.log('maxIndex', maxIndex)
-      // console.log('rankOrder[maxIndex]', rankOrder[maxIndex])
-      // console.log('firstTaxonomy', firstTaxonomy)
-      // console.log('allowedKeys', allowedKeys)
-      // console.log('groupTaxonomy', groupTaxonomy)
 
       // if all members share the same next rank, absorb that too, process recursively
       // note, this always will apply to a situation where there is only 1 member, which is when 2 or more consecutive ranks match the searchString
@@ -228,7 +219,6 @@ const TaxonomySearchModal = (props) => {
   }
 
   // uses the same mechanism when clicking on a slice of the taxonomy pie chart in Interactive Graph Search
-  // TODO: move to a redux action so can close the window when it's done?
   const setTaxonomy = (taxonomy) => {
     const currentAmplicon = props.amplicon
     const currentTaxonomy = props.taxonomy
@@ -332,9 +322,9 @@ const TaxonomySearchModal = (props) => {
       <ModalBody style={{ overflowY: 'scroll' }}>
         <Row style={{ margin: 4, width: '900px' }}>
           <p>
-            The Taxonomy Search tool will search each taxonomy source in the Australian Microbiome
-            database for occurances of a given search string. Use this tool if you are unsure which
-            taxonomy source a particular taxonomic rank of interest belongs to.
+            The Taxonomy Search tool will search each taxonomy source for the given amplicon in the
+            Australian Microbiome database for occurances of a given search string. Use this tool if
+            you are unsure which taxonomy source a particular taxonomic rank of interest belongs to.
           </p>
           <p>
             Results will be grouped at the highest common rank containing the search string (case
@@ -348,6 +338,11 @@ const TaxonomySearchModal = (props) => {
             When viewing the search results, click the "Select" button to set the taxonomy search
             filters for that taxonomy.
           </p>
+        </Row>
+        <Row style={{ margin: 4 }}>
+          <Col>
+            <p>Amplicon: {amplicon.text}</p>
+          </Col>
         </Row>
         <Row style={{ margin: 1 }}>
           <Col>
@@ -517,13 +512,18 @@ function mapStateToProps(state) {
   const { isOpen, isLoading, searchStringInput, searchString, results } =
     state.searchPage.taxonomySearchModal
 
+  const selectedAmplicon = state.searchPage.filters.selectedAmplicon
+  const ampliconNames = state.referenceData.amplicons
+  const ampliconLookup = ampliconNames.values.find((x) => x.id === selectedAmplicon.value)
+  const ampliconName = ampliconLookup && ampliconLookup.value
+
   return {
     isOpen,
     isLoading,
     searchStringInput,
     searchString,
     results,
-    amplicon: state.searchPage.filters.selectedAmplicon,
+    amplicon: { ...selectedAmplicon, ...{ text: ampliconName } },
     taxonomy: state.searchPage.filters.taxonomy,
     rankLabelsLookup: state.referenceData.ranks.rankLabelsLookup,
   }

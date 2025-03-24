@@ -189,7 +189,7 @@ class TaxonomyOptions:
     def __exit__(self, exec_type, exc_value, traceback):
         self._session.close()
 
-    def search(self, search_string):
+    def search(self, selected_amplicon, search_string):
         # search for the string in each ontology class
         # and return all taxonomies where it is present
 
@@ -211,6 +211,7 @@ class TaxonomyOptions:
                     .query(Taxonomy.id, OntologyClass.id, OntologyClass.value)
                     .join(OntologyClass)
                     .filter(OntologyClass.id.in_(ids))
+                    .filter(Taxonomy.amplicon_id == selected_amplicon)
             )
             # log_query(q2)
 

@@ -592,8 +592,9 @@ def taxonomy_search(request):
     # TODO validate no string
 
     with TaxonomyOptions() as options:
-        taxonomy_search_string = json.loads(request.GET['taxonomy_search_string']),
-        results = options.search(taxonomy_search_string[0]) # because result is a tuple
+        selected_amplicon = json.loads(request.GET['selected_amplicon'])
+        taxonomy_search_string = json.loads(request.GET['taxonomy_search_string'])
+        results = options.search(selected_amplicon, taxonomy_search_string)
         serialized_results = [serialize_taxa_search_result(result) for result in results]
 
     return JsonResponse({

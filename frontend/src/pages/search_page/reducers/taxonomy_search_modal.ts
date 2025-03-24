@@ -24,9 +24,10 @@ export const runTaxonomySearch = () => (dispatch, getState) => {
   const state = getState()
   dispatch(runTaxonomySearchStarted())
 
+  const selectedAmplicon = state.searchPage.filters.selectedAmplicon.value
   const searchString = state.searchPage.taxonomySearchModal.searchStringInput
 
-  executeTaxonomySearch(searchString)
+  executeTaxonomySearch(selectedAmplicon, searchString)
     .then((data) => {
       if (_get(data, 'data.errors', []).length > 0) {
         dispatch(runTaxonomySearchEnded(new ErrorList(data.data.errors)))

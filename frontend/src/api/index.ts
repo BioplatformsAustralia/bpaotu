@@ -192,20 +192,10 @@ export const executeMetagenomeSearch = partial(
   join([window.otu_search_config.base_url, 'private/metagenome-search'], '/')
 )
 
-export const executeTaxonomySearch = (searchString) => {
-  // const formData = new FormData()
-  // formData.append('taxonomy_search_string', JSON.stringify(searchString))
-  // return axios({
-  //   method: 'post',
-  //   url: window.otu_search_config.taxonomy_search_endpoint,
-  //   data: formData,
-  //   headers: {
-  //     'Content-Type': 'multipart/form-data',
-  //   },
-  // })
-
+export const executeTaxonomySearch = (selectedAmplicon, searchString) => {
   return axios.get(window.otu_search_config.taxonomy_search_endpoint, {
     params: {
+      selected_amplicon: selectedAmplicon,
       taxonomy_search_string: JSON.stringify(searchString),
     },
   })
