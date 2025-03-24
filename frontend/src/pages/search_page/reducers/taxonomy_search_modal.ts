@@ -76,6 +76,7 @@ export default handleActions(
           isLoading: false,
           searchString: state.searchStringInput,
           results: action.payload.data.results,
+          error: action.payload.data.error,
         }
       },
       throw: (state, action: any) => ({

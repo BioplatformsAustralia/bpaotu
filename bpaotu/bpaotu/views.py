@@ -589,11 +589,16 @@ def taxonomy_search(request):
     private API: given taxonomy constraints, return the possible options
     """
 
-    # TODO validate no string
+    selected_amplicon = json.loads(request.GET['selected_amplicon'])
+    taxonomy_search_string = json.loads(request.GET['taxonomy_search_string'])
+
+    if not taxonomy_search_string:
+        return JsonResponse({
+            'error': 'No search string',
+            'results': [],
+        })
 
     with TaxonomyOptions() as options:
-        selected_amplicon = json.loads(request.GET['selected_amplicon'])
-        taxonomy_search_string = json.loads(request.GET['taxonomy_search_string'])
         results = options.search(selected_amplicon, taxonomy_search_string)
         serialized_results = [serialize_taxa_search_result(result) for result in results]
 

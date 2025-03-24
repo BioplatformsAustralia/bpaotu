@@ -59,6 +59,7 @@ export interface PageState {
     isOpen: boolean
     isLoading: boolean
     results: any[]
+    error: string
   }
   samplesMapModal: {
     isOpen: boolean
@@ -165,6 +166,7 @@ export const searchPageInitialState: PageState = {
     isOpen: false,
     isLoading: false,
     results: [],
+    error: null,
   },
   samplesMapModal: {
     isOpen: false,

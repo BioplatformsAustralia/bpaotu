@@ -102,6 +102,7 @@ const TaxonomySearchModal = (props) => {
     searchStringInput,
     searchString,
     results,
+    error,
     rankLabelsLookup,
     closeTaxonomySearchModal,
     amplicon,
@@ -357,7 +358,15 @@ const TaxonomySearchModal = (props) => {
             />
           </Col>
           <Col>
-            <Button color="warning" disabled={isLoading} onClick={props.runTaxonomySearch}>
+            <Button
+              color="warning"
+              disabled={isLoading}
+              onClick={() => {
+                if (searchStringInput) {
+                  props.runTaxonomySearch()
+                }
+              }}
+            >
               Taxonomy Search
             </Button>
           </Col>
@@ -378,6 +387,13 @@ const TaxonomySearchModal = (props) => {
             </div>
           )}
         </Col>
+        {error && (
+          <Col>
+            <div>
+              <p>{error}</p>
+            </div>
+          </Col>
+        )}
         {resultsAdjusted.length > 0 && (
           <Col>
             <div style={{ overflowX: 'auto' }}>
@@ -509,7 +525,7 @@ const TaxonomySearchModal = (props) => {
 }
 
 function mapStateToProps(state) {
-  const { isOpen, isLoading, searchStringInput, searchString, results } =
+  const { isOpen, isLoading, searchStringInput, searchString, results, error } =
     state.searchPage.taxonomySearchModal
 
   const selectedAmplicon = state.searchPage.filters.selectedAmplicon
@@ -523,6 +539,7 @@ function mapStateToProps(state) {
     searchStringInput,
     searchString,
     results,
+    error,
     amplicon: { ...selectedAmplicon, ...{ text: ampliconName } },
     taxonomy: state.searchPage.filters.taxonomy,
     rankLabelsLookup: state.referenceData.ranks.rankLabelsLookup,
