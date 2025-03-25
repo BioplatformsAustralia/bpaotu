@@ -72,21 +72,15 @@ const _SearchResultsCard = (props) => {
   }
 
   const exportBIOM = () => {
-    track('otu_export_BIOM')
-
     props.showPhinchTip()
     download(window.otu_search_config.export_biom_endpoint, props)
   }
 
   const exportCSV = () => {
-    track('otu_export_CSV')
-
     download(window.otu_search_config.export_endpoint, props)
   }
 
   const exportCSVOnlyContextual = () => {
-    track('otu_export_CSV_only_contextual')
-
     download(window.otu_search_config.export_endpoint, props, true)
   }
 
@@ -157,8 +151,6 @@ const _MetagenomeSearchResultsCard = (props) => {
   const { track } = useAnalytics()
 
   const exportCSVOnlyContextualMetagenome = () => {
-    track('otu_export_CSV_only_contextual_metagenome')
-
     download(window.otu_search_config.export_endpoint, props, true)
   }
 

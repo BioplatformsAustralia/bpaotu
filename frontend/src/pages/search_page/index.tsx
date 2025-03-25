@@ -45,19 +45,15 @@ const SearchPage = (props) => {
     props.search(track)
   }
   const blastSearch = () => {
-    track('otu_blast_search')
     props.openBlastModal()
   }
   const interactiveMapSearch = () => {
-    track('otu_interactive_map_search')
     props.openSamplesMapModal()
   }
   const interactiveGraphSearch = () => {
-    track('otu_interactive_graph_search')
     props.openSamplesGraphModal()
   }
   const interactiveSampleComparison = () => {
-    track('otu_interactive_comparison_search')
     props.openSamplesComparisonModal()
   }
 

@@ -751,6 +751,20 @@ class TaxonomyFilter:
         self.state_vector =  [next(sv_iter, None) for _ in TaxonomyOptions.hierarchy]
         self.trait_filter = trait_filter
 
+    def __repr__(self):
+        return '<TaxonomyFilter(%s,state_vec[%s],%s)>' % (
+            self.amplicon_filter,
+            self.state_vector,
+            self.trait_filter)
+
+    def to_dict(self):
+        amplicon_descr, taxonomy_descr, trait_descr = self.describe()
+        return {
+            "amplicon": amplicon_descr,
+            "taxonomy": taxonomy_descr,
+            "trait": trait_descr,
+        }
+
     def describe(self):
         with OntologyInfo() as info:
             amplicon_description = describe_op_and_val(info, 'amplicon', OTUAmplicon, self.amplicon_filter)
@@ -784,12 +798,6 @@ class TaxonomyFilter:
                                         q, op_and_val)
         return q
 
-    def __repr__(self):
-        return '<TaxonomyFilter(%s,state_vec[%s],%s)>' % (
-            self.amplicon_filter,
-            self.state_vector,
-            self.trait_filter)
-
 
 class ContextualFilter:
     mode_operators = {
@@ -808,6 +816,11 @@ class ContextualFilter:
         return '<ContextualFilter(%s,env[%s],mg[%s],[%s]>' % (
             self.mode,
             repr(self.environment_filter), repr(self.metagenome_only), ','.join(repr(t) for t in self.terms))
+
+    def to_dict(self):
+        return {
+            "terms": self.describe(),
+        }
 
     def describe(self):
         descr = []

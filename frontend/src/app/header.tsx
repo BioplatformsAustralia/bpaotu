@@ -82,9 +82,7 @@ const Header = ({ userEmailAddress }) => {
                 'organization/pages/australian-microbiome/processed'
               }
               onClick={() => {
-                console.log('otu_click_header_help before')
                 track('otu_click_header_help')
-                console.log('otu_click_header_help after')
               }}
             >
               Help
