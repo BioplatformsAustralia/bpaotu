@@ -40,13 +40,6 @@ export const runTaxonomySearch = () => (dispatch, getState) => {
     })
 }
 
-export const setTaxonomy = (taxonomy) => (dispatch, getState) => {
-  const state = getState()
-
-  console.log('setTaxonomy', 'state', state)
-  console.log('setTaxonomy', 'taxonomy', taxonomy)
-}
-
 export default handleActions(
   {
     [openTaxonomySearchModal as any]: (state, action) => ({

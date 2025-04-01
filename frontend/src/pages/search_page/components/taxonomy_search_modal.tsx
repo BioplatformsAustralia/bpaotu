@@ -550,12 +550,10 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
       handleTaxonomySearchString,
-      // setTaxonomy,
       runTaxonomySearch,
       closeTaxonomySearchModal,
       selectAmplicon,
       selectTaxonomyValue: (taxa, id) => createAction('SELECT_' + taxa.toUpperCase())(id),
-      selectTaxonomyValueMultiple: (taxonomy) => createAction('SELECT_TAXONOMY_MULTIPLE')(taxonomy),
       updateTaxonomyDropDown: (taxa) => updateTaxonomyDropDowns(taxa)(),
     },
     dispatch

@@ -163,7 +163,6 @@ def api_config(request):
         'reference_data_endpoint': reverse('reference_data_options'),
         'trait_endpoint': reverse('trait_options'),
         'taxonomy_endpoint': reverse('taxonomy_options'),
-        'taxonomy_multiple_endpoint': reverse('taxonomy_options_multiple'),
         'contextual_endpoint': reverse('contextual_fields'),
         'contextual_graph_endpoint': reverse('contextual_graph_fields'),
         'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),
@@ -317,25 +316,6 @@ def taxonomy_options(request):
     return JsonResponse({
         'possibilities': possibilities,
         'initial': initial,
-    })
-
-
-@require_CKAN_auth
-@require_GET
-def taxonomy_options_multiple(request):
-    """
-    private API: given taxonomy values, return all the nested possibilities
-    """
-
-    # TODO validate no string
-
-    with TaxonomyOptions() as options:
-        taxonomy_search_string = json.loads(request.GET['taxonomy_search_string']),
-        results = options.search(taxonomy_search_string[0]) # because result is a tuple
-        serialized_results = [serialize_taxa_search_result(result) for result in results]
-
-    return JsonResponse({
-        'results': serialized_results,
     })
 
 
@@ -613,11 +593,11 @@ def taxonomy_search(request):
         'results': serialized_results,
     })
 
-
 def serialize_taxa_search_result(result):
     return {
         'taxonomy': result[0].to_dict(),
     }
+
 
 def _parse_contextual_term(filter_spec):
     field_name = filter_spec['field']
@@ -706,7 +686,6 @@ def param_to_filters(query_str, contextual_filtering=True):
         sample_integrity_warnings_filter=sample_integrity_warnings_filter), errors)
 
 def selected_contextual_filters(query_str, contextual_filtering=True):
-
     otu_query = json.loads(query_str)
     context_spec = otu_query['contextual_filters']
     contextual_filter = []
@@ -919,10 +898,14 @@ def otu_search(request, contextual_filtering=True):
         return d
 
     # only send event once per actual search
-    # - exclude other request paths that call this method
-    # - only after clicking 'Sample search' (not when using pagination controls)
+    # - exclude other request paths that call this method (e.g. contextual export)
+    # - only after clicking 'Sample search' (not when using pagination controls, i.e. start is 0)
     if request.path.split('/')[-1] == 'search' and start == 0:
-        event = 'otu_sample_search_metagenome' if params.contextual_filter.metagenome_only else 'otu_sample_search'
+        if params.contextual_filter.metagenome_only:
+            event = 'otu_sample_search_metagenome'
+        else:
+            event = 'otu_sample_search'
+
         track(request, event, search_params_track_args(params))
 
     return JsonResponse({
