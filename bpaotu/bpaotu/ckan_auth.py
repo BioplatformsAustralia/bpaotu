@@ -51,7 +51,7 @@ def _otu_endpoint_verification(data):
 
     secret_key = bytes(os.environ.get('BPAOTU_AUTH_SECRET_KEY'), encoding='utf-8')
 
-    logger.info(f'secret_key : {os.environ.get('BPAOTU_AUTH_SECRET_KEY')}')
+    logger.info(f'secret_key : {os.environ.get("BPAOTU_AUTH_SECRET_KEY")}')
     logger.info(f'secret_key : {secret_key}')
     logger.info(f'hash_portion : {hash_portion}')
     logger.info(f'data_portion : {data_portion}')
