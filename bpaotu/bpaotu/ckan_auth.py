@@ -9,7 +9,7 @@ from django.http import HttpResponseForbidden
 from django.conf import settings
 
 
-logger = logging.getLogger("rainbow")
+logger = logging.getLogger("bpaotu")
 
 
 FORBIDDEN_RESPONSE_MSG = 'Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.'
@@ -23,19 +23,25 @@ class OTUVerificationError(Exception):
 def require_CKAN_auth(func):  # noqa N802
     @wraps(func)
     def inner(request, *args, **kwargs):
+        logger.info(f'settings.CKAN_ENABLE_AUTH : {settings.CKAN_ENABLE_AUTH}')
+        print('settings.CKAN_ENABLE_AUTH', settings.CKAN_ENABLE_AUTH)
         if settings.CKAN_ENABLE_AUTH:
+            logger.info(f'settings.CKAN_AUTH_TOKEN_HEADER_NAME : {settings.CKAN_AUTH_TOKEN_HEADER_NAME}')
+            print('settings.CKAN_AUTH_TOKEN_HEADER_NAME', settings.CKAN_AUTH_TOKEN_HEADER_NAME)
             token = request.META.get(settings.CKAN_AUTH_TOKEN_HEADER_NAME)
+            print('token', token)
             if token is None:
                 token = request.POST.get('token') if request.method == 'POST' else request.GET.get('token')
             if token is None:
                 return HttpResponseForbidden(FORBIDDEN_RESPONSE_MSG)
             try:
                 ckan_data = _otu_endpoint_verification(token)
+                logger.info(f'ckan_data {ckan_data}')
+                print('ckan_data', ckan_data)
+                request.ckan_data = ckan_data
             except OTUVerificationError:
                 logger.exception('OTU Verification Failed')
                 return HttpResponseForbidden(FORBIDDEN_RESPONSE_MSG)
-            
-            request.ckan_data = ckan_data
 
         return func(request, *args, **kwargs)
 
