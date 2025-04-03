@@ -4,7 +4,6 @@ import { connect } from 'react-redux'
 
 import { Card, CardBody, CardHeader } from 'reactstrap'
 
-import { useAnalytics } from 'use-analytics'
 import { ExportDataButton } from 'components/export_data_button'
 
 import { EmptyOTUQuery } from 'search'
@@ -12,7 +11,6 @@ import SearchResultsTable from './search_results_table'
 
 const SearchResultsCard = (props) => {
   const { ckanAuthToken, extraColumns, sorting } = props
-  const { track } = useAnalytics()
 
   const exportCSV = () => {
     const params = new URLSearchParams()
@@ -20,10 +18,6 @@ const SearchResultsCard = (props) => {
     params.set('otu_query', JSON.stringify(EmptyOTUQuery))
     params.set('columns', JSON.stringify(extraColumns))
     params.set('sorting', JSON.stringify(sorting))
-
-    track('otu_export_contextual_CSV', {
-      columns: extraColumns.sort(),
-    })
 
     const baseURL = window.otu_search_config.contextual_csv_download_endpoint
     const url = `${baseURL}?${params.toString()}`

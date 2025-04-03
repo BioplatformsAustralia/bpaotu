@@ -189,6 +189,57 @@ class TaxonomyOptions:
     def __exit__(self, exec_type, exc_value, traceback):
         self._session.close()
 
+    def search(self, selected_amplicon, search_string):
+        # search for the string in each ontology class
+        # and return all taxonomies where it is present
+
+        results = []
+        taxonomy_ids = []
+
+        for (OntologyClass) in taxonomy_ontology_classes[1:]:
+            q1 = (
+                self._session
+                    .query(OntologyClass.id)
+                    .filter(func.lower(OntologyClass.value).like(f"%{search_string.lower()}%"))
+            )
+            # log_query(q1)
+
+            ids = [result[0] for result in q1.all()]
+
+            q2 = (
+                self._session
+                    .query(Taxonomy.id, OntologyClass.id, OntologyClass.value)
+                    .join(OntologyClass)
+                    .filter(OntologyClass.id.in_(ids))
+                    .filter(Taxonomy.amplicon_id == selected_amplicon)
+            )
+            # log_query(q2)
+
+            # find the highest independent order (i.e. to prevent duplicates)
+            taxonomy_ids.extend([result[0] for result in q2.all()])
+            taxonomies = [result for result in q2.all()]
+
+            results.extend(taxonomy_ids)
+
+        if taxonomy_ids:
+            order_by_fields = [Taxonomy.amplicon_id] + [cls.id for cls in taxonomy_ontology_classes]
+
+            qtax = (
+                self._session
+                    .query(Taxonomy, *taxonomy_ontology_classes)
+                    .join(*taxonomy_ontology_classes)
+                    .filter(Taxonomy.id.in_(taxonomy_ids))
+                    .order_by(*order_by_fields)
+            )
+            # log_query(qtax)
+
+            taxonomy_records = [result for result in qtax.all()]
+            taxonomy_records_lcd = [result[0] for result in qtax.all()]
+
+            results = taxonomy_records
+
+        return results
+
     def possibilities(self, taxonomy_filter, force_cache=False):
         cache = caches['search_results']
         key = make_cache_key(
@@ -700,6 +751,20 @@ class TaxonomyFilter:
         self.state_vector =  [next(sv_iter, None) for _ in TaxonomyOptions.hierarchy]
         self.trait_filter = trait_filter
 
+    def __repr__(self):
+        return '<TaxonomyFilter(%s,state_vec[%s],%s)>' % (
+            self.amplicon_filter,
+            self.state_vector,
+            self.trait_filter)
+
+    def to_dict(self):
+        amplicon_descr, taxonomy_descr, trait_descr = self.describe()
+        return {
+            "amplicon": amplicon_descr,
+            "taxonomy": taxonomy_descr,
+            "trait": trait_descr,
+        }
+
     def describe(self):
         with OntologyInfo() as info:
             amplicon_description = describe_op_and_val(info, 'amplicon', OTUAmplicon, self.amplicon_filter)
@@ -733,12 +798,6 @@ class TaxonomyFilter:
                                         q, op_and_val)
         return q
 
-    def __repr__(self):
-        return '<TaxonomyFilter(%s,state_vec[%s],%s)>' % (
-            self.amplicon_filter,
-            self.state_vector,
-            self.trait_filter)
-
 
 class ContextualFilter:
     mode_operators = {
@@ -757,6 +816,11 @@ class ContextualFilter:
         return '<ContextualFilter(%s,env[%s],mg[%s],[%s]>' % (
             self.mode,
             repr(self.environment_filter), repr(self.metagenome_only), ','.join(repr(t) for t in self.terms))
+
+    def to_dict(self):
+        return {
+            "terms": self.describe(),
+        }
 
     def describe(self):
         descr = []

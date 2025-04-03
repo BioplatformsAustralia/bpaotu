@@ -174,6 +174,15 @@ export const executeMetagenomeSearch = partial(
   join([window.otu_search_config.base_url, 'private/metagenome-search'], '/')
 )
 
+export const executeTaxonomySearch = (selectedAmplicon, searchString) => {
+  return axios.get(window.otu_search_config.taxonomy_search_endpoint, {
+    params: {
+      selected_amplicon: selectedAmplicon,
+      taxonomy_search_string: JSON.stringify(searchString),
+    },
+  })
+}
+
 export function executeSubmitToGalaxy(filters) {
   const formData = new FormData()
   formData.append('query', JSON.stringify(filters))

@@ -40,10 +40,12 @@ export const selectedAmpliconReducer = handleActions(
     [clearAllTaxonomyFilters as any]: (state, action: any) => {
       return EmptyOperatorAndValue
     },
-    [selectAmplicon as any]: (state, action: any) => ({
-      ...state,
-      value: action.payload,
-    }),
+    [selectAmplicon as any]: (state, action: any) => {
+      return {
+        ...state,
+        value: action.payload,
+      }
+    },
     [selectAmpliconOperator as any]: (state, action: any) => ({
       ...state,
       operator: action.payload,

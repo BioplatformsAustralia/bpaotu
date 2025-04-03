@@ -19,7 +19,6 @@ import { Tutorial, stepsStyle } from 'components/tutorial'
 import { TourContext } from 'providers/tour_provider'
 
 import { metagenomeRequest } from 'api'
-import { useAnalytics } from 'use-analytics'
 
 import { closeMetagenomeModal } from '../reducers/metagenome_modal'
 import { describeSearch } from '../reducers/search'
@@ -56,8 +55,6 @@ const MetagenomeModal = (props) => {
   const [selected, setSelected] = useState({})
   const [requestState, setRequestState] = useState(0)
   const [submissionResponse, setSubmissionResponse] = useState<SubmissionResponse>({})
-
-  const { track } = useAnalytics()
 
   const {
     isMainTourOpen,
@@ -109,8 +106,6 @@ const MetagenomeModal = (props) => {
     event.preventDefault()
 
     if (requestState === 1) {
-      track('otu_request_metagenome_files')
-
       metagenomeRequest(props.sample_ids, keys(pickBy(selected)))
         .then((response) => {
           setSubmissionResponse(response)

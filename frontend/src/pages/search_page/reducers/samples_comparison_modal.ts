@@ -7,7 +7,7 @@ import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
 import { ComparisonSubmission, ErrorList } from './types'
 
-import { filter, get as _get, includes, isNumber, join, last, reject, upperCase } from 'lodash'
+import { get as _get, isNumber, last } from 'lodash'
 
 export const {
   openSamplesComparisonModal,
@@ -150,15 +150,6 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
       }
     })
 }
-
-function alert(text, color = 'primary') {
-  return { color, text }
-}
-
-const COMPARISON_ALERT_IN_PROGRESS = alert(
-  'Comparison is in progress, and may take several minutes. Do not close your browser - this status will update once the search is complete.'
-)
-const COMPARISON_ALERT_ERROR = alert('An error occured while running comparison.', 'danger')
 
 export default handleActions(
   {

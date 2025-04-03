@@ -56,9 +56,11 @@ from sklearn.manifold import MDS
 from .sample_run_id_dict import sample_run_id_dict
 
 from mixpanel import Mixpanel
+import hashlib
 
 logger = logging.getLogger('bpaotu')
 
+mp = Mixpanel(settings.MIXPANEL_TOKEN) if getattr(settings, "MIXPANEL_TOKEN", None) else None
 
 # See datatables.net serverSide documentation for details
 ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
@@ -164,6 +166,7 @@ def api_config(request):
         'contextual_endpoint': reverse('contextual_fields'),
         'contextual_graph_endpoint': reverse('contextual_graph_fields'),
         'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),
+        'taxonomy_search_endpoint': reverse('taxonomy_search'),
         'search_endpoint': reverse('otu_search'),
         'export_endpoint': reverse('otu_export'),
         'export_biom_endpoint': reverse('otu_biom_export'),
@@ -207,7 +210,7 @@ def cookie_consent_declined(request):
         mp = Mixpanel(settings.MIXPANEL_TOKEN)
         mp.track('None', 'Cookie consent declined')
     else:
-        logger.info("No Mixpanel token")
+        logger.info("No MIXPANEL_TOKEN")
 
     return HttpResponseNoContent()
 
@@ -218,7 +221,7 @@ def cookie_consent_accepted(request):
         mp = Mixpanel(settings.MIXPANEL_TOKEN)
         mp.track('None', 'Cookie consent accepted')
     else:
-        logger.info("No Mixpanel token")
+        logger.info("No MIXPANEL_TOKEN")
 
     return HttpResponseNoContent()
 
@@ -394,11 +397,16 @@ def contextual_graph_fields(request, contextual_filtering=True):
                    'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
                    'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
     params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+
     if errors:
         return JsonResponse({
             'errors': [str(t) for t in errors],
             'graphdata': {}
         })
+
+    # Note: this is in here rather than taxonomy_graph_fields for no particular reason
+    track(request, 'otu_interactive_graph_search', search_params_track_args(params))
+
     graph_results = {}
     sample_results = {}
 
@@ -416,8 +424,6 @@ def contextual_graph_fields(request, contextual_filtering=True):
                             if (x != None and not
                             (skip_sentinels and math.isclose(x, settings.BPAOTU_MISSING_VALUE_SENTINEL)))]
             graph_results[h] = [xy.tolist() for xy in np.unique(cleaned_data, return_counts=True)]
-
-
 
         for x in ndata:
             sample_id_column = all_headers.index('id')
@@ -560,6 +566,39 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
         }
     })
 
+
+@require_CKAN_auth
+@require_GET
+def taxonomy_search(request):
+    """
+    private API: given taxonomy constraints, return the possible options
+    """
+
+    selected_amplicon = json.loads(request.GET['selected_amplicon'])
+    taxonomy_search_string = json.loads(request.GET['taxonomy_search_string'])
+
+    if not taxonomy_search_string:
+        return JsonResponse({
+            'error': 'No search string',
+            'results': [],
+        })
+
+    track(request, 'otu_taxonomy_search', { 'taxonomy_search_string': taxonomy_search_string })
+
+    with TaxonomyOptions() as options:
+        results = options.search(selected_amplicon, taxonomy_search_string)
+        serialized_results = [serialize_taxa_search_result(result) for result in results]
+
+    return JsonResponse({
+        'results': serialized_results,
+    })
+
+def serialize_taxa_search_result(result):
+    return {
+        'taxonomy': result[0].to_dict(),
+    }
+
+
 def _parse_contextual_term(filter_spec):
     field_name = filter_spec['field']
 
@@ -647,7 +686,6 @@ def param_to_filters(query_str, contextual_filtering=True):
         sample_integrity_warnings_filter=sample_integrity_warnings_filter), errors)
 
 def selected_contextual_filters(query_str, contextual_filtering=True):
-
     otu_query = json.loads(query_str)
     context_spec = otu_query['contextual_filters']
     contextual_filter = []
@@ -728,6 +766,9 @@ def nondenoised_request(request):
     request = NonDenoisedDataRequest(**attrs)
     request.save()
     attrs['id'] = request.id
+
+    track(request, 'otu_nondenoised_data_request')
+
     send_mail(
         "[ND#{}] Australian Microbiome: Data request received".format(request.id),
         ACKNOWLEDGEMENT_EMAIL_TEMPLATE.format(**attrs),
@@ -757,6 +798,8 @@ def otu_search_sample_sites(request):
         key = (str(d['latitude']), str(d['longitude']))
         d['site_images'] = site_image_lookup_table.get(key)
 
+    track(request, 'otu_interactive_map_search', search_params_track_args(params))
+
     return JsonResponse({ 'data': data, 'sample_otus': sample_otus })
 
 
@@ -782,113 +825,6 @@ def otu_search_sample_sites_comparison(request):
             'success': False,
             'errors': exc.errors,
         })
-
-    # params, errors = param_to_filters(request.POST['otu_query'])
-    # if errors:
-    #     return JsonResponse({
-    #         'errors': [str(e) for e in errors],
-    #         'data': [],
-    #         'sample_otus': []
-    #     })
-
-    # logger.info('start abundance_matrix comparison_query')
-    # abundance_matrix = comparison_query(params)
-
-    # if "error" in abundance_matrix:
-    #     return JsonResponse({
-    #         'abundance_matrix': abundance_matrix,
-    #         'contextual': {}
-    #     })
-
-    # dist_matrix_braycurtis = abundance_matrix['matrix_braycurtis']
-    # dist_matrix_jaccard = abundance_matrix['matrix_jaccard']
-
-    # def mds_results(dist_matrix):
-    #     RANDOMSEED = np.random.RandomState(seed=2)
-
-    #     log_msg('  MDS')
-    #     mds = MDS(n_components=2, max_iter=1000, random_state=RANDOMSEED, dissimilarity="precomputed")
-    #     mds_result = mds.fit_transform(dist_matrix)
-    #     MDS_x_scores = mds_result[:,0]
-    #     MDS_y_scores = mds_result[:,1]
-
-    #     # calculate the normalized stress from sklearn stress
-    #     # (https://stackoverflow.com/questions/36428205/stress-attribute-sklearn-manifold-mds-python)
-    #     stress_norm_MDS = np.sqrt(mds.stress_ / (0.5 * np.sum(dist_matrix**2)))
-
-    #     log_msg('  NMDS')
-    #     # compute NMDS  ***inititial the start position of the nmds as the mds solution!!!!
-    #     # dissimilarities = pairwise_distances(df.drop('class', axis=1), metric='euclidean')
-    #     nmds = MDS(n_components=2, metric=False, max_iter=1000, dissimilarity="precomputed")
-    #     nmds_result = nmds.fit_transform(dist_matrix, init=mds_result)
-    #     NMDS_x_scores = nmds_result[:,0]
-    #     NMDS_y_scores = nmds_result[:,1]
-
-    #     # calculate the normalized stress from sklearn stress
-    #     stress_norm_NMDS = np.sqrt(nmds.stress_ / (0.5 * np.sum(dist_matrix**2)))
-
-    #     return {
-    #         'MDS_x_scores': MDS_x_scores,
-    #         'MDS_y_scores': MDS_y_scores,
-    #         'NMDS_x_scores': NMDS_x_scores,
-    #         'NMDS_y_scores': NMDS_y_scores,
-    #         'stress_norm_MDS': stress_norm_MDS,
-    #         'stress_norm_NMDS': stress_norm_NMDS,
-    #     }
-
-    # log_msg('start braycurtis calc')
-    # results_braycurtis = mds_results(dist_matrix_braycurtis)
-    # pairs_braycurtis_MDS = list(zip(results_braycurtis['MDS_x_scores'], results_braycurtis['MDS_y_scores']))
-    # pairs_braycurtis_NMDS = list(zip(results_braycurtis['NMDS_x_scores'], results_braycurtis['NMDS_y_scores']))
-    # stress_norm_braycurtis_MDS = results_braycurtis['stress_norm_MDS']
-    # stress_norm_braycurtis_NMDS = results_braycurtis['stress_norm_NMDS']
-
-    # log_msg('start jaccard calc')
-    # results_jaccard = mds_results(dist_matrix_jaccard)
-    # pairs_jaccard_MDS = list(zip(results_jaccard['MDS_x_scores'], results_jaccard['MDS_y_scores']))
-    # pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
-    # stress_norm_jaccard_MDS = results_jaccard['stress_norm_MDS']
-    # stress_norm_jaccard_NMDS = results_jaccard['stress_norm_NMDS']
-
-    # abundance_matrix['points'] = {
-    #     'braycurtis': pairs_braycurtis_MDS,
-    #     'braycurtis_NMDS': pairs_braycurtis_NMDS,
-    #     'stress_norm_braycurtis_MDS': stress_norm_braycurtis_MDS,
-    #     'stress_norm_braycurtis_NMDS': stress_norm_braycurtis_NMDS,
-    #     'jaccard': pairs_jaccard_MDS,
-    #     'jaccard_NMDS': pairs_jaccard_NMDS,
-    #     'stress_norm_jaccard_MDS': stress_norm_jaccard_MDS,
-    #     'stress_norm_jaccard_NMDS': stress_norm_jaccard_NMDS,
-    # }
-
-    # sample_results = {}
-
-    # contextual_filtering = True
-    # additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
-    # all_headers = ['id', 'am_environment_id', 'vegetation_type_id', 'imos_site_code', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
-    #                'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
-    #                'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
-    # all_headers_unique = list(set(all_headers))
-
-    # with SampleQuery(params) as query:
-    #     results = query.matching_sample_graph_data(all_headers_unique)
-
-    # if results:
-    #     ndata = np.array(results)
-
-    #     for x in ndata:
-    #         sample_id_column = all_headers_unique.index('id')
-    #         sample_id = x[sample_id_column]
-    #         sample_data = dict(zip(all_headers_unique, x.tolist()))
-    #         sample_results[sample_id] = sample_data
-
-    # abundance_matrix.pop('matrix_jaccard', None)
-    # abundance_matrix.pop('matrix_braycurtis', None)
-
-    # return JsonResponse({
-    #     'abundance_matrix': abundance_matrix,
-    #     'contextual': sample_results
-    # })
 
 
 @require_CKAN_auth
@@ -961,6 +897,17 @@ def otu_search(request, contextual_filtering=True):
         d['run_id'] = sample_run_id_dict.get(d['sample_id'])
         return d
 
+    # only send event once per actual search
+    # - exclude other request paths that call this method (e.g. contextual export)
+    # - only after clicking 'Sample search' (not when using pagination controls, i.e. start is 0)
+    if request.path.split('/')[-1] == 'search' and start == 0:
+        if params.contextual_filter.metagenome_only:
+            event = 'otu_sample_search_metagenome'
+        else:
+            event = 'otu_sample_search'
+
+        track(request, event, search_params_track_args(params))
+
     return JsonResponse({
         'data': [map_result(row) for row in results],
         'rowsCount': result_count,
@@ -972,10 +919,14 @@ def otu_search(request, contextual_filtering=True):
 def otu_biom_export(request):
     timestamp = make_timestamp()
     params, errors = param_to_filters(request.GET['q'])
+
+    track(request, 'otu_export_BIOM', search_params_track_args(params))
+
     zf = biom_zip_file_generator(params, timestamp)
     response = StreamingHttpResponse(zf, content_type='application/zip')
     filename = params.filename(timestamp, '.biom.zip')
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+
     return response
 
 
@@ -992,10 +943,24 @@ def otu_export(request):
     """
     timestamp = make_timestamp()
     params, errors = param_to_filters(request.GET['q'])
-    zf = tabular_zip_file_generator(params, request.GET['only_contextual'])
+    only_contextual = request.GET['only_contextual']
+
+    # many endpoints make use of this, so determine the purpose
+    if only_contextual == 't':
+        if params.contextual_filter.metagenome_only:
+            event = 'otu_export_CSV_only_contextual_metagenome'
+        else:
+            event = 'otu_export_CSV_only_contextual'
+    else:
+        event = 'otu_export_CSV'
+
+    track(request, event, search_params_track_args(params))
+
+    zf = tabular_zip_file_generator(params, only_contextual)
     response = StreamingHttpResponse(zf, content_type='application/zip')
     filename = params.filename(timestamp, '-csv.zip')
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+
     return response
 
 
@@ -1084,12 +1049,13 @@ def submit_blast(request):
 
         search_string = normalise_blast_search_string(request.POST['search_string'])
         blast_params_string = request.POST['blast_params']
-        params_object = json.loads(blast_params_string)
 
         submission_id = tasks.submit_blast(
             search_string,
             blast_params_string,
             request.POST['query'])
+
+        track(request, 'otu_blast_search', { 'blast_params': json.loads(blast_params_string) })
 
         return JsonResponse({
             'success': True,
@@ -1133,6 +1099,8 @@ def submit_comparison(request):
             raise OTUError(*errors)
 
         submission_id = tasks.submit_sample_comparison(request.POST['query'])
+
+        track(request, 'otu_sample_comparison', search_params_track_args(params))
 
         return JsonResponse({
             'success': True,
@@ -1361,6 +1329,8 @@ def contextual_csv_download_endpoint(request):
 
     header = ['sample_id', 'bpa_project'] + additional_headers
 
+    track(request, 'otu_export_contextual_CSV', { 'columns': sorted(additional_headers) })
+
     file_buffer = io.StringIO()
     csv_writer = csv.writer(file_buffer)
 
@@ -1483,6 +1453,8 @@ def metagenome_request(request):
             request_id=request_id
         )
 
+        track(request, 'otu_request_metagenome_files')
+
         am_email ="Australian Microbiome Data Requests <{}>".format(to_email)
 
         template = loader.get_template('mg-ack-email.txt')
@@ -1513,3 +1485,37 @@ def get_active_celery_tasks():
     inspector = current_app.control.inspect()
     active_tasks = inspector.active()
     return [task for tasks in active_tasks.values() for task in tasks]
+
+def track(request, event, args=None):
+    """Tracks an event in Mixpanel if enabled."""
+    if mp:
+        try:
+            email = request.ckan_data['email']
+            ident = hash_ckan_email(email)
+            mp.track(ident, event, args or {})
+        except Exception as e:
+            print(f"Mixpanel tracking failed: {e}")
+    else:
+        print("Mixpanel not configured, event not tracked.")
+
+def hash_ckan_email(email):
+    """
+    Hashes the email using SHA-256 with a salt; this is a one-way operation so PII not collected
+    
+    :param identify: Function to handle the hashed identifier.
+    :param email: User email to be hashed.
+    """
+    hash_salt = "d260c5eb-055b-4640-966d-1f657aec34b4"
+    email_lower = email.strip().lower()
+    hash_input = (email_lower + hash_salt).encode("utf-8")
+    hashed = hashlib.sha256(hash_input).digest()
+    hashed_email = hashed.hex()
+
+    return hashed_email
+
+def search_params_track_args(params):
+    return {
+        'search_taxonomy_filter': params.taxonomy_filter.to_dict(),
+        'search_contextual_filter': params.contextual_filter.to_dict(),
+        'search_sample_integrity_warnings_filter': params.sample_integrity_warnings_filter.to_dict(),
+    }

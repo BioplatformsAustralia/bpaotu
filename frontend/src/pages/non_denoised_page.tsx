@@ -28,7 +28,7 @@ const NonDenoisedPage = (props) => {
   const [matchSequence, setMatchSequence] = useState('')
   const [taxonomyString, setTaxonomyString] = useState('')
 
-  const { page, track } = useAnalytics()
+  const { page } = useAnalytics()
 
   // track page visit only on first render
   useEffect(() => {
@@ -36,8 +36,6 @@ const NonDenoisedPage = (props) => {
   }, [page])
 
   const submit = () => {
-    track('otu_nondenoised_data_request')
-
     nondenoisedDataRequest(selectedAmplicon, selectedSamples, matchSequence, taxonomyString).then(
       (data) => {
         setSubmitted(true)
