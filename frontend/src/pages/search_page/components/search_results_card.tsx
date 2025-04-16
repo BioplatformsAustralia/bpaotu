@@ -10,6 +10,7 @@ import { ExportDataButton } from 'components/export_data_button'
 import { describeSearch } from '../reducers/search'
 import { clearGalaxyAlert, submitToGalaxy, workflowOnGalaxy } from '../reducers/submit_to_galaxy'
 import { clearTips, showPhinchTip } from '../reducers/tips'
+import { openKronaModal } from '../reducers/krona_modal'
 import { openMetagenomeModal, openMetagenomeModalSearch } from '../reducers/metagenome_modal'
 import { GalaxySubmission } from '../reducers/types'
 
@@ -20,6 +21,7 @@ import SamplesMapModal from './samples_map_modal'
 import SamplesGraphModal from './samples_graph_modal'
 import SamplesComparisonModal from './samples_comparison_modal'
 import MetagenomeModal from './metagenome_modal'
+import KronaModal from './krona_modal'
 import SearchResultsTable from './search_results_table'
 
 const wrapText = (text) => ({ __html: text })
@@ -42,7 +44,21 @@ const AlertBoxes = (props) => (
 const cell_button = (cell_props, openMetagenomeModal) => (
   <Button
     onClick={() => {
+      console.log('cell_button', 'cell_props', cell_props)
+      console.log('cell_button', 'openMetagenomeModal', openMetagenomeModal)
       openMetagenomeModal(cell_props.row.sample_id)
+    }}
+  >
+    {cell_props.value}
+  </Button>
+)
+
+const krona_button = (cell_props, openKronaModal) => (
+  <Button
+    onClick={() => {
+      console.log('krona_button', 'cell_props', cell_props)
+      console.log('krona_button', 'openKronaModal', openKronaModal)
+      openKronaModal(cell_props.row.sample_id)
     }}
   >
     {cell_props.value}
@@ -135,7 +151,10 @@ const _SearchResultsCard = (props) => {
         <CardBody>
           <AlertBoxes alerts={props.galaxy.alerts} clearAlerts={props.clearGalaxyAlert} />
           <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
-          <SearchResultsTable metagenome={props.metaxaAmpliconSelected} />
+          <SearchResultsTable
+            metagenome={props.metaxaAmpliconSelected}
+            krona_func={(cell_props) => krona_button(cell_props, props.openKronaModal)}
+          />
         </CardBody>
       </Card>
 
@@ -143,6 +162,7 @@ const _SearchResultsCard = (props) => {
       <SamplesMapModal />
       <SamplesGraphModal />
       <SamplesComparisonModal />
+      <KronaModal />
     </div>
   )
 }
@@ -177,6 +197,7 @@ const _MetagenomeSearchResultsCard = (props) => {
           <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
           <SearchResultsTable
             cell_func={(cell_props) => cell_button(cell_props, props.openMetagenomeModal)}
+            krona_func={(cell_props) => krona_button(cell_props, props.openKronaModal)}
             metagenome={true}
           />
         </CardBody>
@@ -186,6 +207,7 @@ const _MetagenomeSearchResultsCard = (props) => {
       <SamplesMapModal />
       <SamplesGraphModal />
       <SamplesComparisonModal />
+      <KronaModal />
       <MetagenomeModal />
     </div>
   )
@@ -215,6 +237,7 @@ function mapDispatchToProps(dispatch) {
       clearGalaxyAlert,
       clearTips,
       showPhinchTip,
+      openKronaModal,
     },
     dispatch
   )

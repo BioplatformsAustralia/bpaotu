@@ -117,6 +117,23 @@ def sample_otu_csv_rows(taxonomy_labels, ids_to_names, q):
         fd.seek(0)
         fd.truncate(0)
 
+# slightly different requirements to the otu export:
+# - this does not need the OTU code, instead we can use OTU id (from sample_otu.otu_id)
+# - tsv instead of csv
+def sample_otu_tsv_rows_krona(taxonomy_labels, ids_to_names, q):
+    fd = io.StringIO()
+    w = csv.writer(fd, delimiter='\t')
+    w.writerow(['OTU Count'] + list(taxonomy_labels))
+    yield fd.getvalue().encode('utf8')
+    fd.seek(0)
+    fd.truncate(0)
+
+    for row in q.yield_per(50):
+        w.writerow([row.SampleOTU.count] + ids_to_names(row.Taxonomy))
+        yield fd.getvalue().encode('utf8')
+        fd.seek(0)
+        fd.truncate(0)
+
 def sanitise(filename):
     return re.sub(r'[\W]+', '-', filename)
 
@@ -155,14 +172,12 @@ def tabular_zip_file_generator(params, onlyContextual):
             taxonomy_labels = taxonomy_labels_by_source[taxonomy_source_id]
 
             ontology_attrs = ['amplicon_id'] + taxonomy_key_id_names[1:len(taxonomy_labels) +1]
-            ontology_lookup_fns = {name: _csv_write_function(getattr(Taxonomy, name))
-                                   for name in ontology_attrs}
+            ontology_lookup_fns = {name: _csv_write_function(getattr(Taxonomy, name)) for name in ontology_attrs}
 
             q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU)
 
             def ids_to_names(taxonomy):
-                return [ontology_lookup_fns[name](getattr(taxonomy, name))
-                        for name in ontology_attrs]
+                return [ontology_lookup_fns[name](getattr(taxonomy, name)) for name in ontology_attrs]
 
             if rank1_id_is_value is None: # not selecting a specific kingdom
                 # get the rank1 possibilities (domain/kingdom) for the amplicon in this query
@@ -188,6 +203,42 @@ def tabular_zip_file_generator(params, onlyContextual):
                 )
         return zf
 
+import tempfile
+import os
+
+def krona_source_data_generator(params, sample_id):
+    # TODO: to a celery task?
+    # TODO: just use amplicon from params
+    # TODO: process file through KronaTools
+
+    tmpdir = tempfile.mkdtemp()
+    krona_source_data_filename = os.path.join(tmpdir, "krona.csv") # or tsv?
+
+    taxonomy_source_id = params.taxonomy_filter.get_rank_equality_value(0)
+    assert taxonomy_source_id != None
+
+    amplicon_id = params.taxonomy_filter.amplicon_filter["value"]
+    assert amplicon_id != None
+
+    with SampleQuery(params) as query, OntologyInfo() as info, TaxonomyOptions() as options:
+        taxonomy_labels_by_source = info.get_taxonomy_labels()
+        taxonomy_labels = taxonomy_labels_by_source[taxonomy_source_id]
+
+        ontology_attrs = taxonomy_key_id_names[1:len(taxonomy_labels) +1]
+        ontology_lookup_fns = {name: _csv_write_function(getattr(Taxonomy, name)) for name in ontology_attrs}
+
+        q = query.matching_sample_otus_krona(sample_id, amplicon_id, taxonomy_source_id)
+
+        def ids_to_names(taxonomy):
+            return [ontology_lookup_fns[name](getattr(taxonomy, name)) for name in ontology_attrs]
+
+        with open(krona_source_data_filename, 'wb') as file:
+            for chunk in sample_otu_tsv_rows_krona(taxonomy_labels, ids_to_names, q):
+                file.write(chunk)
+
+    print('krona_source_data_filename', krona_source_data_filename)
+
+    return krona_source_data_filename
 
 def info_text(params):
     return """\

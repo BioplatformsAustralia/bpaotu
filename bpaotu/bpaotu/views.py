@@ -174,6 +174,7 @@ def api_config(request):
         'execute_workflow_on_galaxy_endpoint': reverse('execute_workflow_on_galaxy'),
         'galaxy_submission_endpoint': reverse('galaxy_submission'),
         'nondenoised_request_endpoint': reverse('nondenoised_request'),
+        'krona_request_endpoint': reverse('krona_request'),
         'submit_blast_endpoint': reverse('submit_blast'),
         'blast_submission_endpoint': reverse('blast_submission'),
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
@@ -778,6 +779,48 @@ def nondenoised_request(request):
         NONDENOISED_EMAIL_TEMPLATE.format(**attrs),
         "Australian Microbiome Data Requests <am-data-requests@bioplatforms.com>", [settings.NONDENOISED_REQUEST_EMAIL])
     return JsonResponse({'okay': True})
+
+
+from .tabular import krona_source_data_generator
+
+@require_CKAN_auth
+@require_POST
+def krona_request(request):
+    params, errors = param_to_filters(request.POST['query'])
+
+    sample_id = request.POST['sample_id'].strip('"')
+    if not sample_id:
+        return JsonResponse({'error': 'sample_id is required as param'}, status=400)
+
+    amplicon_id = params.taxonomy_filter.amplicon_filter.get('value')
+    if not amplicon_id:
+        return JsonResponse({'error': 'amplicon_id is required in taxonomy_filter'}, status=400)
+
+    taxonomy_source_id = params.taxonomy_filter.get_rank_equality_value(0)
+    if not taxonomy_source_id:
+        return JsonResponse({'error': 'taxonomy_source_id is required in taxonomy_filter'}, status=400)
+
+    # save krona.csv to a tmpdir
+    csv_filename = krona_source_data_generator(params, sample_id)
+
+    # run KronaTools and save to same tmpdir
+    import subprocess
+    html_filename = f'{csv_filename}.html'
+    subprocess.run(['ktImportText', html_filename], check=True)
+
+    # Read the contents of the generated HTML file
+    with open(html_filename, 'r') as file:
+        html = file.read()
+
+    krona_params_hash = {
+       'sample_id': sample_id,
+       'amplicon_id': amplicon_id,
+       'taxonomy_source_id': taxonomy_source_id,
+    }
+
+    track(request, "otu_krona_request", krona_params_hash)
+
+    return JsonResponse({ 'sample_id': sample_id, 'html': html })
 
 
 @require_CKAN_auth

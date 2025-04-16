@@ -98,6 +98,12 @@ export interface PageState {
     }
     timestamps: any[]
   }
+  kronaModal: {
+    isLoading: boolean
+    isOpen: boolean
+    sample_id: string
+    error: string
+  }
   metagenomeModal: {
     isLoading: boolean
     isOpen: boolean
@@ -192,6 +198,12 @@ export const searchPageInitialState: PageState = {
     plotData: { jaccard: [], braycurtis: [] },
     mem_usage: { mem: '', swap: '', cpu: '' },
     timestamps: [],
+  },
+  kronaModal: {
+    isOpen: false,
+    isLoading: false,
+    sample_id: '',
+    error: '',
   },
   metagenomeModal: {
     isOpen: false,
