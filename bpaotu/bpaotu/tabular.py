@@ -19,6 +19,7 @@ from .query import (
     SampleQuery,
     TaxonomyOptions)
 import io
+import os
 import csv
 import logging
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
@@ -203,22 +204,8 @@ def tabular_zip_file_generator(params, onlyContextual):
                 )
         return zf
 
-import tempfile
-import os
-
-def krona_source_data_generator(params, sample_id):
-    # TODO: to a celery task?
-    # TODO: just use amplicon from params
-    # TODO: process file through KronaTools
-
-    tmpdir = tempfile.mkdtemp()
-    krona_source_data_filename = os.path.join(tmpdir, "krona.csv") # or tsv?
-
-    taxonomy_source_id = params.taxonomy_filter.get_rank_equality_value(0)
-    assert taxonomy_source_id != None
-
-    amplicon_id = params.taxonomy_filter.amplicon_filter["value"]
-    assert amplicon_id != None
+def krona_source_data_generator(tmpdir, params, sample_id, amplicon_id, taxonomy_source_id):
+    krona_source_data_filename = os.path.join(tmpdir, "krona.tsv")
 
     with SampleQuery(params) as query, OntologyInfo() as info, TaxonomyOptions() as options:
         taxonomy_labels_by_source = info.get_taxonomy_labels()
@@ -235,8 +222,6 @@ def krona_source_data_generator(params, sample_id):
         with open(krona_source_data_filename, 'wb') as file:
             for chunk in sample_otu_tsv_rows_krona(taxonomy_labels, ids_to_names, q):
                 file.write(chunk)
-
-    print('krona_source_data_filename', krona_source_data_filename)
 
     return krona_source_data_filename
 

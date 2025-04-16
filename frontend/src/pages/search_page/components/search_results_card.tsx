@@ -56,8 +56,6 @@ const cell_button = (cell_props, openMetagenomeModal) => (
 const krona_button = (cell_props, openKronaModal) => (
   <Button
     onClick={() => {
-      console.log('krona_button', 'cell_props', cell_props)
-      console.log('krona_button', 'openKronaModal', openKronaModal)
       openKronaModal(cell_props.row.sample_id)
     }}
   >

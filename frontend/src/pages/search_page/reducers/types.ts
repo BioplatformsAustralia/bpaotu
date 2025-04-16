@@ -102,6 +102,7 @@ export interface PageState {
     isLoading: boolean
     isOpen: boolean
     sample_id: string
+    html: string
     error: string
   }
   metagenomeModal: {
@@ -203,6 +204,7 @@ export const searchPageInitialState: PageState = {
     isOpen: false,
     isLoading: false,
     sample_id: '',
+    html: '',
     error: '',
   },
   metagenomeModal: {

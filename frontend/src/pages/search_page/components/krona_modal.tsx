@@ -13,44 +13,51 @@ import {
   FormGroup,
   Alert,
 } from 'reactstrap'
+import SanitizedHTML from 'react-sanitized-html'
 
 import AnimateHelix, { loadingstyle } from 'components/animate_helix'
-import { Tutorial, stepsStyle } from 'components/tutorial'
-import { TourContext } from 'providers/tour_provider'
 
 import { runKronaRequest, closeKronaModal } from '../reducers/krona_modal'
 
-const InfoBox = (props) => (
-  <div
-    className="alert-secondary btn-sm"
-    style={{
-      display: 'inline-block',
-      marginRight: '1em',
-      borderWidth: '1px',
-      borderStyle: 'solid',
-    }}
-  >
-    {props.children}
-  </div>
-)
+const ErrorOverlay = ({ errors }) => {
+  const loadingstyle = {
+    display: 'flex',
+    height: '100%',
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    background: 'rgba(0,0,0,0.4)',
+    zIndex: 99999,
+  } as React.CSSProperties
+
+  return (
+    <div style={loadingstyle}>
+      <Alert color="danger">
+        <h4 className="alert-heading">Error</h4>
+        <ul>
+          {errors.map((err, idx) => (
+            <li key={idx}>
+              <SanitizedHTML allowedTags={['b', 'br', 'em']} html={err} />
+            </li>
+          ))}
+        </ul>
+      </Alert>
+      {/*</div>*/}
+    </div>
+  )
+}
 
 const KronaModal = (props) => {
-  const [selected, setSelected] = useState({})
+  const { isLoading, isOpen, runKronaRequest, sample_id, html, error } = props
 
-  console.log('KronaModal', 'props', props)
-
-  const { isLoading, runKronaRequest, sample_id } = props
-
-  const handleSubmit = (event) => {
-    runKronaRequest(sample_id)
-
-    // .then((response) => {
-    //   console.log('handleSubmit', 'response', response)
-    // })
-    // .catch((error) => {
-    //   console.log('handleSubmit', 'error', error)
-    // })
-  }
+  useEffect(() => {
+    if (isOpen) {
+      runKronaRequest(sample_id)
+    }
+  }, [isOpen, runKronaRequest, sample_id])
 
   const closeModal = () => {
     props.closeKronaModal()
@@ -58,21 +65,57 @@ const KronaModal = (props) => {
 
   const modalBody = () => {
     return (
-      <div>
-        <Button type="button" onClick={handleSubmit} color="primary">
-          Run
-        </Button>
-        <p>isLoading: {isLoading.toString()}</p>
-        <p>sample id: {sample_id}</p>
+      <div style={{ width: '100%', height: '100%' }}>
+        {error ? (
+          <ErrorOverlay errors={[error]} />
+        ) : isLoading ? (
+          <div style={loadingstyle}>
+            <AnimateHelix />
+          </div>
+        ) : (
+          <iframe
+            id="krona-html"
+            srcDoc={html}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            title="Krona Plot"
+          ></iframe>
+        )}
       </div>
     )
   }
 
   const modalFooter = () => {
     return (
-      <Button type="button" onClick={closeModal} color="primary">
-        Close
-      </Button>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%',
+        }}
+      >
+        {isLoading ? (
+          <div></div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>
+            <p style={{ margin: '0', fontSize: '0.8rem' }}>
+              <a href="https://github.com/marbl/Krona/wiki" target="_blank">
+                KronaTools
+              </a>
+            </p>
+            <p style={{ margin: '0', fontSize: '0.8rem' }}>
+              <a href="https://github.com/marbl/Krona/wiki/How-to-cite" target="_blank">
+                How to cite
+              </a>
+            </p>
+          </div>
+        )}
+        <div>
+          <Button type="button" onClick={closeModal} color="primary">
+            Close
+          </Button>
+        </div>
+      </div>
     )
   }
 
@@ -89,7 +132,7 @@ const KronaModal = (props) => {
         data-tut="reactour__CloseKronaPlotModal"
         id="CloseKronaPlotModal"
       >
-        Krona Plots
+        Krona Plot (Sample ID: {sample_id})
       </ModalHeader>
       <ModalBody style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         {modalBody()}
@@ -100,14 +143,13 @@ const KronaModal = (props) => {
 }
 
 const mapStateToProps = (state) => {
-  const { isOpen, isLoading, sample_id, error } = state.searchPage.kronaModal
-
-  console.log('mapStateToProps', 'state.searchPage.kronaModal', state.searchPage.kronaModal)
+  const { isOpen, isLoading, sample_id, html, error } = state.searchPage.kronaModal
 
   return {
     isOpen,
     isLoading,
     sample_id,
+    html,
     error,
   }
 }
@@ -123,73 +165,3 @@ const mapDispatchToProps = (dispatch) => {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(KronaModal as any)
-
-// const steps = [
-//   {
-//     selector: '[data-tut="reactour__KronaPlotModal"]',
-//     content: () => {
-//       return (
-//         <div>
-//           <h4>Krona Plots</h4>
-//           <p>
-//             TODO.
-//           </p>
-//         </div>
-//       )
-//     },
-//     style: stepsStyle,
-//     position: [60, 100],
-//   },
-// ]
-
-/*      <Tutorial
-        steps={steps}
-        isOpen={isRequestSubtourOpen}
-        showCloseButton={false}
-        showNumber={false}
-        onRequestClose={() => {
-          setIsRequestSubtourOpen(false)
-          setIsMainTourOpen(true)
-          const node = document.getElementById('CloseKronaPlotModal')
-          const closeButton = node.querySelector('.close')
-          if (closeButton instanceof HTMLElement) {
-            closeButton.click()
-          }
-        }}
-        lastStepNextButton="Back to Tutorial"
-      />*/
-
-// const {
-//   isMainTourOpen,
-//   setIsMainTourOpen,
-//   mainTourStep,
-//   setMainTourStep,
-//   isRequestSubtourOpen,
-//   setIsRequestSubtourOpen,
-// } = useContext(TourContext)
-
-// useEffect(() => {
-//   if (props.isOpen) {
-//     if (isMainTourOpen) {
-//       setIsMainTourOpen(false)
-//       setIsRequestSubtourOpen(true)
-//     }
-//   } else {
-//     if (isRequestSubtourOpen) {
-//       setIsMainTourOpen(true)
-//       setIsRequestSubtourOpen(false)
-//       // Note: we don't auto increment the mainTourStep when closing modal subtour (like for other subtours)
-//       // because the tour steps that launch this subtour has lots of text and users might click the
-//       // 'Request all' or 'Request on' buttons before finishing reading them all
-//       setMainTourStep(mainTourStep)
-//     }
-//   }
-// }, [
-//   props,
-//   isMainTourOpen,
-//   isRequestSubtourOpen,
-//   setIsMainTourOpen,
-//   setIsRequestSubtourOpen,
-//   mainTourStep,
-//   setMainTourStep,
-// ])

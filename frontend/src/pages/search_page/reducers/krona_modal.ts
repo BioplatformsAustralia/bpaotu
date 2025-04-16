@@ -30,7 +30,7 @@ export const runKronaRequest = (sampleId) => (dispatch, getState) => {
       dispatch(runKronaEnded(data))
     })
     .catch((error) => {
-      dispatch(runKronaEnded(new ErrorList('Unhandled server-side error!')))
+      dispatch(runKronaEnded(error))
     })
 }
 
@@ -48,19 +48,22 @@ export default handleActions(
           return {
             ...state,
             isLoading: false,
-            error: `${response.status}: ${response.statusText}. ${response.data}`,
+            error: `${response.statusText}. ${response.data.error}`,
+            html: '',
           }
         }
         return {
           ...state,
           isLoading: false,
           error: '',
+          html: action.payload.data.html,
         }
       } catch (e) {
         return {
           ...state,
           isLoading: false,
           error: e.toString(),
+          html: '',
         }
       }
     },

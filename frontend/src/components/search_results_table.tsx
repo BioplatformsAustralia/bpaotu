@@ -93,7 +93,7 @@ export class SearchResultsTable extends React.Component<any> {
   ]
 
   public kronaColumn = {
-    Header: () => <div>Krona</div>,
+    Header: () => <div>Krona Plot</div>,
     accessor: 'sample_id',
     sortable: true,
     Cell: this.props.krona_func,

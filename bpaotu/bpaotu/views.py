@@ -8,6 +8,8 @@ import json
 import logging
 import os
 import re
+import subprocess
+import tempfile
 import time
 from collections import OrderedDict, defaultdict
 from functools import wraps
@@ -800,28 +802,31 @@ def krona_request(request):
     if not taxonomy_source_id:
         return JsonResponse({'error': 'taxonomy_source_id is required in taxonomy_filter'}, status=400)
 
-    # save krona.csv to a tmpdir
-    csv_filename = krona_source_data_generator(params, sample_id)
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # save krona.tsv to a tmpdir
+            tsv_filename = krona_source_data_generator(tmpdir, params, sample_id, amplicon_id, taxonomy_source_id)
 
-    # run KronaTools and save to same tmpdir
-    import subprocess
-    html_filename = f'{csv_filename}.html'
-    subprocess.run(['ktImportText', html_filename], check=True)
+            # run KronaTools on tsv and save to same tmpdir
+            html_filename = f'{tsv_filename}.html'
+            subprocess.run(['ktImportText', '-o', html_filename, tsv_filename], check=True)
 
-    # Read the contents of the generated HTML file
-    with open(html_filename, 'r') as file:
-        html = file.read()
+            # read the contents of the generated HTML file and return in response
+            with open(html_filename, 'r') as file:
+                html = file.read()
 
-    krona_params_hash = {
-       'sample_id': sample_id,
-       'amplicon_id': amplicon_id,
-       'taxonomy_source_id': taxonomy_source_id,
-    }
+            krona_params_hash = {
+                'sample_id': sample_id,
+                'amplicon_id': amplicon_id,
+                'taxonomy_source_id': taxonomy_source_id,
+            }
 
-    track(request, "otu_krona_request", krona_params_hash)
+            track(request, "otu_krona_request", krona_params_hash)
 
-    return JsonResponse({ 'sample_id': sample_id, 'html': html })
+            return JsonResponse({'sample_id': sample_id, 'html': html})
 
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 @require_CKAN_auth
 @require_POST
