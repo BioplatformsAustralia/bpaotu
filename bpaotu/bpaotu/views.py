@@ -794,7 +794,7 @@ def krona_request(request):
     krona = KronaPlot(params, sample_id)
     html, krona_params_hash = krona.produce_krona_html()
 
-    track(request, "otu_krona_request", krona_params_hash)
+    track(request, "otu_krona_plot_request", krona_params_hash)
 
     return JsonResponse({ "sample_id": sample_id, "html": html })
 
