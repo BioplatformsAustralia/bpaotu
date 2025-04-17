@@ -94,7 +94,7 @@ const KronaModal = (props) => {
           width: '100%',
         }}
       >
-        {isLoading ? (
+        {isLoading || error ? (
           <div></div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>

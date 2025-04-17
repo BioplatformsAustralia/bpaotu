@@ -118,8 +118,9 @@ def sample_otu_csv_rows(taxonomy_labels, ids_to_names, q):
         fd.seek(0)
         fd.truncate(0)
 
-# slightly different requirements to the otu export:
-# - this does not need the OTU code, instead we can use OTU id (from sample_otu.otu_id)
+# different requirements to the otu csv export:
+# - does not need the OTU code (so it is not included in the query)
+# - does not need count and amplicon fields
 # - tsv instead of csv
 def sample_otu_tsv_rows_krona(taxonomy_labels, ids_to_names, q):
     fd = io.StringIO()
@@ -204,8 +205,12 @@ def tabular_zip_file_generator(params, onlyContextual):
                 )
         return zf
 
-def krona_source_data_generator(tmpdir, params, sample_id, amplicon_id, taxonomy_source_id):
+def krona_source_file_generator(tmpdir, params, krona_params_hash):
     krona_source_data_filename = os.path.join(tmpdir, "krona.tsv")
+
+    sample_id = krona_params_hash['sample_id']
+    amplicon_id = krona_params_hash['amplicon_id']
+    taxonomy_source_id = krona_params_hash['taxonomy_source_id']
 
     with SampleQuery(params) as query, OntologyInfo() as info, TaxonomyOptions() as options:
         taxonomy_labels_by_source = info.get_taxonomy_labels()

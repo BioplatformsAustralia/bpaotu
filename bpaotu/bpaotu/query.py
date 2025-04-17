@@ -583,6 +583,8 @@ class SampleQuery:
         # log_query(q)
         return q
 
+    # note: does not actually use the usual params in q
+    # (since this function is passed them explicitly because they are needed upstream)
     def matching_sample_otus_krona(self, sample_id, amplicon_id, taxonomy_source_id):
         q = self._session\
                 .query(SampleOTU, Taxonomy)\
@@ -592,25 +594,7 @@ class SampleQuery:
                 .filter(Taxonomy.amplicon_id == amplicon_id)\
                 .filter(Taxonomy.taxonomy_source_id == taxonomy_source_id)
 
-                # .query(
-                #     SampleOTU.sample_id,
-                #     SampleOTU.otu_id,
-                #     SampleOTU.count,
-                #     # SampleOTU.count_20k,
-                #     Taxonomy.amplicon_id,
-                #     Taxonomy.taxonomy_source_id,
-                #     Taxonomy.r1_id,
-                #     Taxonomy.r2_id,
-                #     Taxonomy.r3_id,
-                #     Taxonomy.r4_id,
-                #     Taxonomy.r5_id,
-                #     Taxonomy.r6_id,
-                #     Taxonomy.r7_id,
-                #     Taxonomy.r8_id,
-                #     # Taxonomy.traits
-                # )\
-
-        log_query(q)
+        # log_query(q)
         return q
 
     def apply_sample_otu_filters(self, q):

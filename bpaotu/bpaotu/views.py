@@ -50,7 +50,7 @@ from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilter
                     SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
 from .spatial import comparison_query, spatial_query
-from .tabular import tabular_zip_file_generator
+from .tabular import krona_source_file_generator, tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_time, parse_float, log_msg, mem_usage_obj
 
 from sklearn.manifold import MDS
@@ -783,50 +783,40 @@ def nondenoised_request(request):
     return JsonResponse({'okay': True})
 
 
-from .tabular import krona_source_data_generator
-
 @require_CKAN_auth
 @require_POST
 def krona_request(request):
     params, errors = param_to_filters(request.POST['query'])
 
-    sample_id = request.POST['sample_id'].strip('"')
+    sample_id = request.POST["sample_id"].strip('"')
     if not sample_id:
-        return JsonResponse({'error': 'sample_id is required as param'}, status=400)
+        return JsonResponse({ "error": "sample_id is required as param" }, status=400)
 
-    amplicon_id = params.taxonomy_filter.amplicon_filter.get('value')
-    if not amplicon_id:
-        return JsonResponse({'error': 'amplicon_id is required in taxonomy_filter'}, status=400)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # because the only relevant fields are sample_id, amplicon_id, taxonomy_source_id
+        # just extract them manually for the source data and track functions
+        amplicon_id = params.taxonomy_filter.amplicon_filter.get("value")
+        taxonomy_source_id = params.taxonomy_filter.get_rank_equality_value(0)
+        krona_params_hash = {
+            "sample_id": sample_id,
+            "amplicon_id": amplicon_id,
+            "taxonomy_source_id": taxonomy_source_id,
+        }
 
-    taxonomy_source_id = params.taxonomy_filter.get_rank_equality_value(0)
-    if not taxonomy_source_id:
-        return JsonResponse({'error': 'taxonomy_source_id is required in taxonomy_filter'}, status=400)
+        # saves krona.tsv to a tmpdir and returns the filename/path
+        tsv_filename = krona_source_file_generator(tmpdir, params, krona_params_hash)
 
-    try:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            # save krona.tsv to a tmpdir
-            tsv_filename = krona_source_data_generator(tmpdir, params, sample_id, amplicon_id, taxonomy_source_id)
+        # run KronaTools on tsv and save html output file to same tmpdir
+        html_filename = f"{tsv_filename}.html"
+        subprocess.run(["ktImportText", "-o", html_filename, tsv_filename], check=True)
 
-            # run KronaTools on tsv and save to same tmpdir
-            html_filename = f'{tsv_filename}.html'
-            subprocess.run(['ktImportText', '-o', html_filename, tsv_filename], check=True)
+        # read the contents of the generated HTML file and return directly in response
+        with open(html_filename, "r") as file:
+            html = file.read()
 
-            # read the contents of the generated HTML file and return in response
-            with open(html_filename, 'r') as file:
-                html = file.read()
+        track(request, "otu_krona_request", krona_params_hash)
 
-            krona_params_hash = {
-                'sample_id': sample_id,
-                'amplicon_id': amplicon_id,
-                'taxonomy_source_id': taxonomy_source_id,
-            }
-
-            track(request, "otu_krona_request", krona_params_hash)
-
-            return JsonResponse({'sample_id': sample_id, 'html': html})
-
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({ "sample_id": sample_id, "html": html })
 
 @require_CKAN_auth
 @require_POST
