@@ -8,8 +8,6 @@ import json
 import logging
 import os
 import re
-import subprocess
-import tempfile
 import time
 from collections import OrderedDict, defaultdict
 from functools import wraps
@@ -39,6 +37,7 @@ from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .importer import DataImporter
+from .krona import KronaPlot
 from .models import NonDenoisedDataRequest, MetagenomeRequest
 from .otu import (Environment, OTUAmplicon, SampleContext, TaxonomySource, format_taxonomy_name)
 from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilterTermTime,
@@ -50,7 +49,7 @@ from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilter
                     SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
 from .spatial import comparison_query, spatial_query
-from .tabular import krona_source_file_generator, tabular_zip_file_generator
+from .tabular import tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_time, parse_float, log_msg, mem_usage_obj
 
 from sklearn.manifold import MDS
@@ -792,31 +791,12 @@ def krona_request(request):
     if not sample_id:
         return JsonResponse({ "error": "sample_id is required as param" }, status=400)
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # because the only relevant fields are sample_id, amplicon_id, taxonomy_source_id
-        # just extract them manually for the source data and track functions
-        amplicon_id = params.taxonomy_filter.amplicon_filter.get("value")
-        taxonomy_source_id = params.taxonomy_filter.get_rank_equality_value(0)
-        krona_params_hash = {
-            "sample_id": sample_id,
-            "amplicon_id": amplicon_id,
-            "taxonomy_source_id": taxonomy_source_id,
-        }
+    krona = KronaPlot(params, sample_id)
+    html, krona_params_hash = krona.produce_krona_html()
 
-        # saves krona.tsv to a tmpdir and returns the filename/path
-        tsv_filename = krona_source_file_generator(tmpdir, params, krona_params_hash)
+    track(request, "otu_krona_request", krona_params_hash)
 
-        # run KronaTools on tsv and save html output file to same tmpdir
-        html_filename = f"{tsv_filename}.html"
-        subprocess.run(["ktImportText", "-o", html_filename, tsv_filename], check=True)
-
-        # read the contents of the generated HTML file and return directly in response
-        with open(html_filename, "r") as file:
-            html = file.read()
-
-        track(request, "otu_krona_request", krona_params_hash)
-
-        return JsonResponse({ "sample_id": sample_id, "html": html })
+    return JsonResponse({ "sample_id": sample_id, "html": html })
 
 @require_CKAN_auth
 @require_POST
