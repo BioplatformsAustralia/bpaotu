@@ -4,7 +4,6 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { Alert, Button, Card, CardBody, CardHeader } from 'reactstrap'
 
-import { useAnalytics } from 'use-analytics'
 import { ExportDataButton } from 'components/export_data_button'
 
 import { describeSearch } from '../reducers/search'
@@ -74,8 +73,6 @@ const download = (baseURL, props, onlyContextual = false) => {
 }
 
 const _SearchResultsCard = (props) => {
-  const { track } = useAnalytics()
-
   const isGalaxySubmissionDisabled = () => {
     if (props.galaxy.isSubmitting) {
       return true
@@ -166,8 +163,6 @@ const _SearchResultsCard = (props) => {
 }
 
 const _MetagenomeSearchResultsCard = (props) => {
-  const { track } = useAnalytics()
-
   const exportCSVOnlyContextualMetagenome = () => {
     download(window.otu_search_config.export_endpoint, props, true)
   }

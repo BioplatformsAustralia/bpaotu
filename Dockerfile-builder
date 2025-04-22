@@ -39,12 +39,12 @@ RUN pip install --upgrade -r requirements/runtime-requirements.txt \
 && pip install --upgrade -r requirements/biom-requirements.txt \
 && cd "${WORKINGDIR}/${PROJECT_NAME}" && pip install .
 
-# Install KronaTools
-RUN git clone https://github.com/marbl/Krona.git /opt/Krona && \
-  cd /opt/Krona && \
-  git checkout v2.8.1 && \
-  cd /opt/Krona/KronaTools && \
-  ./install.pl
+# Install KronaTools in a path we include in the tar later
+RUN git clone https://github.com/marbl/Krona.git /data/app/krona && \
+    cd /data/app/krona && \
+    git checkout v2.8.1 && \
+    cd /data/app/krona/KronaTools && \
+    ./install.pl --prefix /app/krona
 
 ADD build/frontend.tgz /data/app/bpaotu/bpaotu/static/bpaotu
 
@@ -53,6 +53,7 @@ WORKDIR /data
 ENV ARTIFACTS env \
     app/docker-entrypoint.sh \
     app/uwsgi \
+    app/krona \
     app/${PROJECT_NAME}
 ENV TARBALL "/data/${PROJECT_NAME}-${BUILD_VERSION}.tar"
 ENV TAR_OPTS --exclude-vcs \

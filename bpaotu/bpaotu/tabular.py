@@ -22,6 +22,7 @@ import io
 import os
 import csv
 import logging
+import time
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
 from Bio.SeqRecord  import SeqRecord
@@ -208,6 +209,8 @@ def tabular_zip_file_generator(params, onlyContextual):
 def krona_source_file_generator(tmpdir, params, krona_params_hash):
     krona_source_data_filename = os.path.join(tmpdir, "krona.tsv")
 
+    time_start = time.time()
+
     sample_id = krona_params_hash['sample_id']
     amplicon_id = krona_params_hash['amplicon_id']
     taxonomy_source_id = krona_params_hash['taxonomy_source_id']
@@ -228,7 +231,10 @@ def krona_source_file_generator(tmpdir, params, krona_params_hash):
             for chunk in sample_otu_tsv_rows_krona(taxonomy_labels, ids_to_names, q):
                 file.write(chunk)
 
-    return krona_source_data_filename
+        time_end = time.time()
+        time_taken = round(time_end - time_start, 1)
+
+    return krona_source_data_filename, time_taken
 
 def info_text(params):
     return """\

@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { get as _get, isEmpty, map, reject } from 'lodash'
-import { Alert, Button, UncontrolledTooltip } from 'reactstrap'
+import { Alert, UncontrolledTooltip } from 'reactstrap'
 
 import Octicon from 'components/octicon'
 

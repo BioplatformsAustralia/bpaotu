@@ -1,8 +1,7 @@
-import { get as _get, partial } from 'lodash'
+import { get as _get } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
 
 import { executeKrona } from 'api'
-import { handleSimpleAPIResponse } from 'reducers/utils'
 
 import { searchPageInitialState, ErrorList } from './types'
 import { describeSearch } from './search'

@@ -30,11 +30,13 @@ class KronaPlot:
             }
 
             # saves krona.tsv to a tmpdir and returns the filename/path
-            tsv_filename = krona_source_file_generator(tmpdir, self.params, krona_params_hash)
+            tsv_filename, time_taken = krona_source_file_generator(tmpdir, self.params, krona_params_hash)
+            logger.info(f"Saved KronaPlot source data to {tsv_filename} in {time_taken}s")
 
             # run KronaTools on tsv and save html output file to same tmpdir
+            # we use this system call to the absolute path to avoid issue with installing KronaTools over a multi-stage docker build
             html_filename = f"{tsv_filename}.html"
-            kt_result = subprocess.run(["ktImportText", "-o", html_filename, tsv_filename], capture_output = True, text = True)
+            kt_result = subprocess.run(["perl", "/app/krona/KronaTools/scripts/ImportText.pl", "-o", html_filename, tsv_filename], capture_output = True, text = True)
 
             if kt_result.stdout:
                 logger.info(kt_result.stdout.rstrip("\n"))

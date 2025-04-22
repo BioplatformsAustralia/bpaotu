@@ -1,18 +1,7 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { isString, pickBy, keys, join, values, filter } from 'lodash'
+import React, { useEffect } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import {
-  Modal,
-  ModalBody,
-  ModalHeader,
-  ModalFooter,
-  Button,
-  Input,
-  Label,
-  FormGroup,
-  Alert,
-} from 'reactstrap'
+import { Alert, Button, Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
 import SanitizedHTML from 'react-sanitized-html'
 
 import AnimateHelix, { loadingstyle } from 'components/animate_helix'
@@ -99,12 +88,20 @@ const KronaModal = (props) => {
         ) : (
           <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>
             <p style={{ margin: '0', fontSize: '0.8rem' }}>
-              <a href="https://github.com/marbl/Krona/wiki" target="_blank">
+              <a
+                href="https://github.com/marbl/Krona/wiki"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 KronaTools
               </a>
             </p>
             <p style={{ margin: '0', fontSize: '0.8rem' }}>
-              <a href="https://github.com/marbl/Krona/wiki/How-to-cite" target="_blank">
+              <a
+                href="https://github.com/marbl/Krona/wiki/How-to-cite"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 How to cite
               </a>
             </p>

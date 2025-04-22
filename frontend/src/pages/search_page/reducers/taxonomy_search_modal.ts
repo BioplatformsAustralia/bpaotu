@@ -3,7 +3,6 @@ import { createActions, handleActions } from 'redux-actions'
 
 import { executeTaxonomySearch } from 'api'
 
-import { describeSearch } from './search'
 import { searchPageInitialState, ErrorList } from './types'
 
 export const {
