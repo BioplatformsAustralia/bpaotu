@@ -144,8 +144,8 @@ const SamplesComparisonModal = (props) => {
     plotData,
     contextualFilters,
     comparisonStatus,
-    mem_usage,
-    timestamps,
+    // mem_usage,
+    // timestamps,
     errors,
   } = props
 
@@ -204,7 +204,7 @@ const SamplesComparisonModal = (props) => {
         clearPlotData()
       }
     }
-  }, [isOpen, isLoading])
+  }, [isOpen, isLoading, clearPlotData])
 
   const plotHasData = plotData[selectedMethod] && plotData[selectedMethod].length > 0
   const showExtraControls = plotHasData
@@ -438,8 +438,8 @@ const mapStateToProps = (state) => {
     submissions,
     results,
     plotData,
-    mem_usage,
-    timestamps,
+    // mem_usage,
+    // timestamps,
   } = state.searchPage.samplesComparisonModal
 
   const { abundanceMatrix, contextual } = results
@@ -467,8 +467,8 @@ const mapStateToProps = (state) => {
     alerts,
     errors,
     submissions,
-    mem_usage,
-    timestamps,
+    // mem_usage,
+    // timestamps,
   }
 }
 

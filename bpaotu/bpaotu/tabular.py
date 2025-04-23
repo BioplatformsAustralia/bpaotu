@@ -19,8 +19,10 @@ from .query import (
     SampleQuery,
     TaxonomyOptions)
 import io
+import os
 import csv
 import logging
+import time
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
 from Bio.SeqRecord  import SeqRecord
@@ -117,6 +119,24 @@ def sample_otu_csv_rows(taxonomy_labels, ids_to_names, q):
         fd.seek(0)
         fd.truncate(0)
 
+# different requirements to the otu csv export:
+# - does not need the OTU code (so it is not included in the query)
+# - does not need count and amplicon fields
+# - tsv instead of csv
+def sample_otu_tsv_rows_krona(taxonomy_labels, ids_to_names, q):
+    fd = io.StringIO()
+    w = csv.writer(fd, delimiter='\t')
+    w.writerow(['OTU Count'] + list(taxonomy_labels))
+    yield fd.getvalue().encode('utf8')
+    fd.seek(0)
+    fd.truncate(0)
+
+    for row in q.yield_per(50):
+        w.writerow([row.SampleOTU.count] + ids_to_names(row.Taxonomy))
+        yield fd.getvalue().encode('utf8')
+        fd.seek(0)
+        fd.truncate(0)
+
 def sanitise(filename):
     return re.sub(r'[\W]+', '-', filename)
 
@@ -155,14 +175,12 @@ def tabular_zip_file_generator(params, onlyContextual):
             taxonomy_labels = taxonomy_labels_by_source[taxonomy_source_id]
 
             ontology_attrs = ['amplicon_id'] + taxonomy_key_id_names[1:len(taxonomy_labels) +1]
-            ontology_lookup_fns = {name: _csv_write_function(getattr(Taxonomy, name))
-                                   for name in ontology_attrs}
+            ontology_lookup_fns = {name: _csv_write_function(getattr(Taxonomy, name)) for name in ontology_attrs}
 
             q = query.matching_sample_otus(Taxonomy, OTU, SampleOTU)
 
             def ids_to_names(taxonomy):
-                return [ontology_lookup_fns[name](getattr(taxonomy, name))
-                        for name in ontology_attrs]
+                return [ontology_lookup_fns[name](getattr(taxonomy, name)) for name in ontology_attrs]
 
             if rank1_id_is_value is None: # not selecting a specific kingdom
                 # get the rank1 possibilities (domain/kingdom) for the amplicon in this query
@@ -188,6 +206,35 @@ def tabular_zip_file_generator(params, onlyContextual):
                 )
         return zf
 
+def krona_source_file_generator(tmpdir, params, krona_params_hash):
+    krona_source_data_filename = os.path.join(tmpdir, "krona.tsv")
+
+    time_start = time.time()
+
+    sample_id = krona_params_hash['sample_id']
+    amplicon_id = krona_params_hash['amplicon_id']
+    taxonomy_source_id = krona_params_hash['taxonomy_source_id']
+
+    with SampleQuery(params) as query, OntologyInfo() as info, TaxonomyOptions() as options:
+        taxonomy_labels_by_source = info.get_taxonomy_labels()
+        taxonomy_labels = taxonomy_labels_by_source[taxonomy_source_id]
+
+        ontology_attrs = taxonomy_key_id_names[1:len(taxonomy_labels) +1]
+        ontology_lookup_fns = {name: _csv_write_function(getattr(Taxonomy, name)) for name in ontology_attrs}
+
+        q = query.matching_sample_otus_krona(sample_id, amplicon_id, taxonomy_source_id)
+
+        def ids_to_names(taxonomy):
+            return [ontology_lookup_fns[name](getattr(taxonomy, name)) for name in ontology_attrs]
+
+        with open(krona_source_data_filename, 'wb') as file:
+            for chunk in sample_otu_tsv_rows_krona(taxonomy_labels, ids_to_names, q):
+                file.write(chunk)
+
+        time_end = time.time()
+        time_taken = round(time_end - time_start, 1)
+
+    return krona_source_data_filename, time_taken
 
 def info_text(params):
     return """\

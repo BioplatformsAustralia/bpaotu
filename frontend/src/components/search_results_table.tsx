@@ -23,10 +23,57 @@ const sample_link_run_id = (props) => (
   </div>
 )
 
+const bpaIDToCKANURL = (bpaId) => {
+  if (bpaId.startsWith('SAMN')) {
+    return `https://www.ncbi.nlm.nih.gov/biosample/?term=${bpaId}`
+  } else {
+    return `${window.otu_search_config.ckan_base_url}/organization/australian-microbiome?q=sample_id:102.100.100/${bpaId}`
+  }
+}
+
+const runIDToSandpiperURL = (runId) => {
+  const base_url = 'https://sandpiper.qut.edu.au/run'
+  return `${base_url}/${runId}`
+}
+
+const mapDefinitions = (fields) => {
+  return map(
+    reject(fields, (f) => isEmpty(f.name)),
+    (c) => ({
+      name: c.name,
+      displayName: c.displayName,
+    })
+  )
+}
+
+export const fieldsToColumns = (fields, contextualDataDefinitions) => {
+  // which switching pages, contextualDataDefinitions gets refreshed
+  // since it is initialised as it's `initialState` it will be empty for a brief moment
+  // so use the base fields until it is defined
+  if (contextualDataDefinitions) {
+    const fieldsPlus = fields.map((x) => {
+      // handle cases when adding field it adds an empty object first
+      if (x.name === '') {
+        return x
+      } else {
+        // there will only be one match for each name
+        const def = contextualDataDefinitions.values.find((f) => f.name === x.name)
+        const extra = { displayName: def.display_name }
+        return { ...x, ...extra }
+      }
+    })
+
+    return mapDefinitions(fieldsPlus)
+  } else {
+    return mapDefinitions(fields)
+  }
+}
+
 export class SearchResultsTable extends React.Component<any> {
   static defaultProps = {
     cell_func: sample_link,
     cell_func_run_id: sample_link_run_id,
+    krona_func: null,
     metagenome: false,
   }
 
@@ -44,6 +91,13 @@ export class SearchResultsTable extends React.Component<any> {
       accessor: 'environment',
     },
   ]
+
+  public kronaColumn = {
+    Header: () => <div>Krona Plot</div>,
+    accessor: 'sample_id',
+    sortable: true,
+    Cell: this.props.krona_func,
+  }
 
   public runIdColumn = {
     Header: () => (
@@ -84,9 +138,12 @@ export class SearchResultsTable extends React.Component<any> {
     }))
 
     if (this.props.metagenome) {
-      return this.defaultColumns.concat(this.runIdColumn).concat(extraColumns)
+      return this.defaultColumns
+        .concat(this.kronaColumn)
+        .concat(this.runIdColumn)
+        .concat(extraColumns)
     } else {
-      return this.defaultColumns.concat(extraColumns)
+      return this.defaultColumns.concat(this.kronaColumn).concat(extraColumns)
     }
   }
 
@@ -169,51 +226,5 @@ export class SearchResultsTable extends React.Component<any> {
     if (this.props.results.pages > 0) {
       this.props.search()
     }
-  }
-}
-
-function bpaIDToCKANURL(bpaId) {
-  if (bpaId.startsWith('SAMN')) {
-    return `https://www.ncbi.nlm.nih.gov/biosample/?term=${bpaId}`
-  } else {
-    return `${window.otu_search_config.ckan_base_url}/organization/australian-microbiome?q=sample_id:102.100.100/${bpaId}`
-  }
-}
-
-const runIDToSandpiperURL = (runId) => {
-  const base_url = 'https://sandpiper.qut.edu.au/run'
-  return `${base_url}/${runId}`
-}
-
-const mapDefinitions = (fields) => {
-  return map(
-    reject(fields, (f) => isEmpty(f.name)),
-    (c) => ({
-      name: c.name,
-      displayName: c.displayName,
-    })
-  )
-}
-
-export const fieldsToColumns = (fields, contextualDataDefinitions) => {
-  // which switching pages, contextualDataDefinitions gets refreshed
-  // since it is initialised as it's `initialState` it will be empty for a brief moment
-  // so use the base fields until it is defined
-  if (contextualDataDefinitions) {
-    const fieldsPlus = fields.map((x) => {
-      // handle cases when adding field it adds an empty object first
-      if (x.name === '') {
-        return x
-      } else {
-        // there will only be one match for each name
-        const def = contextualDataDefinitions.values.find((f) => f.name === x.name)
-        const extra = { displayName: def.display_name }
-        return { ...x, ...extra }
-      }
-    })
-
-    return mapDefinitions(fieldsPlus)
-  } else {
-    return mapDefinitions(fields)
   }
 }

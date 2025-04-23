@@ -135,6 +135,19 @@ export function metagenomeRequest(sample_ids, fileTypes) {
   })
 }
 
+export function executeKronaRequest(sample_id) {
+  console.log('kronaRequest', 'sample_id', sample_id)
+
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.krona_request_endpoint,
+    data: { sample_id: JSON.stringify(sample_id) },
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+}
+
 export const executeSearch = partial(doSearch, window.otu_search_config.search_endpoint)
 export const executeContextualSearch = partial(
   doSearch,
@@ -243,6 +256,21 @@ export function getBlastSubmission(submissionId) {
   return axios.get(window.otu_search_config.blast_submission_endpoint, {
     params: {
       submission_id: submissionId,
+    },
+  })
+}
+
+export function executeKrona(filters, sampleId) {
+  const formData = new FormData()
+  formData.append('query', JSON.stringify(filters))
+  formData.append('sample_id', JSON.stringify(sampleId))
+
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.krona_request_endpoint,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
     },
   })
 }

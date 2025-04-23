@@ -11,6 +11,7 @@ import samplesMapModalReducer from './samples_map_modal'
 import samplesGraphModalReducer from './samples_graph_modal'
 import samplesComparisonModalReducer from './samples_comparison_modal'
 import metagenomeModalReducer from './metagenome_modal'
+import kronaModalReducer from './krona_modal'
 import searchResultsReducer from './search'
 import submitToGalaxyReducer from './submit_to_galaxy'
 import taxonomyReducer, { taxonomyOptionsLoading } from './taxonomy'
@@ -45,6 +46,7 @@ const pageReducer = combineReducers({
   samplesGraphModal: samplesGraphModalReducer,
   samplesComparisonModal: samplesComparisonModalReducer,
   metagenomeModal: metagenomeModalReducer,
+  kronaModal: kronaModalReducer,
   galaxy: submitToGalaxyReducer,
   tips: tipsReducer,
   results: searchResultsReducer,

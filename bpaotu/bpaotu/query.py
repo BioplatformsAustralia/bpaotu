@@ -32,6 +32,7 @@ from .otu import (
     ExcludedSamples,
     OntologyErrors,
     Taxonomy,
+    taxonomy_otu,
     taxonomy_otu_export,
     make_engine)
 
@@ -578,6 +579,20 @@ class SampleQuery:
                 .filter(OTU.id.in_(otu_ids))
 
         q = self.apply_sample_otu_filters(q)
+
+        # log_query(q)
+        return q
+
+    # note: does not actually use the usual params in q
+    # (since this function is passed them explicitly because they are needed upstream)
+    def matching_sample_otus_krona(self, sample_id, amplicon_id, taxonomy_source_id):
+        q = self._session\
+                .query(SampleOTU, Taxonomy)\
+                .join(taxonomy_otu, taxonomy_otu.c.otu_id == SampleOTU.otu_id)\
+                .join(Taxonomy, Taxonomy.id == taxonomy_otu.c.taxonomy_id)\
+                .filter(SampleOTU.sample_id == sample_id)\
+                .filter(Taxonomy.amplicon_id == amplicon_id)\
+                .filter(Taxonomy.taxonomy_source_id == taxonomy_source_id)
 
         # log_query(q)
         return q

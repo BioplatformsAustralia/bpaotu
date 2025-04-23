@@ -37,6 +37,7 @@ from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .importer import DataImporter
+from .krona import KronaPlot
 from .models import NonDenoisedDataRequest, MetagenomeRequest
 from .otu import (Environment, OTUAmplicon, SampleContext, TaxonomySource, format_taxonomy_name)
 from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilterTermTime,
@@ -174,6 +175,7 @@ def api_config(request):
         'execute_workflow_on_galaxy_endpoint': reverse('execute_workflow_on_galaxy'),
         'galaxy_submission_endpoint': reverse('galaxy_submission'),
         'nondenoised_request_endpoint': reverse('nondenoised_request'),
+        'krona_request_endpoint': reverse('krona_request'),
         'submit_blast_endpoint': reverse('submit_blast'),
         'blast_submission_endpoint': reverse('blast_submission'),
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
@@ -779,6 +781,22 @@ def nondenoised_request(request):
         "Australian Microbiome Data Requests <am-data-requests@bioplatforms.com>", [settings.NONDENOISED_REQUEST_EMAIL])
     return JsonResponse({'okay': True})
 
+
+@require_CKAN_auth
+@require_POST
+def krona_request(request):
+    params, errors = param_to_filters(request.POST['query'])
+
+    sample_id = request.POST["sample_id"].strip('"')
+    if not sample_id:
+        return JsonResponse({ "error": "sample_id is required as param" }, status=400)
+
+    krona = KronaPlot(params, sample_id)
+    html, krona_params_hash = krona.produce_krona_html()
+
+    track(request, "otu_krona_plot_request", krona_params_hash)
+
+    return JsonResponse({ "sample_id": sample_id, "html": html })
 
 @require_CKAN_auth
 @require_POST
