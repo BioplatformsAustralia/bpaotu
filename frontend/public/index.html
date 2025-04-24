@@ -14,7 +14,7 @@
   <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
   <link rel="stylesheet" type="text/css" href="%PUBLIC_URL%/static/bpaotu/common.css"/>
-  <link rel="stylesheet" type="text/css" href="%PUBLIC_URL%/static/bpaotu/bpaotu.css"/>
+  <link rel="stylesheet" type="text/css" href="%PUBLIC_URL%/static/bpaotu/bpaotu.css?cb=4"/>
   <link rel="stylesheet" type="text/css" href="%PUBLIC_URL%/static/bpaotu/leaflet/leaflet.css" />
 
   <link rel="icon" href="%PUBLIC_URL%/static/bpa-logos/favicon.ico" type="image/x-icon">
@@ -36,22 +36,33 @@
 
   <script>
     window.otu_search_config = {
-      'amplicon_endpoint': "%PUBLIC_URL%/private/api/v1/amplicon-options",
+      'reference_data_endpoint': "%PUBLIC_URL%/private/api/v1/reference-data-options",
+      'trait_endpoint': "%PUBLIC_URL%/private/api/v1/trait-options",
       'taxonomy_endpoint': "%PUBLIC_URL%/private/api/v1/taxonomy-options",
       'contextual_endpoint': "%PUBLIC_URL%/private/api/v1/contextual-fields",
+      'contextual_graph_endpoint': "%PUBLIC_URL%/private/api/v1/contextual-graph-fields",
+      'taxonomy_graph_endpoint': "%PUBLIC_URL%/private/api/v1/taxonomy-graph-fields",
+      'taxonomy_search_endpoint': "%PUBLIC_URL%/private/api/v1/taxonomy-search",
       'search_endpoint': "%PUBLIC_URL%/private/api/v1/search",
       'export_endpoint': "%PUBLIC_URL%/private/api/v1/export",
       'export_biom_endpoint': "%PUBLIC_URL%/private/api/v1/export_biom",
       'submit_to_galaxy_endpoint': "%PUBLIC_URL%/private/api/v1/submit_to_galaxy",
       'nondenoised_request_endpoint': "%PUBLIC_URL%/private/api/v1/nondenoised_request",
+      'krona_request_endpoint': "%PUBLIC_URL%/private/api/v1/krona-request",
       'execute_workflow_on_galaxy_endpoint': "%PUBLIC_URL%/private/api/v1/execute_workflow_on_galaxy",
       'galaxy_submission_endpoint': "%PUBLIC_URL%/private/api/v1/galaxy_submission",
       'submit_blast_endpoint': "%PUBLIC_URL%/private/api/v1/submit_blast",
       'blast_submission_endpoint': "%PUBLIC_URL%/private/api/v1/blast_submission",
       'search_sample_sites_endpoint': "%PUBLIC_URL%/private/api/v1/search-sample-sites",
+      'search_sample_sites_comparison_endpoint': "%PUBLIC_URL%/private/api/v1/search-sample-sites-comparison",
+      'submit_comparison_endpoint': "%PUBLIC_URL%/private/api/v1/submit_comparison",
+      'cancel_comparison_endpoint': "%PUBLIC_URL%/private/api/v1/cancel_comparison",
+      'comparison_submission_endpoint': "%PUBLIC_URL%/private/api/v1/comparison_submission",
+      'search_blast_otus_endpoint': "%PUBLIC_URL%/private/api/v1/search-blast-otus",
       'required_table_headers_endpoint': "%PUBLIC_URL%/private/api/v1/required_table_headers/",
       'contextual_csv_download_endpoint': "%PUBLIC_URL%/contextual_csv_download_endpoint/",
       'contextual_schema_definition_endpoint': "%PUBLIC_URL%/contextual_schema_definition/",
+      'cookie_consent_declined_endpoint': "%PUBLIC_URL%/private/api/v1/cookie_consent_declined/",
       'base_url': "%PUBLIC_URL%",
       'static_base_url': "%PUBLIC_URL%/static/",
       'galaxy_base_url': "https://galaxy-aust-dev.genome.edu.au",
@@ -60,20 +71,6 @@
       'ckan_check_permissions': "%PUBLIC_URL%/private/api/v1/user/check_permissions"
     };
   </script>
-  <footer class="site-footer space-above">
-    <div class="site-footer-links container-fluid">
-      <a href="http://www.bioplatforms.com">Operated by Bioplatforms Australia</a>
-      <a href="https://github.com/BioplatformsAustralia/bpaotu">Source Code</a>
-      <a href="mailto:help@bioplatforms.com">Contact</a>
-    </div>
-    <div class="site-footer-logo container-fluid">
-      <span><a href="https://www.bioplatforms.com"><img class="footer-logos"
-            src="%PUBLIC_URL%/static/bpa-logos/BIO-RGB_Large-NEGTRANS.png" alt="Bioplatforms Australia" /></a></span>
-      <span style="padding-left: 30px;"><a
-          href="https://www.education.gov.au/national-collaborative-research-infrastructure-strategy-ncris"><img
-            class="footer-logos" src="%PUBLIC_URL%/static/bpa-logos/ncris-footer.png" /></a></span>
-    </div>
-  </footer>
 </body>
 
 </html>

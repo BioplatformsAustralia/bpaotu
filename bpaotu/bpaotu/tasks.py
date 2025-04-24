@@ -1,19 +1,23 @@
 from celery import shared_task
 import logging
+import json
+import numpy as np
 import os
 import uuid
 import shutil
 import tempfile
+import base64
 from django.conf import settings
 
 from .blast import BlastWrapper
+from .sample_comparison import SampleComparisonWrapper
 from .biom import save_biom_zip_file
 from .submission import Submission
 from .galaxy_client import get_users_galaxy
 from . import views
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('bpaotu')
 
 
 # Should be None but using a large number because task retrying forever aren't much fun
@@ -48,12 +52,13 @@ def execute_workflow_on_galaxy(email, query, workflow_id):
 
 
 @shared_task
-def submit_blast(search_string, query):
+def submit_blast(search_string, blast_params_string, query):
     submission_id = str(uuid.uuid4())
 
     submission = Submission.create(submission_id)
     submission.query = query
     submission.search_string = search_string
+    submission.blast_params_string = blast_params_string
 
     chain = setup_blast.s() | run_blast.s() | cleanup_blast.s()
 
@@ -154,8 +159,15 @@ def setup_blast(submission_id):
 def run_blast(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_blast_wrapper(submission)
-    fname = wrapper.run()
+    fname, image_contents = wrapper.run()
     submission.result_url = settings.BLAST_RESULTS_URL + '/' + fname
+
+    # if result has an image then encode image contents as a Base64 string
+    image_base64 = ''
+    if image_contents:
+        image_base64 = base64.b64encode(image_contents).decode('utf-8')
+
+    submission.image_contents = image_base64
     return submission_id
 
 
@@ -163,6 +175,75 @@ def run_blast(submission_id):
 def cleanup_blast(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_blast_wrapper(submission)
+    wrapper.cleanup()
+    return submission_id
+
+
+@shared_task(bind=True)
+def submit_sample_comparison(self, query):
+    submission_id = str(uuid.uuid4())
+
+    submission = Submission.create(submission_id)
+    submission.query = query
+    submission.status = 'init'
+
+    # Ensure asynchronous execution and store the task ID
+    chain = setup_comparison.s() | run_comparison.s() | cleanup_comparison.s()
+
+    chain(submission_id)
+
+    return submission_id
+
+
+@shared_task
+def cancel_sample_comparison(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_sample_comparison_wrapper(submission)
+
+    try:
+        results = wrapper.cancel()
+    except Exception as e:
+        submission.status = 'error'
+        submission.error = "%s" % (e)
+        logger.warn("Error running sample comparison: %s" % (e))
+        return submission_id
+
+    return results
+
+
+@shared_task
+def setup_comparison(submission_id):
+    submission = Submission(submission_id)
+    submission.cwd = tempfile.mkdtemp()
+    wrapper = _make_sample_comparison_wrapper(submission)
+    wrapper.setup()
+    return submission_id
+
+@shared_task(bind=True)
+def run_comparison(self, submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_sample_comparison_wrapper(submission)
+
+    try:
+        results = wrapper.run()
+        submission.results = json.dumps(results, cls=NumpyEncoder)
+    except MemoryError as e:
+        submission.status = 'error'
+        submission.error = "Out of Memory: %s" % e
+        logger.error(f"MemoryError running comparison: {e}")
+    # except Exception as e:
+    #     print('Exception')
+    #     print(e)
+    #     submission.status = 'error'
+    #     submission.error = "%s" % (e)
+    #     logger.info("Error running sample comparison: %s" % (e))
+
+    return submission_id
+
+@shared_task
+def cleanup_comparison(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_sample_comparison_wrapper(submission)
     wrapper.cleanup()
     return submission_id
 
@@ -186,4 +267,25 @@ def _create_submission_object(email, query):
 
 def _make_blast_wrapper(submission):
     return BlastWrapper(
-        submission.cwd, submission.submission_id, submission.search_string, submission.query)
+        submission.cwd, submission.submission_id, submission.search_string, submission.blast_params_string, submission.query)
+
+def _make_sample_comparison_wrapper(submission):
+    return SampleComparisonWrapper(
+        submission.cwd, submission.submission_id, submission.status, submission.query)
+
+
+import datetime
+
+class NumpyEncoder(json.JSONEncoder):
+    """ Special json encoder for numpy types """
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, (datetime.date, datetime.datetime)):
+            return obj.isoformat()
+        return json.JSONEncoder.default(self, obj)
+

@@ -5,6 +5,8 @@ import os
 from contextlib import suppress
 from ccg_django_utils.conf import EnvConfig
 
+from ._version import __version__
+
 env = EnvConfig()
 
 VERSION = env.get("bpa_version", os.environ.get("GIT_TAG", "UNKNOWN_VERSION"))
@@ -20,14 +22,25 @@ BASE_URL = SCRIPT_NAME
 WEBAPP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # a directory that will be writable by the webserver, for storing various files...
-WRITABLE_DIRECTORY = env.get("writable_directory", "/tmp")
+WRITABLE_DIRECTORY = env.get("writable_directory", "/tmp") # FIXME used?
+BPAOTU_TMP_DIR = '/var/tmp' # For large temporary files
+
+BPAOTU_MISSING_VALUE_SENTINEL = -9999  # Missing values in sample contextual data.
+# See "Confirmed missing value" in
+# https://github.com/AusMicrobiome/contextualdb_doc/blob/main/db_schema_definitions/db_schema_definitions.xlsx
+
+BPAOTU_SCIENTIFIC_MANUAL_URL = "https://research.csiro.au/ambsm/"
+
+BPAOTU_MAP_CENTRE_LONGITUDE = 133.775
+
+BPAOTU_CKAN_POLL_INTERVAL = 3600 # Seconds between CKAN queries for new resources
 
 SECRET_KEY = env.get("secret_key", "change-it")
 
 # Default SSL on and forced, turn off if necessary
 PRODUCTION = env.get("production", False)
-SSL_ENABLED = PRODUCTION
-SSL_FORCE = PRODUCTION
+SSL_ENABLED = PRODUCTION # FIXME?  used?
+SSL_FORCE = PRODUCTION # FIXME?  used?
 
 DEBUG = env.get("debug", not PRODUCTION)
 
@@ -47,7 +60,9 @@ MANAGERS = ADMINS
 DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'Bioplaforms Data Portal <help@bioplatforms.com>')
 EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU] ')
 SERVER_EMAIL = env.get('DJANGO_SERVER_EMAIL', DEFAULT_FROM_EMAIL)
-EMAIL_BACKEND = "anymail.backends.amazon_ses.EmailBackend"
+EMAIL_BACKEND = env.get('bpaotu_email_backend', "anymail.backends.amazon_ses.EmailBackend")
+EMAIL_HOST = env.get('bpaotu_email_host', 'localhost')
+
 ANYMAIL = {
     "AMAZON_SES_MESSAGE_TAG_NAME": "Type",
     "AMAZON_SES_CLIENT_PARAMS": {
@@ -57,7 +72,6 @@ ANYMAIL = {
         "region_name": env.get("AWS_REGION_FOR_ANYMAIL_SES"),
     },
 }
-
 
 ALLOWED_HOSTS = env.getlist("allowed_hosts", ["*"])
 
@@ -76,6 +90,13 @@ DATABASES = {
         'PASSWORD': env.get("dbpass", "webapp"),
         'HOST': env.get("dbserver", ""),
         'PORT': env.get("dbport", ""),
+        'OPTIONS': {
+            'connect_timeout': 60,  # Connect timeout (not query execution timeout)
+            'keepalives': 1,        # Enable TCP keepalives
+            'keepalives_idle': 600,  # Send keepalive after
+            'keepalives_interval': 60, # Retry every
+            'keepalives_count': 100,    # Retry times before closing
+        }
     }
 }
 
@@ -107,35 +128,11 @@ DATE_FORMAT = "d-m-Y"
 SHORT_DATE_FORMAT = "d/m/Y"
 
 # used by maps when plotting sample location
-GIS_SOURCE_RID = 4326
+GIS_SOURCE_RID = 4326 # FIXME GIS_* used?
 GIS_TARGET_RID = 3857
 GIS_CENTER = (134.0, -26.0)
 GIS_POINT_ZOOM = 12
 GIS_OPENLAYERS_URL = "https://cdnjs.cloudflare.com/ajax/libs/openlayers/2.13.1/OpenLayers.js"
-
-LEAFLET_CONFIG = {
-    'DEFAULT_CENTER': (-25.27, 133.775),
-    'DEFAULT_ZOOM': 4,
-    'ATTRIBUTION_PREFIX': '',
-    'TILES': [
-        ('ESRI',
-         '//server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-         {'attribution':
-          '&copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-          }, ),
-        ('OSM B&W',
-         '//{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png',
-         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
-        ('Thunderforest Landscape',
-         '//{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png',
-         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
-        ('ISM Seamark',
-         '//tiles.openseamap.org/seamark/{z}/{x}/{y}.png',
-         {'attribution': '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> Contributers'}, ),
-    ],
-    'MINIMAP': True,
-    'RESET_VIEW': False
-}
 
 SITE_ID = 1
 
@@ -155,6 +152,17 @@ STATIC_SERVER_PATH = STATIC_ROOT
 BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
 BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
 STATICFILES_DIRS = [
+    # FIXME. This is almost certainly wrong, and should be handled by MEDIA_ROOT
+    # and MEDIA_URL instead. In particular, `django-admin collectstatic` will
+    # copy anything in BLAST_RESULTS_PATH to STATIC_ROOT during the docker
+    # container startup, which is probably not what is intended, and even
+    # requires a mkdir() in bpaotu.apps.BpaotuConfig() to prevent collectstatic
+    # from crashing. It's probably here as an easy way to serve the blast output
+    # during development without having to add a special case to urlpatterns.
+    # See
+    # https://docs.djangoproject.com/en/2.2/ref/contrib/staticfiles/#static-file-development-view
+    # Since it's not obviously breaking anything in production, I'm leaving it
+    # alone for now. (DH, Nov 2022)
     BLAST_RESULTS_PATH,
 ]
 MIDDLEWARE = (
@@ -191,6 +199,17 @@ TEMPLATES = [
             ]
         },
     },
+
+    {
+        "BACKEND":"django.template.backends.jinja2.Jinja2",
+        "DIRS": [os.path.join(WEBAPP_ROOT, 'bpaotu', 'jinja2')],
+        "APP_DIRS": False,
+        "OPTIONS": {
+            "trim_blocks": True,
+            "lstrip_blocks": True
+        }
+     }
+
 ]
 
 
@@ -203,7 +222,7 @@ INSTALLED_APPS = ('django.contrib.auth',
                   'django.contrib.sites',
                   'django.contrib.messages',
                   'django.contrib.staticfiles',
-                  'django.contrib.gis',
+                  'django.contrib.gis', # FIXME used?
                   'django_extensions',
                   'django.contrib.admin',
                   'django.contrib.admindocs',
@@ -250,6 +269,11 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+        'console_prod': {
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
@@ -305,8 +329,8 @@ LOGGING = {
             'propagate': False,
         },
         'bpaotu': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
+            'handlers': ['console_prod', 'file'],
+            'level': 'INFO',
             'propagate': False,
         },
         'libs': {
@@ -389,11 +413,13 @@ CHMOD_GROUP = env.get("repo_group", "apache")
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # ingest all
-DOWNLOADS_CHECKER_USER = env.get('downloads_checker_user', 'downloads_checker')
+DOWNLOADS_CHECKER_USER = env.get('downloads_checker_user', 'downloads_checker') # FIXME used?
 DOWNLOADS_CHECKER_PASS = env.get('downloads_checker_pass', 'ch3ck3r')
 DOWNLOADS_CHECKER_SLEEP = env.get('downloads_checker_sleep', 0.0)
 
 # enable integration with CKAN authentication (specific to the Bioplatforms data portal)
+CKAN_ENABLE_AUTH = env.get('ckan_enable_auth', True)
+
 CKAN_CHECK_PERMISSIONS_URL = env.get('ckan_check_permissions_url', '/user/private/api/bpa/check_permissions')
 
 # email to use in development when CKAN auth integration is enabled
@@ -408,3 +434,16 @@ GALAXY_ADMIN_USER_API_KEY = env.get('galaxy_admin_user_api_key', '')
 GALAXY_INTEGRATION = GALAXY_ADMIN_USER_API_KEY != ''
 GALAXY_KRONA_WORKFLOW_ID = env.get('galaxy_krona_workflow_id', 'bf002aa8f96f4e7b')
 NONDENOISED_REQUEST_EMAIL = env.get('nondenoised_request_email', 'am-data-requests@bioplatforms.com')
+METAGENOME_REQUEST_EMAIL = env.get('metagenome_request_email', 'am-data-requests@bioplatforms.com')
+
+DEFAULT_AMPLICON = env.get('DEFAULT_AMPLICON', '27f519r_bacteria')
+DEFAULT_TAXONOMIES = [
+    # In priority order. Uses first available match as default for taxonomy selector.
+    ['silva138', 'SKlearn'],
+    ['unite8', 'wang']]
+
+MIXPANEL_TOKEN = env.get("MIXPANEL_TOKEN", "")
+
+MAX_ROWS_COMPARISON = env.get('MAX_ROWS_COMPARISON', 30000)
+
+VERSION = __version__

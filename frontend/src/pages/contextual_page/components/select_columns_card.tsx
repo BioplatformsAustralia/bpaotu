@@ -5,9 +5,10 @@ import { bindActionCreators } from 'redux'
 
 import { Button, Card, CardBody, CardFooter, CardHeader } from 'reactstrap'
 
-import { ContextualDropDown } from '../../../components/contextual_drop_down'
+import { ContextualDropDown } from 'components/contextual_drop_down'
 
-import { fetchContextualDataDefinitions } from '../../../reducers/contextual_data_definitions'
+import { fetchContextualDataDefinitions } from 'reducers/contextual_data_definitions'
+
 import { search } from '../reducers/search'
 import { addColumn, clearColumns, removeColumn, selectColumn } from '../reducers/select_columns'
 
@@ -33,7 +34,7 @@ class SelectColumnsCard extends React.Component<any> {
               key={`${column.name}-${index}`}
               index={index}
               filter={column}
-              dataDefinition={find(this.props.dataDefinitions, dd => dd.name === column.name)}
+              dataDefinition={find(this.props.dataDefinitions, (dd) => dd.name === column.name)}
               options={this.props.dataDefinitions}
               optionsLoading={this.props.optionsLoading}
               remove={this.onRemoveColumn}
@@ -70,11 +71,10 @@ class SelectColumnsCard extends React.Component<any> {
 }
 
 function mapStateToProps(state) {
-  console.log(state.contextualDataDefinitions.values)
   return {
     columns: state.contextualPage.selectColumns.columns,
     dataDefinitions: state.contextualDataDefinitions.values,
-    optionsLoading: state.contextualDataDefinitions.isLoading
+    optionsLoading: state.contextualDataDefinitions.isLoading,
   }
 }
 
@@ -86,13 +86,10 @@ function mapDispatchToProps(dispatch: any) {
       removeColumn,
       selectColumn,
       clearColumns,
-      search
+      search,
     },
     dispatch
   )
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(SelectColumnsCard)
+export default connect(mapStateToProps, mapDispatchToProps)(SelectColumnsCard)

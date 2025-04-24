@@ -1,11 +1,10 @@
-version: '3'
+version: "3"
 services:
-
   base:
     build:
       context: ./
       dockerfile: Dockerfile-base
-    image: bioplatformsaustralia/bpaotu-base
+    image: bioplatformsaustralia/bpaotu
 
   builder:
     build:
@@ -25,3 +24,8 @@ services:
         BUILD_VERSION:
     image: bioplatformsaustralia/bpaotu
 
+  dev:
+    build:
+      context: ./
+      dockerfile: Dockerfile-dev
+    image: bioplatformsaustralia/bpaotu

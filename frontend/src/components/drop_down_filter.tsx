@@ -1,10 +1,14 @@
-import { concat, map } from 'lodash'
 import * as React from 'react'
-import { Col, FormGroup, Input, Label } from 'reactstrap'
-import { OperatorAndValue } from '../pages/search_page/reducers/types'
+import { map } from 'lodash'
+import { Col, FormGroup, Input, Label, UncontrolledTooltip } from 'reactstrap'
+import Octicon from 'components/octicon'
+
+import Select from 'react-select'
+import { OperatorAndValue } from 'search'
 
 interface Props {
   label: string
+  info: string
   selected: OperatorAndValue
   optionsLoading: boolean
   options: OperatorAndValue[]
@@ -13,91 +17,83 @@ interface Props {
   onChange: (id: string) => void
 }
 
-export default class DropDownFilter extends React.Component<any> {
-  constructor(props) {
-    super(props)
-    this.onOperatorChange = this.onOperatorChange.bind(this)
-    this.onValueChange = this.onValueChange.bind(this)
-  }
+const DropDownFilter = (props) => {
+  const { label, info, isDisabled, selected, optionsLoadingError, optionsLoading, options } = props
 
-  public render() {
-    return (
-      <FormGroup row={true}>
-        <Label sm={3}>{this.props.label}</Label>
-        <Col sm={3}>
-          <Input
-            type="select"
-            name="operator"
-            disabled={this.props.isDisabled}
-            value={this.props.selected.operator}
-            onChange={this.onOperatorChange}
-          >
-            <option value="is">is</option>
-            <option value="isnot">isn't</option>
-          </Input>
-        </Col>
-        <Col sm={6}>
-          <Input
-            type="select"
-            name="value"
-            invalid={this.props.optionsLoadingError}
-            disabled={this.props.isDisabled || this.props.optionsLoadingError}
-            value={this.props.selected.value}
-            onChange={this.onValueChange}
-          >
-            {this.renderOptions()}
-          </Input>
-        </Col>
-      </FormGroup>
-    )
-  }
-
-  public renderOptions() {
-    if (this.props.optionsLoadingError) {
-      return (
-        <option key="error" value="">
-          Couldn't load values!
-        </option>
-      )
+  const renderOptions = () => {
+    if (optionsLoadingError) {
+      return [{ value: '', label: "Couldn't load values!" }]
     }
-    if (this.props.optionsLoading) {
-      return (
-        <option key="loading" value="">
-          Loading...
-        </option>
-      )
-    }
-    return concat(
-      [
-        <option key="" value="">
-          ---
-        </option>
-      ],
-      map(this.props.options, this.renderOption)
-    )
+
+    return [{ value: '', label: '---' }, ...options.map(renderOption)]
   }
 
-  public renderOption(option) {
-    return (
-      <option key={option.id} value={option.id}>
-        {option.value}
-      </option>
-    )
-  }
+  const renderOption = (option) => ({ value: option.id, label: option.value })
 
-  public onValueChange(evt) {
-    const id = evt.target.value
-    this.props.selectValue(id)
-    if (this.props.onChange) {
-      this.props.onChange()
+  const onValueChange = (evt) => {
+    const id = evt.value
+    props.selectValue(id)
+
+    if (props.onChange) {
+      props.onChange()
     }
   }
 
-  public onOperatorChange(evt: any) {
+  const onOperatorChange = (evt) => {
     const value = evt.target.value
-    this.props.selectOperator(value)
-    if (this.props.onChange) {
-      this.props.onChange()
+    props.selectOperator(value)
+
+    if (props.onChange) {
+      props.onChange()
     }
   }
+
+  if (label === null) {
+    return null // Don't render
+  }
+
+  return (
+    <FormGroup row={true}>
+      {info ? (
+        <Label sm={3}>
+          {label + ' '}
+          <span id={label + 'Tip'}>
+            <Octicon name="info" />
+          </span>
+          <UncontrolledTooltip target={label + 'Tip'} placement="auto">
+            {info}
+          </UncontrolledTooltip>
+        </Label>
+      ) : (
+        <Label sm={3}>{label}</Label>
+      )}
+      <Col sm={3}>
+        <Input
+          type="select"
+          name="operator"
+          disabled={isDisabled}
+          value={selected.operator}
+          onChange={onOperatorChange}
+        >
+          <option value="is">is</option>
+          <option value="isnot">isn't</option>
+        </Input>
+      </Col>
+      <Col sm={6}>
+        <Select
+          placeholder={optionsLoadingError ? optionsLoadingError : '---'}
+          isSearchable={true}
+          isLoading={optionsLoading}
+          options={renderOptions()}
+          isDisabled={isDisabled || optionsLoadingError}
+          value={map(options, renderOption).filter(
+            (option) => option.value === props.selected.value
+          )}
+          onChange={onValueChange}
+        />
+      </Col>
+    </FormGroup>
+  )
 }
+
+export default DropDownFilter

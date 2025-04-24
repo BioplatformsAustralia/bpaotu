@@ -1,0 +1,24 @@
+{% autoescape false %}
+Request for Australian Microbiome metagenome data.
+
+Your request for metagenome data from the Australian Microbiome has been received.
+
+We will be in touch once the data is available, or if we require further information.
+
+The details of your request are provided below for your reference.
+
+Request ID: {{ request_id }}
+
+From: {{ user_email }}
+{{ timestamp.strftime("%c")}}
+
+Requested samples:
+{% for id in selected_samples %}
+  {{ id }}
+{% endfor %}
+
+Requested file types:
+{% for ft in file_types %}
+  {{ ft }}
+{% endfor %}
+{% endautoescape %}

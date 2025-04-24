@@ -5,13 +5,14 @@ import json
 import logging
 import os
 import zipstream
+from sqlalchemy.orm import joinedload
 
 from .query import (
     SampleOTU,
     SampleQuery,
     OntologyInfo)
 from .util import val_or_empty, make_timestamp, empty_to_none
-from .otu import SampleContext
+from .otu import SampleContext, Taxonomy, taxonomy_keys
 
 logger = logging.getLogger('rainbow')
 
@@ -76,20 +77,20 @@ def biom_header(comment):
 
 
 def otu_rows(query, otu_to_row):
-    q = query.matching_otus()
-    taxonomy_fields = ('kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species')
+    taxonomy_fields = taxonomy_keys[1:]
+    taxonomy_lookups = [joinedload(getattr(Taxonomy, rel))
+                        for rel in (taxonomy_fields + ['amplicon'])]
+    q = query.matching_otus_biom().add_entity(Taxonomy).options(taxonomy_lookups)
 
-    for idx, otu in enumerate(q.yield_per(50)):
-        def get_value(attr):
-            if attr == 'class':
-                attr = 'klass'
-            return val_or_empty(getattr(otu, attr))
+    for idx, row in enumerate(q.yield_per(50)):
+        def get_value(obj, attr):
+            return val_or_empty(getattr(obj, attr))
 
-        otu_to_row[otu.id] = idx
-        taxonomy_array = [get_value(f) for f in taxonomy_fields]
+        otu_to_row[row.OTU.id] = idx
+        taxonomy_array = [get_value(row.Taxonomy, f) for f in taxonomy_fields]
         yield '{"id": "%s","metadata": {%s,%s}}' % (
-            otu.code,
-            k_v('amplicon', get_value('amplicon')),
+            row.OTU.code,
+            k_v('amplicon', get_value(row.Taxonomy, 'amplicon')),
             k_v('taxonomy', taxonomy_array))
 
 

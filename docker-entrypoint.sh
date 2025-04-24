@@ -91,10 +91,12 @@ function defaults {
     : "${TEST_SELENIUM_HUB:=http://hub:4444/wd/hub}"
 
     : "${DJANGO_FIXTURES:=none}"
+    
+    : "${SKIP_WARMCACHE:=0}"
 
     export DBSERVER DBPORT DBUSER DBNAME DBPASS MEMCACHE DOCKER_ROUTE
     export TEST_APP_URL TEST_APP_SCHEME TEST_APP_HOST TEST_APP_PORT TEST_APP_PATH TEST_BROWSER TEST_WAIT TEST_SELENIUM_HUB
-    export DJANGO_FIXTURES
+    export DJANGO_FIXTURES SKIP_WARMCACHE
 }
 
 
@@ -123,10 +125,14 @@ function _django_collectstatic {
 
 
 function _warmcache {
-    info "running warmcache"
-    set -x
-    django-admin.py warmcache --settings="${DJANGO_SETTINGS_MODULE}"
-    set +x
+    if [ "${SKIP_WARMCACHE}" = 'yes' ]; then
+        info "skipping warmcache"
+    else
+        info "running warmcache"
+        set -x
+        django-admin.py warmcache --settings="${DJANGO_SETTINGS_MODULE}"
+        set +x
+    fi
 }
 
 
@@ -239,7 +245,7 @@ if [ "$1" = 'celery_worker' ]; then
     info "[Run] Starting celery_worker"
 
     set -x
-    exec celery -A bpaotu worker -l info
+    exec celery -A bpaotu worker -B -l info
 fi
 
 

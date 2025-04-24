@@ -1,76 +1,205 @@
-import * as React from 'react'
+import React, { useEffect, useContext } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-
 import { Col, Container, Row } from 'reactstrap'
 
-import SearchButton from '../../components/search_button'
-import LoadingSpinner from '../../components/search_spinner'
-import AmpliconTaxonomyFilterCard from './components/amplicon_taxonomy_filter_card'
-import BlastSearchCard from './components/blast_search_card'
+import { triggerHashedIdentify } from 'app/analytics'
+import { useAnalytics } from 'use-analytics'
+import { withAnalytics } from 'use-analytics'
+
+import AnimateHelix from 'components/animate_helix'
+import SearchButton from 'components/search_button'
+import { TourContext } from 'providers/tour_provider'
+
+import { AmpliconTaxonomyFilterCard } from './components/amplicon_taxonomy_filter_card'
 import ContextualFilterCard from './components/contextual_filter_card'
 import SearchErrors from './components/search_errors'
-import SearchResultsCard from './components/search_results_card'
+import SearchRunningIcon from './components/search_running_icon'
+import SearchFinishedIcon from './components/search_finished_icon'
+import { SearchResultsCard, MetagenomeSearchResultsCard } from './components/search_results_card'
 
+import { openBlastModal } from './reducers/blast_modal'
+import { openSamplesMapModal } from './reducers/samples_map_modal'
+import { openSamplesGraphModal } from './reducers/samples_graph_modal'
+import { openSamplesComparisonModal } from './reducers/samples_comparison_modal'
 import { search } from './reducers/search'
+import { clearSearchResults } from './reducers/search'
 
-export const SearchPage = props => (
-  <Container fluid={true}>
-    <Row>
-      <Col sm={6}>
-        <AmpliconTaxonomyFilterCard />
-      </Col>
-      <Col sm={6}>
-        <ContextualFilterCard />
-      </Col>
-    </Row>
-    <Row className="space-above">
-      <Col sm={6}>
-        <BlastSearchCard />
-      </Col>
-    </Row>
-    <Row className="space-above">
-      <Col sm={{ size: 6, offset: 3 }}>
-        <SearchErrors errors={props.errors} />
-      </Col>
-    </Row>
+const SearchPage = (props) => {
+  const { page, track, identify } = useAnalytics()
+  const { setMainTourStep } = useContext(TourContext)
 
-    <Row className="space-above">
-      {props.isSearchInProgress ? (
-        <Col sm={{ size: 2, offset: 6 }}>
-          <LoadingSpinner />
+  // this correctly recognises whether this is the Amplicon or Metagenome page
+  // track page visit only on first render
+  useEffect(() => {
+    page()
+  }, [page])
+
+  // ensure tour starts from the start if user switches the page
+  useEffect(() => {
+    setMainTourStep(0)
+  }, [setMainTourStep])
+
+  const newSearch = () => {
+    props.clearSearchResults()
+    props.search(track)
+  }
+  const blastSearch = () => {
+    props.openBlastModal()
+  }
+  const interactiveMapSearch = () => {
+    props.openSamplesMapModal()
+  }
+  const interactiveGraphSearch = () => {
+    props.openSamplesGraphModal()
+  }
+  const interactiveSampleComparison = () => {
+    props.openSamplesComparisonModal()
+  }
+
+  const children = React.Children.toArray(props.children)
+
+  // this is here so we can access the auth state
+  // it will trigger on both Amplicon and Metagenome search pages
+  // but that is not an issue
+  triggerHashedIdentify(identify, props.auth.email)
+
+  return (
+    <Container fluid={true}>
+      <Row>
+        <Col sm={6}>
+          <Row>{children[0]}</Row>
+          {children[1]}
         </Col>
-      ) : (
-        <Col sm={{ size: 2, offset: 5 }}>
-          <SearchButton search={props.search} />
+        <Col sm={6} data-tut="reactour__ContextualFilterCard">
+          <ContextualFilterCard />
         </Col>
-      )}
-    </Row>
-    <Row className="space-above">
-      <Col sm={12}>
-        <SearchResultsCard />
-      </Col>
-    </Row>
-  </Container>
-)
+      </Row>
+
+      <Row className="space-above">
+        <Col sm={{ size: 6, offset: 3 }}>
+          <SearchErrors errors={props.errors} />
+        </Col>
+      </Row>
+
+      <Row className="space-above space-below">
+        {props.isSearchInProgress ? (
+          <Col className="text-center" sm={12}>
+            <AnimateHelix scale={0.2} />
+          </Col>
+        ) : (
+          <>
+            <Col sm={{ size: 2, offset: 1 }}>
+              <SearchButton
+                id="SampleSearchButton"
+                octicon="search"
+                text="Sample search"
+                onClick={newSearch}
+              />
+            </Col>
+            <Col sm={{ size: 2 }} style={{ position: 'relative' }}>
+              <SearchButton
+                id="BLASTSearchButton"
+                octicon="beaker"
+                text="BLAST search"
+                onClick={blastSearch}
+              />
+              {props.isBlastSearchRunning && <SearchRunningIcon />}
+              {props.isBlastSearchFinished && <SearchFinishedIcon />}
+            </Col>
+            <Col sm={{ size: 2 }}>
+              <SearchButton
+                id="InteractiveMapSearchButton"
+                octicon="globe"
+                text="Interactive map search"
+                onClick={interactiveMapSearch}
+              />
+            </Col>
+            <Col sm={{ size: 2 }}>
+              <SearchButton
+                id="InteractiveGraphSearchButton"
+                octicon="graph"
+                text="Interactive graph search"
+                onClick={interactiveGraphSearch}
+              />
+            </Col>
+            <Col sm={{ size: 2 }}>
+              <SearchButton
+                id="InteractiveSampleComparisonButton"
+                octicon="globe"
+                text="Interactive sample comparison"
+                onClick={interactiveSampleComparison}
+              />
+              {props.isComparisonRunning && <SearchRunningIcon />}
+              {props.isComparisonFinished && <SearchFinishedIcon />}
+            </Col>
+          </>
+        )}
+      </Row>
+
+      <Row className="space-above">{children[2]}</Row>
+    </Container>
+  )
+}
 
 function mapStateToProps(state) {
   return {
     isSearchInProgress: state.searchPage.results.isLoading,
-    errors: state.searchPage.results.errors
+    isBlastSearchRunning: state.searchPage.blastSearch.isSubmitting,
+    isBlastSearchFinished: state.searchPage.blastSearch.isFinished,
+    isComparisonRunning: state.searchPage.samplesComparisonModal.isLoading,
+    isComparisonFinished: state.searchPage.samplesComparisonModal.isFinished,
+    errors: state.searchPage.results.errors,
+    auth: state.auth,
   }
 }
 
 function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
-      search
+      openBlastModal,
+      openSamplesMapModal,
+      openSamplesGraphModal,
+      openSamplesComparisonModal,
+      search,
+      clearSearchResults,
     },
     dispatch
   )
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(SearchPage)
+const ConnectedSearchPage = withAnalytics(connect(mapStateToProps, mapDispatchToProps)(SearchPage))
+
+export function SampleSearchPage() {
+  return (
+    <ConnectedSearchPage>
+      <Col data-tut="reactour__AmpliconTaxonomyFilterCard">
+        <AmpliconTaxonomyFilterCard metagenomeMode={false} />
+      </Col>
+
+      <Row className="space-above">
+        <Col></Col>
+      </Row>
+
+      <Col sm={12} data-tut="reactour__SearchResultsCard">
+        <SearchResultsCard />
+      </Col>
+    </ConnectedSearchPage>
+  )
+}
+
+export function MetagenomeSearchPage() {
+  return (
+    <ConnectedSearchPage>
+      <Col data-tut="reactour__AmpliconTaxonomyFilterCard">
+        <AmpliconTaxonomyFilterCard metagenomeMode={true} />
+      </Col>
+
+      <></>
+
+      <Col sm={12} data-tut="reactour__SearchResultsCard">
+        <MetagenomeSearchResultsCard />
+      </Col>
+    </ConnectedSearchPage>
+  )
+}

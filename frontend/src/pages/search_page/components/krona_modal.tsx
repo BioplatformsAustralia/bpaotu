@@ -1,0 +1,164 @@
+import React, { useEffect } from 'react'
+import { connect } from 'react-redux'
+import { bindActionCreators } from 'redux'
+import { Alert, Button, Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
+import SanitizedHTML from 'react-sanitized-html'
+
+import AnimateHelix, { loadingstyle } from 'components/animate_helix'
+
+import { runKronaRequest, closeKronaModal } from '../reducers/krona_modal'
+
+const ErrorOverlay = ({ errors }) => {
+  const loadingstyle = {
+    display: 'flex',
+    height: '100%',
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    background: 'rgba(0,0,0,0.4)',
+    zIndex: 99999,
+  } as React.CSSProperties
+
+  return (
+    <div style={loadingstyle}>
+      <Alert color="danger">
+        <h4 className="alert-heading">Error</h4>
+        <ul>
+          {errors.map((err, idx) => (
+            <li key={idx}>
+              <SanitizedHTML allowedTags={['b', 'br', 'em']} html={err} />
+            </li>
+          ))}
+        </ul>
+      </Alert>
+      {/*</div>*/}
+    </div>
+  )
+}
+
+const KronaModal = (props) => {
+  const { isLoading, isOpen, runKronaRequest, sample_id, html, error } = props
+
+  useEffect(() => {
+    if (isOpen) {
+      runKronaRequest(sample_id)
+    }
+  }, [isOpen, runKronaRequest, sample_id])
+
+  const closeModal = () => {
+    props.closeKronaModal()
+  }
+
+  const modalBody = () => {
+    return (
+      <div style={{ width: '100%', height: '100%' }}>
+        {error ? (
+          <ErrorOverlay errors={[error]} />
+        ) : isLoading ? (
+          <div style={loadingstyle}>
+            <AnimateHelix />
+          </div>
+        ) : (
+          <iframe
+            id="krona-html"
+            srcDoc={html}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            title="Krona Plot"
+          ></iframe>
+        )}
+      </div>
+    )
+  }
+
+  const modalFooter = () => {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%',
+        }}
+      >
+        {isLoading || error ? (
+          <div></div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>
+            <p style={{ margin: '0', fontSize: '0.8rem' }}>
+              <a
+                href="https://github.com/marbl/Krona/wiki"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                KronaTools
+              </a>
+            </p>
+            <p style={{ margin: '0', fontSize: '0.8rem' }}>
+              <a
+                href="https://github.com/marbl/Krona/wiki/How-to-cite"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                How to cite
+              </a>
+            </p>
+          </div>
+        )}
+        <div>
+          <Button type="button" onClick={closeModal} color="primary">
+            Close
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <Modal
+      isOpen={props.isOpen}
+      scrollable={true}
+      fade={true}
+      data-tut="reactour__KronaPlotModal"
+      id="KronaPlotModal"
+    >
+      <ModalHeader
+        toggle={closeModal}
+        data-tut="reactour__CloseKronaPlotModal"
+        id="CloseKronaPlotModal"
+      >
+        Krona Plot (Sample ID: {sample_id})
+      </ModalHeader>
+      <ModalBody style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {modalBody()}
+      </ModalBody>
+      <ModalFooter>{modalFooter()}</ModalFooter>
+    </Modal>
+  )
+}
+
+const mapStateToProps = (state) => {
+  const { isOpen, isLoading, sample_id, html, error } = state.searchPage.kronaModal
+
+  return {
+    isOpen,
+    isLoading,
+    sample_id,
+    html,
+    error,
+  }
+}
+
+const mapDispatchToProps = (dispatch) => {
+  return bindActionCreators(
+    {
+      runKronaRequest,
+      closeKronaModal,
+    },
+    dispatch
+  )
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(KronaModal as any)

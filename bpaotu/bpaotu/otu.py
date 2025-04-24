@@ -1,17 +1,20 @@
 import logging
 import os
+import re
 
 from citext import CIText
 from django.conf import settings
-from sqlalchemy import (ARRAY, Column, Date, Time, Float, ForeignKey, Integer,
-                        String, create_engine)
+from sqlalchemy import (MetaData, ARRAY, Table, Column, Date, Time, Float, ForeignKey, Integer,
+                        String, create_engine, select, Index, Boolean, DDL)
+from sqlalchemy.sql import func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship
+from sqlalchemy_utils import create_materialized_view
 
 logger = logging.getLogger("rainbow")
-Base = declarative_base()
 SCHEMA = 'otu'
+Base = declarative_base(metadata=MetaData(schema=SCHEMA))
 
 
 class SchemaMixin():
@@ -74,71 +77,194 @@ class OTUAmplicon(OntologyMixin, Base):
     pass
 
 
-class OTUKingdom(OntologyMixin, Base):
-    pass
+taxonomy_keys = [
+    'taxonomy_source',
+    # r1, r2, ...  generally correspond to kingdom, phylum, ... , species, but vary
+    # depending on TaxonomySource(). See rank_labels_lookup
+    'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8']
 
+taxonomy_key_id_names = [(r + '_id') for r in taxonomy_keys]
+taxonomy_ontology_classes = [type(name, (OntologyMixin, Base), {}) for name in (
+    # Must correspond to taxonomy_keys
+    'TaxonomySource',
+    'OTUr1', 'OTUr2', 'OTUr3', 'OTUr4', 'OTUr5', 'OTUr6', 'OTUr7', 'OTUr8')]
 
-class OTUPhylum(OntologyMixin, Base):
-    pass
+def format_taxonomy_name(taxonomy_db, taxonomy_method):
+    return "{} {}".format(taxonomy_db, taxonomy_method)
 
+# Different taxonomies have different rank names. See importer.DataImporter()
+TaxonomySource = taxonomy_ontology_classes[0]
+TaxonomySource.hierarchy_type = Column(Integer) # Index into rank_labels_lookup
 
-class OTUClass(OntologyMixin, Base):
-    pass
+rank_labels_lookup = (
+    # Sequence of acceptable taxonomy column headers for taxonomy files, indexed
+    # by TaxonomySource.hierarchy_type.  First match wins, so put longer ones
+    # first. The field order of each entry is important and must correspond to
+    # taxonomy_keys[1:]. Entries can be shorter than r1...r8.
+    ('Kingdom', 'Supergroup', 'Division', 'Class', 'Order', 'Family', 'Genus', 'Species'),
+    ('Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species'),
+    ('Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus'),
+    ('Domain', 'Supergroup', 'Division', 'Class', 'Order', 'Family', 'Genus', 'Species'),
+    ('Domain', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species'),
+    ('Domain', 'Phylum', 'Class', 'Order', 'Family', 'Genus'),
+)
 
+taxonomy_otu = Table(
+    'taxonomy_otu', Base.metadata,
+    Column('otu_id', ForeignKey(SCHEMA + '.otu.id'), primary_key=True),
+    Column('taxonomy_id', ForeignKey(SCHEMA + '.taxonomy.id'), primary_key=True)
+)
 
-class OTUOrder(OntologyMixin, Base):
-    pass
+class Taxonomy(SchemaMixin, Base):
+    """
+    Describes a taxonomy for an OTU (see below). There is a many-to-many
+    relationship betweens OTUs and taxonomies: one taxonomy can have many OTUS
+    and one OTU can be classified as several taxonomies, each with a different
+    taxonomy_source. See taxonomy_otu.
+    Note that each OTU should only have one taxonomy per taxonomy source, but
+    this is difficult to enforce using database design and constraints without
+    allowing other inconsistencies.
+    """
+    __tablename__ = 'taxonomy'
 
-
-class OTUFamily(OntologyMixin, Base):
-    pass
-
-
-class OTUGenus(OntologyMixin, Base):
-    pass
-
-
-class OTUSpecies(OntologyMixin, Base):
-    pass
-
-
-class OTU(SchemaMixin, Base):
-    __tablename__ = 'otu'
     id = Column(Integer, primary_key=True)
-    code = Column(String(length=1024), nullable=False)  # long GATTACAt-ype string
-
-    # we query OTUs via heirarchy, so indexes on the first few
-    # layers are sufficient
-    kingdom_id = ontology_fkey(OTUKingdom, index=True)
-    phylum_id = ontology_fkey(OTUPhylum, index=True)
-    class_id = ontology_fkey(OTUClass, index=True)
-    order_id = ontology_fkey(OTUOrder, index=True)
-    family_id = ontology_fkey(OTUFamily, index=True)
-    genus_id = ontology_fkey(OTUGenus, index=True)
-    species_id = ontology_fkey(OTUSpecies, index=True)
     amplicon_id = ontology_fkey(OTUAmplicon, index=True)
-
-    kingdom = relationship(OTUKingdom)
-    phylum = relationship(OTUPhylum)
-    klass = relationship(OTUClass)
-    order = relationship(OTUOrder)
-    family = relationship(OTUFamily)
-    genus = relationship(OTUGenus)
-    species = relationship(OTUSpecies)
     amplicon = relationship(OTUAmplicon)
+    taxonomy_source_id = ontology_fkey(TaxonomySource, index=True)
+    # The taxonomy rank columns are added at runtime - see _setup_taxonomy() below
+    traits = Column(ARRAY(String))
+
+    otus = relationship("OTU",
+                        secondary=taxonomy_otu,
+                        backref="taxonomies")
+    taxonomy_source = relationship(TaxonomySource)
 
     def __repr__(self):
-        return "<OTU(%d: %s,%s,%s,%s,%s,%s,%s,%s)>" % (
+        return "<Taxonomy(%d: amp. %d %s,%s)>" % (
             self.id,
             self.amplicon_id,
-            self.kingdom_id,
-            self.phylum_id,
-            self.class_id,
-            self.order_id,
-            self.family_id,
-            self.genus_id,
-            self.species_id)
+            ','.join(str(getattr(self, a)) for a in taxonomy_key_id_names),
+            self.traits)
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'amplicon': {
+                'id': self.amplicon_id,
+                'value': self.amplicon.value,
+            },
+            'taxonomy_source': {
+                'id': self.taxonomy_source_id,
+                'value': self.taxonomy_source.value,
+            },
+            'r1': {
+                'id': self.r1_id,
+                'value': self.r1.value,
+            },
+            'r2': {
+                'id': self.r2_id,
+                'value': self.r2.value,
+            },
+            'r3': {
+                'id': self.r3_id,
+                'value': self.r3.value,
+            },
+            'r4': {
+                'id': self.r4_id,
+                'value': self.r4.value,
+            },
+            'r5': {
+                'id': self.r5_id,
+                'value': self.r5.value,
+            },
+            'r6': {
+                'id': self.r6_id,
+                'value': self.r6.value,
+            },
+            'r7': {
+                'id': self.r7_id,
+                'value': self.r7.value,
+            },
+            'r8': {
+                'id': self.r8_id,
+                'value': self.r8.value,
+            },
+        }
+
+
+    @classmethod
+    def _add_taxonomy_attrs(cls):
+        """
+        Add taxonomy columns and relationship()s dynamically
+        xxx_id = ontology_fkey(OTUxxx)
+        xxx = relationship(OTUxxx)
+        See https://docs.sqlalchemy.org/en/13/orm/extensions/declarative/basic_use.html#defining-attributes
+        """
+        for (rank_id, rank, OntologyClass) in zip(taxonomy_key_id_names[1:],
+                                                  taxonomy_keys[1:],
+                                                  taxonomy_ontology_classes[1:]):
+            setattr(cls, rank_id, ontology_fkey(OntologyClass, index=True))
+            setattr(cls, rank, relationship(OntologyClass))
+
+Taxonomy._add_taxonomy_attrs()
+
+taxonomy_otu_export = Table(
+    # Denormalised and partitioned join of Taxonomy and taxonomy_otu for
+    # performance. Ideally this would be a materialized view but they can't be
+    # partitioned. Also in psql 10, we can't have primary keys or foreign key
+    # references.
+    'taxonomy_otu_export',
+    Base.metadata,
+
+    Column('amplicon_id', Integer),
+    Column('traits', ARRAY(String)),
+    Column('otu_id', Integer),
+    *[Column(rank_id, Integer) for rank_id in taxonomy_key_id_names],
+    postgresql_partition_by='LIST(taxonomy_source_id)'
+)
+
+def create_partitions(connection, tablename, ids):
+    """
+    All taxonomy-based queries are done with a specific taxonomy_source_id. In
+    order to get decent performance for data downloads, we want to partition on
+    taxonomy_source_id.
+
+    Call this before adding data to the table.
+
+    See https://www.postgresql.org/docs/10/ddl-partitioning.html
+    """
+    for i in ids:
+        connection.execute(DDL(
+            "CREATE TABLE otu.{1}_{0} PARTITION OF otu.{1} FOR VALUES IN ({0});".format(
+                i, tablename)))
+        for col in ['amplicon_id', 'otu_id'] + taxonomy_key_id_names:
+            connection.execute(DDL(
+                "CREATE INDEX ON otu.{1}_{0} ({2});".format(
+                    i, tablename, col)))
+
+class OTU(SchemaMixin, Base):
+    """
+    Operational Taxonomic Unit. Identifies an organism.
+    """
+    __tablename__ = 'otu'
+    id = Column(Integer, primary_key=True)
+    code = Column(String(length=1024), nullable=False)  # typically a hash
+
+    def __repr__(self):
+        return "<OTU(%d: %s)>" % (
+            self.id,
+            self.code)
+
+class Sequence(SchemaMixin, Base):
+    """
+    This allows us to use short hash values for OTU.code and retain the full
+    GATTACA-style OTU for cases where it's needed (e.g. OTU+copntextual
+    download)
+    """
+    __tablename__ = 'sequence'
+    id = Column(Integer, ForeignKey(SCHEMA + '.otu.id'),
+                nullable=False, primary_key=True, index=True)
+    seq = Column(String(length=1024), nullable=False)  # long GATTACA-style string
 
 class SampleHorizonClassification(OntologyMixin, Base):
     pass
@@ -260,7 +386,10 @@ class SampleContext(SchemaMixin, Base):
     beta_beta_car_meth = Column(CIText)
     beta_epi_car = Column(Float)
     beta_epi_car_meth = Column(CIText)
+    bicarbonate = Column(Float)
+    bicarbonate_meth = Column(CIText)
     bleaching = Column(Float)
+    bleaching_meth = Column(CIText)
     boron_hot_cacl2 = Column(Float)
     boron_hot_cacl2_meth = Column(CIText)
     but_fuco = Column(Float)
@@ -269,8 +398,9 @@ class SampleContext(SchemaMixin, Base):
     cadmium_meth = Column(CIText)
     cantha = Column(Float)
     cantha_meth = Column(CIText)
-    carbonate_bicarbonate = Column(Float)
-    carbonate_bicarbonate_meth = Column(CIText)
+    carbonate = Column(Float)
+    carbonate_meth = Column(CIText)
+    cast_id = Column(CIText)
     cation_exchange_capacity = Column(CIText)
     cation_exchange_capacity_meth = Column(CIText)
     cerium = Column(Float)
@@ -293,6 +423,7 @@ class SampleContext(SchemaMixin, Base):
     conductivity_aqueous = Column(CIText)
     conductivity_aqueous_meth = Column(CIText)
     coarse_sand = Column(Float)
+    collection_permit = Column(CIText)
     coarse_sand_meth = Column(CIText)
     chlorophyll_a = Column(Float)
     chlorophyll_a_meth = Column(CIText)
@@ -373,6 +504,7 @@ class SampleContext(SchemaMixin, Base):
     fluor = Column(Float)
     fluor_meth = Column(CIText)
     fouling = Column(Float)
+    fouling_meth = Column(CIText)
     fouling_organisms = Column(CIText)
     fresh_weight = Column(Float)
     fresh_weight_meth = Column(CIText)
@@ -387,9 +519,11 @@ class SampleContext(SchemaMixin, Base):
     gold = Column(Float)
     gold_meth = Column(CIText)
     gravel = Column(CIText)
-    gravel_percent_meth = Column(CIText)
+    gravel_meth = Column(CIText)
     grazing_number = Column(CIText)
+    grazing_number_meth = Column(CIText)
     grazing = Column(Float)
+    grazing_meth = Column(CIText)
     gyro = Column(Float)
     gyro_meth = Column(CIText)
     hafnium = Column(Float)
@@ -399,10 +533,17 @@ class SampleContext(SchemaMixin, Base):
     holmium = Column(Float)
     holmium_meth = Column(CIText)
     host_abundance_mean = Column(Float)
+    host_abundance_mean_meth = Column(CIText)
     host_abundance = Column(Float)
+    host_abundance_meth = Column(CIText)
     host_abundance_seaweed_mean = Column(Float)
+    host_abundance_seaweed_mean_meth = Column(CIText)
+    host_length = Column(Float)
+    host_length_meth = Column(CIText)
     host_species_variety = Column(CIText)
     host_state = Column(CIText)
+    hyperspectral_analysis = Column(CIText)
+    hyperspectral_analysis_meth = Column(CIText)
     icp_te_boron = Column(Float)
     icp_te_boron_meth = Column(CIText)
     icp_te_calcium = Column(Float)
@@ -431,7 +572,6 @@ class SampleContext(SchemaMixin, Base):
     lanthanum_meth = Column(CIText)
     lead = Column(Float)
     lead_meth = Column(CIText)
-    length = Column(Float)
     light_intensity = Column(Float)
     light_intensity_meth = Column(CIText)
     light_intensity_meadow = Column(Float)
@@ -550,6 +690,7 @@ class SampleContext(SchemaMixin, Base):
     rhodium_meth = Column(CIText)
     root_length = Column(Float)
     root_length_meth = Column(CIText)
+    rosette_position = Column(CIText)
     rubidium = Column(Float)
     rubidium_meth = Column(CIText)
     ruthenium = Column(Float)
@@ -607,8 +748,9 @@ class SampleContext(SchemaMixin, Base):
     strontium_meth = Column(CIText)
     sulphur = Column(Float)
     sulphur_meth = Column(CIText)
-    synecochoccus = Column(Float)
-    synecochoccus_meth = Column(CIText)
+    synechococcus = Column(Float)
+    synechococcus_meth = Column(CIText)
+    synonyms = Column(CIText)
     tantalum = Column(Float)
     tantalum_meth = Column(CIText)
     temp = Column(Float)
@@ -626,9 +768,9 @@ class SampleContext(SchemaMixin, Base):
     tot_carb = Column(Float)
     tot_carb_meth = Column(CIText)
     tot_depth_water_col = Column(Float)
-    tot_depth_water_meth = Column(CIText)
+    tot_depth_water_col_meth = Column(CIText)
     tot_nitro = Column(Float)
-    tot_n_meth = Column(CIText)
+    tot_nitro_meth = Column(CIText)
     tot_org_carb = Column(CIText)
     tot_org_c_meth = Column(CIText)
     tot_phosp = Column(Float)
@@ -656,9 +798,13 @@ class SampleContext(SchemaMixin, Base):
     vanadium = Column(Float)
     vanadium_meth = Column(CIText)
     vegetation_dom_grasses = Column(CIText)
+    vegetation_dom_grasses_meth = Column(CIText)
     vegetation_dom_shrubs = Column(CIText)
+    vegetation_dom_shrubs_meth = Column(CIText)
     vegetation_dom_trees = Column(CIText)
+    vegetation_dom_trees_meth = Column(CIText)
     vegetation_total_cover = Column(CIText)
+    vegetation_total_cover_meth = Column(CIText)
     viola = Column(Float)
     viola_meth = Column(CIText)
     voyage_code = Column(CIText)
@@ -710,30 +856,103 @@ class SampleContext(SchemaMixin, Base):
         return "<SampleContext(%d)>" % (self.id)
 
     @classmethod
+    def is_foreign_key(cls, column):
+        return True if column.foreign_keys else False
+
+    @classmethod
     def display_name(cls, field_name):
         """
         return the display name for a field
 
-        if not explicitly set, we just replace '_' with ' ' and upper-case
-        drop _id if it's there
+        - if not explicitly set, we replace '_' with ' ' and make it title case,
+          dropping the _id suffix if it is a foreign key
+        - if it is not a foreign key and field has _id suffix in it's name
+          (e.g. coastal_id, plant_id, sample_id)
+          then convert the "_id" suffix to " ID" (rather than " Id") as well as other capitalisations
         """
         column = getattr(cls, field_name)
         display_name = getattr(column, 'display_name', None)
         if display_name is None:
-            if field_name.endswith('_id'):
-                field_name = field_name[:-3]
-            display_name = ' '.join(((t[0].upper() + t[1:]) for t in field_name.split('_')))
+            display_name = field_name
+            if SampleContext.is_foreign_key(column):
+                display_name = re.sub(r'_id$', '', display_name)
+
+            display_name = ' '.join(((t[0].upper() + t[1:]) for t in display_name.split('_')))
+
+            # handle capitalisation
+            display_name = re.sub(r' Id$', ' ID', display_name)
+            display_name = re.sub(r'^Utc ', 'UTC ', display_name)
+            display_name = re.sub(r'^Dna ', 'DNA ', display_name)
+            display_name = re.sub(r'^Url$', 'URL', display_name)
+            display_name = re.sub(r'^Ph$', 'pH', display_name)
+            display_name = re.sub(r'^Ph ', 'pH ', display_name)
+            display_name = re.sub(r'^Imos ', 'IMOS ', display_name)
+            display_name = re.sub(r'H2o', 'H2O', display_name)
+
+
         return display_name
 
+    @classmethod
+    def csv_header_name(cls, field_name):
+        """
+        return the csv header name for a field
+
+        this is the same as the field_name, which is always the same as the schema definition
+        except if the field name refers to an ontology table, then remove _id suffix from the field_name
+        (since the schema definition won't have _id as this is added for the database column)
+        """
+        column = getattr(cls, field_name)
+        is_foreign_key = SampleContext.is_foreign_key(column)
+        return re.sub(r'_id$', '', field_name) if is_foreign_key else field_name
+
+class SampleMeta(SchemaMixin, Base):
+    __tablename__ = 'sample_meta'
+    sample_id = Column(String, ForeignKey(SCHEMA + '.sample_context.id'), nullable=False, primary_key=True, index=True)
+    has_metagenome = Column(Boolean, default=False)
 
 class SampleOTU(SchemaMixin, Base):
     __tablename__ = 'sample_otu'
     sample_id = Column(String, ForeignKey(SCHEMA + '.sample_context.id'), nullable=False, primary_key=True, index=True)
     otu_id = Column(Integer, ForeignKey(SCHEMA + '.otu.id'), nullable=False, primary_key=True, index=True)
     count = Column(Integer, nullable=False)
+    count_20k = Column(Integer, nullable=True)
 
     def __repr__(self):
-        return "<SampleOTU(%d,%d,%d)>" % (self.sample_id, self.otu_id, self.count)
+        return "<SampleOTU(%s,%d,%d)>" % (self.sample_id, self.otu_id, self.count)
+
+
+taxonomy_rank_id_attrs = [getattr(Taxonomy, name) for name in taxonomy_key_id_names]
+
+def _sample_otu_indexes(prefix):
+    return [Index(prefix + name + '_idx', name) for name in taxonomy_key_id_names]
+
+class OTUSampleOTU(SchemaMixin, Base):
+    __table__ = create_materialized_view(
+        name='otu_sample_otu',
+        selectable=select(
+            [
+                SampleOTU.sample_id,
+                func.count(SampleOTU.otu_id).label("richness"),
+                func.sum(SampleOTU.count).label("count"),
+                func.count(SampleOTU.count_20k).label("richness_20k"), # Will be 0 if all null
+                func.sum(SampleOTU.count_20k).label("sum_count_20k"), # Will be null if all null
+            ] + taxonomy_rank_id_attrs + [
+                Taxonomy.amplicon_id,
+                Taxonomy.traits
+            ],
+            from_obj=(
+                SampleOTU.__table__.join(OTU).join(taxonomy_otu).join(Taxonomy)))
+        .group_by(SampleOTU.sample_id)
+        .group_by(*taxonomy_rank_id_attrs)
+        .group_by(Taxonomy.amplicon_id)
+        .group_by(Taxonomy.traits),
+        metadata=Base.metadata,
+        indexes=  _sample_otu_indexes('otu_sample_otu_index_') +   [
+            Index('otu_sample_otu_index_sample_id_idx', 'sample_id'),
+            Index('otu_sample_otu_index_amplicon_id_idx', 'amplicon_id'),
+            Index('otu_sample_otu_index_traits_idx', 'traits', postgresql_using='gin'),
+        ]
+    )
 
 
 class OntologyErrors(SchemaMixin, Base):
@@ -758,6 +977,7 @@ class ImportMetadata(SchemaMixin, Base):
     __tablename__ = 'import_metadata'
     id = Column(Integer, primary_key=True)
     methodology = Column(String)
+    analysis_url = Column(String)
     revision_date = Column(Date)
     imported_at = Column(Date)
     otu_count = Column(postgresql.BIGINT)
@@ -776,8 +996,22 @@ class ImportedFile(SchemaMixin, Base):
     rows_skipped = Column(postgresql.BIGINT)
 
 
+class SampleSimilarity(Base):
+    __tablename__ = 'sample_similarities'
+
+    id = Column(Integer, primary_key=True)
+    sample_id_1 = Column(String, nullable=False)
+    sample_id_2 = Column(String, nullable=False)
+    jaccard_similarity = Column(Float)
+    braycurtis_similarity = Column(Float)
+
+    def __repr__(self):
+        return f"<SampleSimilarity(id={self.id}, sample_id_1={self.sample_id_1}, sample_id_2={self.sample_id_2}, jaccard_similarity={self.jaccard_similarity}, braycurtis_similarity={self.braycurtis_similarity})>"
+
+
 def make_engine():
+    dbschema = 'otu,public'
     conf = settings.DATABASES['default']
     engine_string = 'postgres://%(USER)s:%(PASSWORD)s@%(HOST)s:%(PORT)s/%(NAME)s' % (conf)
     echo = os.environ.get('BPAOTU_ECHO') == '1'
-    return create_engine(engine_string, echo=echo)
+    return create_engine(engine_string, echo=echo, connect_args={'options': '-csearch_path={}'.format(dbschema)})

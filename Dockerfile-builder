@@ -1,5 +1,5 @@
 # Container used to build bpaotu
-FROM bioplatformsaustralia/bpaotu-base
+FROM bioplatformsaustralia/bpaotu
 MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
 
 ARG BUILD_VERSION
@@ -14,13 +14,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libyaml-dev \
   libxml2-dev \
   libxslt1-dev \
+  libcairo2-dev \
   pkg-config \
   openssh-client \
   zlib1g-dev \
   curl \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV POETRY_PATH /root/.local/bin
 ENV PATH ${VIRTUAL_ENV}/bin:${POETRY_PATH}:$PATH
 RUN poetry --version
@@ -36,8 +37,14 @@ RUN git rev-parse HEAD | tee .version
 
 RUN pip install --upgrade -r requirements/runtime-requirements.txt \
 && pip install --upgrade -r requirements/biom-requirements.txt \
-&& cd "${WORKINGDIR}/${PROJECT_NAME}" && pip install . \
-&& cd "${WORKINGDIR}/bpa-ingest" && poetry build -f wheel && pip install `ls dist/bpaingest-*.whl`
+&& cd "${WORKINGDIR}/${PROJECT_NAME}" && pip install .
+
+# Install KronaTools in a path we include in the tar later
+RUN git clone https://github.com/marbl/Krona.git /data/app/krona && \
+    cd /data/app/krona && \
+    git checkout v2.8.1 && \
+    cd /data/app/krona/KronaTools && \
+    ./install.pl --prefix /app/krona
 
 ADD build/frontend.tgz /data/app/bpaotu/bpaotu/static/bpaotu
 
@@ -46,6 +53,7 @@ WORKDIR /data
 ENV ARTIFACTS env \
     app/docker-entrypoint.sh \
     app/uwsgi \
+    app/krona \
     app/${PROJECT_NAME}
 ENV TARBALL "/data/${PROJECT_NAME}-${BUILD_VERSION}.tar"
 ENV TAR_OPTS --exclude-vcs \

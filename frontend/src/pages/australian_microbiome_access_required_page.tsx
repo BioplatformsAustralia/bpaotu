@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Alert, Container } from 'reactstrap'
 
-export default props => {
+export default (props) => {
   return (
     <Container fluid={true}>
       <Alert color="danger" className="text-center">

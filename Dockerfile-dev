@@ -1,6 +1,21 @@
-# NB: the following dev file has NOT been refactored yet to incorporate new CI - if needed, refactor then add back to docker-compose-build.yml
-FROM bioplatformsaustralia/bpaotu-builder
+FROM bioplatformsaustralia/bpaotu
 MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
+
+# Project specific deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  build-essential \
+  git \
+  libpcre3-dev \
+  libpq-dev \
+  libssl-dev \
+  libyaml-dev \
+  libxml2-dev \
+  libxslt1-dev \
+  libcairo2-dev \
+  pkg-config \
+  openssh-client \
+  zlib1g-dev \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Runtime args, don't re-use build time args
 ENV PRODUCTION 0
@@ -10,7 +25,7 @@ ENV DEBUG 1
 # However let's make it explicit that we don't want /app from the build image
 RUN rm -rf /app && mkdir -p /app
 
-# # For dev we use root so we can shell in and do evil things
+# For dev we use root so we can shell in and do evil things
 USER root
 WORKDIR /app
 
@@ -26,24 +41,17 @@ COPY ./requirements/runtime-requirements.txt /app/bpaotu/
 RUN pip install --upgrade -r bpaotu/runtime-requirements.txt
 COPY ./requirements/biom-requirements.txt /app/bpaotu/
 RUN pip install --upgrade -r bpaotu/biom-requirements.txt
-# COPY ./bpa-ingest/requirements.txt /app/bpaotu/bpaingest-requirements.txt
-# RUN pip install --upgrade -r bpaotu/bpaingest-requirements.txt
+
+# Install KronaTools
+RUN git clone https://github.com/marbl/Krona.git /opt/Krona && \
+  cd /opt/Krona && \
+  git checkout v2.8.1 && \
+  cd /opt/Krona/KronaTools && \
+  ./install.pl
 
 # Copy code and install the app
 COPY . /app
 RUN pip ${PIP_OPTS} install --upgrade -e bpaotu
-# RUN pip ${PIP_OPTS} install --upgrade -e bpa-ingest
-WORKDIR /app/bpa-ingest
-RUN pip install --no-cache-dir --upgrade pip \
- && pip install --no-cache-dir poetry \
- && poetry config virtualenvs.create false \
- && poetry build --format sdist \
- && tar -xvf dist/*-`poetry version -s`.tar.gz \
-    -O bpaingest-`poetry version -s`/setup.py > setup.py \
- && mv pyproject.toml pyproject.toml.bkup \
- && pip ${PIP_OPTS} install --upgrade -e . \
- && mv pyproject.toml.bkup pyproject.toml \
- && pip uninstall --yes poetry
 
 EXPOSE 8000 9000 9001 9100 9101
 VOLUME ["/app", "/data"]

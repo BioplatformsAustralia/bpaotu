@@ -1,0 +1,17 @@
+{% autoescape false %}
+Request for Australian Microbiome metagenome data.
+From: {{ user_email }}
+{{ timestamp.strftime("%c")}}
+
+Request ID: {{ request_id }}
+
+Requested samples:
+{% for id in selected_samples %}
+  {{ id }}
+{% endfor %}
+
+Requested file types:
+{% for ft in file_types %}
+  {{ ft }}
+{% endfor %}
+{% endautoescape %}

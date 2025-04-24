@@ -1,36 +1,67 @@
+import React, { useState, useEffect } from 'react'
+
 import { get as _get } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { selectAmplicon, selectAmpliconOperator } from '../reducers/amplicon'
-import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 
-import DropDownFilter from '../../../components/drop_down_filter'
+import DropDownFilter from 'components/drop_down_filter'
 
-function mapStateToProps(state) {
+import {
+  selectAmplicon,
+  selectAmpliconOperator,
+  getDefaultAmplicon,
+  getDefaultMetagenomeAmplicon,
+} from '../reducers/amplicon'
+
+const AmpliconFilter = (props) => {
+  const [defaultAmplicon, setDefaultAmplicon] = useState(null)
+
+  const calculateDefaultAmplicon = () => {
+    if (defaultAmplicon || props.options.length === 0) {
+      return
+    }
+    const ampliconFunction = props.metagenomeMode
+      ? getDefaultMetagenomeAmplicon
+      : getDefaultAmplicon
+    const amplicon = ampliconFunction(props.options)
+    if (amplicon) {
+      setDefaultAmplicon(amplicon)
+      props.selectValue(amplicon.id)
+    }
+  }
+
+  useEffect(() => {
+    calculateDefaultAmplicon()
+  }, [props.options, props.metagenomeMode])
+
+  useEffect(() => {
+    if (props.selected.value === '' && !props.metagenomeMode && defaultAmplicon) {
+      props.selectValue(defaultAmplicon.id)
+    }
+  }, [props.selected.value, props.metagenomeMode, defaultAmplicon])
+
+  return <DropDownFilter {...props} />
+}
+
+const mapStateToProps = (state) => {
   return {
     label: 'Amplicon',
     options: state.referenceData.amplicons.values,
     optionsLoadingError: state.referenceData.amplicons.error,
     isDisabled: _get(state, 'referenceData.amplicons.values', []).length === 0,
     optionsLoading: state.referenceData.amplicons.isLoading,
-    selected: state.searchPage.filters.selectedAmplicon
+    selected: state.searchPage.filters.selectedAmplicon,
   }
 }
 
-function mapDispatchToProps(dispatch) {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       selectValue: selectAmplicon,
       selectOperator: selectAmpliconOperator,
-      onChange: updateTaxonomyDropDowns('')
     },
     dispatch
   )
 }
 
-const AmpliconFilter = connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(DropDownFilter)
-
-export default AmpliconFilter
+export default connect(mapStateToProps, mapDispatchToProps)(AmpliconFilter)
