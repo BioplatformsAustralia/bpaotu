@@ -65,7 +65,7 @@
     "redux": "4.0.4",
     "redux-actions": "2.6.5",
     "redux-thunk": "2.3.0",
-    "sanitize-html": "1.27.5",
+    "sanitize-html": "2.12.1",
     "styled-components": "^4.0.0",
     "typescript": "3.5.3",
     "use-analytics": "^0.0.5",
