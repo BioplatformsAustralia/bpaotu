@@ -67,7 +67,7 @@ class Command(BaseCommand):
                  self.onto_is(taxonomy_ontology_classes[1], 'Bacteria'),
                  self.onto_is(taxonomy_ontology_classes[2], 'Bacteroidetes'),
                  self.onto_is(taxonomy_ontology_classes[3], 'Ignavibacteria')],
-                None]),
+                None),
             sample_integrity_warnings_filter=sample_integrity_warnings_filter)
 
         timestamp = make_timestamp()
