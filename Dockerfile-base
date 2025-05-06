@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bullseye
+FROM python:3.10-slim-bullseye
 LABEL maintainer https://github.com/BioplatformsAustralia/bpaotu
 
 ENV VIRTUAL_ENV /env
