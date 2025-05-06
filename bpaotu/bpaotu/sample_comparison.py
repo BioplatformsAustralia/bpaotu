@@ -32,7 +32,7 @@ logger = logging.getLogger('rainbow')
 
 
 class SampleComparisonWrapper:
-    def __init__(self, submission_id, status, query, query_results = None, distance_results = None, mds_results = None):
+    def __init__(self, submission_id, status, query):
         self._submission_id = submission_id
         self._status = status
         self._query = query
