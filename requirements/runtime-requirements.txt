@@ -6,7 +6,7 @@ boto==2.49.0
 ccg-django-utils==0.4.2
 celery==4.4.2
 colorlog==4.1.0
-Django==3.0.0
+Django==3.2.25
 django-anymail[amazon_ses]==7.1.0
 django-extensions==2.2.9
 django-redis==4.12.1
