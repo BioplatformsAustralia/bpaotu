@@ -30,3 +30,13 @@ class Submission:
     def __getattr__(self, name):
         value = redis_client.hget(self.submission_id.encode('utf8'), name.encode('utf8'))
         return None if value is None else value.decode('utf8')
+
+
+    def get_all_values(self):
+        """
+        Retrieve all fields and their values for this submission
+        """
+    
+        values = redis_client.hgetall(self.submission_id)
+    
+        return {key.decode('utf8'): value.decode('utf8') for key, value in values.items()}

@@ -89,8 +89,10 @@ export const cancelComparison = () => (dispatch, getState) => {
 
   dispatch(cancelComparisonStarted())
 
+  // get the most recently added submissionId
+  // (repeated calls to runComparison add a new submissionId)
   const { submissions } = state.searchPage.samplesComparisonModal
-  const submissionId = submissions[0].submissionId
+  const submissionId = submissions[submissions.length - 1].submissionId
 
   executeCancelComparison(submissionId)
     .then((data) => {
