@@ -14,7 +14,6 @@ git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
 jinja2
 matplotlib==3.8.3
 mixpanel==4.10.0
-numba==0.60.0
 numpy==1.26.4
 Pillow>=8.1.15
 psutil
