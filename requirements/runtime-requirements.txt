@@ -11,8 +11,6 @@ django-redis==4.12.1
 fastdist==1.1.6
 git+https://github.com/BioplatformsAustralia/bpa-ingest.git@6.11.4
 git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
-google-api-python-client
-httplib2==0.22.0
 jinja2
 matplotlib==3.8.3
 mixpanel==4.10.0
