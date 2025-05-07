@@ -1,5 +1,4 @@
 basemap==1.4.1
-beautifulsoup4==4.9.0
 biopython==1.80
 boto==2.49.0
 ccg-django-utils==0.4.2
