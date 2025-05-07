@@ -15,6 +15,7 @@ jinja2
 matplotlib==3.8.3
 mixpanel==4.10.0
 numpy==1.26.4
+pandas==2.2.3
 Pillow>=8.1.15
 psutil
 psycopg2==2.8.5
