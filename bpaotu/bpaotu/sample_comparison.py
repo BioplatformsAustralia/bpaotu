@@ -21,7 +21,6 @@ from celery.task.control import revoke
 import numpy as np
 import pandas as pd
 from sklearn.manifold import MDS
-from sklearn.metrics import pairwise_distances
 from fastdist import fastdist
 
 # debug
@@ -177,7 +176,6 @@ class SampleComparisonWrapper:
 
             log_msg('  NMDS', skip_mem=True)
             # compute NMDS  ***inititial the start position of the nmds as the mds solution!!!!
-            # dissimilarities = pairwise_distances(df.drop('class', axis=1), metric='euclidean')
             nmds = MDS(n_components=2, metric=False, max_iter=1000, dissimilarity="precomputed")
             nmds_result = nmds.fit_transform(dist_matrix, init=mds_result)
             NMDS_x_scores = nmds_result[:,0]
