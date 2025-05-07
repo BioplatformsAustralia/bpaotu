@@ -103,7 +103,7 @@ function defaults {
 function _django_check_deploy {
     info "running check --deploy"
     set -x
-    django-admin.py check --deploy --settings="${DJANGO_SETTINGS_MODULE}" 2>&1 | tee "${LOG_DIRECTORY}"/uwsgi-check.log
+    django-admin check --deploy --settings="${DJANGO_SETTINGS_MODULE}" 2>&1 | tee "${LOG_DIRECTORY}"/uwsgi-check.log
     set +x
 }
 
@@ -111,7 +111,7 @@ function _django_check_deploy {
 function _django_migrate {
     info "running migrate"
     set -x
-    django-admin.py migrate --noinput --settings="${DJANGO_SETTINGS_MODULE}" 2>&1 | tee "${LOG_DIRECTORY}"/uwsgi-migrate.log
+    django-admin migrate --noinput --settings="${DJANGO_SETTINGS_MODULE}" 2>&1 | tee "${LOG_DIRECTORY}"/uwsgi-migrate.log
     set +x
 }
 
@@ -119,7 +119,7 @@ function _django_migrate {
 function _django_collectstatic {
     info "running collectstatic"
     set -x
-    django-admin.py collectstatic --noinput --settings="${DJANGO_SETTINGS_MODULE}" 2>&1 | tee "${LOG_DIRECTORY}"/uwsgi-collectstatic.log
+    django-admin collectstatic --noinput --settings="${DJANGO_SETTINGS_MODULE}" 2>&1 | tee "${LOG_DIRECTORY}"/uwsgi-collectstatic.log
     set +x
 }
 
@@ -130,7 +130,7 @@ function _warmcache {
     else
         info "running warmcache"
         set -x
-        django-admin.py warmcache --settings="${DJANGO_SETTINGS_MODULE}"
+        django-admin warmcache --settings="${DJANGO_SETTINGS_MODULE}"
         set +x
     fi
 }
@@ -139,8 +139,8 @@ function _warmcache {
 function _django_test_fixtures {
     info 'loading test (iprestrict permissive) fixture'
     set -x
-    django-admin.py init iprestrict_permissive
-    django-admin.py reload_rules
+    django-admin init iprestrict_permissive
+    django-admin reload_rules
     set +x
 }
 
@@ -148,8 +148,8 @@ function _django_test_fixtures {
 function _django_dev_fixtures {
     info "loading DEV fixture"
     set -x
-    django-admin.py init DEV
-    django-admin.py reload_rules
+    django-admin init DEV
+    django-admin reload_rules
     set +x
 }
 
@@ -177,7 +177,7 @@ function _runserver() {
     set -x
     while true; do
         # shellcheck disable=SC2086
-        django-admin.py ${RUNSERVER_OPTS}
+        django-admin ${RUNSERVER_OPTS}
         echo "oh no, runserver crashed: $!"
         sleep 5
     done
@@ -188,7 +188,7 @@ function _aloe() {
     export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE}"_test
     shift
     set -x
-    exec django-admin.py harvest --with-xunit --xunit-file="${WRITABLE_DIRECTORY}"/tests.xml --verbosity=3 "$@"
+    exec django-admin harvest --with-xunit --xunit-file="${WRITABLE_DIRECTORY}"/tests.xml --verbosity=3 "$@"
 }
 
 
@@ -255,7 +255,7 @@ if [ "$1" = 'runtests' ]; then
     export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE}"_test
 
     set -x
-    exec django-admin.py test --noinput -v 3 bpaotu
+    exec django-admin test --noinput -v 3 bpaotu
 fi
 
 # aloe entrypoint
