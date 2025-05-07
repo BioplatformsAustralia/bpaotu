@@ -9,7 +9,7 @@ import mimetypes
 
 import requests
 from io import BytesIO
-from PIL import Image
+from PIL import Image # Pillow
 from django.http import HttpResponseForbidden
 
 import logging
