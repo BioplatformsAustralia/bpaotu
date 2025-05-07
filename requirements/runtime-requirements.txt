@@ -8,7 +8,6 @@ Django==4.0.10
 django-anymail[amazon_ses]==7.1.0
 django-extensions==3.2.3
 django-redis==4.12.1
-django-webpack-loader==0.7.0
 fastdist==1.1.6
 git+https://github.com/BioplatformsAustralia/bpa-ingest.git@6.11.4
 git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
