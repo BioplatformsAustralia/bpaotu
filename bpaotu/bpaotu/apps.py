@@ -6,6 +6,8 @@ from django.conf import settings
 
 class BpaotuConfig(AppConfig):
     name = 'bpaotu'
+    default_auto_field = 'django.db.models.BigAutoField'
+
     def ready(self):
         # See settings.STATICFILES_DIRS
         with suppress(FileExistsError, PermissionError):

@@ -226,7 +226,6 @@ INSTALLED_APPS = ('django.contrib.auth',
                   'django_extensions',
                   'django.contrib.admin',
                   'django.contrib.admindocs',
-                  'suit',
                   'bpaotu',
                   )
 
