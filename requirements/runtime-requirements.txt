@@ -24,7 +24,6 @@ Pillow>=8.1.1
 psutil
 psycopg2==2.8.5
 python-dateutil==2.8.1
-python-resize-image==1.1.19
 redis==3.4.1
 reportlab==4.0.9
 requests==2.32.3
