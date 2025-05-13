@@ -168,7 +168,7 @@ export const searchPageInitialState: PageState = {
     rowsCount: -1, // to prevent clash with "0" which prevents running blast search
   },
   taxonomySearchModal: {
-    searchStringInput: 'Skeletonema',
+    searchStringInput: '',
     searchString: null,
     isOpen: false,
     isLoading: false,
