@@ -93,7 +93,17 @@ export class SearchResultsTable extends React.Component<any> {
   ]
 
   public kronaColumn = {
-    Header: () => <div>Krona Plot</div>,
+    Header: () => (
+      <div>
+        Krona Plot{' '}
+        <span id="singleMTipTabKrona">
+          <Octicon name="info" />
+        </span>
+        <UncontrolledTooltip target="singleMTipTabKrona" autohide={false} placement="bottom">
+          Includes abundance for all taxonomies found in this sample (unaffected by filters)
+        </UncontrolledTooltip>
+      </div>
+    ),
     accessor: 'sample_id',
     sortable: true,
     Cell: this.props.krona_func,
@@ -103,10 +113,10 @@ export class SearchResultsTable extends React.Component<any> {
     Header: () => (
       <div>
         Sandpiper community profile{' '}
-        <span id="singleMTipTab">
+        <span id="singleMTipTabSandpiper">
           <Octicon name="info" />
         </span>
-        <UncontrolledTooltip target="singleMTipTab" autohide={false} placement="left">
+        <UncontrolledTooltip target="singleMTipTabSandpiper" autohide={false} placement="bottom">
           Link to{' '}
           <a href={'https://github.com/wwood/singlem'} target="_blank" rel="noopener noreferrer">
             SingleM
