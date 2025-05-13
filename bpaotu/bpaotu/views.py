@@ -765,18 +765,19 @@ def nondenoised_request(request):
         attrs['amplicon'] = info.id_to_value(OTUAmplicon, amplicon_id)
     attrs['email'] = request.ckan_data.get('email')
     attrs['selected_samples'] = '\n'.join(json.loads(request.POST.get('selected_samples', '[]')))
-    request = NonDenoisedDataRequest(**attrs)
-    request.save()
-    attrs['id'] = request.id
+
+    request_object = NonDenoisedDataRequest(**attrs)
+    request_object.save()
+    attrs['id'] = request_object.id
 
     track(request, 'otu_nondenoised_data_request')
 
     send_mail(
-        "[ND#{}] Australian Microbiome: Data request received".format(request.id),
+        "[ND#{}] Australian Microbiome: Data request received".format(request_object.id),
         ACKNOWLEDGEMENT_EMAIL_TEMPLATE.format(**attrs),
         "Australian Microbiome Data Requests <am-data-requests@bioplatforms.com>", [attrs['email']])
     send_mail(
-        "[ND#{}] Non-denoised data request".format(request.id),
+        "[ND#{}] Non-denoised data request".format(request_object.id),
         NONDENOISED_EMAIL_TEMPLATE.format(**attrs),
         "Australian Microbiome Data Requests <am-data-requests@bioplatforms.com>", [settings.NONDENOISED_REQUEST_EMAIL])
     return JsonResponse({'okay': True})
