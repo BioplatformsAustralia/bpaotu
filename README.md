@@ -7,21 +7,25 @@ developed to access data from the Australian Microbiome.
 
 - The backend is implemented in [Django](https://www.djangoproject.com/), but uses
   [SQLAlchemy](https://www.sqlalchemy.org/) for most database operations.
+
 - The frontend is implemented in [React](https://reactjs.org/) and uses
   [Plotly](https://plotly.com/javascript/) for charts and
   [Leaflet](https://leafletjs.com/) for maps. It has its own webserver, separate from
   Django, which serves the React assets and also proxies requests from the user
   interface through to Django.
+
 - In production, the system requires that the browser session be logged in to
   the configured [CKAN](https://docs.ckan.org/) instance (see settings.py). This
   is an administrative restriction, and the system doesn't require CKAN
   authentication for functionality.
+
 - All data for the system is contained within a Postgres database which is
   loaded from a set of files by an ingest operation (see below). Some ancillary
   data is fetched using the Python `ckanapi` (e.g. sample site images and sample
   metagenome data). For this reason the docker containers (at least `runserver`
   and `celeryworker`) need to run with a valid CKAN_API_KEY environment
   variable (see ./.env_local and ./docker-compose.yml).
+
 - It depends on another Bioplatforms Australia project called `bpa-ingest`
   [(maintained externally)](https://github.com/BioplatformsAustralia/bpa-ingest).
   The version of `bpa-ingest` used is maintained in the `runtime-requirements.txt` file.
@@ -29,22 +33,24 @@ developed to access data from the Australian Microbiome.
   These changes will be associated with a git tag by the `bpa-ingest` team for the new version.
   The entry in `runtime-requirements.txt` must be updated to use the version at this new tag.
   Note: This dependency was handled previously as a git submodule.
+
 - For development, Django runs in a Docker container, while the frontend
   webserver is started from a shell prompt outside of the container. The
   container mounts `./` as a volume, which means that Django will monitor all of
   its \*.py files and restart when they are updated outside of the container.
+
 - The production instance is hosted at https://data.bioplatforms.com/
+
 - For production, both Django and the frontend webserver run in Docker containers.
+
 - Deployment into production from github is performed by [Bioplatforms Australia](https://bioplatforms.com/) using [CircleCI](https://circleci.com/)
 
 ## Development environment setup
 
 ### Backend (Django)
 
-- [Install docker and compose](https://docs.docker.com/compose/install/)
-  - Note: the Docker compose plugin (`docker compose`) does not seem to work with the docker-compose-build.yml file, but the older executable (`docker-compose`) does work
-  - On the docker compose install page, there is a note that Compose V1 won't be supported anymore
-    from the end of June 2023 (which may affect these steps)
+- [Install Docker and the Docker Compose plugin](https://docs.docker.com/compose/install/)
+
 - Generate `./.env_local`. This should contain `KEY=value` lines. See `./.env`
   for keys. This must have a valid `CKAN_API_KEY` so that site images and sample
   metagenome data can be fetched during development. You can use your personal
@@ -63,21 +69,25 @@ developed to access data from the Australian Microbiome.
 
 - Build the docker images
 
-  `docker-compose -f docker-compose-build.yml build base dev`
+  `docker compose -f docker-compose-build.yml build base dev`
 
 - Start all of the containers
 
-  `docker-compose up`
+  `docker compose up`
 
   There are 4 containers: runserver, db, cache, celeryworker
 
+  This will start the docker containers attached to the current terminal process. Logs will be written to the terminal screen.
+
+- If you want the containers to persist running after closing the terminal, start the containers with the `-d` argument:
+
+  `docker compose up -d`
+
+  And then manage the containers with usual docker commands, e.g. `docker compose ps`, `docker compose stop`, `docker compose start`; and monitor the logs with `docker compose logs`, `docker compose logs runserver` or `docker compose logs celeryworker` as appropriate
+
+- Troubleshooting:
+
   If the local machine already has a postgresql server instance it will need to be stopped, since the ports will conflict (`sudo service postgresql stop`)
-
-  This will start the docker containers attached to the current terminal process. If you want the containers to persist running after closing the terminal, start the containers with the -d argument:
-
-  `docker-compose up -d`
-
-  And then manage the containers with usual docker commands (`docker-compose ps`, `docker-compose stop`, `docker-compose start`)
 
 ### Ingest
 
@@ -95,7 +105,7 @@ Once the BE is operational it's possible to do a data ingest. This is described 
 
 - Run the otu_ingest management task on the app container
 
-  `docker-compose exec runserver bash`
+  `docker compose exec runserver bash`
 
   `/app/docker-entrypoint.sh django-admin otu_ingest $ingest_dir $yyyy-mm-dd --use-sql-context --no-force-fetch`
 
@@ -108,8 +118,11 @@ These steps are performed in a separate terminal, i.e. not in the container, and
 - Install node
 
   - The required version is in the `frontend/package.json` under the `"engines"`` property
+
   - Most systems will already have a version of node installed. The easiest way to install the required version for this app is to use [`nvm`](https://github.com/nvm-sh/nvm#installing-and-updating) (Node Version Manager)
+
   - Once nvm is installed, install the required version of node, e.g.: `nvm install x.y.z`
+
   - There is also a file in the `frontend/` directory called `.nvmrc` that specifies the version of node to be used for this project in the event that the local system has multiple versions of node.
 
 - Install yarn
@@ -126,6 +139,24 @@ These steps are performed in a separate terminal, i.e. not in the container, and
 
   - Run `yarn start`
   - The page will be accessible on port 3000 by default
+
+### KronaTools
+
+KronaTools is used for some visualisations. In production, KronaTools is installed to the /app directory in the container during the production build. This doesn't work in development mode as /app is mounted to the code directory. To get around this, install KronaTools directly in the code directory to ./krona (this path is included in the .gitignore file, so it's not committed to the repository).
+
+Not installing KronaTools won't cause the development environment to fail, but it will raise errors when trying to produce Krona plots.
+
+`/path/to/bpaotu` is the app root (i.e. where docker-compose.yml is)
+
+```
+cd /path/to/bpaotu
+
+git clone https://github.com/marbl/Krona.git ./krona
+cd krona
+git checkout v2.8.1
+cd KronaTools
+./install.pl --prefix ./
+```
 
 ## Input data description
 
@@ -161,7 +192,7 @@ The ingest is then run as a Django management command. To run this you will need
 ```console
 cd ~/bpaotu # or wherever docker-compose.yml lives
 # either this
-docker-compose exec runserver bash
+docker compose exec runserver bash
 # or this
 docker exec -it bpaotu_runserver_1 bash
 
@@ -172,8 +203,8 @@ root@05abc9e1ecb2:~# /app/docker-entrypoint.sh django-admin otu_ingest $dir $yyy
 root@420c1d1e9fe4:~# /app/docker-entrypoint.sh django-admin otu_ingest $dir $yyyy_mm_dd
 ```
 
-> If `docker-compose exec runserver bash` does not work, then find the id of the container
-> with `docker container ls` (the system will need to be running for this to work, i.e. with `docker-compose up`)
+> If `docker compose exec runserver bash` does not work, then find the id of the container
+> with `docker container ls` (the system will need to be running for this to work, i.e. with `docker compose up`)
 > and then run `docker exec -it 2361ab2339af bash` (name will be different for the reader)
 
 `$dir` is the base directory for the abundance and taxonomy files.
@@ -189,7 +220,7 @@ cd ./data/dev
 tar -xvzf </path/to/dataarchive.tar.gz> ./
 
 cd ~/bpaotu # or wherever docker-compose.yml lives
-docker-compose exec runserver bash
+docker compose exec runserver bash
 /app/docker-entrypoint.sh django-admin otu_ingest AM_data_db_submit_202303211107/ 2023-11-29 --use-sql-context --no-force-fetch
 ```
 
@@ -280,6 +311,8 @@ AAAAGAAGTAAGTAGTCTAACCGTTTACGGAGGGCGCTTACCACTTTGTGATTCATGACTGGGG  21653 14
 AAAAGAAGTAGATAGCTTAACCTTCGGGAGGGCGTTTACCACTTTGTGATTCATGACTGGGG  21644 70  2
 ```
 
+## Database
+
 ### Database visualisation
 
 To generate an SVG diagram of the database schema, install the
@@ -306,11 +339,17 @@ SET search_path TO otu;
 
 ## Testing
 
+### Add-hoc
+
 There is a script to test the output of the `OTU and Contextual Download` feature. This counts and displays the number of unique OTU hashes in the OTU.fasta file, the number of unique Sample IDs in the contextual.csv file, and for each domain .csv file, counts and displays the number of unique OTU hashes and unique Sample IDs. The results can then be inspected to ensure they are as expected for the given search.
 
 To run, download a search, extract the results to a directory, cd to that directory and run the script:
 
 `. /path/to/bpaotu/test/verify-otu-contextual-export.sh`
+
+### Automated
+
+There are no automated tests
 
 ## Deployments
 
@@ -327,25 +366,3 @@ BPA OTU is released under the GNU Affero GPL. See source for a licence copy.
 - Fork next_release branch
 - Make changes on a feature branch
 - Submit pull request
-
-MDS TODO
-
-Start without the map
-
-Why does the spatial query need to even be used? Why not just use the raw lat long components and if there are multiple samples for the same location, then collate them in the response, or after
-
-Cache the calculations
-If filters change then reset plotData; or just when modal is opened/closed <--------------
-
-improve index calc:
-scipy
-https://stackoverflow.com/questions/53021522/how-to-speed-up-distance-matrix-calculation
-
-test cases
-
-different table / column for each amplicon
-bacteria: domain = bacteria, phylum != unclassified
-
-different section rather than same graph page
-
-Note when search filters are different the the displayed results

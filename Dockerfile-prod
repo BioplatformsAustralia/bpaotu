@@ -1,4 +1,3 @@
-# bpaotu production
 FROM bioplatformsaustralia/bpaotu
 MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
 

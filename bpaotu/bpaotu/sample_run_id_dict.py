@@ -1,3 +1,6 @@
+# This file maps an AM Sample ID to a Sandpiper Sample Run
+# Scraped from https://sandpiper.qut.edu.au/project?model_bioproject=PRJNA317932
+
 sample_run_id_dict = {
     '16003': 'SRR5915934',
     '15861': 'SRR5915945',

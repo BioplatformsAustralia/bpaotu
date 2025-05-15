@@ -1,4 +1,3 @@
-# Container used to build bpaotu
 FROM bioplatformsaustralia/bpaotu
 MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
 
