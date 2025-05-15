@@ -1,5 +1,5 @@
 FROM bioplatformsaustralia/bpaotu
-MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
+LABEL maintainer=https://github.com/bioplatformsaustralia/bpaotu
 
 ARG BUILD_VERSION
 ARG GIT_BRANCH

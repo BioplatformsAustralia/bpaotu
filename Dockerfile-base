@@ -1,20 +1,20 @@
 FROM python:3.9-slim-bullseye
-LABEL maintainer https://github.com/BioplatformsAustralia/bpaotu
+LABEL maintainer=https://github.com/BioplatformsAustralia/bpaotu
 
-ENV VIRTUAL_ENV /env
-ENV PATH $VIRTUAL_ENV/bin:$PATH
-ENV PROJECT_NAME bpaotu
-ENV PROJECT_SOURCE https://github.com/BioplatformsAustralia/bpaotu.git
-ENV DEPLOYMENT prod
-ENV PRODUCTION 1
-ENV DEBUG 0
-ENV STATIC_ROOT /data/static
-ENV WRITABLE_DIRECTORY /data/scratch
-ENV MEDIA_ROOT /data/static/media
-ENV LOG_DIRECTORY /data/log
+ENV VIRTUAL_ENV=/env
+ENV PATH=$VIRTUAL_ENV/bin:$PATH
+ENV PROJECT_NAME=bpaotu
+ENV PROJECT_SOURCE=https://github.com/BioplatformsAustralia/bpaotu.git
+ENV DEPLOYMENT=prod
+ENV PRODUCTION=1
+ENV DEBUG=0
+ENV STATIC_ROOT=/data/static
+ENV WRITABLE_DIRECTORY=/data/scratch
+ENV MEDIA_ROOT=/data/static/media
+ENV LOG_DIRECTORY=/data/log
 ENV MONGO_DB_PREFIX=prod_
-ENV DJANGO_SETTINGS_MODULE bpaotu.settings
-ENV PYTHONUNBUFFERED 1
+ENV DJANGO_SETTINGS_MODULE=bpaotu.settings
+ENV PYTHONUNBUFFERED=1
 
 RUN addgroup --gid 1000 bioplatforms \
   && adduser --disabled-password --home /data --no-create-home --system -q --uid 1000 --ingroup bioplatforms bioplatforms \

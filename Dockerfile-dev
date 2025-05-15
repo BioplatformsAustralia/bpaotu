@@ -1,5 +1,5 @@
 FROM bioplatformsaustralia/bpaotu
-MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
+LABEL maintainer=https://github.com/bioplatformsaustralia/bpaotu
 
 # For dev we use root so we can shell in and do evil things
 USER root
@@ -22,8 +22,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Runtime args, don't re-use build time args
-ENV PRODUCTION 0
-ENV DEBUG 1
+ENV PRODUCTION=0
+ENV DEBUG=1
 
 # Strictly speaking not needed as we mount over the top
 # However let's make it explicit that we don't want /app from the build image
@@ -56,7 +56,7 @@ RUN pip ${PIP_OPTS} install --upgrade -e bpaotu
 EXPOSE 8000 9000 9001 9100 9101
 VOLUME ["/app", "/data"]
 
-ENV HOME /data
+ENV HOME=/data
 WORKDIR /data
 
 # entrypoint shell script that by default starts runserver
