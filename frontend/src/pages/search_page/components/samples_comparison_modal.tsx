@@ -391,21 +391,46 @@ const SamplesComparisonModal = (props) => {
               height: chartHeight,
               title: 'NMDS Plot',
               legend: { orientation: 'h' },
+              paper_bgcolor: 'white',
+              plot_bgcolor: 'white',
               xaxis: {
+                showticklabels: false,
+                showgrid: false,
+                zeroline: false,
                 tickmode: 'linear',
                 tick0: 0,
                 dtick: 0.2,
                 range: plotHasData ? undefined : [-1, 1],
               },
               yaxis: {
+                showticklabels: false,
+                showgrid: false,
+                zeroline: false,
                 scaleanchor: 'x',
                 tickmode: 'linear',
                 tick0: 0,
                 dtick: 0.2,
                 range: plotHasData ? undefined : [-1, 1],
               },
+              shapes: [
+                {
+                  type: 'rect',
+                  xref: 'paper',
+                  yref: 'paper',
+                  x0: 0,
+                  y0: 0,
+                  x1: 1,
+                  y1: 1,
+                  line: {
+                    color: 'black',
+                    width: 2,
+                  },
+                  fillcolor: 'rgba(0,0,0,0)',
+                  layer: 'above',
+                },
+              ],
             }}
-            config={{ displayLogo: false, scrollZoom: false }}
+            config={{ displayLogo: false, scrollZoom: false, displayModeBar: false }}
             useResizeHandler
             style={{ width: '100%', height: '100%', marginTop: '0px' }}
           />
