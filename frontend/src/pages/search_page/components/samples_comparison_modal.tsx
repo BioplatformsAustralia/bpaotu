@@ -153,6 +153,7 @@ const SamplesComparisonModal = (props) => {
   // console.log('SamplesComparisonModal', 'comparisonStatus', comparisonStatus)
   // console.log('SamplesComparisonModal', 'contextual', contextual)
   // console.log('SamplesComparisonModal', 'plotData', plotData)
+  // console.log('SamplesComparisonModal', 'stressNorm', stressNorm)
   // console.log('SamplesComparisonModal', 'mem_usage', mem_usage)
   // console.log('SamplesComparisonModal', 'timestamps', timestamps)
 
@@ -359,6 +360,7 @@ const SamplesComparisonModal = (props) => {
                   Stress:
                 </Col>
                 <Col xs="1" style={{ paddingLeft: '0px', textAlign: 'left' }}>
+                  {stressNorm[`${selectedMethod}_MDS`].toPrecision(3)}{' '}
                   {stressNorm[`${selectedMethod}_NMDS`].toPrecision(3)}
                 </Col>
               </>
@@ -413,7 +415,7 @@ const SamplesComparisonModal = (props) => {
                 range: plotHasData ? undefined : [-1, 1],
               },
               shapes: [
-                {
+                plotHasData && {
                   type: 'rect',
                   xref: 'paper',
                   yref: 'paper',
