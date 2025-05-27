@@ -43,11 +43,7 @@ COPY ./requirements/biom-requirements.txt /app/bpaotu/
 RUN pip install --upgrade -r bpaotu/biom-requirements.txt
 
 # Install KronaTools
-RUN git clone https://github.com/marbl/Krona.git /opt/Krona && \
-  cd /opt/Krona && \
-  git checkout v2.8.1 && \
-  cd /opt/Krona/KronaTools && \
-  ./install.pl
+## done locally; see README.md
 
 # Copy code and install the app
 COPY . /app
