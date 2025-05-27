@@ -48,7 +48,7 @@ from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilter
                     TaxonomyFilter, TaxonomyOptions, get_sample_ids,
                     SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
-from .spatial import comparison_query, spatial_query
+from .spatial import spatial_query
 from .tabular import tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_time, parse_float, log_msg, mem_usage_obj
 

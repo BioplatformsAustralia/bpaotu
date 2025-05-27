@@ -13,7 +13,6 @@ from django.conf import settings
 from . import views
 from .otu import OTU, SampleContext, SampleOTU
 from .query import SampleQuery
-from .spatial import comparison_query
 from .submission import Submission
 from .util import format_sample_id
 from celery.task.control import revoke
