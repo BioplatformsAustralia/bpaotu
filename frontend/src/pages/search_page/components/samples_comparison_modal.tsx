@@ -142,6 +142,7 @@ const SamplesComparisonModal = (props) => {
     clearPlotData,
     contextual,
     plotData,
+    stressNorm,
     contextualFilters,
     comparisonStatus,
     // mem_usage,
@@ -208,6 +209,7 @@ const SamplesComparisonModal = (props) => {
 
   const plotHasData = plotData[selectedMethod] && plotData[selectedMethod].length > 0
   const showExtraControls = plotHasData
+  const showStress = plotHasData
 
   // use jittered x, y values for plotting and original values for tooltip (using customdata)
   const plotDataTransformedTooltip = plotDataTransformed.map((z) => {
@@ -351,12 +353,25 @@ const SamplesComparisonModal = (props) => {
                 <Col xs="3">&nbsp;</Col>
               </>
             )}
-            {showExtraControls && !isContinuous && (
+            {showStress && (
               <>
                 <Col xs="2" style={{ textAlign: 'right' }}>
+                  Stress:
+                </Col>
+                <Col xs="1" style={{ paddingLeft: '0px', textAlign: 'left' }}>
+                  {stressNorm[`${selectedMethod}_NMDS`].toPrecision(3)}
+                </Col>
+              </>
+            )}
+          </Row>
+          <Row>
+            {showExtraControls && !isContinuous && (
+              <>
+                <Col xs="9">&nbsp;</Col>
+                <Col xs="2" style={{ marginTop: 4, textAlign: 'right' }}>
                   Marker size:
                 </Col>
-                <Col xs="1" style={{ paddingLeft: 0, paddingRight: 0 }}>
+                <Col xs="1" style={{ marginTop: 4, paddingLeft: 0, paddingRight: 0 }}>
                   <RangeSlider
                     value={markerSize}
                     onChange={(changeEvent) => setMarkerSize(parseInt(changeEvent.target.value))}
@@ -374,7 +389,7 @@ const SamplesComparisonModal = (props) => {
             layout={{
               // width: chartWidth,
               height: chartHeight,
-              title: 'MDS Plot',
+              title: 'NMDS Plot',
               legend: { orientation: 'h' },
               xaxis: {
                 tickmode: 'linear',
@@ -438,6 +453,7 @@ const mapStateToProps = (state) => {
     submissions,
     results,
     plotData,
+    stressNorm,
     // mem_usage,
     // timestamps,
   } = state.searchPage.samplesComparisonModal
@@ -458,6 +474,7 @@ const mapStateToProps = (state) => {
 
     results,
     plotData,
+    stressNorm,
     abundanceMatrix,
     contextual,
 

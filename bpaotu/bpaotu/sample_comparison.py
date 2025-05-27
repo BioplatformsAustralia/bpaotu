@@ -177,7 +177,6 @@ class SampleComparisonWrapper:
 
             log_msg('  NMDS', skip_mem=True)
             # compute NMDS  ***inititial the start position of the nmds as the mds solution!!!!
-            # dissimilarities = pairwise_distances(df.drop('class', axis=1), metric='euclidean')
             nmds = MDS(n_components=2, metric=False, max_iter=1000, dissimilarity="precomputed")
             nmds_result = nmds.fit_transform(dist_matrix, init=mds_result)
             NMDS_x_scores = nmds_result[:,0]
@@ -225,14 +224,14 @@ class SampleComparisonWrapper:
         }
 
         abundance_matrix['points'] = {
-            'braycurtis': pairs_braycurtis_MDS,
-            'braycurtis_NMDS': pairs_braycurtis_NMDS,
-            'stress_norm_braycurtis_MDS': stress_norm_braycurtis_MDS,
-            'stress_norm_braycurtis_NMDS': stress_norm_braycurtis_NMDS,
-            'jaccard': pairs_jaccard_MDS,
-            'jaccard_NMDS': pairs_jaccard_NMDS,
-            'stress_norm_jaccard_MDS': stress_norm_jaccard_MDS,
-            'stress_norm_jaccard_NMDS': stress_norm_jaccard_NMDS,
+            'braycurtis': pairs_braycurtis_NMDS,
+            'jaccard': pairs_jaccard_NMDS,
+            'stress_norm': {
+                'braycurtis_MDS': stress_norm_braycurtis_MDS,
+                'braycurtis_NMDS': stress_norm_braycurtis_NMDS,
+                'jaccard_MDS': stress_norm_jaccard_MDS,
+                'jaccard_NMDS': stress_norm_jaccard_NMDS,
+            }
         }
 
         self._status_update(submission, 'contextual_start')

@@ -92,6 +92,12 @@ export interface PageState {
       // jaccard: Array<{ x: number; y: number }>;
       // braycurtis: Array<{ x: number; y: number }>;
     }
+    stressNorm: {
+      braycurtis_MDS: number
+      braycurtis_NMDS: number
+      jaccard_MDS: number
+      jaccard_NMDS: number
+    }
     mem_usage: {
       mem: string
       swap: string
@@ -199,6 +205,7 @@ export const searchPageInitialState: PageState = {
     submissions: [],
     results: { abundanceMatrix: {}, contextual: {} },
     plotData: { jaccard: [], braycurtis: [] },
+    stressNorm: { braycurtis_MDS: -1, braycurtis_NMDS: -1, jaccard_MDS: -1, jaccard_NMDS: -1 },
     mem_usage: { mem: '', swap: '', cpu: '' },
     timestamps: [],
   },
