@@ -23,6 +23,9 @@ from sklearn.manifold import MDS
 from sklearn.metrics import pairwise_distances
 from fastdist import fastdist
 
+import umap.umap_ as umap
+
+
 # debug
 from time import sleep, time
 from .util import log_msg
@@ -224,6 +227,21 @@ class SampleComparisonWrapper:
                 'stress_norm_MDS': stress_norm_MDS,
                 'stress_norm_NMDS': stress_norm_NMDS,
             }
+
+        def umap_results(dist_matrix):
+            #make a name for the output file
+            #create an array from the df data
+            # dist_matrix_values = dist_matrix.values
+             
+            print("running UMAP")
+            #run the UMAP 
+            reducer = umap.UMAP(n_components = 2, n_neighbors = 200, spread=1, min_dist=0.01, metric = 'precomputed', random_state = 0)
+            embeddings = reducer.fit_transform(dist_matrix)
+            plot_df = pd.DataFrame(data = embeddings, columns = ['dim1', 'dim2'], index=dist_matrix.index)
+
+            return plot_df
+
+        results_braycurtis_umap = umap_results(dist_matrix_braycurtis)
 
         self._status_update(submission, 'calc_mds_bc')
         log_msg('start braycurtis calc')
