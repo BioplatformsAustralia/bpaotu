@@ -118,14 +118,14 @@ class SampleComparisonWrapper:
         submission = Submission(self._submission_id)
 
         self._status_update(submission, 'fetch')
-        log_msg('Fetching sample data', skip_mem=True)
+        log_msg('Fetching sample data')
 
         # make csv in /tmp dir with abundance data
         self._make_abundance_csv()
 
         # read abundance data into a dataframe
         self._status_update(submission, 'fetched_to_df')
-        log_msg('start query results to df', skip_mem=True)
+        log_msg('start query results to df')
         results_file = self._in('abundance.csv')
         print(results_file)
         column_names = ['sample_id', 'otu_id', 'abundance']
@@ -137,14 +137,14 @@ class SampleComparisonWrapper:
         df['otu_id'] = pd.to_numeric(df['otu_id'], downcast='unsigned')
         df['abundance'] = pd.to_numeric(df['abundance'], downcast='unsigned')
 
-        log_msg(f'df.shape {df.shape}', skip_mem=True)
+        log_msg(f'df.shape {df.shape}')
 
         nunique_sample_id = df["sample_id"].nunique()
         nunique_otu_id = df["otu_id"].nunique()
         dtype_size = np.dtype(np.uint32).itemsize
 
-        log_msg(f'nunique df.sample_id: {nunique_sample_id}', skip_mem=True)
-        log_msg(f'nunique df.otu_id:    {nunique_otu_id}', skip_mem=True)
+        log_msg(f'nunique df.sample_id: {nunique_sample_id}')
+        log_msg(f'nunique df.otu_id:    {nunique_otu_id}')
 
         estimated_index_bytes = nunique_sample_id * 50 # size per sample is an estimate
         estimated_data_bytes = nunique_sample_id * nunique_otu_id * dtype_size
@@ -152,7 +152,7 @@ class SampleComparisonWrapper:
         estimated_mb = estimated_bytes / (1024 ** 2)
 
         # does not include index
-        log_msg(f"Estimated pivot memory usage: {estimated_bytes:,} bytes ({estimated_mb:.2f} MB)", skip_mem=True)
+        log_msg(f"Estimated pivot memory usage: {estimated_bytes:,} bytes ({estimated_mb:.2f} MB)")
         
         check = self._check_result_size_ok(estimated_mb)
         if not check['valid']:
@@ -172,11 +172,11 @@ class SampleComparisonWrapper:
             aggfunc='first'
         ).astype(np.uint32)
 
-        log_msg(f'rect_df.shape {rect_df.shape}', skip_mem=True)
+        log_msg(f'rect_df.shape {rect_df.shape}')
 
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
-        log_msg(f"Actual pivot memory_usage: {actual_bytes:,} bytes ({actual_mb:.2f} MB)", skip_mem=True)
+        log_msg(f"Actual pivot memory_usage: {actual_bytes:,} bytes ({actual_mb:.2f} MB)")
 
         # when pivoting otu_id becomes index, sample ids along the top
         # take the values in the otu_id column, uniq them, put in list, calc length of list .tolist
@@ -190,13 +190,13 @@ class SampleComparisonWrapper:
         self._status_update(submission, 'calc_distances_j')
         dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
 
-        log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape, skip_mem=True)
-        log_msg('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape, skip_mem=True)
+        log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape)
+        log_msg('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape)
 
         RANDOMSEED = np.random.RandomState(seed=2)
 
         def mds_results(dist_matrix):
-            log_msg('  MDS', skip_mem=True)
+            log_msg('  MDS')
             mds = MDS(n_components=2, max_iter=1000, random_state=RANDOMSEED, dissimilarity="precomputed")
             mds_result = mds.fit_transform(dist_matrix)
             MDS_x_scores = mds_result[:,0]
@@ -206,7 +206,7 @@ class SampleComparisonWrapper:
             # (https://stackoverflow.com/questions/36428205/stress-attribute-sklearn-manifold-mds-python)
             stress_norm_MDS = np.sqrt(mds.stress_ / (0.5 * np.sum(dist_matrix**2)))
 
-            log_msg('  NMDS', skip_mem=True)
+            log_msg('  NMDS')
             # compute NMDS  ***inititial the start position of the nmds as the mds solution!!!!
             nmds = MDS(n_components=2, metric=False, max_iter=1000, dissimilarity="precomputed")
             nmds_result = nmds.fit_transform(dist_matrix, init=mds_result)
@@ -226,7 +226,7 @@ class SampleComparisonWrapper:
             }
 
         self._status_update(submission, 'calc_mds_bc')
-        log_msg('start braycurtis calc', skip_mem=True)
+        log_msg('start braycurtis calc')
         results_braycurtis = mds_results(dist_matrix_braycurtis)
         pairs_braycurtis_MDS = list(zip(results_braycurtis['MDS_x_scores'], results_braycurtis['MDS_y_scores']))
         pairs_braycurtis_NMDS = list(zip(results_braycurtis['NMDS_x_scores'], results_braycurtis['NMDS_y_scores']))
@@ -234,7 +234,7 @@ class SampleComparisonWrapper:
         stress_norm_braycurtis_NMDS = results_braycurtis['stress_norm_NMDS']
 
         self._status_update(submission, 'calc_mds_j')
-        log_msg('start jaccard calc', skip_mem=True)
+        log_msg('start jaccard calc')
         results_jaccard = mds_results(dist_matrix_jaccard)
         pairs_jaccard_MDS = list(zip(results_jaccard['MDS_x_scores'], results_jaccard['MDS_y_scores']))
         pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
@@ -244,8 +244,8 @@ class SampleComparisonWrapper:
         sample_ids = df['sample_id'].unique().tolist()
         otu_ids = df['otu_id'].unique().tolist()
 
-        log_msg('sample_ids: ', len(sample_ids), skip_mem=True)
-        log_msg('otu_ids: ', len(otu_ids), skip_mem=True)
+        log_msg('sample_ids: ', len(sample_ids))
+        log_msg('otu_ids: ', len(otu_ids))
 
         abundance_matrix = {
             'sample_ids': sample_ids,

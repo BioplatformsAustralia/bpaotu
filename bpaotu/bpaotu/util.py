@@ -109,8 +109,8 @@ def pprint_ntuple(nt):
             _str = _str + '{}={}, '.format(name, value)
     return _str
 
-def log_msg(*args, skip_mem=False, **kwargs):
+def log_msg(*args, show_mem=False, **kwargs):
     message = ' '.join(str(arg) for arg in args)
     logger.info(message)
-    if not skip_mem:
+    if show_mem:
         mem_usage()
