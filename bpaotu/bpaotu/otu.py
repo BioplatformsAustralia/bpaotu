@@ -258,7 +258,7 @@ class OTU(SchemaMixin, Base):
 class Sequence(SchemaMixin, Base):
     """
     This allows us to use short hash values for OTU.code and retain the full
-    GATTACA-style OTU for cases where it's needed (e.g. OTU+copntextual
+    GATTACA-style OTU for cases where it's needed (e.g. OTU+contextual
     download)
     """
     __tablename__ = 'sequence'

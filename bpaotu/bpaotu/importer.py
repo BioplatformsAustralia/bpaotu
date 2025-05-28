@@ -28,6 +28,8 @@ from sqlalchemy.sql.expression import text
 
 from sqlalchemy_utils import refresh_materialized_view
 
+from Bio import SeqIO
+
 from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon,
                   taxonomy_keys, taxonomy_key_id_names, rank_labels_lookup,
@@ -86,13 +88,47 @@ def tmp_csv_file():
 def is_metaxa_otu(code):
     return code.startswith('mxa_')
 
+
+class FastaRowsIterator:
+    hash_re = re.compile(r'^[a-fA-F0-9]{32}$') # md5
+    code_re = re.compile(r'^[GATC]+$')
+
+    def __init__(self, fasta_files):
+        self.fasta_files = tuple(fasta_files)
+
+    def __iter__(self):
+        for amplicon_code, fname in self.fasta_files:
+            logger.info('reading fasta file: {}'.format(fname))
+
+            # TODO duplicates
+            # Since we can have multiple taxonomies, the same organism can
+            # be repeated. Just add the first occurrence to otu.otu.
+            # otu,otu.id will not be contiguous, but that's OK.
+
+            with gzip.open(fname, 'rt') as fd:
+                for record in SeqIO.parse(fd, "fasta"):
+                    otu_hash = record.id.strip()
+                    sequence = str(record.seq).upper()
+
+                    if not self.hash_re.match(otu_hash):
+                        raise DataImportError("Invalid OTU hash {}".format(otu_hash))
+
+                    if not self.code_re.match(sequence):
+                        raise DataImportError("Invalid OTU sequence {}".format(sequence))
+
+                    yield {
+                        'otu_hash': otu_hash,
+                        'sequence': sequence
+                    }
+
+
 class TaxonomyRowsIterator:
     hierarchy_type_by_source = {}
     taxonomy_file_info = {}
-    code_re = re.compile(r'^[GATC]+$')
     otu_header = '#otu id'
     amplicon_header = 'amplicon'
     traits_header = 'traits'
+    hash_re = re.compile(r'^[a-fA-F0-9]{32}$') # md5
 
     def __init__(self, taxonomy_files):
         self.taxonomy_files = tuple(taxonomy_files)
@@ -139,8 +175,8 @@ class TaxonomyRowsIterator:
                 amplicon = None
                 for idx, row in enumerate(reader):
                     code = row[0]
-                    if not self.code_re.match(code) and not is_metaxa_otu(code):
-                        raise DataImportError('Invalid OTU code "{}" in {}'.format(code, fname))
+                    if not self.hash_re.match(code) and not is_metaxa_otu(code):
+                        raise DataImportError('Invalid OTU hash "{}" in {}'.format(code, fname))
                     traits = (row[traits_header_index].replace(";", ",").strip()
                                 if traits_header_index > -1 else "")
                     if traits:
@@ -337,6 +373,11 @@ class DataImporter:
             amplicon = fname.split('/')[-2]
             yield amplicon, fname
 
+    def fasta_files(self, pattern):
+        for fname in glob(self._import_base + '/*/' + pattern):
+            amplicon = fname.split('/')[-2]
+            yield amplicon, fname
+
     def make_file_log(self, filename, **attrs):
         attrs['file_size'] = os.stat(filename).st_size
         attrs['filename'] = os.path.basename(filename)
@@ -362,7 +403,6 @@ class DataImporter:
 
     def load_taxonomies(self):
         # md5(otu code) -> otu ID, returned
-        otu_lookup = {}
         taxonomy_fields = ( # field names must match field names in tmp_taxonomy_load below
             ['id', 'amplicon_id', 'otu_id', 'traits'] +
             taxonomy_key_id_names)
@@ -370,8 +410,29 @@ class DataImporter:
             tuple(zip(taxonomy_keys, taxonomy_ontology_classes)) +
             (('amplicon', OTUAmplicon),))
 
+
+        fasta_rows_iter = FastaRowsIterator(
+            self.fasta_files('*_seqs_listSET.fasta.gz'))
+
+        logger.info("loading sequences - importing fasta file")
+
+        with tmp_csv_file() as (w_otu, otu_fd), tmp_csv_file() as (w_seq, seq_fd):
+            logger.info("Writing OTU hashes to temporary CSV file {}".format(otu_fd.name))
+            logger.info("Writing OTU sequences to temporary CSV file {}".format(seq_fd.name))
+            for (_id, row) in enumerate(fasta_rows_iter, 1):
+                w_otu.writerow([_id, row['otu_hash']])
+                w_seq.writerow([_id, row['sequence']])
+
+            logger.info(f"Loading OTU hash data from {otu_fd.name}")
+            self.load_from_csv("COPY otu.otu (id, code) FROM STDIN CSV", otu_fd)
+
+            logger.info(f"Loading OTU sequences from {seq_fd.name}")
+            self.load_from_csv("COPY sequence (id, seq) FROM STDIN CSV", seq_fd)
+
+
         taxonomy_rows_iter = TaxonomyRowsIterator(
             self.amplicon_files('*.*.*.taxonomy.gz'))
+
 
         logger.info("loading taxonomies - pass 1, defining ontologies")
         mappings = self._load_ontology(
@@ -387,49 +448,33 @@ class DataImporter:
                 taxonomy_otu_export.name,
                 taxonomy_source_id_by_name.values())
 
+        # in memory lookup for finding otu.id from the hash in taxonomy files
+        # created from data already loaded into database
+        otu_lookup = {
+            otu.code: otu.id
+            for otu in self._session.query(OTU).all()
+        }
+
         # TODO need nicer taxonomy source names via some kind of lookup (maybe a yaml file)?
         logger.info("loading taxonomies - pass 2, defining OTUs")
-        with tmp_csv_file() as (w, otu_fd), tmp_csv_file() as (w_tax, tax_fd), \
-                tmp_csv_file() as (w_seq, seq_fd):
-            logger.info("Writing OTUs to temporary CSV file {}".format(otu_fd.name))
+        with tmp_csv_file() as (w_tax, tax_fd):
             logger.info("Writing taxonomies to temporary CSV file {}".format(tax_fd.name))
             for (_id, row) in enumerate(taxonomy_rows_iter, 1):
-                ts_id = taxonomy_source_id_by_name[row['taxonomy_source']]
-                otu_code = row['otu']
-                otu_key = otu_hash(otu_code, row['amplicon_code'])
-                otu_lookup_val = otu_lookup.get(otu_key)
-                amplicon_id = mappings.get('amplicon').get(row.get('amplicon', ''), "")
-                # Since we can have multiple taxonomies, the same organism can
-                # be repeated. Just add the first occurrence to otu.otu.
-                # otu,otu.id will not be contiguous, but that's OK.
-                if otu_lookup_val:
-                    taxonomy_source_ids = otu_lookup_val[1]
-                    if ts_id in taxonomy_source_ids:
-                        raise DataImportError("Duplicate OTU: {} {} {}".format(
-                            otu_code, row['amplicon'], row['taxonomy_source']))
-                    taxonomy_source_ids.add(ts_id)
-                else:
-                    otu_lookup[otu_key] = otu_lookup_val = (_id, {ts_id})
-                    if is_metaxa_otu(otu_code):
-                        w.writerow([_id, otu_code])
-                    else:
-                        # For GATC-style OTUs we keep a short identifier in
-                        # otu.otu and the long GATC string in another table
-                        w.writerow([_id, md5(otu_code.encode('ascii')).hexdigest()])
-                        w_seq.writerow([_id, otu_code])
+                otu_hash = row['otu']
+                otu_id = otu_lookup.get(otu_hash)
 
+                if otu_id is None:
+                    raise DataImportError(f"Unknown OTU hash: {row['otu']}")
+
+                amplicon_id = mappings.get('amplicon').get(row.get('amplicon', ''), "")
                 taxonomy_row = [_id,
                                 amplicon_id,
-                                otu_lookup_val[0],
+                                otu_id,
                                 row['traits']] + [
                     mappings.get(field).get(row.get(field, ''), "")
                     for field in taxonomy_keys]
                 w_tax.writerow(taxonomy_row) # Column order must match taxonomy_fields
 
-            logger.info("Loading OTU data from {}".format(otu_fd.name))
-            self.load_from_csv("COPY otu.otu (id, code) FROM STDIN CSV", otu_fd)
-            self.load_from_csv("COPY otu.sequence (id, seq) FROM STDIN CSV",
-                               seq_fd)
 
             # Build the OTU-Taxonomy many-to-many relationships by loading the
             # taxonomy file data into a temporary table, then deriving
@@ -602,7 +647,7 @@ class DataImporter:
         samn_id_re = re.compile(r"^SAMN(\d+)$")
 
         for row in reader:
-            otu_code, sample_id, count, count_20k = ([f.strip() for f in row] + [""])[:4]
+            otu_hash, sample_id, count, count_20k = ([f.strip() for f in row] + [""])[:4]
             count_20k = re.sub(r'[.]0*$', '', count_20k) # Should be integer but we can cope with .0
             float_count = float(count)
             int_count = int(float_count)
@@ -615,12 +660,12 @@ class DataImporter:
                         logger.warning('[{}] skipped non-integer sample ID: {}'.format(amplicon_code, sample_id))
                         self.sample_non_integer.add(sample_id)
                     continue
-            hash = otu_hash(otu_code, amplicon_code)
-            otu_lookup_val = otu_lookup.get(hash)
-            if not otu_lookup_val:
+
+            otu_id = otu_lookup.get(otu_hash)
+            if not otu_id:
                 continue
             # Note that an unquoted empty string means NULL to psql COPY. See below
-            yield otu_lookup_val[0], sample_id, int_count, count_20k
+            yield otu_id, sample_id, int_count, count_20k
 
     def load_otu_abundance(self, otu_lookup):
         def _make_sample_otus(fname, amplicon_code, present_sample_ids):
