@@ -52,8 +52,6 @@ from .spatial import spatial_query
 from .tabular import tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_time, parse_float, log_msg, mem_usage_obj
 
-from sklearn.manifold import MDS
-
 from .sample_run_id_dict import sample_run_id_dict
 
 from mixpanel import Mixpanel

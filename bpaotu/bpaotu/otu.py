@@ -996,18 +996,6 @@ class ImportedFile(SchemaMixin, Base):
     rows_skipped = Column(postgresql.BIGINT)
 
 
-class SampleSimilarity(Base):
-    __tablename__ = 'sample_similarities'
-
-    id = Column(Integer, primary_key=True)
-    sample_id_1 = Column(String, nullable=False)
-    sample_id_2 = Column(String, nullable=False)
-    jaccard_similarity = Column(Float)
-    braycurtis_similarity = Column(Float)
-
-    def __repr__(self):
-        return f"<SampleSimilarity(id={self.id}, sample_id_1={self.sample_id_1}, sample_id_2={self.sample_id_2}, jaccard_similarity={self.jaccard_similarity}, braycurtis_similarity={self.braycurtis_similarity})>"
-
 
 def make_engine():
     dbschema = 'otu,public'
