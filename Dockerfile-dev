@@ -1,6 +1,10 @@
 FROM bioplatformsaustralia/bpaotu
 MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
 
+# For dev we use root so we can shell in and do evil things
+USER root
+WORKDIR /app
+
 # Project specific deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
   build-essential \
@@ -24,10 +28,6 @@ ENV DEBUG 1
 # Strictly speaking not needed as we mount over the top
 # However let's make it explicit that we don't want /app from the build image
 RUN rm -rf /app && mkdir -p /app
-
-# For dev we use root so we can shell in and do evil things
-USER root
-WORKDIR /app
 
 RUN env | sort
 
