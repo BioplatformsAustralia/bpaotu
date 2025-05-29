@@ -58,6 +58,7 @@ export interface PageState {
     searchString: string
     isOpen: boolean
     isLoading: boolean
+    selectIndex: number
     results: any[]
     error: string
   }
@@ -172,6 +173,7 @@ export const searchPageInitialState: PageState = {
     searchString: null,
     isOpen: false,
     isLoading: false,
+    selectIndex: null,
     results: [],
     error: null,
   },

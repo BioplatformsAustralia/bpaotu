@@ -11,12 +11,14 @@ export const {
   handleTaxonomySearchString,
   runTaxonomySearchStarted,
   runTaxonomySearchEnded,
+  handleSetSelectIndex,
 } = createActions(
   'OPEN_TAXONOMY_SEARCH_MODAL',
   'CLOSE_TAXONOMY_SEARCH_MODAL',
   'HANDLE_TAXONOMY_SEARCH_STRING',
   'RUN_TAXONOMY_SEARCH_STARTED',
-  'RUN_TAXONOMY_SEARCH_ENDED'
+  'RUN_TAXONOMY_SEARCH_ENDED',
+  'HANDLE_SET_SELECT_INDEX'
 )
 
 export const runTaxonomySearch = () => (dispatch, getState) => {
@@ -44,6 +46,7 @@ export default handleActions(
     [openTaxonomySearchModal as any]: (state, action) => ({
       ...state,
       isOpen: true,
+      selectIndex: null, // set to null on open rather than close to prevent seeing change as modal closes
     }),
     [closeTaxonomySearchModal as any]: (state, action) => ({
       ...state,
@@ -75,6 +78,12 @@ export default handleActions(
         ...state,
         isLoading: false,
       }),
+    },
+    [handleSetSelectIndex as any]: (state, action: any) => {
+      return {
+        ...state,
+        selectIndex: action.payload,
+      }
     },
   },
   searchPageInitialState.taxonomySearchModal
