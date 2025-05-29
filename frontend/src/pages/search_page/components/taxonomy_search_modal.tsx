@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { createAction } from 'redux-actions'
@@ -11,6 +11,7 @@ import {
   ModalHeader,
   Input,
   Row,
+  Spinner,
   Table,
   UncontrolledTooltip,
 } from 'reactstrap'
@@ -20,6 +21,7 @@ import { selectAmplicon } from '../reducers/amplicon'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import {
   handleTaxonomySearchString,
+  handleSetSelectIndex,
   runTaxonomySearch,
   closeTaxonomySearchModal,
 } from '../reducers/taxonomy_search_modal'
@@ -101,12 +103,21 @@ const TaxonomySearchModal = (props) => {
     isLoading,
     searchStringInput,
     searchString,
+    selectIndex,
     results,
     error,
     rankLabelsLookup,
     closeTaxonomySearchModal,
     amplicon,
   } = props
+
+  const inputRef = useRef(null)
+
+  const handleModalOpened = () => {
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }
 
   const rankOrder = ['amplicon', 'taxonomy_source', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8']
   const rankOrderLookup = Object.fromEntries(rankOrder.map((key, index) => [key, index]))
@@ -220,7 +231,8 @@ const TaxonomySearchModal = (props) => {
   }
 
   // uses the same mechanism when clicking on a slice of the taxonomy pie chart in Interactive Graph Search
-  const setTaxonomy = (taxonomy) => {
+  const setTaxonomy = (taxonomy, index) => {
+    props.handleSetSelectIndex(index)
     const currentAmplicon = props.amplicon
     const currentTaxonomy = props.taxonomy
 
@@ -278,6 +290,22 @@ const TaxonomySearchModal = (props) => {
         props.selectTaxonomyValue('r8', taxonomy.r8.id)
       }
     }
+
+    // just short delay before closing
+    // apparently looks cool seeing some of the dropdowns change magically
+    setTimeout(() => {
+      closeTaxonomySearchModal()
+    }, 300)
+  }
+
+  const onSubmit = () => {
+    if (isLoading) {
+      return
+    }
+
+    if (searchStringInput) {
+      props.runTaxonomySearch()
+    }
   }
 
   const RankCell = ({ taxonomy, rank, list, maxIndex, index }) => {
@@ -312,6 +340,7 @@ const TaxonomySearchModal = (props) => {
       data-tut="reactour__TaxonomySearchModal"
       id="reactour__TaxonomySearchModal"
       contentClassName="modalContentStyle"
+      onOpened={handleModalOpened}
     >
       <ModalHeader
         toggle={closeTaxonomySearchModal}
@@ -348,6 +377,7 @@ const TaxonomySearchModal = (props) => {
         <Row style={{ margin: 1 }}>
           <Col>
             <Input
+              innerRef={inputRef}
               name="searchStringInput"
               id="searchStringInput"
               width="250px"
@@ -355,18 +385,15 @@ const TaxonomySearchModal = (props) => {
               placeholder="e.g. Skeletonema"
               disabled={isLoading}
               onChange={(evt) => props.handleTaxonomySearchString(evt.target.value)}
+              onKeyDown={(evt) => {
+                if (evt.key === 'Enter') {
+                  onSubmit()
+                }
+              }}
             />
           </Col>
           <Col>
-            <Button
-              color="warning"
-              disabled={isLoading}
-              onClick={() => {
-                if (searchStringInput) {
-                  props.runTaxonomySearch()
-                }
-              }}
-            >
+            <Button color="warning" disabled={isLoading} onClick={onSubmit}>
               Taxonomy Search
             </Button>
           </Col>
@@ -403,7 +430,13 @@ const TaxonomySearchModal = (props) => {
                     <th scope="row" style={stickyStyle}></th>
                     {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
                       <th key={index}>
-                        <Button onClick={() => setTaxonomy(taxonomy)}>Select</Button>
+                        <Button
+                          onClick={() => setTaxonomy(taxonomy, index)}
+                          disabled={selectIndex && selectIndex !== index}
+                          style={{ width: '80px' }}
+                        >
+                          {selectIndex == index ? <Spinner size="sm"></Spinner> : 'Select'}
+                        </Button>
                       </th>
                     ))}
                   </tr>
@@ -525,7 +558,7 @@ const TaxonomySearchModal = (props) => {
 }
 
 function mapStateToProps(state) {
-  const { isOpen, isLoading, searchStringInput, searchString, results, error } =
+  const { isOpen, isLoading, searchStringInput, searchString, selectIndex, results, error } =
     state.searchPage.taxonomySearchModal
 
   const selectedAmplicon = state.searchPage.filters.selectedAmplicon
@@ -538,6 +571,7 @@ function mapStateToProps(state) {
     isLoading,
     searchStringInput,
     searchString,
+    selectIndex,
     results,
     error,
     amplicon: { ...selectedAmplicon, ...{ text: ampliconName } },
@@ -550,6 +584,7 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
       handleTaxonomySearchString,
+      handleSetSelectIndex,
       runTaxonomySearch,
       closeTaxonomySearchModal,
       selectAmplicon,
