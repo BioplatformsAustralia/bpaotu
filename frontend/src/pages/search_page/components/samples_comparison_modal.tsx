@@ -142,7 +142,6 @@ const SamplesComparisonModal = (props) => {
     clearPlotData,
     contextual,
     plotData,
-    stressNorm,
     contextualFilters,
     comparisonStatus,
     // mem_usage,
@@ -153,7 +152,6 @@ const SamplesComparisonModal = (props) => {
   // console.log('SamplesComparisonModal', 'comparisonStatus', comparisonStatus)
   // console.log('SamplesComparisonModal', 'contextual', contextual)
   // console.log('SamplesComparisonModal', 'plotData', plotData)
-  // console.log('SamplesComparisonModal', 'stressNorm', stressNorm)
   // console.log('SamplesComparisonModal', 'mem_usage', mem_usage)
   // console.log('SamplesComparisonModal', 'timestamps', timestamps)
 
@@ -349,27 +347,9 @@ const SamplesComparisonModal = (props) => {
                   </select>
                 </Col>
               </>
-            ) : (
+            ) : showExtraControls && !isContinuous ? (
               <>
                 <Col xs="3">&nbsp;</Col>
-              </>
-            )}
-            {showStress && (
-              <>
-                <Col xs="2" style={{ textAlign: 'right' }}>
-                  Stress:
-                </Col>
-                <Col xs="1" style={{ paddingLeft: '0px', textAlign: 'left' }}>
-                  {stressNorm[`${selectedMethod}_MDS`].toPrecision(3)}{' '}
-                  {stressNorm[`${selectedMethod}_NMDS`].toPrecision(3)}
-                </Col>
-              </>
-            )}
-          </Row>
-          <Row>
-            {showExtraControls && !isContinuous && (
-              <>
-                <Col xs="9">&nbsp;</Col>
                 <Col xs="2" style={{ marginTop: 4, textAlign: 'right' }}>
                   Marker size:
                 </Col>
@@ -382,6 +362,8 @@ const SamplesComparisonModal = (props) => {
                   />
                 </Col>
               </>
+            ) : (
+              <Col xs="6">&nbsp;</Col>
             )}
           </Row>
         </Container>
@@ -391,7 +373,9 @@ const SamplesComparisonModal = (props) => {
             layout={{
               // width: chartWidth,
               height: chartHeight,
-              title: 'NMDS Plot',
+              title: {
+                text: 'umap',
+              },
               legend: { orientation: 'h' },
               paper_bgcolor: 'white',
               plot_bgcolor: 'white',
@@ -415,7 +399,7 @@ const SamplesComparisonModal = (props) => {
                 range: plotHasData ? undefined : [-1, 1],
               },
               shapes: [
-                plotHasData && {
+                {
                   type: 'rect',
                   xref: 'paper',
                   yref: 'paper',
@@ -480,7 +464,6 @@ const mapStateToProps = (state) => {
     submissions,
     results,
     plotData,
-    stressNorm,
     // mem_usage,
     // timestamps,
   } = state.searchPage.samplesComparisonModal
@@ -501,7 +484,6 @@ const mapStateToProps = (state) => {
 
     results,
     plotData,
-    stressNorm,
     abundanceMatrix,
     contextual,
 

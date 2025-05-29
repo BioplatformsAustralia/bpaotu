@@ -17,12 +17,9 @@ from .submission import Submission
 from .util import format_sample_id
 from celery.task.control import revoke
 
+from fastdist import fastdist
 import numpy as np
 import pandas as pd
-from sklearn.manifold import MDS
-from sklearn.metrics import pairwise_distances
-from fastdist import fastdist
-
 import umap.umap_ as umap
 
 
@@ -175,17 +172,10 @@ class SampleComparisonWrapper:
             aggfunc='first'
         ).astype(np.uint32)
 
-        log_msg(f'rect_df.shape {rect_df.shape}')
-
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
+        log_msg(f'rect_df.shape {rect_df.shape}')
         log_msg(f"Actual pivot memory_usage: {actual_bytes:,} bytes ({actual_mb:.2f} MB)")
-
-        # when pivoting otu_id becomes index, sample ids along the top
-        # take the values in the otu_id column, uniq them, put in list, calc length of list .tolist
-        # that is the number of rows in the actual matrix
-        # num of columns is number of samples
-        # this would give a better idea of the size restrictions than the original count
 
         self._status_update(submission, 'calc_distances_bc')
         dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
@@ -196,68 +186,30 @@ class SampleComparisonWrapper:
         log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape)
         log_msg('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape)
 
-        RANDOMSEED = np.random.RandomState(seed=2)
-
-        def mds_results(dist_matrix):
-            log_msg('  MDS')
-            mds = MDS(n_components=2, max_iter=1000, random_state=RANDOMSEED, dissimilarity="precomputed")
-            mds_result = mds.fit_transform(dist_matrix)
-            MDS_x_scores = mds_result[:,0]
-            MDS_y_scores = mds_result[:,1]
-
-            # calculate the normalized stress from sklearn stress
-            # (https://stackoverflow.com/questions/36428205/stress-attribute-sklearn-manifold-mds-python)
-            stress_norm_MDS = np.sqrt(mds.stress_ / (0.5 * np.sum(dist_matrix**2)))
-
-            log_msg('  NMDS')
-            # compute NMDS  ***inititial the start position of the nmds as the mds solution!!!!
-            nmds = MDS(n_components=2, metric=False, max_iter=1000, dissimilarity="precomputed")
-            nmds_result = nmds.fit_transform(dist_matrix, init=mds_result)
-            NMDS_x_scores = nmds_result[:,0]
-            NMDS_y_scores = nmds_result[:,1]
-
-            # calculate the normalized stress from sklearn stress
-            stress_norm_NMDS = np.sqrt(nmds.stress_ / (0.5 * np.sum(dist_matrix**2)))
-
-            return {
-                'MDS_x_scores': MDS_x_scores.tolist(),
-                'MDS_y_scores': MDS_y_scores.tolist(),
-                'NMDS_x_scores': NMDS_x_scores.tolist(),
-                'NMDS_y_scores': NMDS_y_scores.tolist(),
-                'stress_norm_MDS': stress_norm_MDS,
-                'stress_norm_NMDS': stress_norm_NMDS,
-            }
+        # TODO next release
+        # - save matrix to a tmpdir
+        # - keep using for umap until modal is closed (separate endpoint)
+        # - timeout failsafe with no usage
 
         def umap_results(dist_matrix):
             #make a name for the output file
             #create an array from the df data
-            # dist_matrix_values = dist_matrix.values
-             
-            print("running UMAP")
-            #run the UMAP 
-            reducer = umap.UMAP(n_components = 2, n_neighbors = 200, spread=1, min_dist=0.01, metric = 'precomputed', random_state = 0)
-            embeddings = reducer.fit_transform(dist_matrix)
-            plot_df = pd.DataFrame(data = embeddings, columns = ['dim1', 'dim2'], index=dist_matrix.index)
 
+            dist_matrix_df = pd.DataFrame(dist_matrix, index=rect_df.index, columns=rect_df.index)
+
+            reducer = umap.UMAP(n_components = 2, n_neighbors = 15, spread=1.0, min_dist=0.1, metric = 'precomputed', random_state = 0)
+            embeddings = reducer.fit_transform(dist_matrix_df.values)
+            plot_df = pd.DataFrame(data = embeddings, columns = ['dim1', 'dim2'], index=dist_matrix_df.index)
+            
             return plot_df
 
-        results_braycurtis_umap = umap_results(dist_matrix_braycurtis)
-
         self._status_update(submission, 'calc_mds_bc')
-        log_msg('start braycurtis calc')
-        results_braycurtis = mds_results(dist_matrix_braycurtis)
-        pairs_braycurtis_MDS = list(zip(results_braycurtis['MDS_x_scores'], results_braycurtis['MDS_y_scores']))
-        pairs_braycurtis_NMDS = list(zip(results_braycurtis['NMDS_x_scores'], results_braycurtis['NMDS_y_scores']))
-        stress_norm_braycurtis_MDS = results_braycurtis['stress_norm_MDS']
-        stress_norm_braycurtis_NMDS = results_braycurtis['stress_norm_NMDS']
+        results_braycurtis_umap = umap_results(dist_matrix_braycurtis)
+        pairs_braycurtis_umap = list(zip(results_braycurtis_umap.dim1.values, results_braycurtis_umap.dim2.values))
 
         self._status_update(submission, 'calc_mds_j')
-        log_msg('start jaccard calc')
-        results_jaccard = mds_results(dist_matrix_jaccard)
-        pairs_jaccard_MDS = list(zip(results_jaccard['MDS_x_scores'], results_jaccard['MDS_y_scores']))
-        pairs_jaccard_NMDS = list(zip(results_jaccard['NMDS_x_scores'], results_jaccard['NMDS_y_scores']))
-        stress_norm_jaccard_MDS = results_jaccard['stress_norm_MDS']
-        stress_norm_jaccard_NMDS = results_jaccard['stress_norm_NMDS']
+        results_jaccard_umap = umap_results(dist_matrix_jaccard)
+        pairs_jaccard_umap = list(zip(results_jaccard_umap.dim1.values, results_jaccard_umap.dim2.values))
 
         sample_ids = df['sample_id'].unique().tolist()
         otu_ids = df['otu_id'].unique().tolist()
@@ -273,14 +225,8 @@ class SampleComparisonWrapper:
         }
 
         abundance_matrix['points'] = {
-            'braycurtis': pairs_braycurtis_NMDS,
-            'jaccard': pairs_jaccard_NMDS,
-            'stress_norm': {
-                'braycurtis_MDS': stress_norm_braycurtis_MDS,
-                'braycurtis_NMDS': stress_norm_braycurtis_NMDS,
-                'jaccard_MDS': stress_norm_jaccard_MDS,
-                'jaccard_NMDS': stress_norm_jaccard_NMDS,
-            }
+            'braycurtis': pairs_braycurtis_umap,
+            'jaccard': pairs_jaccard_umap,
         }
 
         self._status_update(submission, 'contextual_start')
