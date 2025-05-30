@@ -31,12 +31,16 @@ logger = logging.getLogger('bpaotu')
 
 
 class SampleComparisonWrapper:
-    def __init__(self, cwd, submission_id, status, query):
+    def __init__(self, cwd, submission_id, status, query, umap_params_string):
         self._cwd = cwd
         self._submission_id = submission_id
         self._status = status
         self._query = query
         self._params, _ = views.param_to_filters(query)
+        umap_params = json.loads(umap_params_string)
+        self._param_min_dist = float(umap_params['min_dist'])
+        self._param_n_neighbors = int(umap_params['n_neighbors'])
+        self._param_spread = float(umap_params['spread'])
 
     def setup(self):
         submission = Submission(self._submission_id)
@@ -192,22 +196,28 @@ class SampleComparisonWrapper:
         # - timeout failsafe with no usage
 
         def umap_results(dist_matrix):
-            #make a name for the output file
-            #create an array from the df data
-
             dist_matrix_df = pd.DataFrame(dist_matrix, index=rect_df.index, columns=rect_df.index)
 
-            reducer = umap.UMAP(n_components = 2, n_neighbors = 15, spread=1.0, min_dist=0.1, metric = 'precomputed', random_state = 0)
-            embeddings = reducer.fit_transform(dist_matrix_df.values)
-            plot_df = pd.DataFrame(data = embeddings, columns = ['dim1', 'dim2'], index=dist_matrix_df.index)
-            
-            return plot_df
+            n_neighbors = self._param_n_neighbors
+            spread = self._param_spread
+            min_dist = self._param_min_dist
 
-        self._status_update(submission, 'calc_mds_bc')
+            reducer = umap.UMAP(n_components=2,
+                                n_neighbors=n_neighbors,
+                                spread=spread,
+                                min_dist=min_dist,
+                                metric='precomputed',
+                                random_state=0)
+
+            embeddings = reducer.fit_transform(dist_matrix_df.values)
+
+            return pd.DataFrame(data=embeddings, columns=['dim1', 'dim2'], index=dist_matrix_df.index)
+
+        self._status_update(submission, 'calc_umap_bc')
         results_braycurtis_umap = umap_results(dist_matrix_braycurtis)
         pairs_braycurtis_umap = list(zip(results_braycurtis_umap.dim1.values, results_braycurtis_umap.dim2.values))
 
-        self._status_update(submission, 'calc_mds_j')
+        self._status_update(submission, 'calc_umap_j')
         results_jaccard_umap = umap_results(dist_matrix_jaccard)
         pairs_jaccard_umap = list(zip(results_jaccard_umap.dim1.values, results_jaccard_umap.dim2.values))
 

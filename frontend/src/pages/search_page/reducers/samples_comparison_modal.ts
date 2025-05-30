@@ -17,6 +17,8 @@ export const {
   samplesComparisonModalSetSelectedFilter,
   samplesComparisonModalSetSelectedFilterExtra,
 
+  handleUmapParameters,
+
   runComparisonStarted,
   runComparisonEnded,
   comparisonSubmissionUpdateStarted,
@@ -33,6 +35,8 @@ export const {
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_METHOD',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER_EXTRA',
+  
+  'HANDLE_UMAP_PARAMETERS',
 
   'RUN_COMPARISON_STARTED',
   'RUN_COMPARISON_ENDED',
@@ -63,14 +67,14 @@ export const clearPlotData = () => (dispatch, getState) => {
   dispatch(samplesComparisonModalClearPlotData())
 }
 
-export const runComparison = () => (dispatch, getState) => {
+export const runComparison = (umapParams) => (dispatch, getState) => {
   const state = getState()
 
   dispatch(runComparisonStarted())
 
   const filters = describeSearch(state)
 
-  executeComparison(filters)
+  executeComparison(filters, umapParams)
     .then((data) => {
       if (_get(data, 'data.errors', []).length > 0) {
         dispatch(runComparisonEnded(new ErrorList(...data.data.errors)))
@@ -179,6 +183,12 @@ export default handleActions(
       ...state,
       plotData: searchPageInitialState.samplesComparisonModal.plotData,
     }),
+    [handleUmapParameters as any]: (state, action: any) => {
+      return {
+        ...state,
+        umapParams: { ...state.umapParams, [action.payload.param]: action.payload.value },
+      }
+    },
     [runComparisonStarted as any]: (state, action: any) => ({
       ...state,
       isLoading: true,

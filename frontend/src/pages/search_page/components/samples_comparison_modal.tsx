@@ -6,6 +6,7 @@ import {
   Button,
   Container,
   Col,
+  Input,
   Row,
   Modal,
   ModalBody,
@@ -26,6 +27,7 @@ import AnimateHelix from 'components/animate_helix'
 import {
   clearPlotData,
   closeSamplesComparisonModal,
+  handleUmapParameters,
   runComparison,
   cancelComparison,
   setSelectedMethod,
@@ -45,8 +47,8 @@ const comparisonStatusMapping = {
   pivot: 'Pivoting data',
   calc_distances_bc: 'Calculating distance matrices (Bray-Curtis)',
   calc_distances_j: 'Calculating distance matrices (Jaccard)',
-  calc_mds_bc: 'Calculating MDS points (Bray-Curtis)',
-  calc_mds_j: 'Calculating MDS points (Jaccard)',
+  calc_umap_bc: 'Calculating umap points (Bray-Curtis)',
+  calc_umap_j: 'Calculating umap points (Jaccard)',
   contextual_start: 'Collating contextual data',
   complete: 'Complete',
 }
@@ -139,6 +141,9 @@ const SamplesComparisonModal = (props) => {
     setSelectedFilter,
     setSelectedFilterExtra,
 
+    umapParams,
+    handleUmapParameters,
+
     clearPlotData,
     contextual,
     plotData,
@@ -152,6 +157,7 @@ const SamplesComparisonModal = (props) => {
   // console.log('SamplesComparisonModal', 'comparisonStatus', comparisonStatus)
   // console.log('SamplesComparisonModal', 'contextual', contextual)
   // console.log('SamplesComparisonModal', 'plotData', plotData)
+  // console.log('SamplesComparisonModal', 'umapParams', umapParams)
   // console.log('SamplesComparisonModal', 'mem_usage', mem_usage)
   // console.log('SamplesComparisonModal', 'timestamps', timestamps)
 
@@ -266,7 +272,7 @@ const SamplesComparisonModal = (props) => {
           {isLoading ? (
             <Button onClick={cancelComparison}>Cancel</Button>
           ) : (
-            <Button onClick={runComparison} color="primary">
+            <Button onClick={() => runComparison(umapParams)} color="primary">
               Run Comparison
             </Button>
           )}
@@ -373,9 +379,6 @@ const SamplesComparisonModal = (props) => {
             layout={{
               // width: chartWidth,
               height: chartHeight,
-              title: {
-                text: 'umap',
-              },
               legend: { orientation: 'h' },
               paper_bgcolor: 'white',
               plot_bgcolor: 'white',
@@ -458,6 +461,8 @@ const mapStateToProps = (state) => {
     selectedFilterExtra,
     setSelectedFilterExtra,
 
+    umapParams,
+
     status,
     alerts,
     errors,
@@ -482,6 +487,8 @@ const mapStateToProps = (state) => {
     selectedFilterExtra,
     setSelectedFilterExtra,
 
+    umapParams,
+
     results,
     plotData,
     abundanceMatrix,
@@ -503,6 +510,7 @@ const mapDispatchToProps = (dispatch) => {
     {
       clearPlotData,
       closeSamplesComparisonModal,
+      handleUmapParameters,
       runComparison,
       cancelComparison,
       setSelectedMethod,
@@ -514,3 +522,34 @@ const mapDispatchToProps = (dispatch) => {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(SamplesComparisonModal)
+
+// <Input
+//   name="n_neighbors"
+//   value={umapParams['n_neighbors']}
+//   onChange={(evt) =>
+//     handleUmapParameters({
+//       param: 'n_neighbors',
+//       value: evt.target.value,
+//     })
+//   }
+// />
+// <Input
+//   name="spread"
+//   value={umapParams['spread']}
+//   onChange={(evt) =>
+//     handleUmapParameters({
+//       param: 'spread',
+//       value: evt.target.value,
+//     })
+//   }
+// />
+// <Input
+//   name="min_dist"
+//   value={umapParams['min_dist']}
+//   onChange={(evt) =>
+//     handleUmapParameters({
+//       param: 'min_dist',
+//       value: evt.target.value,
+//     })
+//   }
+// />

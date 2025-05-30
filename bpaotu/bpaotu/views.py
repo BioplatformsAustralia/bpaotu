@@ -828,7 +828,9 @@ def otu_search_sample_sites_comparison(request):
         if errors:
             raise OTUError(*errors)
 
-        submission_id = tasks.submit_sample_comparison(request.POST['otu_query'])
+        query = request.POST.get('otu_query')
+        umap_params_string = request.POST.get('umap_params_string', "{}")
+        submission_id = tasks.submit_sample_comparison(query, umap_params_string)
 
         return JsonResponse({
             'success': True,
@@ -1115,7 +1117,9 @@ def submit_comparison(request):
         if errors:
             raise OTUError(*errors)
 
-        submission_id = tasks.submit_sample_comparison(request.POST['query'])
+        query = request.POST.get('query')
+        umap_params_string = request.POST.get('umap_params', "{}")
+        submission_id = tasks.submit_sample_comparison(query, umap_params_string)
 
         track(request, 'otu_sample_comparison', search_params_track_args(params))
 

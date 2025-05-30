@@ -51,20 +51,6 @@ def execute_workflow_on_galaxy(email, query, workflow_id):
     return submission_id
 
 
-@shared_task
-def submit_blast(search_string, blast_params_string, query):
-    submission_id = str(uuid.uuid4())
-
-    submission = Submission.create(submission_id)
-    submission.query = query
-    submission.search_string = search_string
-    submission.blast_params_string = blast_params_string
-
-    chain = setup_blast.s() | run_blast.s() | cleanup_blast.s()
-
-    chain(submission_id)
-
-    return submission_id
 
 
 @shared_task
@@ -147,6 +133,21 @@ upload_biom_to_history_chain = (
 
 
 @shared_task
+def submit_blast(search_string, blast_params_string, query):
+    submission_id = str(uuid.uuid4())
+
+    submission = Submission.create(submission_id)
+    submission.query = query
+    submission.search_string = search_string
+    submission.blast_params_string = blast_params_string
+
+    chain = setup_blast.s() | run_blast.s() | cleanup_blast.s()
+
+    chain(submission_id)
+
+    return submission_id
+
+@shared_task
 def setup_blast(submission_id):
     submission = Submission(submission_id)
     submission.cwd = tempfile.mkdtemp()
@@ -180,12 +181,13 @@ def cleanup_blast(submission_id):
 
 
 @shared_task(bind=True)
-def submit_sample_comparison(self, query):
+def submit_sample_comparison(self, query, umap_params_string):
     submission_id = str(uuid.uuid4())
 
     submission = Submission.create(submission_id)
-    submission.query = query
     submission.status = 'init'
+    submission.query = query
+    submission.umap_params_string = umap_params_string
 
     # Ensure asynchronous execution and store the task ID
     chain = setup_comparison.s() | run_comparison.s() | cleanup_comparison.s()
@@ -271,7 +273,7 @@ def _make_blast_wrapper(submission):
 
 def _make_sample_comparison_wrapper(submission):
     return SampleComparisonWrapper(
-        submission.cwd, submission.submission_id, submission.status, submission.query)
+        submission.cwd, submission.submission_id, submission.status, submission.query, submission.umap_params_string)
 
 
 import datetime

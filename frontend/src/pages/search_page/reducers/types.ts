@@ -82,6 +82,11 @@ export interface PageState {
     alerts: any[]
     errors: any[]
     submissions: any[]
+    umapParams: {
+      min_dist: number
+      n_neighbors: number
+      spread: number
+    }
     results: {
       abundanceMatrix: any
       contextual: any
@@ -91,12 +96,6 @@ export interface PageState {
       braycurtis: any[]
       // jaccard: Array<{ x: number; y: number }>;
       // braycurtis: Array<{ x: number; y: number }>;
-    }
-    stressNorm: {
-      braycurtis_MDS: number
-      braycurtis_NMDS: number
-      jaccard_MDS: number
-      jaccard_NMDS: number
     }
     mem_usage: {
       mem: string
@@ -203,9 +202,13 @@ export const searchPageInitialState: PageState = {
     alerts: [],
     errors: [],
     submissions: [],
+    umapParams: {
+      min_dist: 0.1,
+      n_neighbors: 15,
+      spread: 1.0,
+    },
     results: { abundanceMatrix: {}, contextual: {} },
     plotData: { jaccard: [], braycurtis: [] },
-    stressNorm: { braycurtis_MDS: -1, braycurtis_NMDS: -1, jaccard_MDS: -1, jaccard_NMDS: -1 },
     mem_usage: { mem: '', swap: '', cpu: '' },
     timestamps: [],
   },

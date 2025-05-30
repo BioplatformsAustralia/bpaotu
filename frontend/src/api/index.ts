@@ -275,9 +275,10 @@ export function executeKrona(filters, sampleId) {
   })
 }
 
-export function executeComparison(filters) {
+export function executeComparison(filters, umapParams) {
   const formData = new FormData()
   formData.append('query', JSON.stringify(filters))
+  formData.append('umap_params', JSON.stringify(umapParams))
 
   return axios({
     method: 'post',
