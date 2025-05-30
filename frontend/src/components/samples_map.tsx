@@ -98,7 +98,7 @@ const BPAImages = (props) => {
 
   return (
     <div>
-      {map(this.props.siteImages || [], ({ package_id, resource_id }, index) => (
+      {map(props.siteImages || [], ({ package_id, resource_id }, index) => (
         <div key={index} className="bpaotu-map-popup-inner__images">
           <a href={rsUrl(package_id, resource_id)} target="_other">
             <img alt="Australian Microbiome" src={tnUrl(package_id, resource_id)} />
