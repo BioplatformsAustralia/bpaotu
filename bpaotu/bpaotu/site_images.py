@@ -88,7 +88,7 @@ def resize_image(content):
         # Resizing an image while maintaining aspect ratio:
         # https://stackoverflow.com/questions/24745857/python-pillow-how-to-scale-an-image/24745969
         maxsize = (THUMBNAIL_SIZE, THUMBNAIL_SIZE)
-        img_obj.thumbnail(maxsize, Image.ANTIALIAS)
+        img_obj.thumbnail(maxsize, Image.Resampling.LANCZOS)
         # Needed fix for some cases with Alpha channel
         img_obj = img_obj.convert('RGB')
 
