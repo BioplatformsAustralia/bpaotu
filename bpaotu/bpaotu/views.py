@@ -1433,7 +1433,12 @@ def site_image_thumbnail(request, package_id, resource_id):
     '''
 
     buf, content_type = fetch_image(package_id, resource_id)
-    return HttpResponse(buf.getvalue(), content_type=content_type)
+
+    if buf == None:
+        # not ideal, but detecting a non image will require a bit more changes
+        return HttpResponse('')
+    else:
+        return HttpResponse(buf.getvalue(), content_type=content_type)
 
 @require_CKAN_auth
 @require_POST
