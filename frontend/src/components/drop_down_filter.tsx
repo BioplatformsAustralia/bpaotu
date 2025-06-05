@@ -18,7 +18,16 @@ interface Props {
 }
 
 const DropDownFilter = (props) => {
-  const { label, info, isDisabled, selected, optionsLoadingError, optionsLoading, options } = props
+  const {
+    label,
+    info,
+    isDisabled,
+    selected,
+    selectBoxOnly,
+    optionsLoadingError,
+    optionsLoading,
+    options,
+  } = props
 
   const renderOptions = () => {
     if (optionsLoadingError) {
@@ -52,6 +61,24 @@ const DropDownFilter = (props) => {
     return null // Don't render
   }
 
+  const SelectBox = () => {
+    return (
+      <Select
+        placeholder={optionsLoadingError ? optionsLoadingError : '---'}
+        isSearchable={true}
+        isLoading={optionsLoading}
+        options={renderOptions()}
+        isDisabled={isDisabled || optionsLoadingError}
+        value={map(options, renderOption).filter((option) => option.value === props.selected.value)}
+        onChange={onValueChange}
+      />
+    )
+  }
+
+  if (selectBoxOnly) {
+    return <SelectBox />
+  }
+
   return (
     <FormGroup row={true}>
       {info ? (
@@ -80,17 +107,7 @@ const DropDownFilter = (props) => {
         </Input>
       </Col>
       <Col sm={6}>
-        <Select
-          placeholder={optionsLoadingError ? optionsLoadingError : '---'}
-          isSearchable={true}
-          isLoading={optionsLoading}
-          options={renderOptions()}
-          isDisabled={isDisabled || optionsLoadingError}
-          value={map(options, renderOption).filter(
-            (option) => option.value === props.selected.value
-          )}
-          onChange={onValueChange}
-        />
+        <SelectBox />
       </Col>
     </FormGroup>
   )

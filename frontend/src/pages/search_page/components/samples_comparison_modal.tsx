@@ -362,6 +362,7 @@ const SamplesComparisonModal = (props) => {
                 <Col xs="1" style={{ marginTop: 4, paddingLeft: 0, paddingRight: 0 }}>
                   <RangeSlider
                     value={markerSize}
+                    tooltipPlacement="top"
                     onChange={(changeEvent) => setMarkerSize(parseInt(changeEvent.target.value))}
                     min={5}
                     max={20}
@@ -419,7 +420,7 @@ const SamplesComparisonModal = (props) => {
                 },
               ],
             }}
-            config={{ displayLogo: false, scrollZoom: false, displayModeBar: false }}
+            config={{ displayLogo: false, scrollZoom: false, displayModeBar: true }}
             useResizeHandler
             style={{ width: '100%', height: '100%', marginTop: '0px' }}
           />
