@@ -78,8 +78,7 @@ class SampleComparisonWrapper:
 
         if estimated_mb > max_size:
             result['valid'] = False
-            result['error'] = f'Search has too many elements: {nunique_sample_id} samples and {nunique_otu_id} OTUs for a matrix size of {estimated_mb:.2f} MB.<br />The maximum supported size is {max_size:.2f}.<br />Please choose a smaller search space or download OTU data and perform analysis locally'
-        
+
         return result
 
     def _make_abundance_csv(self):
@@ -161,7 +160,13 @@ class SampleComparisonWrapper:
         check = self._check_result_size_ok(estimated_mb)
         if not check['valid']:
             self._status_update(submission, 'error')
-            submission.error = check['error']
+            submission.error = (
+                f'Search has too many elements: {nunique_sample_id} samples and {nunique_otu_id} '
+                f'OTUs for a matrix size of {estimated_mb:.2f} MB.<br />The maximum supported size '
+                f'is {check["size_max"]} MB.<br />Please choose a smaller search space or download '
+                f'OTU data and perform analysis locally.'
+            )
+
             return False
 
         self._status_update(submission, 'sort')
