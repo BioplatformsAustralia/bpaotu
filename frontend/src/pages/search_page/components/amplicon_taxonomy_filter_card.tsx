@@ -58,6 +58,8 @@ const TaxonomySourceInfo =
 const TaxonomyFilterCard = (props) => {
   const prevAmplicon = useRef({ ...EmptyOperatorAndValue })
 
+  const { mismatch, valueAmplicon, valueR1, nameR1 } = props.mismatchState
+
   useEffect(() => {
     prevAmplicon.current = { ...EmptyOperatorAndValue }
     props.setMetagenomeMode(props.metagenomeMode)
@@ -118,6 +120,11 @@ const TaxonomyFilterCard = (props) => {
                 search for a taxonomy
               </Button>
             </p>
+            {mismatch && (
+              <p className="text-center" style={{ fontSize: '13px' }}>
+                Note: potential mismatch between Amplicon ({valueAmplicon}) and {nameR1} ({valueR1})
+              </p>
+            )}
           </Col>
         </Row>
 
@@ -144,9 +151,36 @@ const TaxonomyFilterCard = (props) => {
 }
 
 function mapStateToProps(state, ownProps) {
+  // check for mismatch between Amplicon and R1 (i.e. Kingdom/Domain)
+  // the split on "__" means that metaxa will always have an error caught and mismatch to be false
+  let mismatch, valueAmplicon, valueR1, nameR1
+  try {
+    const optionsAmplicons = state.referenceData.amplicons.values
+    const optionsTaxonomyR1 = state.searchPage.filters.taxonomy.r1
+    const textAmplicon = optionsAmplicons.find(
+      (x) => x.id === state.searchPage.filters.selectedAmplicon.value
+    )
+    const textR1 = optionsTaxonomyR1.options.find((x) => x.id === optionsTaxonomyR1.selected.value)
+
+    if (textAmplicon === undefined || textR1 === undefined) {
+      // skip
+      mismatch = false
+    } else {
+      valueAmplicon = textAmplicon.value
+      valueR1 = textR1.value
+      nameR1 = state.referenceData.ranks.rankLabels.r1
+      const matchAmplicon = valueAmplicon.split('_').map((x) => x.toLowerCase().substring(0, 4))
+      const matchR1 = valueR1.split('__')[1].toLowerCase().substring(0, 4)
+      mismatch = matchAmplicon.indexOf(matchR1) === -1
+    }
+  } catch (err) {
+    mismatch = false
+  }
+
   return {
     amplicons: state.referenceData.amplicons,
     traits: state.referenceData.traits,
+    mismatchState: { mismatch: mismatch, valueAmplicon, valueR1, nameR1: nameR1 },
     selectedAmplicon: getAmpliconFilter(state),
   }
 }
