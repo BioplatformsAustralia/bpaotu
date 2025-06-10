@@ -130,7 +130,7 @@ class SampleComparisonWrapper:
         self._status_update(submission, 'fetched_to_df')
         log_msg('start query results to df')
         results_file = self._in('abundance.csv')
-        print(results_file)
+        logger.info(results_file)
         column_names = ['sample_id', 'otu_id', 'abundance']
         column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
 
@@ -155,6 +155,7 @@ class SampleComparisonWrapper:
         estimated_mb = estimated_bytes / (1024 ** 2)
 
         # does not include index
+        logger.info(f"Estimated pivot memory usage: {estimated_bytes:,} bytes ({estimated_mb:.2f} MB)")
         log_msg(f"Estimated pivot memory usage: {estimated_bytes:,} bytes ({estimated_mb:.2f} MB)")
         
         check = self._check_result_size_ok(estimated_mb)
@@ -184,6 +185,7 @@ class SampleComparisonWrapper:
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
         log_msg(f'rect_df.shape {rect_df.shape}')
+        logger.info(f"Actual pivot memory_usage: {actual_bytes:,} bytes ({actual_mb:.2f} MB)")
         log_msg(f"Actual pivot memory_usage: {actual_bytes:,} bytes ({actual_mb:.2f} MB)")
 
         self._status_update(submission, 'calc_distances_bc')
