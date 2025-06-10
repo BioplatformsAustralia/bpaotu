@@ -109,7 +109,10 @@ class SampleComparisonWrapper:
 
     def _cleanup(self):
         try:
-            shutil.rmtree(self._cwd)
+            if self._cwd:
+                shutil.rmtree(self._cwd)
+            else:
+                logger.info("No cwd to cleanup")
         except FileNotFoundError:
             # directory doesn't exist
             pass
@@ -156,7 +159,6 @@ class SampleComparisonWrapper:
 
         # does not include index
         logger.info(f"Estimated pivot memory usage: {estimated_bytes:,} bytes ({estimated_mb:.2f} MB)")
-        log_msg(f"Estimated pivot memory usage: {estimated_bytes:,} bytes ({estimated_mb:.2f} MB)")
         
         check = self._check_result_size_ok(estimated_mb)
         if not check['valid']:
@@ -185,8 +187,7 @@ class SampleComparisonWrapper:
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
         log_msg(f'rect_df.shape {rect_df.shape}')
-        logger.info(f"Actual pivot memory_usage: {actual_bytes:,} bytes ({actual_mb:.2f} MB)")
-        log_msg(f"Actual pivot memory_usage: {actual_bytes:,} bytes ({actual_mb:.2f} MB)")
+        logger.info(f"   Actual pivot memory_usage: {actual_bytes:,} bytes ({actual_mb:.2f} MB)")
 
         self._status_update(submission, 'calc_distances_bc')
         dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
