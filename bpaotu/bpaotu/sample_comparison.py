@@ -82,9 +82,8 @@ class SampleComparisonWrapper:
         return result
 
     def _make_abundance_csv(self):
-        logger.info('Making abundance file')
         results_file = self._in('abundance.csv')
-        print('results_file', results_file)
+        logger.info(f'Making abundance file: {results_file}')
         with open(results_file, 'w') as fd:
             with SampleQuery(self._params) as query:
                 for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(1000):
@@ -133,11 +132,14 @@ class SampleComparisonWrapper:
         self._status_update(submission, 'fetched_to_df')
         log_msg('start query results to df')
         results_file = self._in('abundance.csv')
-        logger.info(results_file)
         column_names = ['sample_id', 'otu_id', 'abundance']
         column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
 
         df = pd.read_csv(results_file, header=None, names=column_names, dtype=column_dtypes)
+
+        df_actual_bytes = df.memory_usage(deep=True).sum()
+        df_actual_mb = df_actual_bytes / (1024 ** 2)
+        logger.info(f"Actual results df memory_usage: {df_actual_bytes:,} bytes ({df_actual_mb:.2f} MB)")
 
         # keep df['sample_id'] as string type (since it is unique category type does not save space)
         df['otu_id'] = pd.to_numeric(df['otu_id'], downcast='unsigned')
