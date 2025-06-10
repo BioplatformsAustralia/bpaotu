@@ -233,6 +233,11 @@ def run_comparison(self, submission_id):
         submission.status = 'error'
         submission.error = "Out of Memory: %s" % e
         logger.error(f"MemoryError running comparison: {e}")
+    except ValueError as e:
+        submission.status = 'error'
+        print(str(e))
+        submission.error = "Out of Memory: %s" % e
+        logger.error(f"ValueError running comparison: {e}")
     # except Exception as e:
     #     print('Exception')
     #     print(e)
