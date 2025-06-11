@@ -184,7 +184,8 @@ class SampleComparisonWrapper:
             values='abundance',
             fill_value=0,
             aggfunc='first'
-        ).astype(np.uint32)
+        )
+        # .astype(np.uint32)
 
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)

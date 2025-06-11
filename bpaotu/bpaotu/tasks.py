@@ -233,14 +233,15 @@ def run_comparison(self, submission_id):
         submission.status = 'error'
         submission.error = "Out of Memory: %s" % e
         logger.error(f"MemoryError running comparison: {e}")
-    except ValueError as e:
-        submission.status = 'error'
-        if "Unstacked DataFrame is too big" in str(e):
-            submission.error = "Out of Memory: Unstacked DataFrame is too big. Please try a smaller dataset."
-            logger.error(f"ValueError running comparison: {e}")
-        else:
-            submission.error = "Error running sample comparison"
-            logger.info("Error running sample comparison: %s" % (e))
+        
+    # except ValueError as e:
+    #     submission.status = 'error'
+    #     if "Unstacked DataFrame is too big" in str(e):
+    #         submission.error = "Out of Memory: Unstacked DataFrame is too big. Please try a smaller dataset."
+    #         logger.error(f"ValueError running comparison: {e}")
+    #     else:
+    #         submission.error = "Error running sample comparison"
+    #         logger.info("Error running sample comparison: %s" % (e))
 
     # except Exception as e:
     #     print('Exception')
