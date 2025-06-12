@@ -1,4 +1,4 @@
-from celery import shared_task
+from celery import chain, shared_task
 import logging
 import json
 import numpy as np
@@ -189,10 +189,16 @@ def submit_sample_comparison(self, query, umap_params_string):
     submission.query = query
     submission.umap_params_string = umap_params_string
 
-    # Ensure asynchronous execution and store the task ID
-    chain = setup_comparison.s() | run_comparison.s() | cleanup_comparison.s()
+    # create the chain and submit it asynchronously
+    task_chain = chain(
+        setup_comparison.s(submission_id),
+        run_comparison.s(),
+        cleanup_comparison.s()
+    )
 
-    chain(submission_id)
+    result = task_chain.apply_async()
+
+    submission.task_id = result.id
 
     return submission_id
 
