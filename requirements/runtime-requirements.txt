@@ -6,7 +6,6 @@ beautifulsoup4==4.9.0
 boto==2.49.0
 ccg-django-utils==0.4.2
 psycopg2==2.8.5
-pytz==2019.3
 requests==2.31.0
 six==1.14.0
 uwsgi==2.0.18
@@ -23,6 +22,7 @@ redis==3.4.1
 django-redis==4.10.0
 zipstream==1.1.4
 numpy==1.26.4
+pandas==1.4.0
 celery==4.4.2
 Pillow>=8.1.1
 python-resize-image==1.1.19
