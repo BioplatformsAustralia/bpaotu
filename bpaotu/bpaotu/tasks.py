@@ -193,7 +193,6 @@ def submit_sample_comparison(self, query, umap_params_string):
     task_chain = chain(
         setup_comparison.s(submission_id),
         run_comparison.s(),
-        cleanup_comparison.s()
     )
 
     result = task_chain.apply_async()
@@ -222,7 +221,6 @@ def cancel_sample_comparison(submission_id):
 @shared_task
 def setup_comparison(submission_id):
     submission = Submission(submission_id)
-    submission.cwd = tempfile.mkdtemp()
     wrapper = _make_sample_comparison_wrapper(submission)
     wrapper.setup()
     return submission_id
@@ -233,18 +231,16 @@ def run_comparison(self, submission_id):
     wrapper = _make_sample_comparison_wrapper(submission)
 
     try:
-        results = wrapper.run()
-        submission.results = json.dumps(results, cls=NumpyEncoder)
+        results_files = wrapper.run()
+        submission.results_files = json.dumps(results_files)
     except MemoryError as e:
         submission.status = 'error'
         submission.error = "Out of Memory: %s" % e
         logger.error(f"MemoryError running comparison: {e}")
     # except Exception as e:
-    #     print('Exception')
-    #     print(e)
     #     submission.status = 'error'
-    #     submission.error = "%s" % (e)
-    #     logger.info("Error running sample comparison: %s" % (e))
+    #     submission.error = str(e)
+    #     logger.error("Error running sample comparison: %s" % (e))
 
     return submission_id
 
@@ -279,21 +275,4 @@ def _make_blast_wrapper(submission):
 
 def _make_sample_comparison_wrapper(submission):
     return SampleComparisonWrapper(
-        submission.cwd, submission.submission_id, submission.status, submission.query, submission.umap_params_string)
-
-
-import datetime
-
-class NumpyEncoder(json.JSONEncoder):
-    """ Special json encoder for numpy types """
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        elif isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.isoformat()
-        return json.JSONEncoder.default(self, obj)
-
+        submission.submission_id, submission.status, submission.query, submission.umap_params_string)

@@ -32,6 +32,7 @@ services:
     volumes:
       - .:/app
       - ./data/dev:/data
+      - shared-data:/shared
     ports:
       - "8000:8000"
     depends_on:
@@ -52,9 +53,11 @@ services:
       - WAIT_FOR_CACHE=1
     volumes:
       - .:/app
+      - shared-data:/shared
     depends_on:
       - db
       - cache
 
 volumes:
   dbdata:
+  shared-data:

@@ -1171,7 +1171,6 @@ def comparison_submission(request):
     submission = tasks.Submission(submission_id)
     state = submission.status
 
-    # TODO: is there at all a possibility that this is checked in between tasks?!?
     # look for an active task with the submission_id in the task args
     active_tasks = get_active_celery_tasks()
     task_found = any(submission_id in task["args"] for task in active_tasks)
@@ -1180,9 +1179,6 @@ def comparison_submission(request):
     timestamps = json.loads(timestamps_)
 
     results = { 'abundanceMatrix': {}, 'contextual': {} }
-    if state == 'complete':
-        results = json.loads(submission.results)
-
     response_data = {
         'success': True,
         'mem_usage': mem_usage_obj(),
@@ -1197,13 +1193,26 @@ def comparison_submission(request):
 
     if state == 'complete':
         try:
+            results_files = json.loads(submission.results_files)
+            results = {
+                'abundanceMatrix': json.load(open(results_files['abundance_matrix_file'])),
+                'contextual': json.load(open(results_files['contextual_file'])),
+            }
+            response_data['submission']['results'] = results
+        except Exception as e:
+            logger.error(f"Could not load result files for submission {submission_id}: {e}")
+
+        try:
             duration = timestamps[-1]['complete'] - timestamps[0]['init']
             response_data['submission']['duration'] = round(duration, 2)
         except Exception as e:
             logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
 
+        tasks.cleanup_comparison(submission_id)
+
     elif state == 'error':
         response_data['submission']['error'] = submission.error
+        tasks.cleanup_comparison(submission_id)
 
     elif not task_found:
         response_data['submission']['state'] = 'error'

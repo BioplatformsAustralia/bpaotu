@@ -29,10 +29,10 @@ from .util import log_msg
 
 logger = logging.getLogger('bpaotu')
 
+SHARED_DIR = "/shared"
 
 class SampleComparisonWrapper:
-    def __init__(self, cwd, submission_id, status, query, umap_params_string):
-        self._cwd = cwd
+    def __init__(self, submission_id, status, query, umap_params_string):
         self._submission_id = submission_id
         self._status = status
         self._query = query
@@ -41,6 +41,8 @@ class SampleComparisonWrapper:
         self._param_min_dist = float(umap_params['min_dist'])
         self._param_n_neighbors = int(umap_params['n_neighbors'])
         self._param_spread = float(umap_params['spread'])
+        self._submission_dir = os.path.join(SHARED_DIR, submission_id)
+        os.makedirs(self._submission_dir, exist_ok=True)
 
     def setup(self):
         submission = Submission(self._submission_id)
@@ -54,8 +56,8 @@ class SampleComparisonWrapper:
         submission.timestamps = json.dumps(timestamps_)
 
     def _in(self, filename):
-        "return path to filename within cwd"
-        return os.path.join(self._cwd, filename)
+        "return path to filename within submission dir"
+        return os.path.join(self._submission_dir, filename)
 
     def run(self):
         return self._run()
@@ -108,29 +110,22 @@ class SampleComparisonWrapper:
 
     def _cleanup(self):
         try:
-            if self._cwd:
-                shutil.rmtree(self._cwd)
-            else:
-                logger.info("No cwd to cleanup")
+            # shutil.rmtree(self._submission_dir)
+            logger.info(f"TEMP don't remove submission directory yet: {self._submission_dir}")
         except FileNotFoundError:
-            # directory doesn't exist
-            pass
-        except Exception:
-            logger.exception('Error when cleaning up cwd: ({})'.format(self._cwd))
+            logger.info(f"Could not remove submission directory (FileNotFoundError): {self._submission_dir}")
 
     def _run(self):
         # access the submission so we can change the status
         submission = Submission(self._submission_id)
 
+        # make csv in submission dir with abundance data
         self._status_update(submission, 'fetch')
-        log_msg('Fetching sample data')
-
-        # make csv in /tmp dir with abundance data
         self._make_abundance_csv()
 
-        # read abundance data into a dataframe
+        # read abundance data csv into a dataframe
         self._status_update(submission, 'fetched_to_df')
-        log_msg('start query results to df')
+        log_msg('Start query results to df')
         results_file = self._in('abundance.csv')
         column_names = ['sample_id', 'otu_id', 'abundance']
         column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
@@ -188,7 +183,6 @@ class SampleComparisonWrapper:
 
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
-        log_msg(f'rect_df.shape {rect_df.shape}')
         logger.info(f"   Actual pivot memory_usage: {actual_bytes:,} bytes ({actual_mb:.2f} MB)")
 
         self._status_update(submission, 'calc_distances_bc')
@@ -275,9 +269,34 @@ class SampleComparisonWrapper:
         abundance_matrix.pop('matrix_jaccard', None)
         abundance_matrix.pop('matrix_braycurtis', None)
 
+        abundance_path = os.path.join(self._submission_dir, "abundance_matrix.json")
+        contextual_path = os.path.join(self._submission_dir, "contextual.json")
+
+        with open(abundance_path, "w") as f:
+            json.dump(abundance_matrix, f, cls=NumpyEncoder)
+
+        with open(contextual_path, "w") as f:
+            json.dump(sample_results, f, cls=NumpyEncoder)
+
         self._status_update(submission, 'complete')
 
         return {
-            'abundanceMatrix': abundance_matrix,
-            'contextual': sample_results
+            "abundance_matrix_file": abundance_path,
+            "contextual_file": contextual_path
         }
+
+
+import datetime
+
+class NumpyEncoder(json.JSONEncoder):
+    """ Special json encoder for numpy types """
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, (datetime.date, datetime.datetime)):
+            return obj.isoformat()
+        return json.JSONEncoder.default(self, obj)
