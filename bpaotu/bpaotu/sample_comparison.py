@@ -42,11 +42,14 @@ class SampleComparisonWrapper:
         self._param_n_neighbors = int(umap_params['n_neighbors'])
         self._param_spread = float(umap_params['spread'])
         self._submission_dir = os.path.join(SHARED_DIR, submission_id)
-        os.makedirs(self._submission_dir, exist_ok=True)
 
     def setup(self):
         submission = Submission(self._submission_id)
         submission.timestamps = json.dumps([])
+        
+        os.makedirs(self._submission_dir, exist_ok=True)
+        logger.info(f'Submission directory created: {self._submission_dir}')
+
         self._status_update(submission, 'init')
 
     def _status_update(self, submission, text):
@@ -85,7 +88,7 @@ class SampleComparisonWrapper:
 
     def _make_abundance_csv(self):
         results_file = self._in('abundance.csv')
-        logger.info(f'Making abundance file: {results_file}')
+        logger.info('Making abundance file')
         with open(results_file, 'w') as fd:
             with SampleQuery(self._params) as query:
                 for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(1000):
