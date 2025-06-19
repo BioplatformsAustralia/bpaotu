@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import umap.umap_ as umap
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # debug
 from time import sleep, time
@@ -188,21 +189,42 @@ class SampleComparisonWrapper:
         actual_mb = actual_bytes / (1024 ** 2)
         logger.info(f"   Actual pivot memory_usage: {actual_bytes:,} bytes ({actual_mb:.2f} MB)")
 
-        self._status_update(submission, 'calc_distances_bc')
-        dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
+        def calc_dist_braycurtis(rect_df):
+            return 'braycurtis', fastdist.matrix_pairwise_distance(
+                rect_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True
+            )
 
-        self._status_update(submission, 'calc_distances_j')
-        dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
+        def calc_dist_jaccard(rect_df):
+            return 'jaccard', fastdist.matrix_pairwise_distance(
+                rect_df.values, fastdist.jaccard, "jaccard", return_matrix=True
+            )
 
-        log_msg('dist_matrix_braycurtis.shape', dist_matrix_braycurtis.shape)
-        log_msg('dist_matrix_jaccard.shape', dist_matrix_jaccard.shape)
+        self._status_update(submission, 'calc_distances_both_pending')
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [
+                executor.submit(calc_dist_braycurtis, rect_df),
+                executor.submit(calc_dist_jaccard, rect_df)
+            ]
+            
+            results_dist = {}
+            for future in as_completed(futures):
+                key, value = future.result()
+                results_dist[key] = value
+                if len(results_dist) == 1:
+                    self._status_update(submission, f'calc_distances_{key}_done')
+                elif len(results_dist) == 2:
+                    self._status_update(submission, f'calc_distances_both_done')
+
+        dist_matrix_braycurtis = results_dist["braycurtis"]
+        dist_matrix_jaccard = results_dist["jaccard"]
 
         # TODO next release
         # - save matrix to a tmpdir
         # - keep using for umap until modal is closed (separate endpoint)
         # - timeout failsafe with no usage
 
-        def umap_results(dist_matrix):
+
+        def calc_umap(method, dist_matrix):
             dist_matrix_df = pd.DataFrame(dist_matrix, index=rect_df.index, columns=rect_df.index)
 
             n_neighbors = self._param_n_neighbors
@@ -218,21 +240,35 @@ class SampleComparisonWrapper:
 
             embeddings = reducer.fit_transform(dist_matrix_df.values)
 
-            return pd.DataFrame(data=embeddings, columns=['dim1', 'dim2'], index=dist_matrix_df.index)
+            return method, pd.DataFrame(data=embeddings, columns=['dim1', 'dim2'], index=dist_matrix_df.index)
 
-        self._status_update(submission, 'calc_umap_bc')
-        results_braycurtis_umap = umap_results(dist_matrix_braycurtis)
+        self._status_update(submission, 'calc_umap_both_pending')
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [
+                executor.submit(calc_umap, 'braycurtis', dist_matrix_braycurtis),
+                executor.submit(calc_umap, 'jaccard', dist_matrix_jaccard)
+            ]
+            
+            results_umap = {}
+            for future in as_completed(futures):
+                key, value = future.result()
+                results_umap[key] = value
+                if len(results_umap) == 1:
+                    self._status_update(submission, f'calc_umap_{key}_done')
+                elif len(results_umap) == 2:
+                    self._status_update(submission, f'calc_umap_both_done')
+
+        results_braycurtis_umap = results_umap["braycurtis"]
+        results_jaccard_umap = results_umap["jaccard"]
+
         pairs_braycurtis_umap = list(zip(results_braycurtis_umap.dim1.values, results_braycurtis_umap.dim2.values))
-
-        self._status_update(submission, 'calc_umap_j')
-        results_jaccard_umap = umap_results(dist_matrix_jaccard)
         pairs_jaccard_umap = list(zip(results_jaccard_umap.dim1.values, results_jaccard_umap.dim2.values))
 
         sample_ids = df['sample_id'].unique().tolist()
         otu_ids = df['otu_id'].unique().tolist()
 
-        log_msg('sample_ids: ', len(sample_ids))
-        log_msg('otu_ids: ', len(otu_ids))
+        # log_msg('sample_ids: ', len(sample_ids))
+        # log_msg('otu_ids: ', len(otu_ids))
 
         abundance_matrix = {
             'sample_ids': sample_ids,

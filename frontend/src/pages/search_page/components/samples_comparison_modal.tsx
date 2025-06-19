@@ -45,10 +45,62 @@ const comparisonStatusMapping = {
   fetched_to_df: 'Loading samples into dataframe',
   sort: 'Sorting samples',
   pivot: 'Pivoting data',
-  calc_distances_bc: 'Calculating distance matrices (Bray-Curtis)',
-  calc_distances_j: 'Calculating distance matrices (Jaccard)',
-  calc_umap_bc: 'Calculating umap points (Bray-Curtis)',
-  calc_umap_j: 'Calculating umap points (Jaccard)',
+  calc_distances_both_pending: (
+    <>
+      Calculating distance matrices
+      <br />
+      <small>(Bray-Curtis: pending, Jaccard: pending)</small>
+    </>
+  ),
+  calc_distances_braycurtis_done: (
+    <>
+      Calculating distance matrices
+      <br />
+      <small>(Bray-Curtis: done, Jaccard: pending)</small>
+    </>
+  ),
+  calc_distances_jacaard_done: (
+    <>
+      Calculating distance matrices
+      <br />
+      <small>(Bray-Curtis: pending, Jaccard: done)</small>
+    </>
+  ),
+  calc_distances_both_done: (
+    <>
+      Calculating distance matrices
+      <br />
+      <small>(Bray-Curtis: done, Jaccard: done)</small>
+    </>
+  ),
+  calc_umap_both_pending: (
+    <>
+      Calculating umap points
+      <br />
+      <small>(Bray-Curtis: pending, Jaccard: pending)</small>
+    </>
+  ),
+  calc_umap_braycurtis_done: (
+    <>
+      Calculating umap points
+      <br />
+      <small>(Bray-Curtis: done, Jaccard: pending)</small>
+    </>
+  ),
+  calc_umap_jacaard_done: (
+    <>
+      Calculating umap points
+      <br />
+      <small>(Bray-Curtis: pending, Jaccard: done)</small>
+    </>
+  ),
+  calc_umap_both_done: (
+    <>
+      Calculating umap points
+      <br />
+      <small>(Bray-Curtis: done, Jaccard: done)</small>
+    </>
+  ),
   contextual_start: 'Collating contextual data',
   complete: 'Complete',
 }
@@ -67,6 +119,12 @@ const LoadingSpinnerOverlay = ({ status }) => {
     zIndex: 99999,
   } as React.CSSProperties
 
+  console.log('status', status)
+  console.log('comparisonStatusMapping[status]', comparisonStatusMapping[status])
+
+  const inner = comparisonStatusMapping[status] || <>Loading</>
+  console.log('inner', inner)
+
   return (
     <div style={loadingstyle}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -80,8 +138,9 @@ const LoadingSpinnerOverlay = ({ status }) => {
             background: 'white',
             width: '100%',
           }}
+          // dangerouslySetInnerHTML={{ __html: inner }}
         >
-          <>{comparisonStatusMapping[status] || 'Loading'}</>
+          {inner}
         </div>
       </div>
     </div>
