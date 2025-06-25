@@ -141,8 +141,14 @@ class SampleComparisonWrapper:
         logger.info(f"Actual results df memory_usage: {df_actual_bytes:,} bytes ({df_actual_mb:.2f} MB)")
 
         # keep df['sample_id'] as string type (since it is unique category type does not save space)
-        df['otu_id'] = pd.to_numeric(df['otu_id'], downcast='unsigned')
-        df['abundance'] = pd.to_numeric(df['abundance'], downcast='unsigned')
+
+        ## these may be causing a bad crash in kombu
+        # kombu.exceptions.InconsistencyError: 
+        # Cannot route message for exchange 'reply.celery.pidbox': Table empty or key no longer exists.
+        # Probably the key ('_kombu.binding.reply.celery.pidbox') has been removed from the Redis database.
+
+        # df['otu_id'] = pd.to_numeric(df['otu_id'], downcast='unsigned')
+        # df['abundance'] = pd.to_numeric(df['abundance'], downcast='unsigned')
 
         log_msg(f'df.shape {df.shape}')
 
@@ -177,13 +183,19 @@ class SampleComparisonWrapper:
         df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
 
         self._status_update(submission, 'pivot')
-        rect_df = df.pivot_table(
+        rect_df = df.pivot(
             index='sample_id',
             columns='otu_id',
-            values='abundance',
-            fill_value=0,
-            aggfunc='first'
-        ).astype(np.uint32)
+            values='abundance').fillna(0)
+
+        ## incorporate this if to_numeric removal stops crash
+        # rect_df = df.pivot_table(
+        #     index='sample_id',
+        #     columns='otu_id',
+        #     values='abundance',
+        #     fill_value=0,
+        #     aggfunc='first'
+        # ).astype(np.uint32)
 
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
