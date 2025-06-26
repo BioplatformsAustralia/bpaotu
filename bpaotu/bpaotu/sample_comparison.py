@@ -53,6 +53,7 @@ class SampleComparisonWrapper:
         logger.info(f'Submission directory created: {self._submission_dir}')
 
     def _status_update(self, submission, text):
+        logger.debug(f"Status: {text}")
         submission.status = text
         timestamps_ = json.loads(submission.timestamps)
         timestamps_.append({ text: time() })
@@ -113,8 +114,8 @@ class SampleComparisonWrapper:
 
     def _cleanup(self):
         try:
-            # shutil.rmtree(self._submission_dir)
-            logger.info(f"TEMP don't remove submission directory yet: {self._submission_dir}")
+            shutil.rmtree(self._submission_dir)
+            logger.info(f"Submission directory removed: {self._submission_dir}")
         except FileNotFoundError:
             logger.info(f"Could not remove submission directory (FileNotFoundError): {self._submission_dir}")
 
