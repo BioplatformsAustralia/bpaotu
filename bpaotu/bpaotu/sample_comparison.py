@@ -181,20 +181,16 @@ class SampleComparisonWrapper:
         self._status_update(submission, 'sort')
         df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
 
-        self._status_update(submission, 'pivot')
-        # rect_df = df.pivot(
-        #     index='sample_id',
-        #     columns='otu_id',
-        #     values='abundance').fillna(0)
+        # notes:
+        # use of df.pivot_table (instead of df.pivot) and pd.to_numeric on df columns
+        # can cause a crash in celeryworker that is not recoverable without restarting
+        # the containers if the worker runs out of memory during this stage
 
-        ## incorporate this if to_numeric removal stops crash
-        rect_df = df.pivot_table(
+        self._status_update(submission, 'pivot')
+        rect_df = df.pivot(
             index='sample_id',
             columns='otu_id',
-            values='abundance',
-            fill_value=0,
-            aggfunc='first'
-        ).astype(np.uint32)
+            values='abundance').fillna(0)
 
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
