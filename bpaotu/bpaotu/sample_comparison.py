@@ -47,11 +47,10 @@ class SampleComparisonWrapper:
     def setup(self):
         submission = Submission(self._submission_id)
         submission.timestamps = json.dumps([])
-        
-        os.makedirs(self._submission_dir, exist_ok=True)
-        logger.info(f'Submission directory created: {self._submission_dir}')
 
         self._status_update(submission, 'init')
+        os.makedirs(self._submission_dir, exist_ok=True)
+        logger.info(f'Submission directory created: {self._submission_dir}')
 
     def _status_update(self, submission, text):
         submission.status = text
@@ -183,19 +182,19 @@ class SampleComparisonWrapper:
         df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
 
         self._status_update(submission, 'pivot')
-        rect_df = df.pivot(
-            index='sample_id',
-            columns='otu_id',
-            values='abundance').fillna(0)
-
-        ## incorporate this if to_numeric removal stops crash
-        # rect_df = df.pivot_table(
+        # rect_df = df.pivot(
         #     index='sample_id',
         #     columns='otu_id',
-        #     values='abundance',
-        #     fill_value=0,
-        #     aggfunc='first'
-        # ).astype(np.uint32)
+        #     values='abundance').fillna(0)
+
+        ## incorporate this if to_numeric removal stops crash
+        rect_df = df.pivot_table(
+            index='sample_id',
+            columns='otu_id',
+            values='abundance',
+            fill_value=0,
+            aggfunc='first'
+        ).astype(np.uint32)
 
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
