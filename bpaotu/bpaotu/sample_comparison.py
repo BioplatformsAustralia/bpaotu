@@ -140,21 +140,32 @@ class SampleComparisonWrapper:
         df_actual_mb = df_actual_bytes / (1024 ** 2)
         logger.info(f"Actual results df memory_usage: {df_actual_bytes:,} bytes ({df_actual_mb:.2f} MB)")
 
-        # keep df['sample_id'] as string type (since it is unique category type does not save space)
-
-        ## these may be causing a bad crash in kombu
+        # NOTES:
+        # use of pd.to_numeric on df columns here and df.pivot_table (instead of df.pivot) later
+        # can cause a crash in celeryworker that is not recoverable without restarting
+        # the containers if the worker runs out of memory during this stage
+        # this is different behaviour to a crash due to an incredibly large dataset
+        # e.g. with 32MB RAM;
+        # - all p__Acidobateriota (pidbox crash, unrecoverable)
+        # - all p__Actinobacteriota (standard crash, recoverable)
+        #
         # kombu.exceptions.InconsistencyError: 
         # Cannot route message for exchange 'reply.celery.pidbox': Table empty or key no longer exists.
         # Probably the key ('_kombu.binding.reply.celery.pidbox') has been removed from the Redis database.
-
-        # df['otu_id'] = pd.to_numeric(df['otu_id'], downcast='unsigned')
-        # df['abundance'] = pd.to_numeric(df['abundance'], downcast='unsigned')
+        #
+        # > keep df['sample_id'] as string type (since it is unique category type does not save space)
+        # > df['otu_id'] = pd.to_numeric(df['otu_id'], downcast='unsigned')
+        # > df['abundance'] = pd.to_numeric(df['abundance'], downcast='unsigned')
+        #
+        # using pd.to_numeric without df.pivot_table seems to have no effect on the datatype size but does not cause the crashing
+        # so using int64 (default) without downcasting seems to prevent the crashes, though it doubles the size requirements
+        # however, such large result sets take forever to compute anyway
 
         log_msg(f'df.shape {df.shape}')
 
         nunique_sample_id = df["sample_id"].nunique()
         nunique_otu_id = df["otu_id"].nunique()
-        dtype_size = np.dtype(np.uint32).itemsize
+        dtype_size = np.dtype(np.int64).itemsize
 
         log_msg(f'nunique df.sample_id: {nunique_sample_id}')
         log_msg(f'nunique df.otu_id:    {nunique_otu_id}')
@@ -182,16 +193,15 @@ class SampleComparisonWrapper:
         self._status_update(submission, 'sort')
         df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
 
-        # notes:
-        # use of df.pivot_table (instead of df.pivot) and pd.to_numeric on df columns
-        # can cause a crash in celeryworker that is not recoverable without restarting
-        # the containers if the worker runs out of memory during this stage
-
         self._status_update(submission, 'pivot')
-        rect_df = df.pivot(
-            index='sample_id',
-            columns='otu_id',
-            values='abundance').fillna(0)
+        rect_df = (
+            df.pivot(
+                index='sample_id',
+                columns='otu_id',
+                values='abundance'
+            )
+            .fillna(0)
+        )
 
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
