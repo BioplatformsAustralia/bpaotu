@@ -102,7 +102,7 @@ class SampleComparisonWrapper:
         try:
             # celery task ID was stored when chain was started
             task_id = submission.task_id
-            revoke(task_id, terminate=True)
+            revoke(task_id, terminate=True, signal='SIGKILL')
             self._status_update(submission, 'cancelled')
             return True
         except Exception as e:

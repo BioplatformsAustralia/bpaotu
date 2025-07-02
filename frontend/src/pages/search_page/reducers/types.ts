@@ -75,6 +75,7 @@ export interface PageState {
     isOpen: boolean
     isLoading: boolean
     isFinished: boolean
+    isCancelled: boolean
     selectedMethod: string
     selectedFilter: string
     selectedFilterExtra: string
@@ -195,6 +196,7 @@ export const searchPageInitialState: PageState = {
     isOpen: false,
     isLoading: false,
     isFinished: false,
+    isCancelled: false,
     selectedMethod: 'braycurtis',
     selectedFilter: '',
     selectedFilterExtra: 'year',

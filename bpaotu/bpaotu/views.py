@@ -1185,13 +1185,24 @@ def comparison_submission(request):
         'submission': {
             'id': submission_id,
             'state': state,
+            'duration': None,
             'results': results,
             'timestamps': timestamps,
             'task_found': task_found,
         }
     }
 
+    # this is set in the cancel() method
+    if submission.cancelled:
+        response_data['submission']["cancelled"] = True
+
     if state == 'complete':
+        try:
+            duration = timestamps[-1]['complete'] - timestamps[0]['init']
+            response_data['submission']['duration'] = round(duration, 2)
+        except Exception as e:
+            logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
+
         try:
             results_files = json.loads(submission.results_files)
             results = {
@@ -1201,12 +1212,6 @@ def comparison_submission(request):
             response_data['submission']['results'] = results
         except Exception as e:
             logger.error(f"Could not load result files for submission {submission_id}: {e}")
-
-        try:
-            duration = timestamps[-1]['complete'] - timestamps[0]['init']
-            response_data['submission']['duration'] = round(duration, 2)
-        except Exception as e:
-            logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
 
         tasks.cleanup_comparison(submission_id)
 

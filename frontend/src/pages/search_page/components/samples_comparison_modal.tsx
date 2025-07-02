@@ -119,11 +119,7 @@ const LoadingSpinnerOverlay = ({ status }) => {
     zIndex: 99999,
   } as React.CSSProperties
 
-  console.log('status', status)
-  console.log('comparisonStatusMapping[status]', comparisonStatusMapping[status])
-
   const inner = comparisonStatusMapping[status] || <>Loading</>
-  console.log('inner', inner)
 
   return (
     <div style={loadingstyle}>
@@ -138,7 +134,6 @@ const LoadingSpinnerOverlay = ({ status }) => {
             background: 'white',
             width: '100%',
           }}
-          // dangerouslySetInnerHTML={{ __html: inner }}
         >
           {inner}
         </div>
@@ -189,6 +184,7 @@ const SamplesComparisonModal = (props) => {
   const {
     isOpen,
     isLoading,
+    isCancelled,
     runComparison,
     cancelComparison,
     closeSamplesComparisonModal,
@@ -338,7 +334,7 @@ const SamplesComparisonModal = (props) => {
         </div>
       </ModalHeader>
       <ModalBody>
-        {isError && <ErrorOverlay errors={errors} />}
+        {isError && !isCancelled && <ErrorOverlay errors={errors} />}
         {isLoading && <LoadingSpinnerOverlay status={comparisonStatus} />}
         {/* controls layout is 2 rows, each in their own container, divided into 12 parts (set by xs prop) */}
         <Container>
@@ -513,6 +509,7 @@ const mapStateToProps = (state) => {
     isOpen,
     isLoading,
     isFinished,
+    isCancelled,
 
     selectedMethod,
     setSelectedMethod,
@@ -539,6 +536,7 @@ const mapStateToProps = (state) => {
     isOpen,
     isLoading,
     isFinished,
+    isCancelled,
 
     selectedMethod,
     setSelectedMethod,

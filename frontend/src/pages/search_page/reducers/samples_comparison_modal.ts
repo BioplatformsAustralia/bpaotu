@@ -35,7 +35,7 @@ export const {
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_METHOD',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER_EXTRA',
-  
+
   'HANDLE_UMAP_PARAMETERS',
 
   'RUN_COMPARISON_STARTED',
@@ -219,7 +219,8 @@ export default handleActions(
     },
     [comparisonSubmissionUpdateEnded as any]: {
       next: (state, action: any) => {
-        const actionSubmissionState = action.payload.data.submission.state
+        const actionSubmission = action.payload.data.submission
+        const actionSubmissionState = actionSubmission.state
         const lastSubmission = last(state.submissions)
         const newLastSubmissionState = ((submission) => {
           const { state: status, error } = action.payload.data.submission
@@ -294,6 +295,7 @@ export default handleActions(
           ),
           isLoading: isLoading,
           isFinished: isFinished,
+          isCancelled: !!actionSubmission.cancelled,
           mem_usage: action.payload.data.mem_usage,
           timestamps: action.payload.data.submission.timestamps,
           errors: errors,

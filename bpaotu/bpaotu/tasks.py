@@ -209,6 +209,7 @@ def cancel_sample_comparison(submission_id):
 
     try:
         results = wrapper.cancel()
+        submission.cancelled = 'true'
     except Exception as e:
         submission.status = 'error'
         submission.error = "%s" % (e)
