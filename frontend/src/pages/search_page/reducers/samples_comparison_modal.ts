@@ -248,7 +248,7 @@ export default handleActions(
           const { abundanceMatrix, contextual } = results
           const sample_ids = abundanceMatrix.sample_ids
           const pointsBC = abundanceMatrix.points['braycurtis']
-          const pointsJ = abundanceMatrix.points['jaccard']
+          // const pointsJ = abundanceMatrix.points['jaccard']
 
           // apply a jitter so that points aren't put on the same place (makes graph misleading)
           // need to retain the original value to put in the tooltip though
@@ -264,16 +264,17 @@ export default handleActions(
                 ...contextual[s],
               }
             }),
-            jaccard: sample_ids.map((s, i) => {
-              return {
-                text: s,
-                x: pointsJ[i][0],
-                xj: pointsJ[i][0] + (Math.random() * 2 - 1) * jitterAmount,
-                y: pointsJ[i][1],
-                yj: pointsJ[i][1] + (Math.random() * 2 - 1) * jitterAmount,
-                ...contextual[s],
-              }
-            }),
+            jaccard: [],
+            // jaccard: sample_ids.map((s, i) => {
+            //   return {
+            //     text: s,
+            //     x: pointsJ[i][0],
+            //     xj: pointsJ[i][0] + (Math.random() * 2 - 1) * jitterAmount,
+            //     y: pointsJ[i][1],
+            //     yj: pointsJ[i][1] + (Math.random() * 2 - 1) * jitterAmount,
+            //     ...contextual[s],
+            //   }
+            // }),
           }
         }
 

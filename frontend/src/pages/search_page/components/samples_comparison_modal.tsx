@@ -45,6 +45,12 @@ const comparisonStatusMapping = {
   fetched_to_df: 'Loading samples into dataframe',
   sort: 'Sorting samples',
   pivot: 'Pivoting data',
+  // single-threaded:
+  calc_distances_bc: 'Calculating distance matrix (Bray-Curtis)',
+  calc_distances_j: 'Calculating distance matrix (Jaccard)',
+  calc_umap_bc: 'Calculating umap points (Bray-Curtis)',
+  calc_umap_j: 'Calculating umap points (Jaccard)',
+  // multi-threaded:
   calc_distances_both_pending: (
     <>
       Calculating distance matrices
@@ -349,7 +355,7 @@ const SamplesComparisonModal = (props) => {
                 }}
               >
                 <option value="braycurtis">Bray-Curtis</option>
-                <option value="jaccard">Jaccard</option>
+                {/*<option value="jaccard">Jaccard</option>*/}
               </select>
             </Col>
             <Col xs="3">&nbsp;</Col>
