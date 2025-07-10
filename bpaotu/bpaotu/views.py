@@ -180,7 +180,6 @@ def api_config(request):
         'submit_blast_endpoint': reverse('submit_blast'),
         'blast_submission_endpoint': reverse('blast_submission'),
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
-        'search_sample_sites_comparison_endpoint': reverse('otu_search_sample_sites_comparison'),
         'submit_comparison_endpoint': reverse('submit_comparison'),
         'cancel_comparison_endpoint': reverse('cancel_comparison'),
         'comparison_submission_endpoint': reverse('comparison_submission'),
@@ -825,32 +824,6 @@ def otu_search_sample_sites(request):
 
 @require_CKAN_auth
 @require_POST
-def otu_search_sample_sites_comparison(request):
-    try:
-        params, errors = param_to_filters(request.POST['otu_query'])
-        if errors:
-            raise OTUError(*errors)
-
-        query = request.POST.get('otu_query')
-        umap_params_string = request.POST.get('umap_params_string', "{}")
-        submission_id = tasks.submit_sample_comparison(query, umap_params_string)
-
-        return JsonResponse({
-            'success': True,
-            'abundanceMatrix': [],
-            'contextual': {},
-            'submission_id': submission_id,
-        })
-    except OTUError as exc:
-        logger.exception('Error in submit to sample comparison')
-        return JsonResponse({
-            'success': False,
-            'errors': exc.errors,
-        })
-
-
-@require_CKAN_auth
-@require_POST
 def otu_search_blast_otus(request):
     params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=True)
     if errors:
@@ -1112,16 +1085,6 @@ def blast_submission(request):
         }
     })
 
-def _status_update(submission, text):
-    logger.info(f"Status: {text}")
-    submission.status = text
-    # timestamps_ = json.loads(submission.timestamps)
-    # timestamps_.append({ text: time() })
-    # submission.timestamps = json.dumps(timestamps_)
-
-def _in(_submission_dir, filename):
-    "return path to filename within submission dir"
-    return os.path.join(_submission_dir, filename)
 
 @require_CKAN_auth
 @require_POST

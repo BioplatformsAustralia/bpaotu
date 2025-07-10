@@ -22,8 +22,6 @@ import numpy as np
 import pandas as pd
 import umap.umap_ as umap
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
 # debug
 from time import sleep, time
 from .util import log_msg

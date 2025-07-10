@@ -21,7 +21,6 @@ urlpatterns = [
     url(r'^private/api/v1/taxonomy-search$', views.taxonomy_search, name="taxonomy_search"),
     url(r'^private/api/v1/search$', views.otu_search, name="otu_search"),
     url(r'^private/api/v1/search-sample-sites$', views.otu_search_sample_sites, name="otu_search_sample_sites"),
-    url(r'^private/api/v1/search-sample-sites-comparison$', views.otu_search_sample_sites_comparison, name="otu_search_sample_sites_comparison"),
     url(r'^private/api/v1/search-blast-otus$', views.otu_search_blast_otus, name="otu_search_blast_otus"),
     url(r'^private/api/v1/submit_to_galaxy$', views.submit_to_galaxy, name="submit_to_galaxy"),
     url(
