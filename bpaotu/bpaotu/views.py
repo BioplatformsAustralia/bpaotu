@@ -9,6 +9,7 @@ import logging
 import os
 import re
 import time
+import uuid
 from collections import OrderedDict, defaultdict
 from functools import wraps
 from operator import itemgetter
@@ -50,6 +51,7 @@ from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilter
                     SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
 from .spatial import spatial_query
+from .submission import Submission
 from .tabular import tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_time, parse_float, log_msg, mem_usage_obj
 
@@ -1133,29 +1135,11 @@ def submit_comparison(request):
         query = request.POST.get('query')
         umap_params_string = request.POST.get('umap_params', "{}")
 
-        # time (s): 440 (runserver)
-        # submission_id = tasks_minimal.test_fastdist()
-        # time (s): 27 35 (celeryworker)
-        # submission_id = tasks_minimal.test_fastdist.delay()
+        # # because the initial task call has to be with delay we need to create the Submission id here
+        submission_id = str(uuid.uuid4())
+        # submission = Submission.create(submission_id)
 
-        # with test_fastdist
-        # time (s): 40 26 31 34 (celeryworker)
-        # submission_id = tasks_minimal.submit_sample_comparison(query, umap_params_string)
-        # time (s): 37 34 35 (celeryworker)
-        # submission_id = tasks_minimal.submit_sample_comparison.delay(query, umap_params_string)
-
-        # with fastdist_task (just calc_braycurtis tep)
-        # time (s): 4m23s (runserver)
-        # submission_id = tasks_minimal.submit_sample_comparison(query, umap_params_string)
-        # time (s): 19s (celeryworker)
-        submission_id = tasks_minimal.submit_sample_comparison.delay(query, umap_params_string)
-
-        # submission_id = tasks_minimal.fastdist_task(query, umap_params_string)
-        # submission_id = tasks_minimal.fastdist_task.delay(query, umap_params_string)
-
-
-        print('submission_id', submission_id)
-        print('submission_id', submission_id.__dict__)
+        result = tasks_minimal.submit_sample_comparison.delay(submission_id, query, umap_params_string)
 
         ########
 
@@ -1206,7 +1190,7 @@ def cancel_comparison(request):
 @require_GET
 def comparison_submission(request):
     submission_id = request.GET['submission_id']
-    submission = tasks.Submission(submission_id)
+    submission = Submission(submission_id)
     state = submission.status
 
     # look for an active task with the submission_id in the task args
@@ -1242,7 +1226,9 @@ def comparison_submission(request):
             logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
 
         try:
+            print('submission.results_files', submission.results_files)
             results_files = json.loads(submission.results_files)
+            print('submission.results_files', submission.results_files)
             results = {
                 'abundanceMatrix': json.load(open(results_files['abundance_matrix_file'])),
                 'contextual': json.load(open(results_files['contextual_file'])),

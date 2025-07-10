@@ -4,6 +4,7 @@ import logging
 import os.path
 import shutil
 import time
+import datetime
 import uuid
 
 from fastdist import fastdist
@@ -40,10 +41,10 @@ def periodic_task():
 
 def _status_update(submission, text):
     logger.info(f"Status: {text}")
-    # submission.status = text
-    # timestamps_ = json.loads(submission.timestamps)
-    # timestamps_.append({ text: time() })
-    # submission.timestamps = json.dumps(timestamps_)
+    submission.status = text
+    timestamps_ = json.loads(submission.timestamps)
+    timestamps_.append({ text: time.time() })
+    submission.timestamps = json.dumps(timestamps_)
 
 def _in(_submission_dir, filename):
     "return path to filename within submission dir"
@@ -51,10 +52,9 @@ def _in(_submission_dir, filename):
 
 
 @shared_task()
-def submit_sample_comparison(query, umap_params_string):
-    submission_id = str(uuid.uuid4())
-
+def submit_sample_comparison(submission_id, query, umap_params_string):
     submission = Submission.create(submission_id)
+
     submission.status = 'init'
     submission.query = query
     submission.umap_params_string = umap_params_string
@@ -66,7 +66,7 @@ def submit_sample_comparison(query, umap_params_string):
     # )
 
     # result = task_chain.apply_async()
-    result = fastdist_task(query, umap_params_string).delay()
+    result = fastdist_task.delay(submission_id, query, umap_params_string)
 
     submission.task_id = result.id
 
@@ -96,13 +96,12 @@ def test_fastdist():
 
 
 @shared_task()
-def fastdist_task(query, umap_params_string):
+def fastdist_task(submission_id, _query, umap_params_string):
     ########
     SHARED_DIR = "/shared"
-    submission_id = str(uuid.uuid4())
     _submission_id = submission_id
     _submission_dir = os.path.join(SHARED_DIR, _submission_id)
-    _params, _errors = param_to_filters(query)
+    _params, _errors = param_to_filters(_query)
 
     umap_params = json.loads(umap_params_string)
     _param_min_dist = float(umap_params['min_dist'])
@@ -111,7 +110,7 @@ def fastdist_task(query, umap_params_string):
 
     #### setup(self):
     submission = Submission(_submission_id)
-    # submission.timestamps = json.dumps([])
+    submission.timestamps = json.dumps([])
 
     _status_update(submission, 'init')
     os.makedirs(_submission_dir, exist_ok=True)
@@ -219,6 +218,49 @@ def fastdist_task(query, umap_params_string):
 
     _status_update(submission, 'contextual_start')
 
+    contextual_filtering = True
+    additional_headers = selected_contextual_filters(_query, contextual_filtering=contextual_filtering)
+    all_headers = ['id', 'am_environment_id', 'vegetation_type_id', 'imos_site_code', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
+                   'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
+                   'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
+    all_headers_unique = list(set(all_headers))
+
+    with SampleQuery(_params) as query:
+        results = query.matching_sample_graph_data(all_headers_unique)
+
+    sample_results = {}
+    if results:
+        ndata = np.array(results)
+
+        for x in ndata:
+            sample_id_column = all_headers_unique.index('id')
+            sample_id = x[sample_id_column]
+            sample_data = dict(zip(all_headers_unique, x.tolist()))
+            sample_results[sample_id] = sample_data
+
+    abundance_matrix.pop('matrix_jaccard', None)
+    abundance_matrix.pop('matrix_braycurtis', None)
+
+    abundance_path = os.path.join(_submission_dir, "abundance_matrix.json")
+    contextual_path = os.path.join(_submission_dir, "contextual.json")
+
+    with open(abundance_path, "w") as f:
+        json.dump(abundance_matrix, f, cls=NumpyEncoder)
+
+    with open(contextual_path, "w") as f:
+        json.dump(sample_results, f, cls=NumpyEncoder)
+
+    _status_update(submission, 'complete')
+
+    results_files = {
+        "abundance_matrix_file": abundance_path,
+        "contextual_file": contextual_path
+    }
+
+    submission.results_files = json.dumps(results_files)
+
+    return 'return value'
+
 
 def _parse_contextual_term(filter_spec):
     field_name = filter_spec['field']
@@ -305,6 +347,17 @@ def param_to_filters(query_str, contextual_filtering=True):
         taxonomy_filter=taxonomy_filter,
         sample_integrity_warnings_filter=sample_integrity_warnings_filter), errors)
 
+def selected_contextual_filters(query_str, contextual_filtering=True):
+    otu_query = json.loads(query_str)
+    context_spec = otu_query['contextual_filters']
+    contextual_filter = []
+
+    if contextual_filtering:
+        for filter_spec in context_spec['filters']:
+            field_name = filter_spec['field']
+            contextual_filter.append(field_name)
+
+    return contextual_filter
 
 def int_if_not_already_none(v):
     if v is None or v == '':
@@ -348,3 +401,17 @@ def make_clean_taxonomy_filter(amplicon_filter, state_vector, trait_filter):
             get_operator_and_int_value,
             state_vector)),
         clean_trait_filter(trait_filter))
+
+
+class NumpyEncoder(json.JSONEncoder):
+    """ Special json encoder for numpy types """
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, (datetime.date, datetime.datetime)):
+            return obj.isoformat()
+        return json.JSONEncoder.default(self, obj)

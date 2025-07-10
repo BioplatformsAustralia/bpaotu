@@ -249,7 +249,7 @@ def run_comparison(self, submission_id):
 def cleanup_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
-    wrapper.cleanup()
+    # wrapper.cleanup()
     return submission_id
 
 
