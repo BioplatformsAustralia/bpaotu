@@ -34,9 +34,3 @@ services:
       context: ./
       dockerfile: Dockerfile-celeryworker
     image: bioplatformsaustralia/bpaotu-celeryworker
-
-  perf:
-    build:
-      context: ./
-      dockerfile: Dockerfile-perf
-    image: bioplatformsaustralia/bpaotu-perf

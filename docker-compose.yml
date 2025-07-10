@@ -70,21 +70,6 @@ services:
         aliases:
           - web
 
-  perf:
-    build:
-      context: .
-      dockerfile: Dockerfile-perf
-    volumes:
-      - ./testdata:/app
-    working_dir: /app
-    command: ["tail", "-f", "/dev/null"] # Keeps container running
-    depends_on:
-      - db
-      - runserver
-      - cache
-    stdin_open: true
-    tty: true
-
 volumes:
   dbdata:
   shared-data:
