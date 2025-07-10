@@ -16,7 +16,7 @@ mkdir ./build
 docker cp fend-archive:/build .
 docker rm fend && docker rm fend-archive
 
-docker-compose -f docker-compose-build.yml build builder
+docker-compose -f docker-compose-build.yml build builder celeryworker
 
 ## circleci remote-docker does not allow for use of volumes
 echo "Retrieving prod-build archive..."
