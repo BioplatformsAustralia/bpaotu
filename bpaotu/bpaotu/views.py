@@ -33,6 +33,7 @@ from django.core.cache import caches
 from celery import current_app
 
 from . import tasks
+from . import tasks_minimal
 from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
@@ -1109,6 +1110,17 @@ def blast_submission(request):
         }
     })
 
+def _status_update(submission, text):
+    logger.info(f"Status: {text}")
+    submission.status = text
+    # timestamps_ = json.loads(submission.timestamps)
+    # timestamps_.append({ text: time() })
+    # submission.timestamps = json.dumps(timestamps_)
+
+def _in(_submission_dir, filename):
+    "return path to filename within submission dir"
+    return os.path.join(_submission_dir, filename)
+
 @require_CKAN_auth
 @require_POST
 def submit_comparison(request):
@@ -1119,7 +1131,10 @@ def submit_comparison(request):
 
         query = request.POST.get('query')
         umap_params_string = request.POST.get('umap_params', "{}")
-        submission_id = tasks.submit_sample_comparison(query, umap_params_string)
+        # submission_id = tasks.submit_sample_comparison(query, umap_params_string)
+        tasks_minimal.fastdist_task.delay()
+
+        ########
 
         track(request, 'otu_sample_comparison', search_params_track_args(params))
 
@@ -1172,8 +1187,8 @@ def comparison_submission(request):
     state = submission.status
 
     # look for an active task with the submission_id in the task args
-    active_tasks = get_active_celery_tasks()
-    task_found = any(submission_id in task["args"] for task in active_tasks)
+    # active_tasks = get_active_celery_tasks()
+    task_found = True #any(submission_id in task["args"] for task in active_tasks)
 
     timestamps_ = submission.timestamps or json.dumps([])
     timestamps = json.loads(timestamps_)

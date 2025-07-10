@@ -44,19 +44,42 @@ services:
           - web
 
   celeryworker:
-    image: bioplatformsaustralia/bpaotu
-    command: celery_worker
+    build:
+      context: .
+      dockerfile: Dockerfile-celeryworker
+    image: bioplatformsaustralia/bpaotu-celeryworker
+    command: celery --app=bpaotu worker --loglevel=info --beat
+    working_dir: /app/bpaotu
     env_file:
       - .env_local
     environment:
       - WAIT_FOR_DB=1
       - WAIT_FOR_CACHE=1
+      - PYTHONPATH=/app/bpaotu
+      - DJANGO_SETTINGS_MODULE=bpaotu.celery_settings
     volumes:
       - .:/app
+      - ./data/dev:/data
       - shared-data:/shared
     depends_on:
       - db
       - cache
+      - runserver
+
+  perf:
+    build:
+      context: .
+      dockerfile: Dockerfile-perf
+    volumes:
+      - ./testdata:/app
+    working_dir: /app
+    command: ["tail", "-f", "/dev/null"] # Keeps container running
+    depends_on:
+      - db
+      - runserver
+      - cache
+    stdin_open: true
+    tty: true
 
 volumes:
   dbdata:

@@ -53,7 +53,7 @@ class SampleComparisonWrapper:
         logger.info(f'Submission directory created: {self._submission_dir}')
 
     def _status_update(self, submission, text):
-        logger.debug(f"Status: {text}")
+        logger.info(f"Status: {text}")
         submission.status = text
         timestamps_ = json.loads(submission.timestamps)
         timestamps_.append({ text: time() })
@@ -122,6 +122,10 @@ class SampleComparisonWrapper:
     def _run(self):
         # access the submission so we can change the status
         submission = Submission(self._submission_id)
+
+        import os
+        os.environ["OMP_NUM_THREADS"] = "4"
+        os.environ["OPENBLAS_NUM_THREADS"] = "4"
 
         # make csv in submission dir with abundance data
         self._status_update(submission, 'fetch')

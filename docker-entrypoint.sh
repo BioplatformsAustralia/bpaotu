@@ -245,7 +245,7 @@ if [ "$1" = 'celery_worker' ]; then
     info "[Run] Starting celery_worker"
 
     set -x
-    exec celery -A bpaotu worker -B -l info
+    exec celery -A bpaotu worker -B -l info -P threads
 fi
 
 

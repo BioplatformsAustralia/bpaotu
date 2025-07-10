@@ -14,7 +14,7 @@ from .sample_comparison import SampleComparisonWrapper
 from .biom import save_biom_zip_file
 from .submission import Submission
 from .galaxy_client import get_users_galaxy
-from . import views
+# from . import views
 
 
 logger = logging.getLogger('bpaotu')

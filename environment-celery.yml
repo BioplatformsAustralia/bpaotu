@@ -1,0 +1,11 @@
+name: celeryenv
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - gdal
+  - numpy
+  - pandas
+  - scipy
+  - numba
+  - psycopg
