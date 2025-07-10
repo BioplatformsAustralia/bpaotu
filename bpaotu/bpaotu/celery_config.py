@@ -1,6 +1,6 @@
 import os
 
-print('celeryconfig')
+print('celery_config')
 
 broker_url = os.getenv('CELERY_BROKER_URL', 'redis://cache')
 result_backend = broker_url

@@ -1129,10 +1129,33 @@ def submit_comparison(request):
         if errors:
             raise OTUError(*errors)
 
+        # we pass the query and not the params to avoid serialising the params to json
         query = request.POST.get('query')
         umap_params_string = request.POST.get('umap_params', "{}")
-        # submission_id = tasks.submit_sample_comparison(query, umap_params_string)
-        tasks_minimal.fastdist_task.delay()
+
+        # time (s): 440 (runserver)
+        # submission_id = tasks_minimal.test_fastdist()
+        # time (s): 27 35 (celeryworker)
+        # submission_id = tasks_minimal.test_fastdist.delay()
+
+        # with test_fastdist
+        # time (s): 40 26 31 34 (celeryworker)
+        # submission_id = tasks_minimal.submit_sample_comparison(query, umap_params_string)
+        # time (s): 37 34 35 (celeryworker)
+        # submission_id = tasks_minimal.submit_sample_comparison.delay(query, umap_params_string)
+
+        # with fastdist_task (just calc_braycurtis tep)
+        # time (s): 4m23s (runserver)
+        # submission_id = tasks_minimal.submit_sample_comparison(query, umap_params_string)
+        # time (s): 19s (celeryworker)
+        submission_id = tasks_minimal.submit_sample_comparison.delay(query, umap_params_string)
+
+        # submission_id = tasks_minimal.fastdist_task(query, umap_params_string)
+        # submission_id = tasks_minimal.fastdist_task.delay(query, umap_params_string)
+
+
+        print('submission_id', submission_id)
+        print('submission_id', submission_id.__dict__)
 
         ########
 
