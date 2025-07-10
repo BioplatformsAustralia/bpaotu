@@ -1,4 +1,4 @@
-from celery import shared_task
+from bpaotu.celery import app
 
 import logging
 import os.path
@@ -20,52 +20,16 @@ import json
 
 logger = logging.getLogger('bpaotu')
 
-@shared_task(bind=True)
+@app.task(bind=True)
 def debug_task(self):
     print('Request: {0!r}'.format(self.request))
 
-@shared_task(ignore_result=True)
+@app.task(ignore_result=True)
 def periodic_task():
     print('periodic_task')
 
 
-
-def _status_update(submission, text):
-    logger.info(f"Status: {text}")
-    submission.status = text
-    timestamps_ = json.loads(submission.timestamps)
-    timestamps_.append({ text: time.time() })
-    submission.timestamps = json.dumps(timestamps_)
-
-def _in(_submission_dir, filename):
-    "return path to filename within submission dir"
-    return os.path.join(_submission_dir, filename)
-
-
-@shared_task()
-def submit_sample_comparison(submission_id, query, umap_params_string):
-    submission = Submission.create(submission_id)
-
-    submission.status = 'init'
-    submission.query = query
-    submission.umap_params_string = umap_params_string
-
-    # # create the chain and submit it asynchronously
-    # task_chain = chain(
-    #     setup_comparison.s(submission_id),
-    #     run_comparison.s(),
-    # )
-
-    # result = task_chain.apply_async()
-    result = fastdist_task.delay(submission_id, query, umap_params_string)
-
-    submission.task_id = result.id
-
-    return submission_id
-
-
-
-@shared_task()
+@app.task()
 def test_fastdist():
     print("init")
     results_file = open("/data/abundance_envlocal.csv")
@@ -86,28 +50,88 @@ def test_fastdist():
     print(f"fastdist braycurtis matrix took {elapsed:.2f} seconds")
 
 
-@shared_task()
-def fastdist_task(submission_id, _query, umap_params_string):
+def _status_update(submission, text):
+    logger.info(f"Status: {text}")
+    submission.status = text
+    timestamps_ = json.loads(submission.timestamps)
+    timestamps_.append({ text: time.time() })
+    submission.timestamps = json.dumps(timestamps_)
+
+def _in(_submission_dir, filename):
+    "return path to filename within submission dir"
+    return os.path.join(_submission_dir, filename)
+
+
+@app.task()
+def submit_sample_comparison(submission_id, query, umap_params_string):
+    submission = Submission.create(submission_id)
+
+    submission.status = 'init'
+    submission.query = query
+    submission.umap_params_string = umap_params_string
+
+    # TODO:
+    # split run into dist_bc, dist_j, umap_bc and umap_j
+    # create group/chord/chain as needed
+    # apply_async() ?
+    result = wrapper_setup_run.delay(submission_id, query, umap_params_string)
+
+    submission.task_id = result.id
+
+    return submission_id
+
+@app.task
+def cancel_sample_comparison(submission_id):
+    submission = Submission(submission_id)
+    # wrapper = _make_sample_comparison_wrapper(submission)
+
+    try:
+        wrapper_cancel(submission_id)
+        # results = wrapper.cancel()
+        submission.cancelled = 'true'
+    except Exception as e:
+        submission.status = 'error'
+        submission.error = "%s" % (e)
+        logger.warn("Error running sample comparison: %s" % (e))
+        return submission_id
+
+    return submission_id
+
+@app.task
+def cleanup_comparison(submission_id):
+    submission = Submission(submission_id)
+
+    # wrapper = _make_sample_comparison_wrapper(submission)
+    # wrapper.cleanup()
+    wrapper_cleanup(submission_id)
+
+    return submission_id
+
+
+@app.task()
+def wrapper_setup_run(submission_id, _query, umap_params_string):
     ########
     SHARED_DIR = "/shared"
     _submission_id = submission_id
     _submission_dir = os.path.join(SHARED_DIR, _submission_id)
-    _params, _errors = param_to_filters(_query)
 
-    umap_params = json.loads(umap_params_string)
-    _param_min_dist = float(umap_params['min_dist'])
-    _param_n_neighbors = int(umap_params['n_neighbors'])
-    _param_spread = float(umap_params['spread'])
-
-    #### setup(self):
+    #### setup(submission_id, _query, umap_params_string):
     submission = Submission(_submission_id)
     submission.timestamps = json.dumps([])
+    submission.submission_dir = _submission_dir
 
     _status_update(submission, 'init')
     os.makedirs(_submission_dir, exist_ok=True)
     logger.info(f'Submission directory created: {_submission_dir}')
 
-    #### _run(self):
+    #### _run(submission_id, query):
+    submission = Submission(_submission_id)
+    _params, _errors = param_to_filters(_query)
+    umap_params = json.loads(umap_params_string)
+    _param_min_dist = float(umap_params['min_dist'])
+    _param_n_neighbors = int(umap_params['n_neighbors'])
+    _param_spread = float(umap_params['spread'])
+
     _status_update(submission, 'fetch')
     results_file = _in(_submission_dir, 'abundance.csv')
     logger.info('Making abundance file')
@@ -132,7 +156,7 @@ def fastdist_task(submission_id, _query, umap_params_string):
     nunique_otu_id = df["otu_id"].nunique()
     dtype_size = np.dtype(np.int64).itemsize
 
-    logger.info(f'Pivot dimensions: sample_id x otu_id = {nunique_sample_id} x {nunique_otu_id}')
+    logger.info(f'Pivot dimensions: {nunique_sample_id} x {nunique_otu_id} (sample_id x otu_id )')
 
     estimated_index_bytes = nunique_sample_id * 50 # size per sample is an estimate
     estimated_data_bytes = nunique_sample_id * nunique_otu_id * dtype_size

@@ -986,13 +986,12 @@ def submit_comparison(request):
         query = request.POST.get('query')
         umap_params_string = request.POST.get('umap_params', "{}")
 
-        # # because the initial task call has to be with delay we need to create the Submission id here
+        # because the initial submit task call has to be with delay we need to create the Submission id here
+        # the submit task will create the Submission in cache and start the rest of the task
         submission_id = str(uuid.uuid4())
-        # submission = Submission.create(submission_id)
-
         result = tasks_minimal.submit_sample_comparison.delay(submission_id, query, umap_params_string)
 
-        ########
+        print('result', result)
 
         track(request, 'otu_sample_comparison', search_params_track_args(params))
 
@@ -1015,7 +1014,7 @@ def cancel_comparison(request):
         body_data = json.loads(body_unicode)
         submission_id = body_data['submissionId']
 
-        result = tasks.cancel_sample_comparison(submission_id)
+        result = tasks_minimal.cancel_sample_comparison(submission_id)
 
         if result:
             return JsonResponse({
@@ -1045,8 +1044,8 @@ def comparison_submission(request):
     state = submission.status
 
     # look for an active task with the submission_id in the task args
-    # active_tasks = get_active_celery_tasks()
-    task_found = True #any(submission_id in task["args"] for task in active_tasks)
+    active_tasks = get_active_celery_tasks()
+    task_found = any(submission_id in task["args"] for task in active_tasks)
 
     timestamps_ = submission.timestamps or json.dumps([])
     timestamps = json.loads(timestamps_)
@@ -1068,6 +1067,11 @@ def comparison_submission(request):
     # this is set in the cancel() method
     if submission.cancelled:
         response_data['submission']["cancelled"] = True
+        print("***** submission.cancelled")
+
+    if state == 'cancelled':
+        print("***** state == cancelled")
+
 
     if state == 'complete':
         try:
@@ -1077,9 +1081,7 @@ def comparison_submission(request):
             logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
 
         try:
-            print('submission.results_files', submission.results_files)
             results_files = json.loads(submission.results_files)
-            print('submission.results_files', submission.results_files)
             results = {
                 'abundanceMatrix': json.load(open(results_files['abundance_matrix_file'])),
                 'contextual': json.load(open(results_files['contextual_file'])),
@@ -1088,16 +1090,16 @@ def comparison_submission(request):
         except Exception as e:
             logger.error(f"Could not load result files for submission {submission_id}: {e}")
 
-        tasks.cleanup_comparison(submission_id)
+        tasks_minimal.cleanup_comparison(submission_id)
 
     elif state == 'error':
         response_data['submission']['error'] = submission.error
-        tasks.cleanup_comparison(submission_id)
+        tasks_minimal.cleanup_comparison(submission_id)
 
     elif not task_found:
         response_data['submission']['state'] = 'error'
         response_data['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
-        tasks.cleanup_comparison(submission_id)
+        tasks_minimal.cleanup_comparison(submission_id)
 
     else:
         # still ongoing
