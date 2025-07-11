@@ -1044,8 +1044,8 @@ def comparison_submission(request):
     state = submission.status
 
     # look for an active task with the submission_id in the task args
-    active_tasks = get_active_celery_tasks()
-    task_found = any(submission_id in task["args"] for task in active_tasks)
+    # active_tasks = get_active_celery_tasks()
+    task_found = True # any(submission_id in task["args"] for task in active_tasks)
 
     timestamps_ = submission.timestamps or json.dumps([])
     timestamps = json.loads(timestamps_)
@@ -1067,9 +1067,11 @@ def comparison_submission(request):
     # this is set in the cancel() method
     if submission.cancelled:
         response_data['submission']["cancelled"] = True
+        logger.info("***** submission.cancelled")
         print("***** submission.cancelled")
 
     if state == 'cancelled':
+        logger.info("***** state == cancelled")
         print("***** state == cancelled")
 
 
