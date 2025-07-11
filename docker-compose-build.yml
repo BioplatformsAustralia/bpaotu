@@ -28,3 +28,9 @@ services:
       context: ./
       dockerfile: Dockerfile-dev
     image: bioplatformsaustralia/bpaotu
+
+  celeryworker:
+    build:
+      context: ./
+      dockerfile: Dockerfile-celeryworker
+    image: bioplatformsaustralia/bpaotu-celeryworker
