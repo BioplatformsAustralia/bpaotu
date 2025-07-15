@@ -1,27 +1,24 @@
 FROM continuumio/miniconda3
 
-# Optimised conda env for celery
+# Create dedicated conda environment for celery worker and set it as default
 COPY environment-celery.yml .
-
-# Create conda environment from YAML
 RUN conda env create -f environment-celery.yml && conda clean --all --yes
+ENV PATH=/opt/conda/envs/celeryenv/bin:$PATH
 
 # Activate the environment and install pip-only packages
+# TODO: move all this to environment-celery.yml
 COPY requirements/celery-requirements.txt .
 RUN /bin/bash -c "source activate celeryenv && pip install --no-cache-dir -r celery-requirements.txt"
 
-# Set the conda env as default
-ENV PATH=/opt/conda/envs/celeryenv/bin:$PATH
+# Use this to set the default conda environoment for an interactive shell
+RUN echo "source /opt/conda/etc/profile.d/conda.sh && conda activate celeryenv" >> /root/.bashrc
 
-# Activate it by default for interactive shells
-SHELL ["conda", "run", "-n", "celeryenv", "/bin/bash", "-c"]
-
-# Set working directory and copy only what you need
+# Set working directory so bpaotu app is available
 WORKDIR /app
 COPY . /app
 
-ENV HOME=/data
-WORKDIR /data
+# Notes:
+# Don't set HOME to /app because other containers used /data as home
 
-# Default command for Celery worker
+# Run the celery worker for bpaotu when container starts
 CMD ["celery", "-A", "bpaotu", "worker", "--loglevel=info"]
