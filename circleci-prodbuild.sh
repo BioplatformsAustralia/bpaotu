@@ -20,12 +20,20 @@ docker-compose -f docker-compose-build.yml build builder
 
 ## circleci remote-docker does not allow for use of volumes
 echo "Retrieving prod-build archive..."
-docker create --name prod-archive bioplatformsaustralia/bpaotu-builder /bin/true
+docker create --name prod-archive bioplatformsaustralia/${PROJECT_NAME}-builder /bin/true
 docker cp prod-archive:/data/${PROJECT_NAME}-${BUILD_VERSION}.tar.gz ./build/
 docker rm prod-archive
 
-eval docker-compose -f docker-compose-build.yml build worker prod
+# build and push the runserver image
+eval docker-compose -f docker-compose-build.yml build prod
 
-docker push bioplatformsaustralia/${PROJECT_NAME}
 docker tag bioplatformsaustralia/${PROJECT_NAME}:latest bioplatformsaustralia/${PROJECT_NAME}:${BUILD_VERSION}
+docker push bioplatformsaustralia/${PROJECT_NAME}
 docker push bioplatformsaustralia/${PROJECT_NAME}:${BUILD_VERSION}
+
+# build and push the worker image
+eval docker-compose -f docker-compose-build.yml build worker
+
+docker tag bioplatformsaustralia/${PROJECT_NAME}-worker:latest bioplatformsaustralia/${PROJECT_NAME}-worker:${BUILD_VERSION}
+docker push bioplatformsaustralia/${PROJECT_NAME}-worker
+docker push bioplatformsaustralia/${PROJECT_NAME}-worker:${BUILD_VERSION}
