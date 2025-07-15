@@ -13,12 +13,15 @@ RUN /bin/bash -c "source activate celeryenv && pip install --no-cache-dir -r cel
 # Set the conda env as default
 ENV PATH=/opt/conda/envs/celeryenv/bin:$PATH
 
+# Activate it by default for interactive shells
+SHELL ["conda", "run", "-n", "celeryenv", "/bin/bash", "-c"]
+
 # Set working directory and copy only what you need
 WORKDIR /app
-COPY . .
+COPY . /app
 
-# Optional: Activate it by default for interactive shells (if needed)
-# SHELL ["conda", "run", "-n", "celeryenv", "/bin/bash", "-c"]
+ENV HOME=/data
+WORKDIR /data
 
 # Default command for Celery worker
 CMD ["celery", "-A", "bpaotu", "worker", "--loglevel=info"]

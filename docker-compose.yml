@@ -44,11 +44,7 @@ services:
           - web
 
   celeryworker:
-    build:
-      context: .
-      dockerfile: Dockerfile-celeryworker
-    image: bioplatformsaustralia/bpaotu-celeryworker
-    command: celery --app=bpaotu worker --loglevel=info --beat
+    image: bioplatformsaustralia/bpaotu-worker
     env_file:
       - .env_local
     environment:
@@ -56,7 +52,6 @@ services:
       - WAIT_FOR_CACHE=1
       - PYTHONPATH=/app/bpaotu
       - DJANGO_SETTINGS_MODULE=bpaotu.celery_settings
-    working_dir: /app/bpaotu
     volumes:
       - .:/app
       - ./data/dev:/data

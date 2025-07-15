@@ -2,6 +2,7 @@ name: celeryenv
 channels:
   - conda-forge
 dependencies:
+  # core functionality:
   - python=3.9
   - gdal
   - numpy
@@ -9,3 +10,14 @@ dependencies:
   - scipy
   - numba
   - psycopg
+  - celery=5.5.3
+  # task related:
+  - matplotlib==3.8.3
+  # pip:
+  - pip
+  - pip:
+      # core functionality:
+      ## TODO if any
+      # task related:
+      - fastdist==1.1.6
+      - umap-learn==0.5.7
