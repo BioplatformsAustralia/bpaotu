@@ -1079,6 +1079,8 @@ def comparison_submission(request):
         try:
             duration = timestamps[-1]['complete'] - timestamps[0]['init']
             response_data['submission']['duration'] = round(duration, 2)
+            logger.info(f"duration: {duration}")
+            print("duration", duration)
         except Exception as e:
             logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
 
