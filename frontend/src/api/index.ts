@@ -247,6 +247,14 @@ export function executeBlast(searchString, blastParams, filters) {
   })
 }
 
+export function executeCancelBlast(submissionId) {
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.cancel_blast_endpoint,
+    data: { submissionId: submissionId },
+  })
+}
+
 export function getBlastSubmission(submissionId) {
   return axios.get(window.otu_search_config.blast_submission_endpoint, {
     params: {

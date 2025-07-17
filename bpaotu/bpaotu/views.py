@@ -33,7 +33,7 @@ from django.core.cache import caches
 
 from celery import current_app
 
-from . import tasks
+from . import tasks_old
 from . import tasks_minimal
 from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
@@ -132,6 +132,7 @@ def api_config(request):
         'nondenoised_request_endpoint': reverse('nondenoised_request'),
         'krona_request_endpoint': reverse('krona_request'),
         'submit_blast_endpoint': reverse('submit_blast'),
+        'cancel_blast_endpoint': reverse('cancel_blast'),
         'blast_submission_endpoint': reverse('blast_submission'),
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
         'submit_comparison_endpoint': reverse('submit_comparison'),
@@ -886,7 +887,7 @@ def do_on_galaxy(galaxy_action):
 def submit_to_galaxy(request, email):
     '''Submits the search results as a biom file into a new history in Galaxy.'''
     user_created = galaxy_ensure_user(email)
-    submission_id = tasks.submit_to_galaxy(email, request.POST['query'])
+    submission_id = tasks_old.submit_to_galaxy(email, request.POST['query'])
     return submission_id, user_created
 
 
@@ -896,7 +897,7 @@ def submit_to_galaxy(request, email):
 def execute_workflow_on_galaxy(request, email):
     user_created = galaxy_ensure_user(email)
     workflow_id = get_krona_workflow(email)
-    submission_id = tasks.execute_workflow_on_galaxy(email, request.POST['query'], workflow_id)
+    submission_id = tasks_old.execute_workflow_on_galaxy(email, request.POST['query'], workflow_id)
     return submission_id, user_created
 
 
@@ -904,7 +905,7 @@ def execute_workflow_on_galaxy(request, email):
 @require_GET
 def galaxy_submission(request):
     submission_id = request.GET['submission_id']
-    submission = tasks.Submission(submission_id)
+    submission = tasks_old.Submission(submission_id)
 
     if not submission.history_id or not submission.file_id:
         state = 'pending'
@@ -926,17 +927,16 @@ def galaxy_submission(request):
 @require_POST
 def submit_blast(request):
     try:
-        params, errors = param_to_filters(request.POST['query'])
+        query = request.POST['query']
+        params, errors = param_to_filters(query)
         if errors:
             raise OTUError(*errors)
 
         search_string = normalise_blast_search_string(request.POST['search_string'])
         blast_params_string = request.POST['blast_params']
 
-        submission_id = tasks.submit_blast(
-            search_string,
-            blast_params_string,
-            request.POST['query'])
+        submission_id = str(uuid.uuid4())
+        result = tasks_minimal.submit_blast.delay(submission_id, query, search_string, blast_params_string)
 
         track(request, 'otu_blast_search', { 'blast_params': json.loads(blast_params_string) })
 
@@ -945,22 +945,59 @@ def submit_blast(request):
             'submission_id': submission_id,
         })
     except OTUError as exc:
-        logger.exception('Error in submit to Blast')
+        logger.exception('Error in submit BLAST')
+        logger.exception(exc)
         return JsonResponse({
             'success': False,
             'errors': exc.errors,
         })
 
+@require_CKAN_auth
+@require_POST
+def cancel_blast(request):
+    try:
+        body_unicode = request.body.decode('utf-8')
+        body_data = json.loads(body_unicode)
+        submission_id = body_data['submissionId']
+
+        result = tasks_minimal.cancel_blast(submission_id)
+
+        if result:
+            return JsonResponse({
+                'success': True,
+                'submission_id': submission_id,
+                'cancelled': True,
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'submission_id': submission_id,
+                'cancelled': False,
+            })
+    except OTUError as exc:
+        logger.exception('Error in cancel BLAST search')
+        logger.exception(exc)
+        return JsonResponse({
+            'success': False,
+            'cancelled': False,
+            'errors': exc.errors,
+        })
 
 @require_CKAN_auth
 @require_GET
 def blast_submission(request):
     submission_id = request.GET['submission_id']
-    submission = tasks.Submission(submission_id)
+    submission = Submission(submission_id)
+    state = submission.status
 
-    if not submission.result_url:
-        state = 'pending'
-    else:
+    # look for an active task with the submission_id in the task args
+    active_tasks = get_active_celery_tasks()
+    task_found = any(submission_id in task["args"] for task in active_tasks)
+
+    timestamps_ = submission.timestamps or json.dumps([])
+    timestamps = json.loads(timestamps_)
+
+    if submission.result_url:
         state = 'complete'
 
     return JsonResponse({
@@ -991,8 +1028,6 @@ def submit_comparison(request):
         submission_id = str(uuid.uuid4())
         result = tasks_minimal.submit_sample_comparison.delay(submission_id, query, umap_params_string)
 
-        print('result', result)
-
         track(request, 'otu_sample_comparison', search_params_track_args(params))
 
         return JsonResponse({
@@ -1001,6 +1036,7 @@ def submit_comparison(request):
         })
     except OTUError as exc:
         logger.exception('Error in submit to sample comparison')
+        logger.exception(exc)
         return JsonResponse({
             'success': False,
             'errors': [str(t) for t in exc.errors],
@@ -1030,6 +1066,7 @@ def cancel_comparison(request):
             })
     except OTUError as exc:
         logger.exception('Error in cancel sample comparison')
+        logger.exception(exc)
         return JsonResponse({
             'success': False,
             'cancelled': False,
@@ -1044,8 +1081,8 @@ def comparison_submission(request):
     state = submission.status
 
     # look for an active task with the submission_id in the task args
-    # active_tasks = get_active_celery_tasks()
-    task_found = True # any(submission_id in task["args"] for task in active_tasks)
+    active_tasks = get_active_celery_tasks()
+    task_found = any(submission_id in task["args"] for task in active_tasks)
 
     timestamps_ = submission.timestamps or json.dumps([])
     timestamps = json.loads(timestamps_)
@@ -1064,15 +1101,14 @@ def comparison_submission(request):
         }
     }
 
+    # testing to see if both get set
     # this is set in the cancel() method
     if submission.cancelled:
         response_data['submission']["cancelled"] = True
         logger.info("***** submission.cancelled")
-        print("***** submission.cancelled")
 
     if state == 'cancelled':
         logger.info("***** state == cancelled")
-        print("***** state == cancelled")
 
 
     if state == 'complete':
@@ -1080,7 +1116,7 @@ def comparison_submission(request):
             duration = timestamps[-1]['complete'] - timestamps[0]['init']
             response_data['submission']['duration'] = round(duration, 2)
             logger.info(f"duration: {duration}")
-            print("duration", duration)
+            print("duration", round(duration, 2))
         except Exception as e:
             logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
 

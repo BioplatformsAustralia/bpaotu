@@ -10,7 +10,7 @@ import base64
 from django.conf import settings
 
 from .blast import BlastWrapper
-from .sample_comparison import SampleComparisonWrapper
+# from .sample_comparison import SampleComparisonWrapper
 from .biom import save_biom_zip_file
 from .submission import Submission
 from .galaxy_client import get_users_galaxy

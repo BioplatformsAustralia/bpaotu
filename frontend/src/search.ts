@@ -30,6 +30,7 @@ export interface SearchConfig {
   execute_workflow_on_galaxy_endpoint: string
   galaxy_submission_endpoint: string
   submit_blast_endpoint: string
+  cancel_blast_endpoint: string
   blast_submission_endpoint: string
   search_sample_sites_endpoint: string
   search_sample_sites_comparison_endpoint: string

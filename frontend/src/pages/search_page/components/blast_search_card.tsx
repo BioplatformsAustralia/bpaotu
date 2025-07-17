@@ -23,8 +23,24 @@ import {
   handleBlastSequence,
   handleBlastParameters,
   runBlast,
+  cancelBlast,
 } from '../reducers/blast_search'
 import { getAmpliconFilter } from '../reducers/amplicon'
+
+const blastStatusMapping = {
+  init: 'Initialising',
+  fetch: 'Fetching samples',
+  making_db_fasta: 'Making db.fasta of OTUs',
+  makeblastdb: 'Running makeblastdb',
+  write_query: 'Building query',
+  execute_blast: 'Executing BLAST Search',
+  write_output_raw: 'Writing raw output',
+  write_output_sample: 'Writing sample output',
+  write_output_map: 'Drawing map',
+  write_output_compress: 'Building download package',
+  cancelled: 'Cancelled',
+  complete: 'Complete',
+}
 
 export class BlastSearchCard extends React.Component<any> {
   public render() {
@@ -162,9 +178,12 @@ export class BlastSearchCard extends React.Component<any> {
               </div>
             </div>
           </div>
-          <div className="text-center">
-            {this.props.isSubmitting && <AnimateHelix scale={0.2} />}
-          </div>
+          {this.props.isSubmitting && (
+            <div className="text-center">
+              <AnimateHelix scale={0.2} />
+              <p style={fetchingSamplesStyle}>{blastStatusMapping[this.props.blastStatus]}</p>
+            </div>
+          )}
         </CardBody>
         <CardFooter className="text-center">
           {this.props.isLoading ? (
@@ -175,13 +194,22 @@ export class BlastSearchCard extends React.Component<any> {
           ) : this.props.rowsCount === 0 ? (
             <div>No Sample OTUs found for these search parameters</div>
           ) : (
-            <Button
-              color="warning"
-              disabled={this.props.isSearchDisabled}
-              onClick={this.props.runBlast}
-            >
-              Run BLAST
-            </Button>
+            <>
+              <Button
+                color="warning"
+                disabled={this.props.isSearchDisabled}
+                onClick={this.props.runBlast}
+              >
+                Run BLAST
+              </Button>
+              {this.props.isSubmitting && (
+                <div className="text-center" style={{ marginTop: 8 }}>
+                  <Button onClick={this.props.cancelBlast} size="sm">
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </CardFooter>
       </Card>
@@ -196,6 +224,8 @@ function mapStateToProps(state, props) {
     sequenceValue: state.searchPage.blastSearch.sequenceValue,
     blastParams: state.searchPage.blastSearch.blastParams,
     isSubmitting: state.searchPage.blastSearch.isSubmitting,
+    blastStatus: state.searchPage.blastSearch.status,
+
     isSearchDisabled:
       selectedAmplicon.value === '' ||
       state.searchPage.blastSearch.sequenceValue === '' ||
@@ -211,6 +241,7 @@ function mapDispatchToProps(dispatch) {
       handleBlastSequence,
       handleBlastParameters,
       runBlast,
+      cancelBlast,
       clearBlastAlert,
     },
     dispatch
