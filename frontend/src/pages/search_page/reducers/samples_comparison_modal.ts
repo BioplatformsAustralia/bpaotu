@@ -25,6 +25,7 @@ export const {
   comparisonSubmissionUpdateEnded,
   cancelComparisonStarted,
   cancelComparisonEnded,
+
   clearComparisonAlert,
 
   samplesComparisonModalClearPlotData,
@@ -44,6 +45,7 @@ export const {
   'COMPARISON_SUBMISSION_UPDATE_ENDED',
   'CANCEL_COMPARISON_STARTED',
   'CANCEL_COMPARISON_ENDED',
+
   'CLEAR_COMPARISON_ALERT',
 
   'SAMPLES_COMPARISON_MODAL_CLEAR_PLOT_DATA'

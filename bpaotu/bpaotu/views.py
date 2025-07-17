@@ -33,7 +33,6 @@ from django.core.cache import caches
 
 from celery import current_app
 
-from . import tasks_old
 from . import tasks_minimal
 from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
@@ -887,7 +886,7 @@ def do_on_galaxy(galaxy_action):
 def submit_to_galaxy(request, email):
     '''Submits the search results as a biom file into a new history in Galaxy.'''
     user_created = galaxy_ensure_user(email)
-    submission_id = tasks_old.submit_to_galaxy(email, request.POST['query'])
+    submission_id = tasks_minimal.submit_to_galaxy.delay(email, request.POST['query'])
     return submission_id, user_created
 
 
@@ -897,7 +896,7 @@ def submit_to_galaxy(request, email):
 def execute_workflow_on_galaxy(request, email):
     user_created = galaxy_ensure_user(email)
     workflow_id = get_krona_workflow(email)
-    submission_id = tasks_old.execute_workflow_on_galaxy(email, request.POST['query'], workflow_id)
+    submission_id = tasks_minimal.execute_workflow_on_galaxy(email, request.POST['query'], workflow_id)
     return submission_id, user_created
 
 
@@ -905,7 +904,7 @@ def execute_workflow_on_galaxy(request, email):
 @require_GET
 def galaxy_submission(request):
     submission_id = request.GET['submission_id']
-    submission = tasks_old.Submission(submission_id)
+    submission = Submission(submission_id)
 
     if not submission.history_id or not submission.file_id:
         state = 'pending'
@@ -989,26 +988,38 @@ def blast_submission(request):
     submission_id = request.GET['submission_id']
     submission = Submission(submission_id)
     state = submission.status
+    timestamps = timestamps_relative(json.loads(submission.timestamps))
 
-    # look for an active task with the submission_id in the task args
-    active_tasks = get_active_celery_tasks()
-    task_found = any(submission_id in task["args"] for task in active_tasks)
-
-    timestamps_ = submission.timestamps or json.dumps([])
-    timestamps = json.loads(timestamps_)
-
-    if submission.result_url:
-        state = 'complete'
-
-    return JsonResponse({
+    response = {
         'success': True,
         'submission': {
             'id': submission_id,
+            'state': state,
+            'duration': None,
+            'timestamps': timestamps,
             'result_url': submission.result_url,
             'image_contents': submission.image_contents,
-            'state': state,
         }
-    })
+    }
+
+    if state == 'complete':
+        try:
+            duration = timestamps_duration(timestamps)
+            logger.info(f"duration: {duration}")
+        except Exception as e:
+            logger.warning("Could not calculate duration of BLAST search; %s" % getattr(e, 'message', repr(e)))
+
+        tasks_minimal.cleanup_blast(submission_id)
+
+    elif state == 'error':
+        response['submission']['error'] = submission.error
+        tasks_minimal.cleanup_blast(submission_id)
+
+    else:
+        # still ongoing
+        pass
+
+    return JsonResponse(response)
 
 
 @require_CKAN_auth
@@ -1079,16 +1090,14 @@ def comparison_submission(request):
     submission_id = request.GET['submission_id']
     submission = Submission(submission_id)
     state = submission.status
+    timestamps = timestamps_relative(json.loads(submission.timestamps))
 
     # look for an active task with the submission_id in the task args
     active_tasks = get_active_celery_tasks()
     task_found = any(submission_id in task["args"] for task in active_tasks)
 
-    timestamps_ = submission.timestamps or json.dumps([])
-    timestamps = json.loads(timestamps_)
-
     results = { 'abundanceMatrix': {}, 'contextual': {} }
-    response_data = {
+    response = {
         'success': True,
         'mem_usage': mem_usage_obj(),
         'submission': {
@@ -1104,7 +1113,7 @@ def comparison_submission(request):
     # testing to see if both get set
     # this is set in the cancel() method
     if submission.cancelled:
-        response_data['submission']["cancelled"] = True
+        response['submission']["cancelled"] = True
         logger.info("***** submission.cancelled")
 
     if state == 'cancelled':
@@ -1113,10 +1122,8 @@ def comparison_submission(request):
 
     if state == 'complete':
         try:
-            duration = timestamps[-1]['complete'] - timestamps[0]['init']
-            response_data['submission']['duration'] = round(duration, 2)
+            duration = timestamps_duration(timestamps)
             logger.info(f"duration: {duration}")
-            print("duration", round(duration, 2))
         except Exception as e:
             logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
 
@@ -1126,19 +1133,19 @@ def comparison_submission(request):
                 'abundanceMatrix': json.load(open(results_files['abundance_matrix_file'])),
                 'contextual': json.load(open(results_files['contextual_file'])),
             }
-            response_data['submission']['results'] = results
+            response['submission']['results'] = results
         except Exception as e:
             logger.error(f"Could not load result files for submission {submission_id}: {e}")
 
         tasks_minimal.cleanup_comparison(submission_id)
 
     elif state == 'error':
-        response_data['submission']['error'] = submission.error
+        response['submission']['error'] = submission.error
         tasks_minimal.cleanup_comparison(submission_id)
 
     elif not task_found:
-        response_data['submission']['state'] = 'error'
-        response_data['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
+        response['submission']['state'] = 'error'
+        response['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
         tasks_minimal.cleanup_comparison(submission_id)
 
     else:
@@ -1146,7 +1153,7 @@ def comparison_submission(request):
         pass
 
 
-    return JsonResponse(response_data)
+    return JsonResponse(response)
 
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
@@ -1438,10 +1445,42 @@ def metagenome_request(request):
         logger.critical("Error in metagenome_request", exc_info=True)
         return HttpResponseServerError(str(e), content_type="text/plain")
 
+
+def timestamps_relative(timestamps):
+    """
+    Calculate timestamps relative to the init timestamp
+    """
+
+    if not timestamps or not isinstance(timestamps, list):
+        # Input must be a non-empty list of dictionaries, just return as is
+        return timestamps
+    
+    init_time = None
+    for item in timestamps:
+        if 'init' in item:
+            init_time = item['init']
+            break
+
+    if init_time is None:
+        # Missing 'init' timestamp, just return as is
+        return timestamps
+
+    relative = []
+    for entry in timestamps:
+        for key, value in entry.items():
+            relative.append({key: value - init_time})
+
+    return relative
+
+def timestamps_duration(timestamps):
+    duration = timestamps[-1]['complete'] - timestamps[0]['init']
+    return round(duration, 2)
+
 def get_active_celery_tasks():
     inspector = current_app.control.inspect()
     active_tasks = inspector.active()
     return [task for tasks in active_tasks.values() for task in tasks]
+
 
 def track(request, event, args=None):
     """Tracks an event in Mixpanel if enabled."""

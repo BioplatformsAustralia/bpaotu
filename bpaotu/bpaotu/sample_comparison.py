@@ -1,54 +1,43 @@
-import csv
-import io
-import logging
-import os.path
-import shutil
-import subprocess
-import json
-from contextlib import suppress
+from bpaotu.celery import app
 
-import zipstream
+import os.path
+import logging
+import shutil
+import json
+from time import time
+
 from django.conf import settings
 
-from . import views
-from .otu import OTU, SampleContext, SampleOTU
+from .params import param_to_filters, selected_contextual_filters
 from .query import SampleQuery
 from .submission import Submission
-from .util import format_sample_id
-from celery.task.control import revoke
+from .task_utils import NumpyEncoder, find_task_id_for_submission
 
 from fastdist import fastdist
 import numpy as np
 import pandas as pd
 import umap.umap_ as umap
 
+
 # debug
-from time import sleep, time
 from .util import log_msg
 
 logger = logging.getLogger('bpaotu')
 
-SHARED_DIR = "/shared"
+SHARED_DIR = "/shared/comparison"
 
 class SampleComparisonWrapper:
-    def __init__(self, submission_id, status, query, umap_params_string):
+    def __init__(self, submission_id, query, status, umap_params_string):
         self._submission_id = submission_id
         self._status = status
         self._query = query
-        self._params, _ = views.param_to_filters(query)
+        self._params, _ = param_to_filters(query)
         umap_params = json.loads(umap_params_string)
         self._param_min_dist = float(umap_params['min_dist'])
         self._param_n_neighbors = int(umap_params['n_neighbors'])
         self._param_spread = float(umap_params['spread'])
         self._submission_dir = os.path.join(SHARED_DIR, submission_id)
 
-    def setup(self):
-        submission = Submission(self._submission_id)
-        submission.timestamps = json.dumps([])
-
-        self._status_update(submission, 'init')
-        os.makedirs(self._submission_dir, exist_ok=True)
-        logger.info(f'Submission directory created: {self._submission_dir}')
 
     def _status_update(self, submission, text):
         logger.info(f"Status: {text}")
@@ -61,6 +50,10 @@ class SampleComparisonWrapper:
         "return path to filename within submission dir"
         return os.path.join(self._submission_dir, filename)
 
+
+    def setup(self):
+        return self._setup()
+
     def run(self):
         return self._run()
 
@@ -69,6 +62,16 @@ class SampleComparisonWrapper:
 
     def cleanup(self):
         self._cleanup();
+
+
+    def _setup(self):
+        submission = Submission(self._submission_id)
+        submission.timestamps = json.dumps([])
+
+        self._status_update(submission, 'init')
+        os.makedirs(self._submission_dir, exist_ok=True)
+        logger.info(f'Submission directory created: {self._submission_dir}')
+
 
     def _check_result_size_ok(self, estimated_mb):
         max_size = settings.MAX_COMPARISON_PIVOT_SIZE_MB
@@ -94,15 +97,18 @@ class SampleComparisonWrapper:
                     fd.write('{},{},{}\n'.format(sample_id, otu_id, count))
         logger.info('Finished making abundance file')
 
+
     def _cancel(self):
         submission = Submission(self._submission_id)
 
         try:
-            # celery task ID was stored when chain was started
-            task_id = submission.task_id
-            revoke(task_id, terminate=True, signal='SIGKILL')
-            self._status_update(submission, 'cancelled')
-            return True
+            task_id = find_task_id_for_submission(self._submission_id)
+            if task_id:
+                app.control.revoke(task_id, terminate=True, signal='SIGKILL')
+
+                self._status_update(submission, 'cancelled')
+                submission.cancelled = 'true'
+                return True
         except Exception as e:
             print('error', e)
             logger.exception('Error in cancel sample comparison')
@@ -120,10 +126,7 @@ class SampleComparisonWrapper:
     def _run(self):
         # access the submission so we can change the status
         submission = Submission(self._submission_id)
-
-        import os
-        os.environ["OMP_NUM_THREADS"] = "4"
-        os.environ["OPENBLAS_NUM_THREADS"] = "4"
+        _params, _errors = param_to_filters(self._query)
 
         # make csv in submission dir with abundance data
         self._status_update(submission, 'fetch')
@@ -131,7 +134,6 @@ class SampleComparisonWrapper:
 
         # read abundance data csv into a dataframe
         self._status_update(submission, 'fetched_to_df')
-        log_msg('Start query results to df')
         results_file = self._in('abundance.csv')
         column_names = ['sample_id', 'otu_id', 'abundance']
         column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
@@ -140,7 +142,21 @@ class SampleComparisonWrapper:
 
         df_actual_bytes = df.memory_usage(deep=True).sum()
         df_actual_mb = df_actual_bytes / (1024 ** 2)
-        logger.info(f"Actual results df memory_usage: {df_actual_bytes:,} bytes ({df_actual_mb:.2f} MB)")
+        logger.info(f"Actual results df memory_usage: {df_actual_mb:.2f} MB")
+
+        nunique_sample_id = df["sample_id"].nunique()
+        nunique_otu_id = df["otu_id"].nunique()
+        dtype_size = np.dtype(np.int64).itemsize
+
+        logger.info(f'Pivot dimensions: {nunique_sample_id} x {nunique_otu_id} (sample_id x otu_id )')
+
+        estimated_index_bytes = nunique_sample_id * 50 # size per sample is an estimate
+        estimated_data_bytes = nunique_sample_id * nunique_otu_id * dtype_size
+        estimated_bytes = estimated_index_bytes + estimated_data_bytes
+        estimated_mb = estimated_bytes / (1024 ** 2)
+
+        # does not include index
+        logger.info(f"Estimated pivot memory usage: {estimated_mb:.2f} MB")
 
         # NOTES:
         # use of pd.to_numeric on df columns here and df.pivot_table (instead of df.pivot) later
@@ -163,22 +179,6 @@ class SampleComparisonWrapper:
         # so using int64 (default) without downcasting seems to prevent the crashes, though it doubles the size requirements
         # however, such large result sets take forever to compute anyway
 
-        log_msg(f'df.shape {df.shape}')
-
-        nunique_sample_id = df["sample_id"].nunique()
-        nunique_otu_id = df["otu_id"].nunique()
-        dtype_size = np.dtype(np.int64).itemsize
-
-        log_msg(f'nunique df.sample_id: {nunique_sample_id}')
-        log_msg(f'nunique df.otu_id:    {nunique_otu_id}')
-
-        estimated_index_bytes = nunique_sample_id * 50 # size per sample is an estimate
-        estimated_data_bytes = nunique_sample_id * nunique_otu_id * dtype_size
-        estimated_bytes = estimated_index_bytes + estimated_data_bytes
-        estimated_mb = estimated_bytes / (1024 ** 2)
-
-        # does not include index
-        logger.info(f"Estimated pivot memory usage: {estimated_bytes:,} bytes ({estimated_mb:.2f} MB)")
         
         check = self._check_result_size_ok(estimated_mb)
         if not check['valid']:
@@ -192,6 +192,7 @@ class SampleComparisonWrapper:
 
             return False
 
+
         self._status_update(submission, 'sort')
         df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
 
@@ -204,6 +205,7 @@ class SampleComparisonWrapper:
             )
             .fillna(0)
         )
+
 
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
@@ -232,6 +234,7 @@ class SampleComparisonWrapper:
             embeddings = reducer.fit_transform(dist_matrix_df.values)
 
             return method, pd.DataFrame(data=embeddings, columns=['dim1', 'dim2'], index=dist_matrix_df.index)
+
 
         self._status_update(submission, 'calc_umap_bc')
         results_braycurtis_umap = calc_umap('braycurtis', dist_matrix_braycurtis)[1]
@@ -263,7 +266,7 @@ class SampleComparisonWrapper:
         self._status_update(submission, 'contextual_start')
 
         contextual_filtering = True
-        additional_headers = views.selected_contextual_filters(self._query, contextual_filtering=contextual_filtering)
+        additional_headers = selected_contextual_filters(self._query, contextual_filtering=contextual_filtering)
         all_headers = ['id', 'am_environment_id', 'vegetation_type_id', 'imos_site_code', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
                        'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
                        'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
@@ -286,8 +289,8 @@ class SampleComparisonWrapper:
         abundance_matrix.pop('matrix_jaccard', None)
         abundance_matrix.pop('matrix_braycurtis', None)
 
-        abundance_path = os.path.join(self._submission_dir, "abundance_matrix.json")
-        contextual_path = os.path.join(self._submission_dir, "contextual.json")
+        abundance_path = self._in("abundance_matrix.json")
+        contextual_path = self._in("contextual.json")
 
         with open(abundance_path, "w") as f:
             json.dump(abundance_matrix, f, cls=NumpyEncoder)
@@ -295,25 +298,14 @@ class SampleComparisonWrapper:
         with open(contextual_path, "w") as f:
             json.dump(sample_results, f, cls=NumpyEncoder)
 
-        self._status_update(submission, 'complete')
-
-        return {
+        results_files = {
             "abundance_matrix_file": abundance_path,
             "contextual_file": contextual_path
         }
 
+        submission.results_files = json.dumps(results_files)
 
-import datetime
+        self._status_update(submission, 'complete')
 
-class NumpyEncoder(json.JSONEncoder):
-    """ Special json encoder for numpy types """
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        elif isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.isoformat()
-        return json.JSONEncoder.default(self, obj)
+        return True
+

@@ -293,6 +293,8 @@ class BlastWrapper:
             for chunk in zf:
                 fd.write(chunk)
 
+        self._status_update(submission, 'complete')
+
         return fname, image_contents
 
     def _produce_map(self, blast_sample_results_file):
