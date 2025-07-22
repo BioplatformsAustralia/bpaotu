@@ -42,7 +42,6 @@ mixpanel==4.10.0
 biopython==1.80
 matplotlib==3.8.3
 basemap==1.4.1
-fastdist==1.1.6
 numba==0.60.0
 psutil
 umap-learn==0.5.7

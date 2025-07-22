@@ -21,6 +21,8 @@ dependencies:
       # task related:
       - fastdist==1.1.6
       - umap-learn==0.5.7
+      - fastparquet==0.8
+      - pyarrow==8
       # filter
       - basemap==1.4.1
       - beautifulsoup4==4.9.0

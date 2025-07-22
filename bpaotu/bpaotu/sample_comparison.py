@@ -13,11 +13,8 @@ from .query import SampleQuery
 from .submission import Submission
 from .task_utils import NumpyEncoder, find_task_id_for_submission
 
-from fastdist import fastdist
 import numpy as np
 import pandas as pd
-import umap.umap_ as umap
-
 
 # debug
 from .util import log_msg
@@ -124,6 +121,9 @@ class SampleComparisonWrapper:
             logger.info(f"Could not remove submission directory (FileNotFoundError): {self._submission_dir}")
 
     def _run(self):
+        from fastdist import fastdist
+        import umap.umap_ as umap
+
         # access the submission so we can change the status
         submission = Submission(self._submission_id)
         _params, _errors = param_to_filters(self._query)
