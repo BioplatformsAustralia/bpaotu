@@ -85,14 +85,90 @@ class SampleComparisonWrapper:
 
         return result
 
-    def _make_abundance_csv(self):
+    def _make_abundance_file_csv(self):
+        logger.info('Making abundance csv file')
+        chunk_size = settings.COMPARISON_CHUNK_SIZE
+
         results_file = self._in('abundance.csv')
-        logger.info('Making abundance file')
         with open(results_file, 'w') as fd:
             with SampleQuery(self._params) as query:
-                for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(1000):
+                for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(chunk_size):
                     fd.write('{},{},{}\n'.format(sample_id, otu_id, count))
+
         logger.info('Finished making abundance file')
+
+        return results_file
+
+    def _make_abundance_file_parquet(self):
+        logger.info('Making abundance parquet file')
+        chunk_size = settings.COMPARISON_CHUNK_SIZE
+
+        from fastparquet import write, ParquetFile
+
+        results_file = self._in('abundance.parquet')
+
+        column_names = ['sample_id', 'otu_id', 'abundance']
+        first_chunk = True
+        rows = []
+
+        with SampleQuery(self._params) as query:
+            for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(chunk_size):
+                rows.append((sample_id, otu_id, count))
+
+                if len(rows) >= chunk_size:
+                    df = pd.DataFrame(rows, columns=column_names)
+
+                    if first_chunk:
+                        write(results_file, df, write_index=False)
+                        first_chunk = False
+                    else:
+                        write(results_file, df, write_index=False, append=True)
+
+                    rows.clear()
+
+            # Write any remaining rows
+            if rows:
+                df = pd.DataFrame(rows, columns=column_names)
+                if first_chunk:
+                    write(results_file, df, write_index=False)
+                else:
+                    write(results_file, df, write_index=False, append=True)
+
+        logger.info('Finished making abundance file')
+
+        return results_file
+
+    def _build_abundance_dataframe(self):
+        submission = Submission(self._submission_id)
+
+        logger.info('Building abundance DataFrame in memory')
+        chunk_size = settings.COMPARISON_CHUNK_SIZE
+        column_names = ['sample_id', 'otu_id', 'abundance']
+        rows = []
+
+        self._status_update(submission, 'fetch')
+        with SampleQuery(self._params) as query:
+            for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(chunk_size):
+                rows.append((sample_id, otu_id, count))
+
+        self._status_update(submission, 'fetched_to_df')
+        df = pd.DataFrame(rows, columns=column_names)
+
+        self._status_update(submission, 'sort')
+        df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
+
+        self._status_update(submission, 'pivot')
+        rect_df = (
+            df.pivot(
+                index='sample_id',
+                columns='otu_id',
+                values='abundance'
+            )
+            .fillna(0)
+        )
+
+        logger.info('Finished building abundance DataFrame in memory')
+        return rect_df
 
 
     def _cancel(self):
@@ -128,84 +204,93 @@ class SampleComparisonWrapper:
         submission = Submission(self._submission_id)
         _params, _errors = param_to_filters(self._query)
 
-        # make csv in submission dir with abundance data
-        self._status_update(submission, 'fetch')
-        self._make_abundance_csv()
+        # all in memory
+        if settings.COMPARISON_DF_METHOD == 'memory':
+            rect_df = self._build_abundance_dataframe()
+        else:
+            # make csv in submission dir with abundance data
+            self._status_update(submission, 'fetch')
 
-        # read abundance data csv into a dataframe
-        self._status_update(submission, 'fetched_to_df')
-        results_file = self._in('abundance.csv')
-        column_names = ['sample_id', 'otu_id', 'abundance']
-        column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
+            if settings.COMPARISON_DF_METHOD == 'parquet':
+                results_file = self._make_abundance_file_parquet()
+            else:
+                results_file = self._make_abundance_file_csv()
 
-        df = pd.read_csv(results_file, header=None, names=column_names, dtype=column_dtypes)
+            # read abundance data csv into a dataframe
+            self._status_update(submission, 'fetched_to_df')
+            column_names = ['sample_id', 'otu_id', 'abundance']
+            column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
 
-        df_actual_bytes = df.memory_usage(deep=True).sum()
-        df_actual_mb = df_actual_bytes / (1024 ** 2)
-        logger.info(f"Actual results df memory_usage: {df_actual_mb:.2f} MB")
+            if settings.COMPARISON_DF_METHOD == 'parquet':
+                df = pd.read_parquet(results_file)
+            else:
+                df = pd.read_csv(results_file, header=None, names=column_names, dtype=column_dtypes)
 
-        nunique_sample_id = df["sample_id"].nunique()
-        nunique_otu_id = df["otu_id"].nunique()
-        dtype_size = np.dtype(np.int64).itemsize
+            df_actual_bytes = df.memory_usage(deep=True).sum()
+            df_actual_mb = df_actual_bytes / (1024 ** 2)
+            logger.info(f"Actual results df memory_usage: {df_actual_mb:.2f} MB")
 
-        logger.info(f'Pivot dimensions: {nunique_sample_id} x {nunique_otu_id} (sample_id x otu_id )')
+            nunique_sample_id = df["sample_id"].nunique()
+            nunique_otu_id = df["otu_id"].nunique()
+            dtype_size = np.dtype(np.int64).itemsize
 
-        estimated_index_bytes = nunique_sample_id * 50 # size per sample is an estimate
-        estimated_data_bytes = nunique_sample_id * nunique_otu_id * dtype_size
-        estimated_bytes = estimated_index_bytes + estimated_data_bytes
-        estimated_mb = estimated_bytes / (1024 ** 2)
+            logger.info(f'Pivot dimensions: {nunique_sample_id} x {nunique_otu_id} (sample_id x otu_id )')
 
-        # does not include index
-        logger.info(f"Estimated pivot memory usage: {estimated_mb:.2f} MB")
+            estimated_index_bytes = nunique_sample_id * 50 # size per sample is an estimate
+            estimated_data_bytes = nunique_sample_id * nunique_otu_id * dtype_size
+            estimated_bytes = estimated_index_bytes + estimated_data_bytes
+            estimated_mb = estimated_bytes / (1024 ** 2)
 
-        # NOTES:
-        # use of pd.to_numeric on df columns here and df.pivot_table (instead of df.pivot) later
-        # can cause a crash in celeryworker that is not recoverable without restarting
-        # the containers if the worker runs out of memory during this stage
-        # this is different behaviour to a crash due to an incredibly large dataset
-        # e.g. with 32MB RAM;
-        # - all p__Acidobateriota (pidbox crash, unrecoverable)
-        # - all p__Actinobacteriota (standard crash, recoverable)
-        #
-        # kombu.exceptions.InconsistencyError: 
-        # Cannot route message for exchange 'reply.celery.pidbox': Table empty or key no longer exists.
-        # Probably the key ('_kombu.binding.reply.celery.pidbox') has been removed from the Redis database.
-        #
-        # > keep df['sample_id'] as string type (since it is unique category type does not save space)
-        # > df['otu_id'] = pd.to_numeric(df['otu_id'], downcast='unsigned')
-        # > df['abundance'] = pd.to_numeric(df['abundance'], downcast='unsigned')
-        #
-        # using pd.to_numeric without df.pivot_table seems to have no effect on the datatype size but does not cause the crashing
-        # so using int64 (default) without downcasting seems to prevent the crashes, though it doubles the size requirements
-        # however, such large result sets take forever to compute anyway
+            # does not include index
+            logger.info(f"Estimated pivot memory usage: {estimated_mb:.2f} MB")
 
-        
-        check = self._check_result_size_ok(estimated_mb)
-        if not check['valid']:
-            self._status_update(submission, 'error')
-            submission.error = (
-                f'Search has too many elements: {nunique_sample_id} samples and {nunique_otu_id} '
-                f'OTUs for a matrix size of {estimated_mb:.2f} MB.<br />The maximum supported size '
-                f'is {check["size_max"]} MB.<br />Please choose a smaller search space or download '
-                f'OTU data and perform analysis locally.'
+            # NOTES:
+            # use of pd.to_numeric on df columns here and df.pivot_table (instead of df.pivot) later
+            # can cause a crash in celeryworker that is not recoverable without restarting
+            # the containers if the worker runs out of memory during this stage
+            # this is different behaviour to a crash due to an incredibly large dataset
+            # e.g. with 32MB RAM;
+            # - all p__Acidobateriota (pidbox crash, unrecoverable)
+            # - all p__Actinobacteriota (standard crash, recoverable)
+            #
+            # kombu.exceptions.InconsistencyError: 
+            # Cannot route message for exchange 'reply.celery.pidbox': Table empty or key no longer exists.
+            # Probably the key ('_kombu.binding.reply.celery.pidbox') has been removed from the Redis database.
+            #
+            # > keep df['sample_id'] as string type (since it is unique category type does not save space)
+            # > df['otu_id'] = pd.to_numeric(df['otu_id'], downcast='unsigned')
+            # > df['abundance'] = pd.to_numeric(df['abundance'], downcast='unsigned')
+            #
+            # using pd.to_numeric without df.pivot_table seems to have no effect on the datatype size but does not cause the crashing
+            # so using int64 (default) without downcasting seems to prevent the crashes, though it doubles the size requirements
+            # however, such large result sets take forever to compute anyway
+
+            
+            check = self._check_result_size_ok(estimated_mb)
+            if not check['valid']:
+                self._status_update(submission, 'error')
+                submission.error = (
+                    f'Search has too many elements: {nunique_sample_id} samples and {nunique_otu_id} '
+                    f'OTUs for a matrix size of {estimated_mb:.2f} MB.<br />The maximum supported size '
+                    f'is {check["size_max"]} MB.<br />Please choose a smaller search space or download '
+                    f'OTU data and perform analysis locally.'
+                )
+
+                return False
+
+
+            self._status_update(submission, 'sort')
+            df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
+
+            self._status_update(submission, 'pivot')
+            rect_df = (
+                df.pivot(
+                    index='sample_id',
+                    columns='otu_id',
+                    values='abundance'
+                )
+                .fillna(0)
             )
-
-            return False
-
-
-        self._status_update(submission, 'sort')
-        df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
-
-        self._status_update(submission, 'pivot')
-        rect_df = (
-            df.pivot(
-                index='sample_id',
-                columns='otu_id',
-                values='abundance'
-            )
-            .fillna(0)
-        )
-
 
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
@@ -245,8 +330,8 @@ class SampleComparisonWrapper:
         pairs_braycurtis_umap = list(zip(results_braycurtis_umap.dim1.values, results_braycurtis_umap.dim2.values))
         # pairs_jaccard_umap = list(zip(results_jaccard_umap.dim1.values, results_jaccard_umap.dim2.values))
 
-        sample_ids = df['sample_id'].unique().tolist()
-        otu_ids = df['otu_id'].unique().tolist()
+        sample_ids = rect_df.index.tolist()
+        otu_ids = rect_df.columns.tolist()
 
         dist_matrix_jaccard = []
         pairs_jaccard_umap = []
