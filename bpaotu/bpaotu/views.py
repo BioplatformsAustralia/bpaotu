@@ -997,6 +997,7 @@ def blast_submission(request):
             'state': state,
             'duration': None,
             'timestamps': timestamps,
+            'row_count': submission.row_count,
             'result_url': submission.result_url,
             'image_contents': submission.image_contents,
         }

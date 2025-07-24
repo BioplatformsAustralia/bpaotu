@@ -68,7 +68,7 @@ def setup_blast(submission_id):
 def run_blast(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_blast_wrapper(submission)
-    fname, image_contents = wrapper.run()
+    fname, image_contents, row_count = wrapper.run()
     submission.result_url = settings.BLAST_RESULTS_URL + '/' + fname
 
     # if result has an image then encode image contents as a Base64 string
@@ -77,6 +77,7 @@ def run_blast(submission_id):
         image_base64 = base64.b64encode(image_contents).decode('utf-8')
 
     submission.image_contents = image_base64
+    submission.row_count = row_count
 
     return submission_id
 

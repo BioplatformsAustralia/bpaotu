@@ -228,12 +228,19 @@ export default handleActions(
             imageSrc = `data:image/png;base64,${resultImg64}`
           }
 
-          const BLAST_ALERT_SUCCESS = alert(
-            'BLAST search executed successfully. ' +
-              `Click <a target="_blank" href="${resultUrl}" className="alert-link">` +
-              'here</a> to download the results.',
-            'success'
-          )
+          const hasResults = action.payload.data.submission.row_count > 0
+
+          let alertContent = 'BLAST search executed successfully. '
+
+          if (hasResults) {
+            alertContent =
+              alertContent +
+              `Click <a target="_blank" href="${resultUrl}" className="alert-link">here</a> to download the results.`
+          } else {
+            alertContent = alertContent + 'No results were found for the given sequence.'
+          }
+
+          const BLAST_ALERT_SUCCESS = alert(alertContent, 'success')
           newAlerts = reject([state.alerts, BLAST_ALERT_IN_PROGRESS])
           newAlerts.push(
             newLastSubmissionState['succeeded'] ? BLAST_ALERT_SUCCESS : BLAST_ALERT_ERROR

@@ -265,8 +265,10 @@ class BlastWrapper:
         self._rewritten_blast_result_rows_sample(blast_sample_results_file)
         zf.write_iter('blast_results_sample.csv', self._file_chunk_generator(blast_sample_results_file))
 
-        # add map if there are results
+        # determine if any results
         row_count = self._file_count_rows(blast_sample_results_file)
+
+        # add map if there are results
         image_contents = None
         if row_count > 0:
             self._status_update(submission, 'write_output_map')
@@ -290,7 +292,7 @@ class BlastWrapper:
 
         self._status_update(submission, 'complete')
 
-        return fname, image_contents
+        return fname, image_contents, row_count
 
     def _produce_map(self, blast_sample_results_file):
         # based on github.com/AusMicrobiome/Maps
