@@ -7,13 +7,8 @@ from ccg_django_utils.conf import EnvConfig
 
 from ._version import __version__
 
-env = EnvConfig()
+from .settings_shared import *
 
-VERSION = env.get("bpa_version", os.environ.get("GIT_TAG", "UNKNOWN_VERSION"))
-BPA_VERSION = VERSION
-
-SCRIPT_NAME = env.get("script_name", os.environ.get("HTTP_SCRIPT_NAME", ""))
-FORCE_SCRIPT_NAME = env.get("force_script_name", "") or SCRIPT_NAME or None
 
 # This should be the path under the webapp is installed on the server ex. /bpa/otu on staging
 # TODO I think this is alwasy SCRIPT_NAME if not get separately from enviroment
@@ -368,23 +363,6 @@ DEFAULT_PAGINATION = 50
 USE_X_FORWARDED_HOST = env.get("use_x_forwarded_host", True)
 
 
-# cache using redis
-CACHES = {
-    'default': {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": env.getlist("cache", ["redis://cache:6379/1"]),
-        "TIMEOUT": 3600,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient"
-        },
-        "KEY_PREFIX": "bpaotu_cache"
-    }
-}
-
-# TODO used temporarily for galaxy submission stuff. Removed when switched over to SqlAlchemy
-REDIS_HOST = env.get('REDIS_HOST', 'cache')
-REDIS_DB = env.get('REDIS_DB', '0')
-
 # Celery
 
 CELERY_BROKER_URL = env.get('CELERY_BROKER_URL', 'redis://cache')
@@ -399,7 +377,6 @@ CELERY_TIMEZONE = TIME_ZONE
 
 # End Celery
 
-CACHES['search_results'] = CACHES['default']
 CACHES['image_results'] = CACHES['default']
 CACHES['contextual_schema_definition_results'] = CACHES['default']
 
@@ -443,9 +420,5 @@ DEFAULT_TAXONOMIES = [
     ['unite8', 'wang']]
 
 MIXPANEL_TOKEN = env.get("MIXPANEL_TOKEN", "")
-
-COMPARISON_CHUNK_SIZE = env.get('COMPARISON_CHUNK_SIZE', 10000)
-COMPARISON_DF_METHOD = env.get('COMPARISON_DF_METHOD', 'parquet')
-COMPARISON_PIVOT_MAX_SIZE_MB = env.get('COMPARISON_PIVOT_MAX_SIZE_MB', 4096)
 
 VERSION = __version__

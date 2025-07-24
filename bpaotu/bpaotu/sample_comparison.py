@@ -282,7 +282,7 @@ class SampleComparisonWrapper:
 
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
-        logger.info(f"   Actual pivot memory_usage: {actual_bytes:,} bytes ({actual_mb:.2f} MB)")
+        logger.info(f"Actual pivot memory_usage: {actual_mb:.2f} MB")
 
         self._status_update(submission, 'calc_distances_bc')
         dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)

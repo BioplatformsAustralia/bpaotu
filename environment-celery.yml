@@ -17,7 +17,11 @@ dependencies:
   - pip
   - pip:
       # core functionality:
+      - ccg-django-utils # settings
+      - django-anymail[amazon_ses]==7.1.0 # settings
+      - colorlog==4.1.0
       - psutil # debugging memory usage
+      - sqlalchemy-citext==1.6.post1
       ## task related:
       # biom
       - zipstream==1.1.4
@@ -29,33 +33,30 @@ dependencies:
       - fastparquet==0.8
       - pyarrow==8
       ## TODO: filter out these
-      # - beautifulsoup4==4.9.0
-      - biopython==1.80
-      # - bitmath==1.3.3.1
-      - boto==2.49.0
-      - ccg-django-utils==0.4.2
-      - colorlog==4.1.0
-      - django-anymail[amazon_ses]==7.1.0
       - django-extensions==2.2.9
       - django-redis==4.10.0
-      - Django-suit==0.2.28
+      # - Django-suit==0.2.28
       - django-webpack-loader==0.7.0
       - Django==2.2.10
-      - httplib2==0.17.2
-      - openpyxl==3.0.10
-      - Pillow>=8.1.1
       - psycopg2-binary==2.9.9
-      - python-dateutil==2.8.1
-      - python-resize-image==1.1.19
       - redis==3.4.1
-      - six==1.14.0
-      - sqlalchemy-citext==1.6.post1
+      # some are needed:
       - SQLAlchemy-Utils==0.41.1
       - SQLAlchemy==1.3.16
+      ## confirmed:
+      # - biopython==1.80
+      # - boto==2.49.0
+      # - six==1.14.0
+      # - python-dateutil==2.8.1
+      # - python-resize-image==1.1.19
+      # - httplib2==0.17.2
+      # - openpyxl==3.0.10
+      # - Pillow>=8.1.1
+      # - beautifulsoup4==4.9.0
+      # - bitmath==1.3.3.1
       # - Unipath==1.1
       # - Werkzeug==0.16.1
       # - xhtml2pdf==0.2.6
-      ## confirmed:
       # - xlrd==1.2.0
       # - xlsxwriter==3.0.5
       # - xlwt==1.3.0

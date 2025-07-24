@@ -1124,7 +1124,6 @@ def comparison_submission(request):
     if state == 'complete':
         try:
             duration = timestamps_duration(timestamps)
-            logger.info(settings.COMPARISON_DF_METHOD)
 
             logger.info(f"duration: {duration}")
             logger.info(f"timestamps: {timestamps}")
