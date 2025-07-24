@@ -69,108 +69,6 @@ class SampleComparisonWrapper:
         os.makedirs(self._submission_dir, exist_ok=True)
         logger.info(f'Submission directory created: {self._submission_dir}')
 
-
-    def _check_result_size_ok(self, estimated_mb):
-        max_size = settings.MAX_COMPARISON_PIVOT_SIZE_MB
-
-        result = {
-            'valid': True,
-            'size': estimated_mb,
-            'size_max': max_size,
-            'error': None,
-        }
-
-        if estimated_mb > max_size:
-            result['valid'] = False
-
-        return result
-
-    def _make_abundance_file_csv(self):
-        logger.info('Making abundance csv file')
-        chunk_size = settings.COMPARISON_CHUNK_SIZE
-
-        results_file = self._in('abundance.csv')
-        with open(results_file, 'w') as fd:
-            with SampleQuery(self._params) as query:
-                for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(chunk_size):
-                    fd.write('{},{},{}\n'.format(sample_id, otu_id, count))
-
-        logger.info('Finished making abundance file')
-
-        return results_file
-
-    def _make_abundance_file_parquet(self):
-        logger.info('Making abundance parquet file')
-        chunk_size = settings.COMPARISON_CHUNK_SIZE
-
-        from fastparquet import write, ParquetFile
-
-        results_file = self._in('abundance.parquet')
-
-        column_names = ['sample_id', 'otu_id', 'abundance']
-        first_chunk = True
-        rows = []
-
-        with SampleQuery(self._params) as query:
-            for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(chunk_size):
-                rows.append((sample_id, otu_id, count))
-
-                if len(rows) >= chunk_size:
-                    df = pd.DataFrame(rows, columns=column_names)
-
-                    if first_chunk:
-                        write(results_file, df, write_index=False)
-                        first_chunk = False
-                    else:
-                        write(results_file, df, write_index=False, append=True)
-
-                    rows.clear()
-
-            # Write any remaining rows
-            if rows:
-                df = pd.DataFrame(rows, columns=column_names)
-                if first_chunk:
-                    write(results_file, df, write_index=False)
-                else:
-                    write(results_file, df, write_index=False, append=True)
-
-        logger.info('Finished making abundance file')
-
-        return results_file
-
-    def _build_abundance_dataframe(self):
-        submission = Submission(self._submission_id)
-
-        logger.info('Building abundance DataFrame in memory')
-        chunk_size = settings.COMPARISON_CHUNK_SIZE
-        column_names = ['sample_id', 'otu_id', 'abundance']
-        rows = []
-
-        self._status_update(submission, 'fetch')
-        with SampleQuery(self._params) as query:
-            for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(chunk_size):
-                rows.append((sample_id, otu_id, count))
-
-        self._status_update(submission, 'fetched_to_df')
-        df = pd.DataFrame(rows, columns=column_names)
-
-        self._status_update(submission, 'sort')
-        df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
-
-        self._status_update(submission, 'pivot')
-        rect_df = (
-            df.pivot(
-                index='sample_id',
-                columns='otu_id',
-                values='abundance'
-            )
-            .fillna(0)
-        )
-
-        logger.info('Finished building abundance DataFrame in memory')
-        return rect_df
-
-
     def _cancel(self):
         submission = Submission(self._submission_id)
 
@@ -196,6 +94,96 @@ class SampleComparisonWrapper:
         except FileNotFoundError:
             logger.info(f"Could not remove submission directory (FileNotFoundError): {self._submission_dir}")
 
+
+    def _check_result_size_ok(self, estimated_mb):
+        max_size = settings.COMPARISON_PIVOT_MAX_SIZE_MB
+
+        result = {
+            'valid': True,
+            'size': estimated_mb,
+            'size_max': max_size,
+            'error': None,
+        }
+
+        if estimated_mb > max_size:
+            result['valid'] = False
+
+        return result
+
+    def _make_abundance_file_csv(self):
+        logger.info('Making abundance csv file')
+
+        chunk_size = settings.COMPARISON_CHUNK_SIZE
+
+        results_file = self._in('abundance.csv')
+        with open(results_file, 'w') as fd:
+            with SampleQuery(self._params) as query:
+                for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(chunk_size):
+                    fd.write('{},{},{}\n'.format(sample_id, otu_id, count))
+
+        logger.info('Finished making abundance csv file')
+
+        return results_file
+
+    def _make_abundance_file_parquet(self):
+        logger.info('Making abundance parquet file')
+
+        from fastparquet import write, ParquetFile
+
+        chunk_size = settings.COMPARISON_CHUNK_SIZE
+        column_names = ['sample_id', 'otu_id', 'abundance']
+        first_chunk = True
+        rows = []
+
+        results_file = self._in('abundance.parquet')
+        with SampleQuery(self._params) as query:
+            for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(chunk_size):
+                rows.append((sample_id, otu_id, count))
+
+                if len(rows) >= chunk_size:
+                    df = pd.DataFrame(rows, columns=column_names)
+
+                    if first_chunk:
+                        write(results_file, df, write_index=False)
+                        first_chunk = False
+                    else:
+                        write(results_file, df, write_index=False, append=True)
+
+                    rows.clear()
+
+            # Write any remaining rows
+            if rows:
+                df = pd.DataFrame(rows, columns=column_names)
+                if first_chunk:
+                    write(results_file, df, write_index=False)
+                else:
+                    write(results_file, df, write_index=False, append=True)
+
+        logger.info('Finished making abundance parquet file')
+
+        return results_file
+
+    def _build_abundance_dataframe(self):
+        logger.info('Building abundance dataframe in memory')
+        submission = Submission(self._submission_id)
+
+        chunk_size = settings.COMPARISON_CHUNK_SIZE
+        column_names = ['sample_id', 'otu_id', 'abundance']
+        rows = []
+
+        self._status_update(submission, 'fetch')
+        with SampleQuery(self._params) as query:
+            for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(chunk_size):
+                rows.append((sample_id, otu_id, count))
+
+        self._status_update(submission, 'fetched_to_df')
+        df = pd.DataFrame(rows, columns=column_names)
+
+        logger.info('Finished building abundance dataframe in memory')
+
+        return df
+
+
     def _run(self):
         from fastdist import fastdist
         import umap.umap_ as umap
@@ -206,24 +194,24 @@ class SampleComparisonWrapper:
 
         # all in memory
         if settings.COMPARISON_DF_METHOD == 'memory':
-            rect_df = self._build_abundance_dataframe()
+            df = self._build_abundance_dataframe()
         else:
-            # make csv in submission dir with abundance data
             self._status_update(submission, 'fetch')
 
+            # make file in submission dir with abundance data
             if settings.COMPARISON_DF_METHOD == 'parquet':
                 results_file = self._make_abundance_file_parquet()
             else:
                 results_file = self._make_abundance_file_csv()
 
-            # read abundance data csv into a dataframe
+            # read abundance file into a dataframe
             self._status_update(submission, 'fetched_to_df')
-            column_names = ['sample_id', 'otu_id', 'abundance']
-            column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
 
             if settings.COMPARISON_DF_METHOD == 'parquet':
                 df = pd.read_parquet(results_file)
             else:
+                column_names = ['sample_id', 'otu_id', 'abundance']
+                column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
                 df = pd.read_csv(results_file, header=None, names=column_names, dtype=column_dtypes)
 
             df_actual_bytes = df.memory_usage(deep=True).sum()
@@ -279,18 +267,18 @@ class SampleComparisonWrapper:
                 return False
 
 
-            self._status_update(submission, 'sort')
-            df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
+        self._status_update(submission, 'sort')
+        df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
 
-            self._status_update(submission, 'pivot')
-            rect_df = (
-                df.pivot(
-                    index='sample_id',
-                    columns='otu_id',
-                    values='abundance'
-                )
-                .fillna(0)
+        self._status_update(submission, 'pivot')
+        rect_df = (
+            df.pivot(
+                index='sample_id',
+                columns='otu_id',
+                values='abundance'
             )
+            .fillna(0)
+        )
 
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)

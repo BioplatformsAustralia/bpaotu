@@ -2,7 +2,7 @@ name: celeryenv
 channels:
   - conda-forge
 dependencies:
-  # core functionality:
+  ## core functionality
   - python=3.9
   - gdal=3.11.3
   - numpy=1.26.4
@@ -11,23 +11,27 @@ dependencies:
   - numba=0.60.0
   - psycopg
   - celery=5.5.3
-  # task related:
+  ## task related
   - matplotlib==3.8.3
-  # pip:
+  ## packages only available via pip
   - pip
   - pip:
       # core functionality:
-      ## TODO if any
-      # task related:
+      - psutil # debugging memory usage
+      ## task related:
+      # biom
+      - zipstream==1.1.4
+      # blast
+      - basemap==1.4.1
+      # comparison
       - fastdist==1.1.6
       - umap-learn==0.5.7
       - fastparquet==0.8
       - pyarrow==8
-      # filter
-      - basemap==1.4.1
-      - beautifulsoup4==4.9.0
+      ## TODO: filter out these
+      # - beautifulsoup4==4.9.0
       - biopython==1.80
-      - bitmath==1.3.3.1
+      # - bitmath==1.3.3.1
       - boto==2.49.0
       - ccg-django-utils==0.4.2
       - colorlog==4.1.0
@@ -37,12 +41,9 @@ dependencies:
       - Django-suit==0.2.28
       - django-webpack-loader==0.7.0
       - Django==2.2.10
-      - google-api-python-client
       - httplib2==0.17.2
-      - jinja2
       - openpyxl==3.0.10
       - Pillow>=8.1.1
-      - psutil
       - psycopg2-binary==2.9.9
       - python-dateutil==2.8.1
       - python-resize-image==1.1.19
@@ -51,10 +52,11 @@ dependencies:
       - sqlalchemy-citext==1.6.post1
       - SQLAlchemy-Utils==0.41.1
       - SQLAlchemy==1.3.16
-      - Unipath==1.1
-      - Werkzeug==0.16.1
-      - xhtml2pdf==0.2.6
-      - xlrd==1.2.0
-      - xlsxwriter==3.0.5
-      - xlwt==1.3.0
-      - zipstream==1.1.4
+      # - Unipath==1.1
+      # - Werkzeug==0.16.1
+      # - xhtml2pdf==0.2.6
+      ## confirmed:
+      # - xlrd==1.2.0
+      # - xlsxwriter==3.0.5
+      # - xlwt==1.3.0
+      # - jinja2

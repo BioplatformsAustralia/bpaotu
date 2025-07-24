@@ -20,13 +20,8 @@ import subprocess
 import zipstream
 from contextlib import suppress
 
-# maps
-import sys
-import matplotlib.pyplot as plt
-from mpl_toolkits.basemap import Basemap
 import pandas as pd
 import numpy as np
-import matplotlib.colors as mcolors
 
 
 logger = logging.getLogger('bpaotu')
@@ -299,6 +294,10 @@ class BlastWrapper:
 
     def _produce_map(self, blast_sample_results_file):
         # based on github.com/AusMicrobiome/Maps
+
+        import matplotlib.pyplot as plt
+        from mpl_toolkits.basemap import Basemap
+        import matplotlib.colors as mcolors
 
         logger.info('Creating map of blast results')
         df = pd.read_csv(blast_sample_results_file, usecols=['latitude', 'longitude', 'pident'])
