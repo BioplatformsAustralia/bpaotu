@@ -1006,7 +1006,9 @@ def blast_submission(request):
     if state == 'complete':
         try:
             duration = timestamps_duration(timestamps)
+            response['submission']['duration'] = duration
             logger.info(f"duration: {duration}")
+            logger.info(f"timestamps: {timestamps}")
         except Exception as e:
             logger.warning("Could not calculate duration of BLAST search; %s" % getattr(e, 'message', repr(e)))
 
@@ -1124,7 +1126,7 @@ def comparison_submission(request):
     if state == 'complete':
         try:
             duration = timestamps_duration(timestamps)
-
+            response['submission']['duration'] = duration
             logger.info(f"duration: {duration}")
             logger.info(f"timestamps: {timestamps}")
         except Exception as e:

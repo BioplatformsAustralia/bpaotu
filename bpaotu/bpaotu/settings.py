@@ -2,10 +2,7 @@
 # Django settings for Bioplatforms OTU project.
 
 import os
-from contextlib import suppress
 from ccg_django_utils.conf import EnvConfig
-
-from ._version import __version__
 
 from .settings_shared import *
 
