@@ -33,6 +33,8 @@ dependencies:
       # (which builds and relies on correct system libraries)
       - psycopg2-binary==2.9.9
       ## task related:
+      # periodic ckan update
+      - git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
       # biom
       - zipstream==1.1.4
       # blast

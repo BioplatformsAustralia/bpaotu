@@ -13,6 +13,7 @@ from django.conf import settings
 from .biom import save_biom_zip_file
 from .blast import BlastWrapper
 from .galaxy_client import get_users_galaxy
+from .sample_meta import update_from_ckan
 from .sample_comparison import SampleComparisonWrapper
 from .submission import Submission
 
@@ -29,15 +30,18 @@ FILE_UPLOAD_STATUS_POLL_FREQUENCY = 5
 GALAXY_HISTORY_NAME_MAX = 255
 
 
+##
+## Misc Tasks
+## 
+
 @app.task(bind=True)
 def debug_task(self):
     print('Request: {0!r}'.format(self.request))
     return "debug_task OK"
 
-
 @app.task(ignore_result=True)
-def periodic_task():
-    print('periodic_task')
+def periodic_ckan_update():
+    update_from_ckan()
 
 
 ##

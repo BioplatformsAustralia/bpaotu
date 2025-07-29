@@ -45,24 +45,12 @@ BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
 BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
 
 
-## database config
+## ckan config
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': env.get("dbname", "webapp"),
-        'USER': env.get("dbuser", "webapp"),
-        'PASSWORD': env.get("dbpass", "webapp"),
-        'HOST': env.get("dbserver", ""),
-        'PORT': env.get("dbport", ""),
-        'OPTIONS': {
-            'connect_timeout': 60,  # Connect timeout (not query execution timeout)
-            'keepalives': 1,        # Enable TCP keepalives
-            'keepalives_idle': 600,  # Send keepalive after
-            'keepalives_interval': 60, # Retry every
-            'keepalives_count': 100,    # Retry times before closing
-        }
-    }
+CKAN_SERVER = {
+    'name': env.get('ckan_name', 'bpa-aws1'),
+    'base_url': env.get('ckan_base_url', 'https://data.bioplatforms.com/'),
+    'api_key': env.get('ckan_api_key', ''),
 }
 
 
@@ -99,6 +87,27 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
 CELERY_TIMEZONE = TIME_ZONE
+
+
+## database config
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': env.get("dbname", "webapp"),
+        'USER': env.get("dbuser", "webapp"),
+        'PASSWORD': env.get("dbpass", "webapp"),
+        'HOST': env.get("dbserver", ""),
+        'PORT': env.get("dbport", ""),
+        'OPTIONS': {
+            'connect_timeout': 60,  # Connect timeout (not query execution timeout)
+            'keepalives': 1,        # Enable TCP keepalives
+            'keepalives_idle': 600,  # Send keepalive after
+            'keepalives_interval': 60, # Retry every
+            'keepalives_count': 100,    # Retry times before closing
+        }
+    }
+}
 
 
 ## logging
