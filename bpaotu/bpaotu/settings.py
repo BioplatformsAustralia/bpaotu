@@ -10,11 +10,7 @@ from ._version import __version__
 from .settings_shared import *
 
 
-# This should be the path under the webapp is installed on the server ex. /bpa/otu on staging
-# TODO I think this is alwasy SCRIPT_NAME if not get separately from enviroment
-BASE_URL = SCRIPT_NAME
 
-WEBAPP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # a directory that will be writable by the webserver, for storing various files...
 WRITABLE_DIRECTORY = env.get("writable_directory", "/tmp") # FIXME used?
@@ -30,14 +26,6 @@ BPAOTU_MAP_CENTRE_LONGITUDE = 133.775
 
 BPAOTU_CKAN_POLL_INTERVAL = 3600 # Seconds between CKAN queries for new resources
 
-SECRET_KEY = env.get("secret_key", "change-it")
-
-# Default SSL on and forced, turn off if necessary
-PRODUCTION = env.get("production", False)
-SSL_ENABLED = PRODUCTION # FIXME?  used?
-SSL_FORCE = PRODUCTION # FIXME?  used?
-
-DEBUG = env.get("debug", not PRODUCTION)
 
 # django-secure
 SECURE_SSL_REDIRECT = env.get("secure_ssl_redirect", PRODUCTION)
@@ -114,7 +102,6 @@ SESSION_COOKIE_NAME = env.get("session_cookie_name", "ccg_{0}".format(SCRIPT_NAM
 SESSION_COOKIE_DOMAIN = env.get("session_cookie_domain", "") or None
 CSRF_USE_SESIONS = True
 
-TIME_ZONE = env.get("time_zone", 'Australia/Perth')
 LANGUAGE_CODE = env.get("language_code", 'en-us')
 USE_I18N = env.get("use_i18n", True)
 USE_L10N = False
@@ -225,130 +212,6 @@ INSTALLED_APPS = ('django.contrib.auth',
                   'bpaotu',
                   )
 
-# #
-# # LOGGING
-# #
-LOG_DIRECTORY = env.get('log_directory', os.path.join(WEBAPP_ROOT, "log"))
-with suppress(OSError):
-    if not os.path.exists(LOG_DIRECTORY):
-        os.mkdir(LOG_DIRECTORY)
-os.path.exists(LOG_DIRECTORY), "No log directory, please create one: %s" % LOG_DIRECTORY
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '[%(levelname)s:%(asctime)s:%(filename)s:%(lineno)s:%(funcName)s] %(message)s'
-        },
-        'db': {
-            'format': '[%(duration)s:%(sql)s:%(params)s %(filename)s %(lineno)s %(funcName)s] %(message)s'
-        },
-        'simple': {
-            'format': '%(levelname)s %(message)s'
-        },
-        'color': {
-            '()': 'colorlog.ColoredFormatter',
-            'format': '[%(log_color)s%(levelname)-8s] %(filename)s:%(lineno)s %(funcName)s() %(message)s',
-        },
-    },
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse',
-        },
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        },
-    },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'filters': ['require_debug_true'],
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
-        },
-        'console_prod': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
-        },
-        'shell': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
-        },
-        'rainbow': {
-            'level': 'DEBUG',
-            'class': 'colorlog.StreamHandler',
-            'formatter': 'color'
-        },
-        'file': {
-            'level': 'INFO',
-            'class': 'ccg_django_utils.loghandlers.ParentPathFileHandler',
-            'filename': os.path.join(LOG_DIRECTORY, 'registry.log'),
-            'when': 'midnight',
-            'formatter': 'verbose'
-        },
-        'mail_admins': {
-            'level': 'ERROR',
-            'filters': ['require_debug_false'],
-            'class': 'django.utils.log.AdminEmailHandler',
-            'include_html': True
-        },
-        'null': {
-            'class': 'logging.NullHandler',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console', 'file'],
-        },
-        'django.request': {
-            'handlers': ['mail_admins'],
-            'level': 'ERROR',
-            'propagate': True,
-        },
-        'django.security': {
-            'handlers': ['mail_admins'],
-            'level': 'ERROR',
-            'propagate': True,
-        },
-        'django.db.backends': {
-            'handlers': ['mail_admins'],
-            'level': 'CRITICAL',
-            'propagate': True,
-        },
-        'rainbow': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'bpaotu': {
-            'handlers': ['console_prod', 'file'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'libs': {
-            'handlers': ['rainbow', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'bpaotu.bpaotu.management.commands': {
-            'handlers': ['rainbow'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'apps': {
-            'handlers': ['rainbow'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'py.warnings': {
-            'handlers': ['console'],
-        },
-    }
-}
-
 if env.get("DEBUG_TOOLBAR", False):
     INSTALLED_APPS += ('debug_toolbar', )
     MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
@@ -362,23 +225,6 @@ DEFAULT_PAGINATION = 50
 # constructing redirect URLS.
 USE_X_FORWARDED_HOST = env.get("use_x_forwarded_host", True)
 
-
-# Celery
-
-CELERY_BROKER_URL = env.get('CELERY_BROKER_URL', 'redis://cache')
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-# CELERY_TASK_IGNORE_RESULT = True
-
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-
-CELERY_TIMEZONE = TIME_ZONE
-
-# End Celery
-
-CACHES['image_results'] = CACHES['default']
-CACHES['contextual_schema_definition_results'] = CACHES['default']
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
@@ -420,5 +266,3 @@ DEFAULT_TAXONOMIES = [
     ['unite8', 'wang']]
 
 MIXPANEL_TOKEN = env.get("MIXPANEL_TOKEN", "")
-
-VERSION = __version__

@@ -32,6 +32,8 @@ GALAXY_HISTORY_NAME_MAX = 255
 @app.task(bind=True)
 def debug_task(self):
     print('Request: {0!r}'.format(self.request))
+    return "debug_task OK"
+
 
 @app.task(ignore_result=True)
 def periodic_task():

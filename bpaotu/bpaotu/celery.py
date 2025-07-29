@@ -1,8 +1,6 @@
 from celery import Celery
 
 app = Celery('bpaotu')
-app.config_from_object('bpaotu.celery_config')
+app.config_from_object('django.conf:settings', namespace='CELERY')
 
 import bpaotu.tasks_minimal
-
-app.loader.override_backends['django'] = 'default'
