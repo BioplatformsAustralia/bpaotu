@@ -7,7 +7,7 @@ import psutil
 from psutil._common import bytes2human
 
 
-logger = logging.getLogger("rainbow")
+logger = logging.getLogger("bpaotu")
 
 
 def strip_to_ascii(s):

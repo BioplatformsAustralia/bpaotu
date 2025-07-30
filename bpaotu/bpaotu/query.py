@@ -37,7 +37,7 @@ from .otu import (
     make_engine)
 
 
-logger = logging.getLogger("rainbow")
+logger = logging.getLogger("bpaotu")
 engine = make_engine()
 Session = sessionmaker(bind=engine)
 

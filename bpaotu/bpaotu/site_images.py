@@ -13,7 +13,7 @@ from PIL import Image
 from django.http import HttpResponseForbidden
 
 import logging
-logger = logging.getLogger("rainbow")
+logger = logging.getLogger("bpaotu")
 
 
 THUMBNAIL_SIZE = 480

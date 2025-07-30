@@ -28,7 +28,7 @@ from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContext
 from Bio.SeqRecord  import SeqRecord
 from Bio.Seq  import Seq
 
-logger = logging.getLogger('rainbow')
+logger = logging.getLogger('bpaotu')
 
 
 def _csv_write_function(column):

@@ -11,7 +11,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
 
-logger = logging.getLogger("rainbow")
+logger = logging.getLogger("bpaotu")
 
 
 class GalaxyClient:

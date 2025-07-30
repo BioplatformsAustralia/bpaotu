@@ -12,7 +12,7 @@ from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy_utils import create_materialized_view
 
-logger = logging.getLogger("rainbow")
+logger = logging.getLogger("bpaotu")
 SCHEMA = 'otu'
 Base = declarative_base(metadata=MetaData(schema=SCHEMA))
 

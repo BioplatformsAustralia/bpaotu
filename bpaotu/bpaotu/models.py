@@ -1,9 +1,5 @@
 from django.db import models
 
-import logging
-logger = logging.getLogger("rainbow")
-
-
 class NonDenoisedDataRequest(models.Model):
     match_sequence = models.TextField(null=False)
     taxonomy_string = models.TextField(null=False)
