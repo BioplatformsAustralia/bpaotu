@@ -304,7 +304,12 @@ const SamplesComparisonModal = (props) => {
             point['value'] = z.name
           } else {
             // e.g. continuous
-            point['value'] = z[selectedFilter][i]
+            // point might not have value
+            if (z[selectedFilter][i]) {
+              point['value'] = z[selectedFilter][i]
+            } else {
+              point['value'] = '(none)'
+            }
           }
         }
 
@@ -431,7 +436,9 @@ const SamplesComparisonModal = (props) => {
                 </Col>
               </>
             ) : (
-              <Col xs="6">&nbsp;</Col>
+              <Col xs="6" style={{ marginTop: 18 }}>
+                &nbsp;
+              </Col>
             )}
           </Row>
         </Container>

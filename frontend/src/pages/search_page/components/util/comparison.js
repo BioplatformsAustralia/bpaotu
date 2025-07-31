@@ -65,15 +65,13 @@ export const filterOptionsSubset = (contextual, contextualFilters) => {
 export const processContinuous = (data, selectedFilter) => {
   const propsToKeep = ['x', 'y', 'xj', 'yj', 'text']
   const transformedObject = {}
+  const dataToLoop = data
 
-  var dataToLoop
   var propsToLoop
 
   if (selectedFilter === '') {
-    dataToLoop = data
     propsToLoop = propsToKeep
   } else {
-    dataToLoop = data.filter((x) => x[selectedFilter] != null)
     propsToLoop = [...propsToKeep, selectedFilter]
   }
 
@@ -102,23 +100,40 @@ export const processContinuous = (data, selectedFilter) => {
       },
     ]
 
+    const noValueMarkerSize = 5
     const desiredMinimumMarkerSize = 20
     const desiredMaximumMarkerSize = 100
     const size = transformedObject[selectedFilter]
     const maxDataValue = Math.max(...size)
     const minDataValue = Math.min(...size)
+
     const scaledSizes = size.map((value) => {
-      const scaledValue = (value - minDataValue) / (maxDataValue - minDataValue)
-      return (
-        scaledValue * (desiredMaximumMarkerSize - desiredMinimumMarkerSize) +
-        desiredMinimumMarkerSize
-      )
+      if (value) {
+        // scale size of marker to value
+        const scaledValue = (value - minDataValue) / (maxDataValue - minDataValue)
+        return (
+          scaledValue * (desiredMaximumMarkerSize - desiredMinimumMarkerSize) +
+          desiredMinimumMarkerSize
+        )
+      } else {
+        // no value, so show tiny dot
+        return noValueMarkerSize
+      }
+    })
+
+    const markerColours = size.map((value) => {
+      if (value) {
+        return '#1f77b4' // muted blue (default colour)
+      } else {
+        return '#aaa'
+      }
     })
 
     plotDataContinuous[0]['marker'] = {
       size: scaledSizes,
       sizemode: 'area',
       sizeref: 0.5,
+      color: markerColours,
     }
   }
 
