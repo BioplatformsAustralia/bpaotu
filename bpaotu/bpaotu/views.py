@@ -1127,6 +1127,7 @@ def comparison_submission(request):
         try:
             duration = timestamps_duration(timestamps)
             response['submission']['duration'] = duration
+
             logger.info(f"duration: {duration}")
             logger.info(f"timestamps: {timestamps}")
         except Exception as e:

@@ -4,9 +4,13 @@ import os.path
 import logging
 import shutil
 import json
+import io
 from time import time
 
 from django.conf import settings
+
+from django.db import connection
+from psycopg2.extensions import adapt
 
 from .params import param_to_filters, selected_contextual_filters
 from .query import SampleQuery
@@ -37,10 +41,21 @@ class SampleComparisonWrapper:
 
 
     def _status_update(self, submission, text):
-        logger.info(f"Status: {text}")
-        submission.status = text
+        this_timestamp = time()
         timestamps_ = json.loads(submission.timestamps)
-        timestamps_.append({ text: time() })
+
+        # log with time taken since last status update
+        if timestamps_:
+            prev_step = timestamps_[-1]
+            prev_label, prev_timestamp = list(prev_step.items())[0]
+            step_duration = this_timestamp - prev_timestamp
+            logger.info(f"Status: {text} ({prev_label} took {step_duration:.1f}s)")
+        else:
+            logger.info(f"Status: {text}")
+
+        # append new timestampe and update submission
+        timestamps_.append({ text: this_timestamp })
+        submission.status = text
         submission.timestamps = json.dumps(timestamps_)
 
     def _in(self, filename):
@@ -95,6 +110,21 @@ class SampleComparisonWrapper:
             logger.info(f"Could not remove submission directory (FileNotFoundError): {self._submission_dir}")
 
 
+    def _estimate_pivot_size(self, df):
+        nunique_sample_id = df["sample_id"].nunique()
+        nunique_otu_id = df["otu_id"].nunique()
+        dtype_size = np.dtype(np.int64).itemsize
+        logger.info(f'Pivot dimensions: {nunique_sample_id} x {nunique_otu_id} (sample_id x otu_id )')
+
+        estimated_index_bytes = nunique_sample_id * 50 # size per sample is an estimate
+        estimated_data_bytes = nunique_sample_id * nunique_otu_id * dtype_size
+        estimated_bytes = estimated_index_bytes + estimated_data_bytes
+        estimated_mb = estimated_bytes / (1024 ** 2)
+        logger.info(f"Estimated pivot memory usage: {estimated_mb:.2f} MB")
+
+        return nunique_sample_id, nunique_otu_id, estimated_mb
+
+
     def _check_result_size_ok(self, estimated_mb):
         max_size = settings.COMPARISON_PIVOT_MAX_SIZE_MB
 
@@ -102,7 +132,6 @@ class SampleComparisonWrapper:
             'valid': True,
             'size': estimated_mb,
             'size_max': max_size,
-            'error': None,
         }
 
         if estimated_mb > max_size:
@@ -110,162 +139,66 @@ class SampleComparisonWrapper:
 
         return result
 
-    def _make_abundance_file_csv(self):
-        logger.info('Making abundance csv file')
-
-        chunk_size = settings.COMPARISON_CHUNK_SIZE
-
-        results_file = self._in('abundance.csv')
-        with open(results_file, 'w') as fd:
-            with SampleQuery(self._params) as query:
-                for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(chunk_size):
-                    fd.write('{},{},{}\n'.format(sample_id, otu_id, count))
-
-        logger.info('Finished making abundance csv file')
-
-        return results_file
-
-    def _make_abundance_file_parquet(self):
-        logger.info('Making abundance parquet file')
-
-        from fastparquet import write, ParquetFile
-
-        chunk_size = settings.COMPARISON_CHUNK_SIZE
-        column_names = ['sample_id', 'otu_id', 'abundance']
-        first_chunk = True
-        rows = []
-
-        results_file = self._in('abundance.parquet')
-        with SampleQuery(self._params) as query:
-            for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(chunk_size):
-                rows.append((sample_id, otu_id, count))
-
-                if len(rows) >= chunk_size:
-                    df = pd.DataFrame(rows, columns=column_names)
-
-                    if first_chunk:
-                        write(results_file, df, write_index=False)
-                        first_chunk = False
-                    else:
-                        write(results_file, df, write_index=False, append=True)
-
-                    rows.clear()
-
-            # Write any remaining rows
-            if rows:
-                df = pd.DataFrame(rows, columns=column_names)
-                if first_chunk:
-                    write(results_file, df, write_index=False)
-                else:
-                    write(results_file, df, write_index=False, append=True)
-
-        logger.info('Finished making abundance parquet file')
-
-        return results_file
 
     def _build_abundance_dataframe(self):
         logger.info('Building abundance dataframe in memory')
+
         submission = Submission(self._submission_id)
-
-        chunk_size = settings.COMPARISON_CHUNK_SIZE
-        column_names = ['sample_id', 'otu_id', 'abundance']
-        rows = []
-
         self._status_update(submission, 'fetch')
+
+        # query to raw SQL and params
         with SampleQuery(self._params) as query:
-            for sample_id, otu_id, count in query.matching_sample_distance_matrix().yield_per(chunk_size):
-                rows.append((sample_id, otu_id, count))
+            q = query.matching_sample_distance_matrix()
+            compiled = q.statement.compile(compile_kwargs={"render_postcompile": True})
+            raw_sql = compiled.string
+            params = compiled.params  # dictionary of bound values
+
+        # safely interpolate with psycopg2
+        # this escapes identifiers and literals properly
+        for key, val in params.items():
+            raw_sql = raw_sql.replace(f":{key}", adapt(val).getquoted().decode())
+
+        # wrap sql in COPY and save directly to dataframe with io buffer
+        # note: StringIO is much slower than BytesIO
+        # (similar to saving to disk as csv and then reading back in)
+        copy_sql = f"COPY ({raw_sql}) TO STDOUT WITH CSV"
+        buff = io.BytesIO()
+        with connection.cursor() as cursor:
+            cursor.copy_expert(copy_sql, buff)
+
+        buff.seek(0)
 
         self._status_update(submission, 'fetched_to_df')
-        df = pd.DataFrame(rows, columns=column_names)
+        column_names = ['sample_id', 'otu_id', 'abundance']
+        column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
 
-        logger.info('Finished building abundance dataframe in memory')
-
-        return df
+        return pd.read_csv(buff, header=None, names=column_names, dtype=column_dtypes)
 
 
     def _run(self):
-        from fastdist import fastdist
-        import umap.umap_ as umap
-
         # access the submission so we can change the status
         submission = Submission(self._submission_id)
+
+        from fastdist import fastdist
+        import umap.umap_ as umap # this takes a while
+        
         _params, _errors = param_to_filters(self._query)
 
-        # all in memory
-        if settings.COMPARISON_DF_METHOD == 'memory':
-            df = self._build_abundance_dataframe()
-        else:
-            self._status_update(submission, 'fetch')
+        df = self._build_abundance_dataframe()
 
-            # make file in submission dir with abundance data
-            if settings.COMPARISON_DF_METHOD == 'parquet':
-                results_file = self._make_abundance_file_parquet()
-            else:
-                results_file = self._make_abundance_file_csv()
+        nunique_sample_id, nunique_otu_id, estimated_mb = self._estimate_pivot_size(df)
+        check = self._check_result_size_ok(estimated_mb)
 
-            # read abundance file into a dataframe
-            self._status_update(submission, 'fetched_to_df')
+        if not check['valid']:
+            self._status_update(submission, 'error')
+            submission.error = (
+                f'Search has too many elements: {nunique_sample_id} samples and {nunique_otu_id} '
+                f'OTUs for a matrix size of {estimated_mb:.2f} MB.<br />The maximum supported size '
+                f'is {check["size_max"]} MB.<br />Please choose a smaller search space or download '
+                f'OTU data and perform analysis locally.'
+            )
 
-            if settings.COMPARISON_DF_METHOD == 'parquet':
-                df = pd.read_parquet(results_file)
-            else:
-                column_names = ['sample_id', 'otu_id', 'abundance']
-                column_dtypes = { "sample_id": str, "otu_id": int, "abundance": int }
-                df = pd.read_csv(results_file, header=None, names=column_names, dtype=column_dtypes)
-
-            df_actual_bytes = df.memory_usage(deep=True).sum()
-            df_actual_mb = df_actual_bytes / (1024 ** 2)
-            logger.info(f"Actual results df memory_usage: {df_actual_mb:.2f} MB")
-
-            nunique_sample_id = df["sample_id"].nunique()
-            nunique_otu_id = df["otu_id"].nunique()
-            dtype_size = np.dtype(np.int64).itemsize
-
-            logger.info(f'Pivot dimensions: {nunique_sample_id} x {nunique_otu_id} (sample_id x otu_id )')
-
-            estimated_index_bytes = nunique_sample_id * 50 # size per sample is an estimate
-            estimated_data_bytes = nunique_sample_id * nunique_otu_id * dtype_size
-            estimated_bytes = estimated_index_bytes + estimated_data_bytes
-            estimated_mb = estimated_bytes / (1024 ** 2)
-
-            # does not include index
-            logger.info(f"Estimated pivot memory usage: {estimated_mb:.2f} MB")
-
-            # NOTES:
-            # use of pd.to_numeric on df columns here and df.pivot_table (instead of df.pivot) later
-            # can cause a crash in celeryworker that is not recoverable without restarting
-            # the containers if the worker runs out of memory during this stage
-            # this is different behaviour to a crash due to an incredibly large dataset
-            # e.g. with 32MB RAM;
-            # - all p__Acidobateriota (pidbox crash, unrecoverable)
-            # - all p__Actinobacteriota (standard crash, recoverable)
-            #
-            # kombu.exceptions.InconsistencyError: 
-            # Cannot route message for exchange 'reply.celery.pidbox': Table empty or key no longer exists.
-            # Probably the key ('_kombu.binding.reply.celery.pidbox') has been removed from the Redis database.
-            #
-            # > keep df['sample_id'] as string type (since it is unique category type does not save space)
-            # > df['otu_id'] = pd.to_numeric(df['otu_id'], downcast='unsigned')
-            # > df['abundance'] = pd.to_numeric(df['abundance'], downcast='unsigned')
-            #
-            # using pd.to_numeric without df.pivot_table seems to have no effect on the datatype size but does not cause the crashing
-            # so using int64 (default) without downcasting seems to prevent the crashes, though it doubles the size requirements
-            # however, such large result sets take forever to compute anyway
-
-            
-            check = self._check_result_size_ok(estimated_mb)
-            if not check['valid']:
-                self._status_update(submission, 'error')
-                submission.error = (
-                    f'Search has too many elements: {nunique_sample_id} samples and {nunique_otu_id} '
-                    f'OTUs for a matrix size of {estimated_mb:.2f} MB.<br />The maximum supported size '
-                    f'is {check["size_max"]} MB.<br />Please choose a smaller search space or download '
-                    f'OTU data and perform analysis locally.'
-                )
-
-                return False
-
+            return False
 
         self._status_update(submission, 'sort')
         df = df.sort_values(by=['sample_id', 'otu_id'], ascending=[True, True])
