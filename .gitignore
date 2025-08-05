@@ -1,6 +1,6 @@
 syntax:glob
 .#*
-*.log
+*.log*
 *.swp
 *.swo
 *.egg-info/
