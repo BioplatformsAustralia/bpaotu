@@ -60,6 +60,10 @@ export const filterOptionsSubset = (contextual, contextualFilters) => {
     .filter((x) => x != null)
 }
 
+const noValueMarkerSize = 5
+const noValueMarkerColour = '#aaa'
+const noValueName = '(none)'
+
 // data will be an array of length 1
 // but the size for each of the points will be different
 export const processContinuous = (data, selectedFilter) => {
@@ -100,7 +104,6 @@ export const processContinuous = (data, selectedFilter) => {
       },
     ]
 
-    const noValueMarkerSize = 5
     const desiredMinimumMarkerSize = 20
     const desiredMaximumMarkerSize = 100
     const size = transformedObject[selectedFilter]
@@ -125,7 +128,7 @@ export const processContinuous = (data, selectedFilter) => {
       if (value) {
         return '#1f77b4' // muted blue (default colour)
       } else {
-        return '#aaa'
+        return noValueMarkerColour
       }
     })
 
@@ -212,7 +215,7 @@ export const processDiscrete = (
   const iteratee = isDate ? selectedDateFilterFunction : selectedFilter
 
   const plotDataGrouped = groupBy(data, iteratee)
-  const groupValues = Object.keys(plotDataGrouped).filter((x) => x !== 'null')
+  const groupValues = Object.keys(plotDataGrouped)
 
   function makeColourScale(schemeName, numColours) {
     const categoricalSchemes = {
@@ -313,12 +316,23 @@ export const processDiscrete = (
       // i.e. will be plotted as a discrete field with no categories
     }
 
-    const groupObject = {
-      ...transformedKeyData,
-      name: name,
-      type: 'scatter',
-      mode: 'markers',
-      marker: { size: markerSize },
+    let groupObject
+    if (key === 'null') {
+      groupObject = {
+        ...transformedKeyData,
+        name: noValueName,
+        type: 'scatter',
+        mode: 'markers',
+        marker: { size: noValueMarkerSize },
+      }
+    } else {
+      groupObject = {
+        ...transformedKeyData,
+        name: name,
+        type: 'scatter',
+        mode: 'markers',
+        marker: { size: markerSize },
+      }
     }
 
     if (isDate) {
@@ -345,7 +359,11 @@ export const processDiscrete = (
     }
 
     if (isDiscrete) {
-      groupObject.marker.color = colourScale[index]
+      if (groupObject.name === noValueName) {
+        groupObject.marker.color = noValueMarkerColour
+      } else {
+        groupObject.marker.color = colourScale[index]
+      }
     }
 
     return groupObject
