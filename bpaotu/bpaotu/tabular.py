@@ -25,6 +25,12 @@ import logging
 import time
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
+from django.conf import settings
+
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
+
 from Bio.SeqRecord  import SeqRecord
 from Bio.Seq  import Seq
 
@@ -119,6 +125,61 @@ def sample_otu_csv_rows(taxonomy_labels, ids_to_names, q):
         fd.seek(0)
         fd.truncate(0)
 
+def sample_otu_parquet_blob(taxonomy_labels, ids_to_names, q):
+    schema = pa.schema([
+        ("Sample ID", pa.string()),
+        ("OTU", pa.string()),
+        ("OTU Count", pa.int64()),
+        ("Amplicon", pa.string()),
+        *[
+            (label, pa.string())
+            for label in taxonomy_labels
+        ],
+        ("Traits", pa.string()),
+    ])
+
+    buffer = io.BytesIO()
+    writer = pq.ParquetWriter(buffer, schema)
+
+    chunk_size = settings.OTU_EXPORT_CHUNK_SIZE
+    rows = []
+
+    for row in q.yield_per(chunk_size):
+        record = {
+            'Sample ID': str(format_sample_id(row.SampleOTU.sample_id)),
+            'OTU': str(row.OTU.code),
+            'OTU Count': row.SampleOTU.count,  # int64 is fine
+            'Amplicon': str(row.Taxonomy.amplicon_id),
+            **{
+                label: str(value) for label, value in zip(
+                    taxonomy_labels,
+                    ids_to_names(row.Taxonomy)
+                )
+            },
+            'Traits': str(array_or_empty(row.Taxonomy.traits).replace(",", ";")),
+        }
+        rows.append(record)
+
+        if len(rows) >= chunk_size:
+            table = pa.Table.from_pylist(rows, schema=schema)
+            writer.write_table(table)
+            rows = []
+
+            buffer.seek(0)
+            yield buffer.read()
+            buffer.seek(0)
+            buffer.truncate()
+
+    # Final flush
+    if rows:
+        table = pa.Table.from_pylist(rows, schema=schema)
+        writer.write_table(table)
+
+    writer.close()
+    buffer.seek(0)
+    yield buffer.read()
+
+
 # different requirements to the otu csv export:
 # - does not need the OTU code (so it is not included in the query)
 # - does not need count and amplicon fields
@@ -160,6 +221,10 @@ def tabular_zip_file_generator(params, onlyContextual):
     assert taxonomy_source_id != None
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     rank1_ontology_class = taxonomy_ontology_classes[1]
+
+    otu_export_format = settings.OTU_EXPORT_FORMAT
+    logger.info(f"OTU export format: {otu_export_format}")
+
     with SampleQuery(params) as query, OntologyInfo() as info, TaxonomyOptions() as options:
         taxonomy_labels_by_source = info.get_taxonomy_labels()
         zf.write_iter('contextual.csv', contextual_csv(query.matching_samples()))
@@ -193,17 +258,33 @@ def tabular_zip_file_generator(params, onlyContextual):
                     taxonomy_rank1_id_attr = getattr(Taxonomy, taxonomy_key_id_names[1])
                     rank1_query = q.filter(taxonomy_rank1_id_attr == rank1_id)
 
-                    filename = "{}.csv".format(sanitise(rank1_name))
-                    zf.write_iter(
-                        filename,
-                        sample_otu_csv_rows(taxonomy_labels, ids_to_names, rank1_query)
-                    )
+                    filename = sanitise(rank1_name)
+
+                    if otu_export_format in ['both', 'csv']:
+                        zf.write_iter(
+                            f"{filename}.csv",
+                            sample_otu_csv_rows(taxonomy_labels, ids_to_names, rank1_query)
+                        )
+
+                    if otu_export_format in ['both', 'parquet']:
+                        zf.write_iter(
+                            f"{filename}.parquet",
+                            sample_otu_parquet_blob(taxonomy_labels, ids_to_names, rank1_query)
+                        )
             else:
-                filename = "{}.csv".format(sanitise(info.id_to_value(rank1_ontology_class, rank1_id_is_value)))
-                zf.write_iter(
-                    filename,
-                    sample_otu_csv_rows(taxonomy_labels, ids_to_names, q)
-                )
+                filename = sanitise(info.id_to_value(rank1_ontology_class, rank1_id_is_value))
+
+                if otu_export_format in ['both', 'csv']:
+                    zf.write_iter(
+                        f"{filename}.csv",
+                        sample_otu_csv_rows(taxonomy_labels, ids_to_names, q)
+                    )
+
+                if otu_export_format in ['both', 'parquet']:
+                    zf.write_iter(
+                        f"{filename}.parquet",
+                        sample_otu_parquet_blob(taxonomy_labels, ids_to_names, q)
+                    )
         return zf
 
 def krona_source_file_generator(tmpdir, params, krona_params_hash):
