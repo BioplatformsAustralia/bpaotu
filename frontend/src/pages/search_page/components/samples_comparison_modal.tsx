@@ -264,11 +264,12 @@ const SamplesComparisonModal = (props) => {
   }, [isOpen])
 
   // Clear the plot if data is being refetched
-  // Update the plot if fetching has finished
+  // Also, clear selectedFilter in case new search does not have that filter in it
   useEffect(() => {
     if (isOpen) {
       if (isLoading) {
         clearPlotData()
+        setSelectedFilter('')
       }
     }
   }, [isOpen, isLoading, clearPlotData])

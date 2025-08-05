@@ -144,7 +144,7 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
       }
     })
     .catch((error) => {
-      if (error.response.status === 504) {
+      if (error.response && error.response.status === 504) {
         // status: 504, statusText: "Gateway Time-out"
         dispatch(
           comparisonSubmissionUpdateEnded(
