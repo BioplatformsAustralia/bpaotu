@@ -1,0 +1,24 @@
+FROM continuumio/miniconda3
+
+# System packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  ncbi-blast+ \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Create dedicated conda environment for celery worker and set it as default
+COPY environment-celery.yml .
+RUN conda env create -f environment-celery.yml && conda clean --all --yes
+ENV PATH=/opt/conda/envs/celeryenv/bin:$PATH
+
+# Use this to set the default conda environoment for an interactive shell
+RUN echo "source /opt/conda/etc/profile.d/conda.sh && conda activate celeryenv" >> /root/.bashrc
+
+# Set working directory so bpaotu app is available
+WORKDIR /app
+COPY . /app
+
+# Notes:
+# Don't set HOME to /app because other containers used /data as home
+
+# Run the celery worker for bpaotu when container starts
+CMD ["celery", "-A", "bpaotu", "worker", "--loglevel=info"]

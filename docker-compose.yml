@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   db:
     image: mdillon/postgis:10
@@ -34,6 +32,7 @@ services:
     volumes:
       - .:/app
       - ./data/dev:/data
+      - shared-data:/shared
     ports:
       - "8000:8000"
     depends_on:
@@ -45,18 +44,27 @@ services:
           - web
 
   celeryworker:
-    image: bioplatformsaustralia/bpaotu
-    command: celery_worker
+    image: bioplatformsaustralia/bpaotu-worker
     env_file:
       - .env_local
     environment:
       - WAIT_FOR_DB=1
       - WAIT_FOR_CACHE=1
+      - PYTHONPATH=/app/bpaotu
+      - DJANGO_SETTINGS_MODULE=bpaotu.settings_celery
     volumes:
       - .:/app
+      - ./data/dev:/data
+      - shared-data:/shared
     depends_on:
       - db
       - cache
+      - runserver
+    networks:
+      default:
+        aliases:
+          - web
 
 volumes:
   dbdata:
+  shared-data:

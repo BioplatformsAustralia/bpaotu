@@ -1,10 +1,7 @@
 import redis
 
 from django.conf import settings
-import logging
 
-
-logger = logging.getLogger('rainbow')
 redis_client = redis.StrictRedis(host=settings.REDIS_HOST, db=settings.REDIS_DB)
 
 

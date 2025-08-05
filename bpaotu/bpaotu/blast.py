@@ -1,63 +1,115 @@
-import csv
-import io
-import logging
-import os.path
-import shutil
-import subprocess
-import json
-from contextlib import suppress
+from bpaotu.celery import app
 
-import zipstream
+import os.path
+import logging
+import shutil
+import json
+from time import time
+
 from django.conf import settings
 
-# maps
-import sys
-import matplotlib.pyplot as plt
-from mpl_toolkits.basemap import Basemap
+from .params import param_to_filters
+from .query import SampleQuery
+from .submission import Submission
+from .task_utils import find_task_id_for_submission
+from .util import format_sample_id
+
+import csv
+import io
+import subprocess
+import zipstream
+from contextlib import suppress
+
 import pandas as pd
 import numpy as np
-import matplotlib.colors as mcolors
 
-from . import views
-from .otu import OTU, SampleContext, SampleOTU
-from .query import SampleQuery
-from .util import format_sample_id
 
 logger = logging.getLogger('bpaotu')
 
+SHARED_DIR = "/shared/blast"
 
 class BlastWrapper:
     BLAST_COLUMNS = ['qlen', 'slen', 'length', 'pident', 'evalue', 'bitscore']
 
-    def __init__(self, cwd, submission_id, search_string, blast_params_string, query):
-        self._cwd = cwd
+    def __init__(self, submission_id, query, status, search_string, blast_params_string):
         self._submission_id = submission_id
+        self._status = status
         self._search_string = search_string
         blast_params = json.loads(blast_params_string)
         self._param_qcov_hsp_perc = blast_params['qcov_hsp_perc']
         self._param_perc_identity = blast_params['perc_identity']
-        self._params, _ = views.param_to_filters(query)
+        self._params, _ = param_to_filters(query)
+        self._submission_dir = os.path.join(SHARED_DIR, submission_id)
+
+
+    def _status_update(self, submission, text):
+        logger.info(f"Status: {text}")
+        submission.status = text
+        timestamps_ = json.loads(submission.timestamps)
+        timestamps_.append({ text: time() })
+        submission.timestamps = json.dumps(timestamps_)
+
+    def _in(self, filename):
+        "return path to filename within submission dir"
+        return os.path.join(self._submission_dir, filename)
+
+    def _run_cmd(self, args):
+        subprocess.run(args, check=True, cwd=self._submission_dir)
+
 
     def setup(self):
+        return self._setup()
+
+    def run(self):
+        return self._run()
+
+    def cancel(self):
+        return self._cancel()
+
+    def cleanup(self):
+        self._cleanup();
+
+
+    def _setup(self):
+        submission = Submission(self._submission_id)
+        submission.timestamps = json.dumps([])
+
+        self._status_update(submission, 'init')
+        os.makedirs(self._submission_dir, exist_ok=True)
+        logger.info(f'Submission directory created: {self._submission_dir}')
+
         self._make_database()
         self._write_query()
 
-    def run(self):
+    def _run(self):
         self._execute_blast()
         return self._write_output()
 
-    def cleanup(self):
+    def _cancel(self):
+        submission = Submission(self._submission_id)
+
         try:
-            shutil.rmtree(self._cwd)
-        except Exception:
-            logger.exception('Error when cleaning up BLAST cwd: ({})'.format(self._cwd))
+            task_id = find_task_id_for_submission(self._submission_id)
+            if task_id:
+                app.control.revoke(task_id, terminate=True, signal='SIGKILL')
 
-    def _in(self, filename):
-        "return path to filename within cwd"
-        return os.path.join(self._cwd, filename)
+                self._status_update(submission, 'cancelled')
+                submission.cancelled = 'true'
+                return True
+        except Exception as e:
+            print('error', e)
+            logger.exception('Error in cancel sample comparison')
+            return False
 
-    def _run(self, args):
-        subprocess.run(args, check=True, cwd=self._cwd)
+        self._cleanup();
+
+    def _cleanup(self):
+        try:
+            shutil.rmtree(self._submission_dir)
+            logger.info(f"Submission directory removed: {self._submission_dir}")
+        except FileNotFoundError:
+            logger.info(f"Could not remove submission directory (FileNotFoundError): {self._submission_dir}")
+
 
     def _make_database(self):
         """
@@ -71,6 +123,9 @@ class BlastWrapper:
         instead of a huge array of otu_ids
         """
 
+        submission = Submission(self._submission_id)
+        self._status_update(submission, 'fetch')
+
         logger.info('Finding all needed otu ids')
         otu_ids = []
         with SampleQuery(self._params) as query:
@@ -79,6 +134,7 @@ class BlastWrapper:
         logger.info(f'Found all needed otu ids: {len(otu_ids)}')
 
         logger.info('Making db.fasta file')
+        self._status_update(submission, 'making_db_fasta')
         with open(self._in('db.fasta'), 'w') as fd:
             # write out the OTU database in FASTA format,
             # retain the otu id in the fasta id to use to get sample info later
@@ -92,7 +148,8 @@ class BlastWrapper:
         logger.info('Completed making db.fasta file')
 
         logger.info('Making blastdb')
-        self._run([
+        self._status_update(submission, 'makeblastdb')
+        self._run_cmd([
             'makeblastdb',
             '-in', 'db.fasta',
             '-dbtype', 'nucl',
@@ -106,6 +163,9 @@ class BlastWrapper:
         return result.stdout.strip() # use strip() to remove trailing \n
 
     def _write_query(self):
+        submission = Submission(self._submission_id)
+        self._status_update(submission, 'write_query')
+
         logger.info('Making query.fasta query file')
         with open(self._in('query.fasta'), 'w') as fd:
             fd.write('>user_provided_search_string\n{}\n'.format(self._search_string))
@@ -126,9 +186,12 @@ class BlastWrapper:
         ]
 
     def _execute_blast(self):
+        submission = Submission(self._submission_id)
+        self._status_update(submission, 'execute_blast')
+
         logger.info('Executing blast command')
         # logger.info(self._blast_command())
-        self._run(self._blast_command())
+        self._run_cmd(self._blast_command())
         logger.info('Finished executing blast command')
 
     def _blast_results(self):
@@ -188,25 +251,35 @@ class BlastWrapper:
         logger.info('Finished adding sample data to blast results')
 
     def _write_output(self):
+        submission = Submission(self._submission_id)
+        self._status_update(submission, 'write_output_raw')
+
         zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
         zf.writestr('info.txt', self._info_text(self._params))
         zf.write_iter('blast_results_raw.csv', self._rewritten_blast_result_rows_raw())
 
         # add sample data to raw results
+        self._status_update(submission, 'write_output_sample')
+
         blast_sample_results_file = self._in('blast_results_sample.csv')
         self._rewritten_blast_result_rows_sample(blast_sample_results_file)
         zf.write_iter('blast_results_sample.csv', self._file_chunk_generator(blast_sample_results_file))
 
-        # add map if there are results
+        # determine if any results
         row_count = self._file_count_rows(blast_sample_results_file)
+
+        # add map if there are results
         image_contents = None
         if row_count > 0:
+            self._status_update(submission, 'write_output_map')
             blast_results_map_file = self._produce_map(blast_sample_results_file)
             zf.write_iter('blast_results_sample_map.png', self._file_chunk_generator(blast_results_map_file))
 
             # read the image file contents and return in response
             with open(blast_results_map_file, 'rb') as image_file:
                 image_contents = image_file.read()
+
+        self._status_update(submission, 'write_output_compress')
 
         with suppress(FileExistsError, PermissionError):
             os.mkdir(settings.BLAST_RESULTS_PATH)
@@ -217,10 +290,16 @@ class BlastWrapper:
             for chunk in zf:
                 fd.write(chunk)
 
-        return fname, image_contents
+        self._status_update(submission, 'complete')
+
+        return fname, image_contents, row_count
 
     def _produce_map(self, blast_sample_results_file):
         # based on github.com/AusMicrobiome/Maps
+
+        import matplotlib.pyplot as plt
+        from mpl_toolkits.basemap import Basemap
+        import matplotlib.colors as mcolors
 
         logger.info('Creating map of blast results')
         df = pd.read_csv(blast_sample_results_file, usecols=['latitude', 'longitude', 'pident'])

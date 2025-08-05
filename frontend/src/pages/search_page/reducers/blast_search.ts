@@ -1,7 +1,7 @@
 import { filter, get as _get, includes, isNumber, join, last, reject, upperCase } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
 
-import { executeBlast, getBlastSubmission } from 'api'
+import { executeBlast, executeCancelBlast, getBlastSubmission } from 'api'
 import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 
 import { describeSearch } from './search'
@@ -13,6 +13,8 @@ export const RUN_BLAST_STARTED = 'RUN_BLAST_STARTED'
 export const RUN_BLAST_ENDED = 'RUN_BLAST_ENDED'
 export const BLAST_SUBMISSION_UPDATE_STARTED = 'BLAST_SUBMISSION_UPDATE_STARTED'
 export const BLAST_SUBMISSION_UPDATE_ENDED = 'BLAST_SUBMISSION_UPDATE_ENDED'
+export const CANCEL_BLAST_STARTED = 'CANCEL_BLAST_STARTED'
+export const CANCEL_BLAST_ENDED = 'CANCEL_BLAST_ENDED'
 export const CLEAR_BLAST_ALERT = 'CLEAR_BLAST_ALERT'
 
 const BLAST_SUBMISSION_POLL_FREQUENCY_MS = 5000
@@ -23,9 +25,10 @@ export const {
 
   runBlastStarted,
   runBlastEnded,
-
   blastSubmissionUpdateStarted,
   blastSubmissionUpdateEnded,
+  cancelBlastStarted,
+  cancelBlastEnded,
 
   clearBlastAlert,
 } = createActions(
@@ -34,14 +37,16 @@ export const {
 
   RUN_BLAST_STARTED,
   RUN_BLAST_ENDED,
-
   BLAST_SUBMISSION_UPDATE_STARTED,
   BLAST_SUBMISSION_UPDATE_ENDED,
+  CANCEL_BLAST_STARTED,
+  CANCEL_BLAST_ENDED,
 
   CLEAR_BLAST_ALERT
 )
 
 const blastInitialState = {
+  status: 'init',
   sequenceValue: '',
   blastParams: {
     qcov_hsp_perc: '60',
@@ -49,6 +54,7 @@ const blastInitialState = {
   },
   alerts: [],
   imageSrc: '',
+  resultUrl: '',
   isSubmitting: false,
   isFinished: false,
   submissions: [],
@@ -77,6 +83,29 @@ export const runBlast = () => (dispatch, getState) => {
     })
 }
 
+export const cancelBlast = () => (dispatch, getState) => {
+  const state = getState()
+
+  dispatch(cancelBlastStarted())
+
+  // get the most recently added submissionId
+  // (repeated calls to runBlast add a new submissionId)
+  const { submissions } = state.searchPage.blastSearch
+  const submissionId = submissions[submissions.length - 1].submissionId
+
+  executeCancelBlast(submissionId)
+    .then((data) => {
+      if (_get(data, 'data.errors', []).length > 0) {
+        dispatch(cancelBlastEnded(new ErrorList(data.data.errors)))
+        return
+      }
+      dispatch(cancelBlastEnded(data))
+    })
+    .catch((error) => {
+      dispatch(cancelBlastEnded(new ErrorList('Unhandled server-side error!')))
+    })
+}
+
 export const autoUpdateBlastSubmission = () => (dispatch, getState) => {
   const getLastSubmission: () => BlastSubmission = () =>
     last(getState().searchPage.blastSearch.submissions)
@@ -84,8 +113,18 @@ export const autoUpdateBlastSubmission = () => (dispatch, getState) => {
   getBlastSubmission(lastSubmission.submissionId)
     .then((data) => {
       dispatch(blastSubmissionUpdateEnded(data))
-      const newLastSubmission = getLastSubmission()
-      if (!newLastSubmission.finished) {
+
+      // previous way was this:
+      // const newLastSubmission = getLastSubmission()
+      // const continuePoll = !newLastSubmission.finished
+      //
+      // however, we need to check the state immediately to prevent another API call
+      // because newLastSubmission.finished will lag due to race condition
+      const { state } = data.data.submission
+      const stopPoll = state === 'complete' || state === 'cancelled' || state === 'error'
+      const continuePoll = !stopPoll
+
+      if (continuePoll) {
         setTimeout(() => dispatch(autoUpdateBlastSubmission()), BLAST_SUBMISSION_POLL_FREQUENCY_MS)
       }
     })
@@ -122,6 +161,7 @@ export default handleActions(
       isSubmitting: true,
       isFinished: false,
       imageSrc: '',
+      status: 'init',
     }),
     [runBlastEnded as any]: {
       next: (state, action: any) => {
@@ -147,10 +187,13 @@ export default handleActions(
         isFinished: false,
         alerts: [BLAST_ALERT_ERROR],
         imageSrc: '',
+        status: 'error',
       }),
     },
     [blastSubmissionUpdateEnded as any]: {
       next: (state, action: any) => {
+        const actionSubmission = action.payload.data.submission
+        const actionSubmissionState = actionSubmission.state
         const lastSubmission = last(state.submissions)
         const newLastSubmissionState = ((submission) => {
           const { state: status, error } = action.payload.data.submission
@@ -165,35 +208,43 @@ export default handleActions(
           return newState
         })(lastSubmission)
 
+        let isSubmitting: any = state.isSubmitting
+        let isFinished: any = false
+        let resultUrl: any = blastInitialState.resultUrl
+        let imageSrc: any = blastInitialState.imageSrc
         let newAlerts: any = state.alerts
-        let imageSrc: any
-        if (newLastSubmissionState['finished'] && !lastSubmission['finished']) {
-          const resultUrl = action.payload.data.submission.result_url
-          const BLAST_ALERT_SUCCESS = alert(
-            'BLAST search executed successfully. ' +
-              `Click <a target="_blank" href="${resultUrl}" className="alert-link">` +
-              'here</a> to download the results.',
-            'success'
-          )
+
+        // if (action.payload.data.submission.result_url) {
+        //   isSubmitting = false
+        //   isFinished = true
+        // }
+
+        if (actionSubmissionState === 'complete') {
+          isSubmitting = false
+          isFinished = true
+          resultUrl = action.payload.data.submission.result_url
+          const resultImg64 = action.payload.data.submission.image_contents
+          if (resultImg64) {
+            imageSrc = `data:image/png;base64,${resultImg64}`
+          }
+
+          const hasResults = action.payload.data.submission.row_count > 0
+
+          let alertContent = 'BLAST search executed successfully. '
+
+          if (hasResults) {
+            alertContent =
+              alertContent +
+              `Click <a target="_blank" href="${resultUrl}" className="alert-link">here</a> to download the results.`
+          } else {
+            alertContent = alertContent + 'No results were found for the given sequence.'
+          }
+
+          const BLAST_ALERT_SUCCESS = alert(alertContent, 'success')
           newAlerts = reject([state.alerts, BLAST_ALERT_IN_PROGRESS])
           newAlerts.push(
             newLastSubmissionState['succeeded'] ? BLAST_ALERT_SUCCESS : BLAST_ALERT_ERROR
           )
-
-          const resultImg64 = action.payload.data.submission.image_contents
-          if (resultImg64) {
-            const imageUrl = `data:image/png;base64,${resultImg64}`
-            imageSrc = imageUrl
-          } else {
-            imageSrc = null
-          }
-        }
-
-        let isSubmitted: any = state.isSubmitting
-        let isFinished: any = false
-        if (action.payload.data.submission.result_url) {
-          isSubmitted = false
-          isFinished = true
         }
 
         return {
@@ -204,9 +255,12 @@ export default handleActions(
             (_) => newLastSubmissionState
           ),
           alerts: newAlerts,
-          imageSrc: imageSrc,
-          isSubmitting: isSubmitted,
+          isSubmitting: isSubmitting,
           isFinished: isFinished,
+          isCancelled: !!actionSubmission.cancelled,
+          status: actionSubmissionState,
+          imageSrc: imageSrc,
+          resultUrl: resultUrl,
         }
       },
       throw: (state, action) => {
@@ -228,6 +282,18 @@ export default handleActions(
         }
       },
     },
+    [cancelBlastStarted as any]: (state, action: any) => ({
+      ...state,
+      isSubmitting: false,
+      isFinished: false,
+      status: 'cancelling',
+    }),
+    [cancelBlastEnded as any]: (state, action: any) => ({
+      ...state,
+      isSubmitting: false,
+      isFinished: true,
+      status: 'cancelled',
+    }),
     [clearBlastAlert as any]: (state, action) => {
       const index = action.payload
       const alerts = isNumber(index)

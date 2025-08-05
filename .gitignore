@@ -1,6 +1,6 @@
 syntax:glob
 .#*
-*.log
+*.log*
 *.swp
 *.swo
 *.egg-info/
@@ -36,3 +36,4 @@ temp/
 backup_*/
 dbdata_*/
 krona/
+celerybeat-schedule.*

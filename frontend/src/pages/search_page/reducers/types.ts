@@ -75,6 +75,7 @@ export interface PageState {
     isOpen: boolean
     isLoading: boolean
     isFinished: boolean
+    isCancelled: boolean
     selectedMethod: string
     selectedFilter: string
     selectedFilterExtra: string
@@ -82,6 +83,11 @@ export interface PageState {
     alerts: any[]
     errors: any[]
     submissions: any[]
+    umapParams: {
+      min_dist: number
+      n_neighbors: number
+      spread: number
+    }
     results: {
       abundanceMatrix: any
       contextual: any
@@ -190,6 +196,7 @@ export const searchPageInitialState: PageState = {
     isOpen: false,
     isLoading: false,
     isFinished: false,
+    isCancelled: false,
     selectedMethod: 'braycurtis',
     selectedFilter: '',
     selectedFilterExtra: 'year',
@@ -197,6 +204,11 @@ export const searchPageInitialState: PageState = {
     alerts: [],
     errors: [],
     submissions: [],
+    umapParams: {
+      min_dist: 0.1,
+      n_neighbors: 15,
+      spread: 1.0,
+    },
     results: { abundanceMatrix: {}, contextual: {} },
     plotData: { jaccard: [], braycurtis: [] },
     mem_usage: { mem: '', swap: '', cpu: '' },

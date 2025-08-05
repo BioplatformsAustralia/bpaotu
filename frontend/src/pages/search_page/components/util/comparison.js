@@ -60,20 +60,22 @@ export const filterOptionsSubset = (contextual, contextualFilters) => {
     .filter((x) => x != null)
 }
 
+const noValueMarkerSize = 5
+const noValueMarkerColour = '#aaa'
+const noValueName = '(none)'
+
 // data will be an array of length 1
 // but the size for each of the points will be different
 export const processContinuous = (data, selectedFilter) => {
   const propsToKeep = ['x', 'y', 'xj', 'yj', 'text']
   const transformedObject = {}
+  const dataToLoop = data
 
-  var dataToLoop
   var propsToLoop
 
   if (selectedFilter === '') {
-    dataToLoop = data
     propsToLoop = propsToKeep
   } else {
-    dataToLoop = data.filter((x) => x[selectedFilter] != null)
     propsToLoop = [...propsToKeep, selectedFilter]
   }
 
@@ -107,18 +109,34 @@ export const processContinuous = (data, selectedFilter) => {
     const size = transformedObject[selectedFilter]
     const maxDataValue = Math.max(...size)
     const minDataValue = Math.min(...size)
+
     const scaledSizes = size.map((value) => {
-      const scaledValue = (value - minDataValue) / (maxDataValue - minDataValue)
-      return (
-        scaledValue * (desiredMaximumMarkerSize - desiredMinimumMarkerSize) +
-        desiredMinimumMarkerSize
-      )
+      if (value) {
+        // scale size of marker to value
+        const scaledValue = (value - minDataValue) / (maxDataValue - minDataValue)
+        return (
+          scaledValue * (desiredMaximumMarkerSize - desiredMinimumMarkerSize) +
+          desiredMinimumMarkerSize
+        )
+      } else {
+        // no value, so show tiny dot
+        return noValueMarkerSize
+      }
+    })
+
+    const markerColours = size.map((value) => {
+      if (value) {
+        return '#1f77b4' // muted blue (default colour)
+      } else {
+        return noValueMarkerColour
+      }
     })
 
     plotDataContinuous[0]['marker'] = {
       size: scaledSizes,
       sizemode: 'area',
       sizeref: 0.5,
+      color: markerColours,
     }
   }
 
@@ -197,7 +215,7 @@ export const processDiscrete = (
   const iteratee = isDate ? selectedDateFilterFunction : selectedFilter
 
   const plotDataGrouped = groupBy(data, iteratee)
-  const groupValues = Object.keys(plotDataGrouped).filter((x) => x !== 'null')
+  const groupValues = Object.keys(plotDataGrouped)
 
   function makeColourScale(schemeName, numColours) {
     const categoricalSchemes = {
@@ -298,12 +316,23 @@ export const processDiscrete = (
       // i.e. will be plotted as a discrete field with no categories
     }
 
-    const groupObject = {
-      ...transformedKeyData,
-      name: name,
-      type: 'scatter',
-      mode: 'markers',
-      marker: { size: markerSize },
+    let groupObject
+    if (key === 'null') {
+      groupObject = {
+        ...transformedKeyData,
+        name: noValueName,
+        type: 'scatter',
+        mode: 'markers',
+        marker: { size: noValueMarkerSize },
+      }
+    } else {
+      groupObject = {
+        ...transformedKeyData,
+        name: name,
+        type: 'scatter',
+        mode: 'markers',
+        marker: { size: markerSize },
+      }
     }
 
     if (isDate) {
@@ -330,7 +359,11 @@ export const processDiscrete = (
     }
 
     if (isDiscrete) {
-      groupObject.marker.color = colourScale[index]
+      if (groupObject.name === noValueName) {
+        groupObject.marker.color = noValueMarkerColour
+      } else {
+        groupObject.marker.color = colourScale[index]
+      }
     }
 
     return groupObject

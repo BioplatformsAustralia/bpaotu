@@ -1,5 +1,9 @@
 FROM bioplatformsaustralia/bpaotu
-MAINTAINER https://github.com/bioplatformsaustralia/bpaotu
+LABEL maintainer=https://github.com/bioplatformsaustralia/bpaotu
+
+# For dev we use root so we can shell in and do evil things
+USER root
+WORKDIR /app
 
 # Project specific deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -18,16 +22,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Runtime args, don't re-use build time args
-ENV PRODUCTION 0
-ENV DEBUG 1
+ENV PRODUCTION=0
+ENV DEBUG=1
 
 # Strictly speaking not needed as we mount over the top
 # However let's make it explicit that we don't want /app from the build image
 RUN rm -rf /app && mkdir -p /app
-
-# For dev we use root so we can shell in and do evil things
-USER root
-WORKDIR /app
 
 RUN env | sort
 
@@ -43,11 +43,7 @@ COPY ./requirements/biom-requirements.txt /app/bpaotu/
 RUN pip install --upgrade -r bpaotu/biom-requirements.txt
 
 # Install KronaTools
-RUN git clone https://github.com/marbl/Krona.git /opt/Krona && \
-  cd /opt/Krona && \
-  git checkout v2.8.1 && \
-  cd /opt/Krona/KronaTools && \
-  ./install.pl
+## done locally; see README.md
 
 # Copy code and install the app
 COPY . /app
@@ -56,7 +52,7 @@ RUN pip ${PIP_OPTS} install --upgrade -e bpaotu
 EXPOSE 8000 9000 9001 9100 9101
 VOLUME ["/app", "/data"]
 
-ENV HOME /data
+ENV HOME=/data
 WORKDIR /data
 
 # entrypoint shell script that by default starts runserver

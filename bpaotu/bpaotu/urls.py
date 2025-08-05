@@ -21,7 +21,6 @@ urlpatterns = [
     url(r'^private/api/v1/taxonomy-search$', views.taxonomy_search, name="taxonomy_search"),
     url(r'^private/api/v1/search$', views.otu_search, name="otu_search"),
     url(r'^private/api/v1/search-sample-sites$', views.otu_search_sample_sites, name="otu_search_sample_sites"),
-    url(r'^private/api/v1/search-sample-sites-comparison$', views.otu_search_sample_sites_comparison, name="otu_search_sample_sites_comparison"),
     url(r'^private/api/v1/search-blast-otus$', views.otu_search_blast_otus, name="otu_search_blast_otus"),
     url(r'^private/api/v1/submit_to_galaxy$', views.submit_to_galaxy, name="submit_to_galaxy"),
     url(
@@ -30,6 +29,7 @@ urlpatterns = [
         name="execute_workflow_on_galaxy"),
     url(r'^private/api/v1/galaxy_submission$', views.galaxy_submission, name="galaxy_submission"),
     url(r'^private/api/v1/submit_blast$', views.submit_blast, name="submit_blast"),
+    url(r'^private/api/v1/cancel_blast$', views.cancel_blast, name="cancel_blast"),
     url(r'^private/api/v1/blast_submission$', views.blast_submission, name="blast_submission"),
     url(r'^private/api/v1/submit_comparison$', views.submit_comparison, name="submit_comparison"),
     url(r'^private/api/v1/cancel_comparison$', views.cancel_comparison, name="cancel_comparison"),

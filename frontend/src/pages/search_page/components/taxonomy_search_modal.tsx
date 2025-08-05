@@ -25,6 +25,7 @@ import {
   runTaxonomySearch,
   closeTaxonomySearchModal,
 } from '../reducers/taxonomy_search_modal'
+import AmpliconFilter from './amplicon_filter'
 
 const LowerRankList = ({ list }) => {
   const [show, setShow] = useState(false)
@@ -371,7 +372,16 @@ const TaxonomySearchModal = (props) => {
         </Row>
         <Row style={{ margin: 4 }}>
           <Col>
-            <p>Amplicon: {amplicon.text}</p>
+            <div
+              style={{ display: 'flex', width: '400px', alignItems: 'center', marginBottom: '8px' }}
+            >
+              <div style={{ width: '100px' }}>
+                <strong>Amplicon:</strong>
+              </div>
+              <div style={{ width: '300px' }}>
+                <AmpliconFilter selectBoxOnly={true} keepExistingValue={true} />
+              </div>
+            </div>
           </Col>
         </Row>
         <Row style={{ margin: 1 }}>

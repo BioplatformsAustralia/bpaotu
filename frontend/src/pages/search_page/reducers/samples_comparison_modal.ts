@@ -17,12 +17,15 @@ export const {
   samplesComparisonModalSetSelectedFilter,
   samplesComparisonModalSetSelectedFilterExtra,
 
+  handleUmapParameters,
+
   runComparisonStarted,
   runComparisonEnded,
   comparisonSubmissionUpdateStarted,
   comparisonSubmissionUpdateEnded,
   cancelComparisonStarted,
   cancelComparisonEnded,
+
   clearComparisonAlert,
 
   samplesComparisonModalClearPlotData,
@@ -34,12 +37,15 @@ export const {
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER_EXTRA',
 
+  'HANDLE_UMAP_PARAMETERS',
+
   'RUN_COMPARISON_STARTED',
   'RUN_COMPARISON_ENDED',
   'COMPARISON_SUBMISSION_UPDATE_STARTED',
   'COMPARISON_SUBMISSION_UPDATE_ENDED',
   'CANCEL_COMPARISON_STARTED',
   'CANCEL_COMPARISON_ENDED',
+
   'CLEAR_COMPARISON_ALERT',
 
   'SAMPLES_COMPARISON_MODAL_CLEAR_PLOT_DATA'
@@ -63,14 +69,14 @@ export const clearPlotData = () => (dispatch, getState) => {
   dispatch(samplesComparisonModalClearPlotData())
 }
 
-export const runComparison = () => (dispatch, getState) => {
+export const runComparison = (umapParams) => (dispatch, getState) => {
   const state = getState()
 
   dispatch(runComparisonStarted())
 
   const filters = describeSearch(state)
 
-  executeComparison(filters)
+  executeComparison(filters, umapParams)
     .then((data) => {
       if (_get(data, 'data.errors', []).length > 0) {
         dispatch(runComparisonEnded(new ErrorList(...data.data.errors)))
@@ -138,7 +144,7 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
       }
     })
     .catch((error) => {
-      if (error.response.status === 504) {
+      if (error.response && error.response.status === 504) {
         // status: 504, statusText: "Gateway Time-out"
         dispatch(
           comparisonSubmissionUpdateEnded(
@@ -179,6 +185,12 @@ export default handleActions(
       ...state,
       plotData: searchPageInitialState.samplesComparisonModal.plotData,
     }),
+    [handleUmapParameters as any]: (state, action: any) => {
+      return {
+        ...state,
+        umapParams: { ...state.umapParams, [action.payload.param]: action.payload.value },
+      }
+    },
     [runComparisonStarted as any]: (state, action: any) => ({
       ...state,
       isLoading: true,
@@ -209,7 +221,8 @@ export default handleActions(
     },
     [comparisonSubmissionUpdateEnded as any]: {
       next: (state, action: any) => {
-        const actionSubmissionState = action.payload.data.submission.state
+        const actionSubmission = action.payload.data.submission
+        const actionSubmissionState = actionSubmission.state
         const lastSubmission = last(state.submissions)
         const newLastSubmissionState = ((submission) => {
           const { state: status, error } = action.payload.data.submission
@@ -237,7 +250,7 @@ export default handleActions(
           const { abundanceMatrix, contextual } = results
           const sample_ids = abundanceMatrix.sample_ids
           const pointsBC = abundanceMatrix.points['braycurtis']
-          const pointsJ = abundanceMatrix.points['jaccard']
+          // const pointsJ = abundanceMatrix.points['jaccard']
 
           // apply a jitter so that points aren't put on the same place (makes graph misleading)
           // need to retain the original value to put in the tooltip though
@@ -253,16 +266,17 @@ export default handleActions(
                 ...contextual[s],
               }
             }),
-            jaccard: sample_ids.map((s, i) => {
-              return {
-                text: s,
-                x: pointsJ[i][0],
-                xj: pointsJ[i][0] + (Math.random() * 2 - 1) * jitterAmount,
-                y: pointsJ[i][1],
-                yj: pointsJ[i][1] + (Math.random() * 2 - 1) * jitterAmount,
-                ...contextual[s],
-              }
-            }),
+            jaccard: [],
+            // jaccard: sample_ids.map((s, i) => {
+            //   return {
+            //     text: s,
+            //     x: pointsJ[i][0],
+            //     xj: pointsJ[i][0] + (Math.random() * 2 - 1) * jitterAmount,
+            //     y: pointsJ[i][1],
+            //     yj: pointsJ[i][1] + (Math.random() * 2 - 1) * jitterAmount,
+            //     ...contextual[s],
+            //   }
+            // }),
           }
         }
 
@@ -284,6 +298,7 @@ export default handleActions(
           ),
           isLoading: isLoading,
           isFinished: isFinished,
+          isCancelled: !!actionSubmission.cancelled,
           mem_usage: action.payload.data.mem_usage,
           timestamps: action.payload.data.submission.timestamps,
           errors: errors,

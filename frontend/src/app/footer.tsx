@@ -43,6 +43,15 @@ const Footer = () => {
             />
           </a>
         </span>
+        <span>
+          <a href="https://www.australianmicrobiome.com/">
+            <img
+              className="footer-logos"
+              src={logoPNG('Australian-Microbiome-NEGTRANS.png')}
+              alt="Australian Microbiome"
+            />
+          </a>
+        </span>
         <span style={{ paddingLeft: 30 }}>
           <a href="https://www.education.gov.au/national-collaborative-research-infrastructure-strategy-ncris">
             <img

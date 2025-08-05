@@ -14,7 +14,7 @@ from .query import (
 from .util import val_or_empty, make_timestamp, empty_to_none
 from .otu import SampleContext, Taxonomy, taxonomy_keys
 
-logger = logging.getLogger('rainbow')
+logger = logging.getLogger('bpaotu')
 
 
 def generate_biom_file(query, comment):

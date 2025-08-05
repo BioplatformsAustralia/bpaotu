@@ -31,14 +31,18 @@ const AmpliconFilter = (props) => {
   }
 
   useEffect(() => {
-    calculateDefaultAmplicon()
-  }, [props.options, props.metagenomeMode])
+    if (!props.keepExistingValue) {
+      calculateDefaultAmplicon()
+    }
+  }, [props.options, props.metagenomeMode, props.keepExistingValue])
 
   useEffect(() => {
-    if (props.selected.value === '' && !props.metagenomeMode && defaultAmplicon) {
-      props.selectValue(defaultAmplicon.id)
+    if (!props.keepExistingValue) {
+      if (props.selected.value === '' && !props.metagenomeMode && defaultAmplicon) {
+        props.selectValue(defaultAmplicon.id)
+      }
     }
-  }, [props.selected.value, props.metagenomeMode, defaultAmplicon])
+  }, [props.selected.value, props.metagenomeMode, defaultAmplicon, props.keepExistingValue])
 
   return <DropDownFilter {...props} />
 }

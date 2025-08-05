@@ -9,6 +9,7 @@ import logging
 import os
 import re
 import time
+import uuid
 from collections import OrderedDict, defaultdict
 from functools import wraps
 from operator import itemgetter
@@ -32,7 +33,7 @@ from django.core.cache import caches
 
 from celery import current_app
 
-from . import tasks
+from . import tasks_minimal
 from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
@@ -40,6 +41,7 @@ from .importer import DataImporter
 from .krona import KronaPlot
 from .models import NonDenoisedDataRequest, MetagenomeRequest
 from .otu import (Environment, OTUAmplicon, SampleContext, TaxonomySource, format_taxonomy_name)
+from .params import clean_amplicon_filter, make_clean_taxonomy_filter, param_to_filters, selected_contextual_filters
 from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilterTermTime,
                     ContextualFilterTermFloat, ContextualFilterTermLongitude,
                     ContextualFilterTermOntology,
@@ -48,11 +50,10 @@ from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilter
                     TaxonomyFilter, TaxonomyOptions, get_sample_ids,
                     SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
-from .spatial import comparison_query, spatial_query
+from .spatial import spatial_query
+from .submission import Submission
 from .tabular import tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_time, parse_float, log_msg, mem_usage_obj
-
-from sklearn.manifold import MDS
 
 from .sample_run_id_dict import sample_run_id_dict
 
@@ -99,53 +100,6 @@ def make_environment_lookup():
         return dict(info.get_values(Environment))
 
 
-def int_if_not_already_none(v):
-    if v is None or v == '':
-        return None
-    v = str(v)  # let's not let anything odd through
-    return int(v)
-
-
-def get_operator_and_int_value(v):
-    if v is None or v == '':
-        return None
-    if v.get('value', '') == '':
-        return None
-    return OrderedDict((
-        ('operator', v.get('operator', 'is')),
-        ('value', int_if_not_already_none(v['value'])),
-    ))
-
-def get_operator_and_string_value(v):
-    if v is None or v == '':
-        return None
-    if v.get('value', '') == '':
-        return None
-    return OrderedDict((
-        ('operator', v.get('operator', 'is')),
-        ('value', v['value']),
-    ))
-
-
-clean_trait_filter = get_operator_and_string_value
-clean_amplicon_filter = get_operator_and_int_value
-clean_environment_filter = get_operator_and_int_value
-
-
-def make_clean_taxonomy_filter(amplicon_filter, state_vector, trait_filter):
-    """
-    take an amplicon filter and a taxonomy filter
-    # (a list of phylum, kingdom, ...) and clean it
-    """
-    assert(len(state_vector) == len(TaxonomyOptions.hierarchy))
-    return TaxonomyFilter(
-        clean_amplicon_filter(amplicon_filter),
-        list(map(
-            get_operator_and_int_value,
-            state_vector)),
-        clean_trait_filter(trait_filter))
-
-
 def normalise_blast_search_string(s):
     cleaned = s.strip().upper()
     used_chars = set(cleaned)
@@ -177,9 +131,9 @@ def api_config(request):
         'nondenoised_request_endpoint': reverse('nondenoised_request'),
         'krona_request_endpoint': reverse('krona_request'),
         'submit_blast_endpoint': reverse('submit_blast'),
+        'cancel_blast_endpoint': reverse('cancel_blast'),
         'blast_submission_endpoint': reverse('blast_submission'),
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
-        'search_sample_sites_comparison_endpoint': reverse('otu_search_sample_sites_comparison'),
         'submit_comparison_endpoint': reverse('submit_comparison'),
         'cancel_comparison_endpoint': reverse('cancel_comparison'),
         'comparison_submission_endpoint': reverse('comparison_submission'),
@@ -633,72 +587,6 @@ def _parse_contextual_term(filter_spec):
         raise ValueError("invalid filter term type: %s", typ)
 
 
-def param_to_filters(query_str, contextual_filtering=True):
-    """
-    take a JSON encoded query_str, validate, return any errors
-    and the filter instances
-    """
-
-    otu_query = json.loads(query_str)
-    taxonomy_filter = make_clean_taxonomy_filter(
-        otu_query['amplicon_filter'],
-        otu_query['taxonomy_filters'],
-        otu_query['trait_filter'])
-    context_spec = otu_query['contextual_filters']
-    sample_integrity_spec = otu_query['sample_integrity_warnings_filter']
-    contextual_filter = ContextualFilter(context_spec['mode'],
-                                         context_spec['environment'],
-                                         otu_query['metagenome_only'])
-    sample_integrity_warnings_filter = ContextualFilter(sample_integrity_spec['mode'],
-                                                        sample_integrity_spec['environment'],
-                                                        otu_query['metagenome_only'])
-
-    errors = []
-
-    if contextual_filtering:
-        for filter_spec in context_spec['filters']:
-            field_name = filter_spec['field']
-            if field_name not in SampleContext.__table__.columns:
-                errors.append("Please select a contextual data field to filter upon.")
-                continue
-
-            try:
-                contextual_filter.add_term(_parse_contextual_term(filter_spec))
-            except Exception:
-                errors.append("Invalid value provided for contextual field `%s'" % field_name)
-                logger.critical("Exception parsing field: `%s'", field_name, exc_info=True)
-
-    # process sample integrity separately
-    if contextual_filtering:
-        for filter_spec in sample_integrity_spec['filters']:
-            field_name = filter_spec['field']
-            if field_name not in SampleContext.__table__.columns:
-                errors.append("Please select a sample integrity warning data field to filter upon.")
-                continue
-
-            try:
-                sample_integrity_warnings_filter.add_term(_parse_contextual_term(filter_spec))
-            except Exception:
-                errors.append("Invalid value provided for sample integrity warning field `%s'" % field_name)
-                logger.critical("Exception parsing field: `%s'", field_name, exc_info=True)
-
-    return (OTUQueryParams(
-        contextual_filter=contextual_filter,
-        taxonomy_filter=taxonomy_filter,
-        sample_integrity_warnings_filter=sample_integrity_warnings_filter), errors)
-
-def selected_contextual_filters(query_str, contextual_filtering=True):
-    otu_query = json.loads(query_str)
-    context_spec = otu_query['contextual_filters']
-    contextual_filter = []
-
-    if contextual_filtering:
-        for filter_spec in context_spec['filters']:
-            field_name = filter_spec['field']
-            contextual_filter.append(field_name)
-
-    return contextual_filter
-
 
 @require_POST
 def required_table_headers(request):
@@ -820,30 +708,6 @@ def otu_search_sample_sites(request):
     track(request, 'otu_interactive_map_search', search_params_track_args(params))
 
     return JsonResponse({ 'data': data, 'sample_otus': sample_otus })
-
-
-@require_CKAN_auth
-@require_POST
-def otu_search_sample_sites_comparison(request):
-    try:
-        params, errors = param_to_filters(request.POST['otu_query'])
-        if errors:
-            raise OTUError(*errors)
-
-        submission_id = tasks.submit_sample_comparison(request.POST['otu_query'])
-
-        return JsonResponse({
-            'success': True,
-            'abundanceMatrix': [],
-            'contextual': {},
-            'submission_id': submission_id,
-        })
-    except OTUError as exc:
-        logger.exception('Error in submit to sample comparison')
-        return JsonResponse({
-            'success': False,
-            'errors': exc.errors,
-        })
 
 
 @require_CKAN_auth
@@ -1022,7 +886,7 @@ def do_on_galaxy(galaxy_action):
 def submit_to_galaxy(request, email):
     '''Submits the search results as a biom file into a new history in Galaxy.'''
     user_created = galaxy_ensure_user(email)
-    submission_id = tasks.submit_to_galaxy(email, request.POST['query'])
+    submission_id = tasks_minimal.submit_to_galaxy.delay(email, request.POST['query'])
     return submission_id, user_created
 
 
@@ -1032,7 +896,7 @@ def submit_to_galaxy(request, email):
 def execute_workflow_on_galaxy(request, email):
     user_created = galaxy_ensure_user(email)
     workflow_id = get_krona_workflow(email)
-    submission_id = tasks.execute_workflow_on_galaxy(email, request.POST['query'], workflow_id)
+    submission_id = tasks_minimal.execute_workflow_on_galaxy(email, request.POST['query'], workflow_id)
     return submission_id, user_created
 
 
@@ -1040,7 +904,7 @@ def execute_workflow_on_galaxy(request, email):
 @require_GET
 def galaxy_submission(request):
     submission_id = request.GET['submission_id']
-    submission = tasks.Submission(submission_id)
+    submission = Submission(submission_id)
 
     if not submission.history_id or not submission.file_id:
         state = 'pending'
@@ -1062,17 +926,16 @@ def galaxy_submission(request):
 @require_POST
 def submit_blast(request):
     try:
-        params, errors = param_to_filters(request.POST['query'])
+        query = request.POST['query']
+        params, errors = param_to_filters(query)
         if errors:
             raise OTUError(*errors)
 
         search_string = normalise_blast_search_string(request.POST['search_string'])
         blast_params_string = request.POST['blast_params']
 
-        submission_id = tasks.submit_blast(
-            search_string,
-            blast_params_string,
-            request.POST['query'])
+        submission_id = str(uuid.uuid4())
+        result = tasks_minimal.submit_blast.delay(submission_id, query, search_string, blast_params_string)
 
         track(request, 'otu_blast_search', { 'blast_params': json.loads(blast_params_string) })
 
@@ -1081,33 +944,86 @@ def submit_blast(request):
             'submission_id': submission_id,
         })
     except OTUError as exc:
-        logger.exception('Error in submit to Blast')
+        logger.exception('Error in submit BLAST')
+        logger.exception(exc)
         return JsonResponse({
             'success': False,
             'errors': exc.errors,
         })
 
+@require_CKAN_auth
+@require_POST
+def cancel_blast(request):
+    try:
+        body_unicode = request.body.decode('utf-8')
+        body_data = json.loads(body_unicode)
+        submission_id = body_data['submissionId']
+
+        result = tasks_minimal.cancel_blast(submission_id)
+
+        if result:
+            return JsonResponse({
+                'success': True,
+                'submission_id': submission_id,
+                'cancelled': True,
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'submission_id': submission_id,
+                'cancelled': False,
+            })
+    except OTUError as exc:
+        logger.exception('Error in cancel BLAST search')
+        logger.exception(exc)
+        return JsonResponse({
+            'success': False,
+            'cancelled': False,
+            'errors': exc.errors,
+        })
 
 @require_CKAN_auth
 @require_GET
 def blast_submission(request):
     submission_id = request.GET['submission_id']
-    submission = tasks.Submission(submission_id)
+    submission = Submission(submission_id)
+    state = submission.status
+    timestamps = timestamps_relative(json.loads(submission.timestamps))
 
-    if not submission.result_url:
-        state = 'pending'
-    else:
-        state = 'complete'
-
-    return JsonResponse({
+    response = {
         'success': True,
         'submission': {
             'id': submission_id,
+            'state': state,
+            'duration': None,
+            'timestamps': timestamps,
+            'row_count': submission.row_count,
             'result_url': submission.result_url,
             'image_contents': submission.image_contents,
-            'state': state,
         }
-    })
+    }
+
+    if state == 'complete':
+        try:
+            duration = timestamps_duration(timestamps)
+            response['submission']['duration'] = duration
+            logger.info(f"duration: {duration}")
+            logger.info(f"timestamps: {timestamps}")
+        except Exception as e:
+            logger.warning("Could not calculate duration of BLAST search; %s" % getattr(e, 'message', repr(e)))
+
+        tasks_minimal.cleanup_blast(submission_id)
+
+    elif state == 'error':
+        response['submission']['error'] = submission.error
+        tasks_minimal.cleanup_blast(submission_id)
+
+    else:
+        # still ongoing
+        pass
+
+    return JsonResponse(response)
+
 
 @require_CKAN_auth
 @require_POST
@@ -1117,7 +1033,14 @@ def submit_comparison(request):
         if errors:
             raise OTUError(*errors)
 
-        submission_id = tasks.submit_sample_comparison(request.POST['query'])
+        # we pass the query and not the params to avoid serialising the params to json
+        query = request.POST.get('query')
+        umap_params_string = request.POST.get('umap_params', "{}")
+
+        # because the initial submit task call has to be with delay we need to create the Submission id here
+        # the submit task will create the Submission in cache and start the rest of the task
+        submission_id = str(uuid.uuid4())
+        result = tasks_minimal.submit_sample_comparison.delay(submission_id, query, umap_params_string)
 
         track(request, 'otu_sample_comparison', search_params_track_args(params))
 
@@ -1127,6 +1050,7 @@ def submit_comparison(request):
         })
     except OTUError as exc:
         logger.exception('Error in submit to sample comparison')
+        logger.exception(exc)
         return JsonResponse({
             'success': False,
             'errors': [str(t) for t in exc.errors],
@@ -1140,7 +1064,7 @@ def cancel_comparison(request):
         body_data = json.loads(body_unicode)
         submission_id = body_data['submissionId']
 
-        result = tasks.cancel_sample_comparison(submission_id)
+        result = tasks_minimal.cancel_sample_comparison(submission_id)
 
         if result:
             return JsonResponse({
@@ -1156,6 +1080,7 @@ def cancel_comparison(request):
             })
     except OTUError as exc:
         logger.exception('Error in cancel sample comparison')
+        logger.exception(exc)
         return JsonResponse({
             'success': False,
             'cancelled': False,
@@ -1166,54 +1091,75 @@ def cancel_comparison(request):
 @require_GET
 def comparison_submission(request):
     submission_id = request.GET['submission_id']
-    submission = tasks.Submission(submission_id)
+    submission = Submission(submission_id)
     state = submission.status
+    timestamps = timestamps_relative(json.loads(submission.timestamps))
 
-    # TODO: is there at all a possibility that this is checked in between tasks?!?
     # look for an active task with the submission_id in the task args
     active_tasks = get_active_celery_tasks()
     task_found = any(submission_id in task["args"] for task in active_tasks)
 
-    timestamps_ = submission.timestamps or json.dumps([])
-    timestamps = json.loads(timestamps_)
-
     results = { 'abundanceMatrix': {}, 'contextual': {} }
-    if state == 'complete':
-        results = json.loads(submission.results)
-
-    response_data = {
+    response = {
         'success': True,
         'mem_usage': mem_usage_obj(),
         'submission': {
             'id': submission_id,
             'state': state,
+            'duration': None,
             'results': results,
             'timestamps': timestamps,
             'task_found': task_found,
         }
     }
 
+    # testing to see if both get set
+    # this is set in the cancel() method
+    if submission.cancelled:
+        response['submission']["cancelled"] = True
+        logger.info("***** submission.cancelled")
+
+    if state == 'cancelled':
+        logger.info("***** state == cancelled")
+
+
     if state == 'complete':
         try:
-            duration = timestamps[-1]['complete'] - timestamps[0]['init']
-            response_data['submission']['duration'] = round(duration, 2)
+            duration = timestamps_duration(timestamps)
+            response['submission']['duration'] = duration
+
+            logger.info(f"duration: {duration}")
+            logger.info(f"timestamps: {timestamps}")
         except Exception as e:
             logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
 
+        try:
+            results_files = json.loads(submission.results_files)
+            results = {
+                'abundanceMatrix': json.load(open(results_files['abundance_matrix_file'])),
+                'contextual': json.load(open(results_files['contextual_file'])),
+            }
+            response['submission']['results'] = results
+        except Exception as e:
+            logger.error(f"Could not load result files for submission {submission_id}: {e}")
+
+        tasks_minimal.cleanup_comparison(submission_id)
+
     elif state == 'error':
-        response_data['submission']['error'] = submission.error
+        response['submission']['error'] = submission.error
+        tasks_minimal.cleanup_comparison(submission_id)
 
     elif not task_found:
-        response_data['submission']['state'] = 'error'
-        response_data['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
-        tasks.cleanup_comparison(submission_id)
+        response['submission']['state'] = 'error'
+        response['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
+        tasks_minimal.cleanup_comparison(submission_id)
 
     else:
         # still ongoing
         pass
 
 
-    return JsonResponse(response_data)
+    return JsonResponse(response)
 
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
@@ -1431,7 +1377,12 @@ def site_image_thumbnail(request, package_id, resource_id):
     '''
 
     buf, content_type = fetch_image(package_id, resource_id)
-    return HttpResponse(buf.getvalue(), content_type=content_type)
+
+    if buf == None:
+        # not ideal, but detecting a non image will require a bit more changes
+        return HttpResponse('')
+    else:
+        return HttpResponse(buf.getvalue(), content_type=content_type)
 
 @require_CKAN_auth
 @require_POST
@@ -1500,10 +1451,42 @@ def metagenome_request(request):
         logger.critical("Error in metagenome_request", exc_info=True)
         return HttpResponseServerError(str(e), content_type="text/plain")
 
+
+def timestamps_relative(timestamps):
+    """
+    Calculate timestamps relative to the init timestamp
+    """
+
+    if not timestamps or not isinstance(timestamps, list):
+        # Input must be a non-empty list of dictionaries, just return as is
+        return timestamps
+    
+    init_time = None
+    for item in timestamps:
+        if 'init' in item:
+            init_time = item['init']
+            break
+
+    if init_time is None:
+        # Missing 'init' timestamp, just return as is
+        return timestamps
+
+    relative = []
+    for entry in timestamps:
+        for key, value in entry.items():
+            relative.append({key: value - init_time})
+
+    return relative
+
+def timestamps_duration(timestamps):
+    duration = timestamps[-1]['complete'] - timestamps[0]['init']
+    return round(duration, 2)
+
 def get_active_celery_tasks():
     inspector = current_app.control.inspect()
     active_tasks = inspector.active()
     return [task for tasks in active_tasks.values() for task in tasks]
+
 
 def track(request, event, args=None):
     """Tracks an event in Mixpanel if enabled."""

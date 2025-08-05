@@ -13,7 +13,7 @@ from PIL import Image
 from django.http import HttpResponseForbidden
 
 import logging
-logger = logging.getLogger("rainbow")
+logger = logging.getLogger("bpaotu")
 
 
 THUMBNAIL_SIZE = 480
@@ -88,7 +88,7 @@ def resize_image(content):
         # Resizing an image while maintaining aspect ratio:
         # https://stackoverflow.com/questions/24745857/python-pillow-how-to-scale-an-image/24745969
         maxsize = (THUMBNAIL_SIZE, THUMBNAIL_SIZE)
-        img_obj.thumbnail(maxsize, Image.ANTIALIAS)
+        img_obj.thumbnail(maxsize, Image.Resampling.LANCZOS)
         # Needed fix for some cases with Alpha channel
         img_obj = img_obj.convert('RGB')
 
@@ -117,6 +117,9 @@ def fetch_image(package_id, resource_id):
             raise HttpResponseForbidden()
         img_url = resource['url']
         content_type, _ = mimetypes.guess_type(img_url)
+        if content_type == None:
+            return (None, content_type)
+
         r = requests.get(img_url, headers={'Authorization': settings.CKAN_SERVER['api_key']})
         img_data = resize_image(r.content)
     except Exception as e:

@@ -6,6 +6,7 @@ import {
   Button,
   Container,
   Col,
+  Input,
   Row,
   Modal,
   ModalBody,
@@ -26,6 +27,7 @@ import AnimateHelix from 'components/animate_helix'
 import {
   clearPlotData,
   closeSamplesComparisonModal,
+  handleUmapParameters,
   runComparison,
   cancelComparison,
   setSelectedMethod,
@@ -43,10 +45,68 @@ const comparisonStatusMapping = {
   fetched_to_df: 'Loading samples into dataframe',
   sort: 'Sorting samples',
   pivot: 'Pivoting data',
-  calc_distances_bc: 'Calculating distance matrices (Bray-Curtis)',
-  calc_distances_j: 'Calculating distance matrices (Jaccard)',
-  calc_mds_bc: 'Calculating MDS points (Bray-Curtis)',
-  calc_mds_j: 'Calculating MDS points (Jaccard)',
+  // single-threaded:
+  calc_distances_bc: 'Calculating distance matrix (Bray-Curtis)',
+  calc_distances_j: 'Calculating distance matrix (Jaccard)',
+  calc_umap_bc: 'Calculating umap points (Bray-Curtis)',
+  calc_umap_j: 'Calculating umap points (Jaccard)',
+  // multi-threaded:
+  calc_distances_both_pending: (
+    <>
+      Calculating distance matrices
+      <br />
+      <small>(Bray-Curtis: pending, Jaccard: pending)</small>
+    </>
+  ),
+  calc_distances_braycurtis_done: (
+    <>
+      Calculating distance matrices
+      <br />
+      <small>(Bray-Curtis: done, Jaccard: pending)</small>
+    </>
+  ),
+  calc_distances_jacaard_done: (
+    <>
+      Calculating distance matrices
+      <br />
+      <small>(Bray-Curtis: pending, Jaccard: done)</small>
+    </>
+  ),
+  calc_distances_both_done: (
+    <>
+      Calculating distance matrices
+      <br />
+      <small>(Bray-Curtis: done, Jaccard: done)</small>
+    </>
+  ),
+  calc_umap_both_pending: (
+    <>
+      Calculating umap points
+      <br />
+      <small>(Bray-Curtis: pending, Jaccard: pending)</small>
+    </>
+  ),
+  calc_umap_braycurtis_done: (
+    <>
+      Calculating umap points
+      <br />
+      <small>(Bray-Curtis: done, Jaccard: pending)</small>
+    </>
+  ),
+  calc_umap_jacaard_done: (
+    <>
+      Calculating umap points
+      <br />
+      <small>(Bray-Curtis: pending, Jaccard: done)</small>
+    </>
+  ),
+  calc_umap_both_done: (
+    <>
+      Calculating umap points
+      <br />
+      <small>(Bray-Curtis: done, Jaccard: done)</small>
+    </>
+  ),
   contextual_start: 'Collating contextual data',
   complete: 'Complete',
 }
@@ -65,6 +125,8 @@ const LoadingSpinnerOverlay = ({ status }) => {
     zIndex: 99999,
   } as React.CSSProperties
 
+  const inner = comparisonStatusMapping[status] || <>Loading</>
+
   return (
     <div style={loadingstyle}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -79,7 +141,7 @@ const LoadingSpinnerOverlay = ({ status }) => {
             width: '100%',
           }}
         >
-          <>{comparisonStatusMapping[status] || 'Loading'}</>
+          {inner}
         </div>
       </div>
     </div>
@@ -128,6 +190,7 @@ const SamplesComparisonModal = (props) => {
   const {
     isOpen,
     isLoading,
+    isCancelled,
     runComparison,
     cancelComparison,
     closeSamplesComparisonModal,
@@ -138,6 +201,9 @@ const SamplesComparisonModal = (props) => {
     setSelectedMethod,
     setSelectedFilter,
     setSelectedFilterExtra,
+
+    umapParams,
+    handleUmapParameters,
 
     clearPlotData,
     contextual,
@@ -152,6 +218,7 @@ const SamplesComparisonModal = (props) => {
   // console.log('SamplesComparisonModal', 'comparisonStatus', comparisonStatus)
   // console.log('SamplesComparisonModal', 'contextual', contextual)
   // console.log('SamplesComparisonModal', 'plotData', plotData)
+  // console.log('SamplesComparisonModal', 'umapParams', umapParams)
   // console.log('SamplesComparisonModal', 'mem_usage', mem_usage)
   // console.log('SamplesComparisonModal', 'timestamps', timestamps)
 
@@ -197,17 +264,19 @@ const SamplesComparisonModal = (props) => {
   }, [isOpen])
 
   // Clear the plot if data is being refetched
-  // Update the plot if fetching has finished
+  // Also, clear selectedFilter in case new search does not have that filter in it
   useEffect(() => {
     if (isOpen) {
       if (isLoading) {
         clearPlotData()
+        setSelectedFilter('')
       }
     }
   }, [isOpen, isLoading, clearPlotData])
 
   const plotHasData = plotData[selectedMethod] && plotData[selectedMethod].length > 0
   const showExtraControls = plotHasData
+  const showStress = plotHasData
 
   // use jittered x, y values for plotting and original values for tooltip (using customdata)
   const plotDataTransformedTooltip = plotDataTransformed.map((z) => {
@@ -236,7 +305,12 @@ const SamplesComparisonModal = (props) => {
             point['value'] = z.name
           } else {
             // e.g. continuous
-            point['value'] = z[selectedFilter][i]
+            // point might not have value
+            if (z[selectedFilter][i]) {
+              point['value'] = z[selectedFilter][i]
+            } else {
+              point['value'] = '(none)'
+            }
           }
         }
 
@@ -265,14 +339,14 @@ const SamplesComparisonModal = (props) => {
           {isLoading ? (
             <Button onClick={cancelComparison}>Cancel</Button>
           ) : (
-            <Button onClick={runComparison} color="primary">
+            <Button onClick={() => runComparison(umapParams)} color="primary">
               Run Comparison
             </Button>
           )}
         </div>
       </ModalHeader>
       <ModalBody>
-        {isError && <ErrorOverlay errors={errors} />}
+        {isError && !isCancelled && <ErrorOverlay errors={errors} />}
         {isLoading && <LoadingSpinnerOverlay status={comparisonStatus} />}
         {/* controls layout is 2 rows, each in their own container, divided into 12 parts (set by xs prop) */}
         <Container>
@@ -287,7 +361,7 @@ const SamplesComparisonModal = (props) => {
                 }}
               >
                 <option value="braycurtis">Bray-Curtis</option>
-                <option value="jaccard">Jaccard</option>
+                {/*<option value="jaccard">Jaccard</option>*/}
               </select>
             </Col>
             <Col xs="3">&nbsp;</Col>
@@ -346,25 +420,26 @@ const SamplesComparisonModal = (props) => {
                   </select>
                 </Col>
               </>
-            ) : (
+            ) : showExtraControls && !isContinuous ? (
               <>
                 <Col xs="3">&nbsp;</Col>
-              </>
-            )}
-            {showExtraControls && !isContinuous && (
-              <>
-                <Col xs="2" style={{ textAlign: 'right' }}>
+                <Col xs="2" style={{ marginTop: 4, textAlign: 'right' }}>
                   Marker size:
                 </Col>
-                <Col xs="1" style={{ paddingLeft: 0, paddingRight: 0 }}>
+                <Col xs="1" style={{ marginTop: 4, paddingLeft: 0, paddingRight: 0 }}>
                   <RangeSlider
                     value={markerSize}
+                    tooltipPlacement="top"
                     onChange={(changeEvent) => setMarkerSize(parseInt(changeEvent.target.value))}
                     min={5}
                     max={20}
                   />
                 </Col>
               </>
+            ) : (
+              <Col xs="6" style={{ marginTop: 18 }}>
+                &nbsp;
+              </Col>
             )}
           </Row>
         </Container>
@@ -374,23 +449,47 @@ const SamplesComparisonModal = (props) => {
             layout={{
               // width: chartWidth,
               height: chartHeight,
-              title: 'MDS Plot',
               legend: { orientation: 'h' },
+              paper_bgcolor: 'white',
+              plot_bgcolor: 'white',
               xaxis: {
+                showticklabels: false,
+                showgrid: false,
+                zeroline: false,
                 tickmode: 'linear',
                 tick0: 0,
                 dtick: 0.2,
                 range: plotHasData ? undefined : [-1, 1],
               },
               yaxis: {
+                showticklabels: false,
+                showgrid: false,
+                zeroline: false,
                 scaleanchor: 'x',
                 tickmode: 'linear',
                 tick0: 0,
                 dtick: 0.2,
                 range: plotHasData ? undefined : [-1, 1],
               },
+              shapes: [
+                {
+                  type: 'rect',
+                  xref: 'paper',
+                  yref: 'paper',
+                  x0: 0,
+                  y0: 0,
+                  x1: 1,
+                  y1: 1,
+                  line: {
+                    color: 'black',
+                    width: 2,
+                  },
+                  fillcolor: 'rgba(0,0,0,0)',
+                  layer: 'above',
+                },
+              ],
             }}
-            config={{ displayLogo: false, scrollZoom: false }}
+            config={{ displayLogo: false, scrollZoom: false, displayModeBar: true }}
             useResizeHandler
             style={{ width: '100%', height: '100%', marginTop: '0px' }}
           />
@@ -424,6 +523,7 @@ const mapStateToProps = (state) => {
     isOpen,
     isLoading,
     isFinished,
+    isCancelled,
 
     selectedMethod,
     setSelectedMethod,
@@ -431,6 +531,8 @@ const mapStateToProps = (state) => {
     setSelectedFilter,
     selectedFilterExtra,
     setSelectedFilterExtra,
+
+    umapParams,
 
     status,
     alerts,
@@ -448,6 +550,7 @@ const mapStateToProps = (state) => {
     isOpen,
     isLoading,
     isFinished,
+    isCancelled,
 
     selectedMethod,
     setSelectedMethod,
@@ -455,6 +558,8 @@ const mapStateToProps = (state) => {
     setSelectedFilter,
     selectedFilterExtra,
     setSelectedFilterExtra,
+
+    umapParams,
 
     results,
     plotData,
@@ -477,6 +582,7 @@ const mapDispatchToProps = (dispatch) => {
     {
       clearPlotData,
       closeSamplesComparisonModal,
+      handleUmapParameters,
       runComparison,
       cancelComparison,
       setSelectedMethod,
@@ -488,3 +594,34 @@ const mapDispatchToProps = (dispatch) => {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(SamplesComparisonModal)
+
+// <Input
+//   name="n_neighbors"
+//   value={umapParams['n_neighbors']}
+//   onChange={(evt) =>
+//     handleUmapParameters({
+//       param: 'n_neighbors',
+//       value: evt.target.value,
+//     })
+//   }
+// />
+// <Input
+//   name="spread"
+//   value={umapParams['spread']}
+//   onChange={(evt) =>
+//     handleUmapParameters({
+//       param: 'spread',
+//       value: evt.target.value,
+//     })
+//   }
+// />
+// <Input
+//   name="min_dist"
+//   value={umapParams['min_dist']}
+//   onChange={(evt) =>
+//     handleUmapParameters({
+//       param: 'min_dist',
+//       value: evt.target.value,
+//     })
+//   }
+// />
