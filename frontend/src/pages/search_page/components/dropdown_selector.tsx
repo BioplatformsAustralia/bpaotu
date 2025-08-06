@@ -1,71 +1,77 @@
+import React, { useEffect, useMemo } from 'react'
 import { map } from 'lodash'
-import * as React from 'react'
-import { Col, FormGroup, Label, UncontrolledTooltip } from 'reactstrap'
+import { Col, FormGroup } from 'reactstrap'
 import Select from 'react-select'
 
-import Octicon from 'components/octicon'
+import { FilterHeader } from 'components/filter_header'
 
-export default class DropDownSelector extends React.Component<any> {
-  constructor(props) {
-    super(props)
-    this.onValueChange = this.onValueChange.bind(this)
-    props.selectOperator('is')
-  }
+const DropDownSelector = (props) => {
+  const {
+    label,
+    info,
+    placeholder,
+    options,
+    selected,
+    selectOperator,
+    selectValue,
+    onChange,
+    isDisabled,
+    optionsLoading,
+    optionsLoadingError,
+    getDefaultOption,
+  } = props
 
-  componentDidUpdate() {
-    if (this.props.selected.value === '' && this.props.options.length) {
-      this.props.selectValue(this.getDefaultOption())
-      this.props.onChange()
+  // Default operator
+  useEffect(() => {
+    selectOperator('is')
+  }, [selectOperator])
+
+  // If selected value is empty and options are available, select default option
+  useEffect(() => {
+    if (selected.value === '' && options.length) {
+      selectValue(getDefaultOption(options))
+      onChange()
     }
-  }
+  }, [selected, options, selectValue, onChange])
 
-  public getDefaultOption() {
-    return this.props.options[0].id
-  }
+  const renderOption = (option) => ({
+    value: option.id,
+    label: option.value,
+  })
 
-  public onValueChange(evt) {
+  const renderedOptions = useMemo(() => {
+    if (optionsLoadingError) {
+      return [{ value: '', label: "Couldn't load values!" }]
+    }
+    return map(options, renderOption)
+  }, [options, optionsLoadingError])
+
+  const selectedOption = useMemo(() => {
+    return renderedOptions.find((option) => option.value === selected.value)
+  }, [renderedOptions, selected.value])
+
+  const onValueChange = (evt) => {
     const id = evt.value
-    this.props.selectValue(id)
-    this.props.onChange()
+    selectValue(id)
+    onChange()
   }
 
-  public renderOptions() {
-    if (this.props.optionsLoadingError) {
-      return { value: '', label: "Couldn't load values!" }
-    }
-    return map(this.props.options, this.renderOption)
-  }
-
-  public renderOption(option) {
-    return { value: option.id, label: option.value }
-  }
-
-  public render() {
-    return (
-      <FormGroup row={true}>
-        <Label sm={3}>
-          {this.props.label + ' '}
-          <span id={this.props.label + 'Tip'}>
-            <Octicon name="info" />
-          </span>
-          <UncontrolledTooltip target={this.props.label + 'Tip'} placement="auto">
-            {this.props.info}
-          </UncontrolledTooltip>
-        </Label>
-        <Col sm={9}>
-          <Select
-            isSearchable={true}
-            isLoading={this.props.optionsLoading}
-            isDisabled={this.props.isDisabled || this.props.optionsLoadingError}
-            value={map(this.props.options, this.renderOption).filter(
-              (option) => option.value === this.props.selected.value
-            )}
-            options={this.renderOptions()}
-            onChange={this.onValueChange}
-            placeholder={this.props.placeholder}
-          />
-        </Col>
-      </FormGroup>
-    )
-  }
+  return (
+    <FormGroup row>
+      <FilterHeader label={label} info={info} />
+      <Col sm={9}>
+        <Select
+          isSearchable
+          isLoading={optionsLoading}
+          isDisabled={isDisabled || optionsLoadingError}
+          value={selectedOption}
+          options={renderedOptions}
+          onChange={onValueChange}
+          placeholder={placeholder}
+        />
+      </Col>
+    </FormGroup>
+  )
 }
+
+export default DropDownSelector
