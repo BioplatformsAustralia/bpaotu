@@ -5,11 +5,10 @@ import { bindActionCreators } from 'redux'
 import { createAction } from 'redux-actions'
 
 import { taxonomy_ranks } from 'app/constants'
-import DropDownFilter from 'components/drop_down_filter'
 
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
-
-import DropDownSelector from './dropdown_selector'
+import DropDownFilter from 'components/drop_down_filter'
+import DropDownSelector from './drop_down_selector'
 
 const TaxonomySourceSelector = (props) => {
   const getDefaultOption = (options) => {
