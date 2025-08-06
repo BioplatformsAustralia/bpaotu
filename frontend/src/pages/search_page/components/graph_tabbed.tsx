@@ -41,8 +41,8 @@ const ContextualTab = (props) => {
     const initialTab = tablist.includes(scrollToSelected)
       ? 'tab_' + scrollToSelected
       : selectedEnvironment && selectedEnvironment.value === 1
-      ? 'tab_sample_type_id'
-      : 'tab_vegetation_type_id'
+        ? 'tab_sample_type_id'
+        : 'tab_vegetation_type_id'
     return initialTab
   })
 
@@ -288,26 +288,6 @@ const GraphTabbed = (props) => {
               </span>
               <UncontrolledTooltip target="traitsEnvironmentTipGraphTab" placement="auto">
                 {'Relative abundance of traits for AM environment '}
-              </UncontrolledTooltip>
-            </NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink
-              data-tut="reactour__graph_mds_plots"
-              id="reactour__graph_mds_plots"
-              className={classnames({
-                active: selectedTab === 'tab_mds_plots_id',
-              })}
-              onClick={() => {
-                selectTab('tab_mds_plots_id')
-              }}
-            >
-              {'MDS Plots '}
-              <span id="mdsPlotsTipGraphTab">
-                <Octicon name="info" align="top" />
-              </span>
-              <UncontrolledTooltip target="mdsPlotsTipGraphTab" placement="auto">
-                {'MDS Plots'}
               </UncontrolledTooltip>
             </NavLink>
           </NavItem>

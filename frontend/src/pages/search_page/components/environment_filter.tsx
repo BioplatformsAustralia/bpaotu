@@ -1,7 +1,6 @@
-import * as React from 'react'
+import React from 'react'
 import { concat, map } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Col, FormGroup, Input, Label, UncontrolledTooltip } from 'reactstrap'
 import Select from 'react-select'
 
@@ -12,72 +11,57 @@ import { selectEnvironment, selectEnvironmentOperator } from '../reducers/contex
 export const EnvironmentInfo =
   'Data may be filtered on environment to restrict samples to either soil or marine environment sources. Marine environment includes pelagic, coastal, sediment and host associated samples which can be further selected by applying "Sample Type" filter under Contextual Filters.'
 
-class EnvironmentFilter extends React.Component<any> {
-  protected defaultOption = { value: '', label: '---' }
-  public render() {
-    return (
-      <FormGroup row={true}>
-        <Label sm={3}>
-          Environment{' '}
-          <span id="environmentTip">
-            <Octicon name="info" />
-          </span>
-          <UncontrolledTooltip target="environmentTip" placement="auto">
-            {EnvironmentInfo}
-          </UncontrolledTooltip>
-        </Label>
-        <Col sm={3}>
-          <Input
-            type="select"
-            name="operator"
-            value={this.props.selected.operator}
-            onChange={(evt) => this.props.selectEnvironmentOperator(evt.target.value)}
-          >
-            <option value="is">is</option>
-            <option value="isnot">isn't</option>
-          </Input>
-        </Col>
-        <Col sm={6}>
-          <Select
-            placeholder={this.defaultOption.label}
-            isSearchable={true}
-            options={this.renderOptions()}
-            defaultValue={this.defaultOption}
-            value={map(this.props.options, this.renderOption).filter(
-              (option) => option.value === this.props.selected.value
-            )}
-            onChange={(evt) => this.props.selectEnvironment(evt.value)}
-          />
-        </Col>
-      </FormGroup>
-    )
-  }
+const defaultOption = { value: '', label: '---' }
 
-  public renderOptions() {
-    return concat([this.defaultOption], map(this.props.options, this.renderOption))
-  }
+const EnvironmentFilter = () => {
+  const dispatch = useDispatch()
 
-  public renderOption(option) {
-    return { value: option.id, label: option.name }
-  }
-}
-
-function mapStateToProps(state) {
-  return {
+  const { selected } = useSelector((state: any) => ({
     selected: state.searchPage.filters.contextual.selectedEnvironment,
-    optionsLoading: state.contextualDataDefinitions.isLoading,
-    options: state.contextualDataDefinitions.environment,
-  }
-}
+  }))
 
-function mapDispatchToProps(dispatch: any) {
-  return bindActionCreators(
-    {
-      selectEnvironment,
-      selectEnvironmentOperator,
-    },
-    dispatch
+  const { options, loading } = useSelector((state: any) => ({
+    options: state.contextualDataDefinitions.environment,
+    loading: state.contextualDataDefinitions.isLoading,
+  }))
+
+  const renderOption = (option) => ({ value: option.id, label: option.name })
+  const renderOptions = () => concat([defaultOption], map(options, renderOption))
+
+  return (
+    <FormGroup row={true}>
+      <Label sm={3}>
+        Environment{' '}
+        <span id="environmentTip">
+          <Octicon name="info" />
+        </span>
+        <UncontrolledTooltip target="environmentTip" placement="auto">
+          {EnvironmentInfo}
+        </UncontrolledTooltip>
+      </Label>
+      <Col sm={3}>
+        <Input
+          type="select"
+          name="operator"
+          value={selected.operator}
+          onChange={(evt) => dispatch(selectEnvironmentOperator(evt.target.value))}
+        >
+          <option value="is">is</option>
+          <option value="isnot">isn't</option>
+        </Input>
+      </Col>
+      <Col sm={6}>
+        <Select
+          placeholder={defaultOption.label}
+          isSearchable={true}
+          options={renderOptions()}
+          defaultValue={defaultOption}
+          value={map(options, renderOption).filter((option) => option.value === selected.value)}
+          onChange={(evt) => dispatch(selectEnvironment(evt.value))}
+        />
+      </Col>
+    </FormGroup>
   )
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(EnvironmentFilter)
+export default EnvironmentFilter

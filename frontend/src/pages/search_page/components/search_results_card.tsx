@@ -191,7 +191,7 @@ const _MetagenomeSearchResultsCard = (props) => {
           <SearchResultsTable
             cell_func={(cell_props) => cell_button(cell_props, props.openMetagenomeModal)}
             krona_func={(cell_props) => krona_button(cell_props, props.openKronaModal)}
-            metagenome={true}
+            metagenome
           />
         </CardBody>
       </Card>

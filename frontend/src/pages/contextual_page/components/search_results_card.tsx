@@ -1,16 +1,21 @@
-import { isEmpty, map, reject } from 'lodash'
-import * as React from 'react'
-import { connect } from 'react-redux'
-
+import React from 'react'
+import { useSelector } from 'react-redux'
 import { Card, CardBody, CardHeader } from 'reactstrap'
-
-import { ExportDataButton } from 'components/export_data_button'
+import { isEmpty, map, reject } from 'lodash'
 
 import { EmptyOTUQuery } from 'search'
-import SearchResultsTable from './search_results_table'
+import { ExportDataButton } from 'components/export_data_button'
+import ContextualSearchResultsTable from './search_results_table'
 
 const SearchResultsCard = (props) => {
-  const { ckanAuthToken, extraColumns, sorting } = props
+  const ckanAuthToken = useSelector((state: any) => state.auth.ckanAuthToken)
+  const { extraColumns, sorting } = useSelector((state: any) => ({
+    extraColumns: reject(
+      map(state.contextualPage.selectColumns.columns, (c) => c.name),
+      (c) => isEmpty(c)
+    ),
+    sorting: state.contextualPage.results.sorted,
+  }))
 
   const exportCSV = () => {
     const params = new URLSearchParams()
@@ -37,22 +42,11 @@ const SearchResultsCard = (props) => {
           </div>
         </CardHeader>
         <CardBody>
-          <SearchResultsTable />
+          <ContextualSearchResultsTable />
         </CardBody>
       </Card>
     </div>
   )
 }
 
-function mapStateToProps(state) {
-  return {
-    ckanAuthToken: state.auth.ckanAuthToken,
-    extraColumns: reject(
-      map(state.contextualPage.selectColumns.columns, (c) => c.name),
-      (c) => isEmpty(c)
-    ),
-    sorting: state.contextualPage.results.sorted,
-  }
-}
-
-export default connect(mapStateToProps, null)(SearchResultsCard)
+export default SearchResultsCard

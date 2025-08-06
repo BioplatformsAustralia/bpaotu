@@ -1,95 +1,80 @@
-import { find } from 'lodash'
-import * as React from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
-
+import React, { useEffect, useCallback } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Button, Card, CardBody, CardFooter, CardHeader } from 'reactstrap'
-
-import { ContextualDropDown } from 'components/contextual_drop_down'
+import { find } from 'lodash'
 
 import { fetchContextualDataDefinitions } from 'reducers/contextual_data_definitions'
-
 import { search } from '../reducers/search'
 import { addColumn, clearColumns, removeColumn, selectColumn } from '../reducers/select_columns'
 
-class SelectColumnsCard extends React.Component<any> {
-  constructor(props) {
-    super(props)
-    this.onRemoveColumn = this.onRemoveColumn.bind(this)
-    this.onSelectColumn = this.onSelectColumn.bind(this)
-    this.onClearColumns = this.onClearColumns.bind(this)
-  }
+import { ContextualDropDown } from 'components/contextual_drop_down'
 
-  public componentDidMount() {
-    this.props.fetchContextualDataDefinitions()
-  }
+const SelectColumnsCard = () => {
+  const dispatch = useDispatch()
 
-  public render() {
-    return (
-      <Card>
-        <CardHeader>Select Columns</CardHeader>
-        <CardBody className="filters">
-          {this.props.columns.map((column, index) => (
-            <ContextualDropDown
-              key={`${column.name}-${index}`}
-              index={index}
-              filter={column}
-              dataDefinition={find(this.props.dataDefinitions, (dd) => dd.name === column.name)}
-              options={this.props.dataDefinitions}
-              optionsLoading={this.props.optionsLoading}
-              remove={this.onRemoveColumn}
-              select={this.onSelectColumn}
-            />
-          ))}
-        </CardBody>
-        <CardFooter className="text-center">
-          <Button color="success" onClick={this.props.addColumn}>
-            Add
-          </Button>
-          <Button color="warning" onClick={this.onClearColumns}>
-            Clear
-          </Button>
-        </CardFooter>
-      </Card>
-    )
-  }
-
-  private onRemoveColumn(...args) {
-    this.props.removeColumn(...args)
-    this.props.search()
-  }
-
-  private onSelectColumn(...args) {
-    this.props.selectColumn(...args)
-    this.props.search()
-  }
-
-  private onClearColumns() {
-    this.props.clearColumns()
-    this.props.search()
-  }
-}
-
-function mapStateToProps(state) {
-  return {
+  const { columns, dataDefinitions, optionsLoading } = useSelector((state: any) => ({
     columns: state.contextualPage.selectColumns.columns,
     dataDefinitions: state.contextualDataDefinitions.values,
     optionsLoading: state.contextualDataDefinitions.isLoading,
-  }
-}
+  }))
 
-function mapDispatchToProps(dispatch: any) {
-  return bindActionCreators(
-    {
-      fetchContextualDataDefinitions,
-      addColumn,
-      removeColumn,
-      selectColumn,
-      clearColumns,
-      search,
+  // Fetch data definitions on mount
+  useEffect(() => {
+    dispatch(fetchContextualDataDefinitions())
+  }, [dispatch])
+
+  const onRemoveColumn = useCallback(
+    (...args: any[]) => {
+      dispatch(removeColumn(...args))
+      dispatch(search())
     },
-    dispatch
+    [dispatch]
+  )
+
+  const onSelectColumn = useCallback(
+    (...args: any[]) => {
+      dispatch(selectColumn(...args))
+      dispatch(search())
+    },
+    [dispatch]
+  )
+
+  const onClearColumns = useCallback(() => {
+    dispatch(clearColumns())
+    dispatch(search())
+  }, [dispatch])
+
+  const onAddColumn = useCallback(() => {
+    dispatch(addColumn())
+  }, [dispatch])
+
+  return (
+    <Card>
+      <CardHeader>Select Columns</CardHeader>
+      <CardBody className="filters">
+        {columns.map((column, index) => (
+          <ContextualDropDown
+            key={`${column.name}-${index}`}
+            index={index}
+            filter={column}
+            dataDefinition={find(dataDefinitions, (dd) => dd.name === column.name)}
+            options={dataDefinitions}
+            optionsLoading={optionsLoading}
+            remove={onRemoveColumn}
+            select={onSelectColumn}
+          />
+        ))}
+      </CardBody>
+      <CardFooter className="text-center">
+        <Button color="success" onClick={onAddColumn}>
+          Add
+        </Button>
+        <Button color="warning" onClick={onClearColumns}>
+          Clear
+        </Button>
+      </CardFooter>
+    </Card>
   )
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(SelectColumnsCard)
+export default SelectColumnsCard

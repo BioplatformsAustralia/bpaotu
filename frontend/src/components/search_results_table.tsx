@@ -1,11 +1,10 @@
-import * as React from 'react'
+import React, { useMemo } from 'react'
 import { get as _get, isEmpty, map, reject } from 'lodash'
 import { Alert, UncontrolledTooltip } from 'reactstrap'
-
-import Octicon from 'components/octicon'
-
 import ReactTable from 'react-table'
 import 'react-table/react-table.css'
+
+import Octicon from 'components/octicon'
 
 const sample_link = (props) => (
   <div>
@@ -69,172 +68,171 @@ export const fieldsToColumns = (fields, contextualDataDefinitions) => {
   }
 }
 
-export class SearchResultsTable extends React.Component<any> {
-  static defaultProps = {
-    cell_func: sample_link,
-    cell_func_run_id: sample_link_run_id,
-    krona_func: null,
-    metagenome: false,
-  }
+export const SearchResultsTable = (props) => {
+  const {
+    cell_func = sample_link,
+    cell_func_run_id = sample_link_run_id,
+    krona_func = null,
+    metagenome = false,
+    contextual = false,
+    extraColumns = [],
+    results,
+    changeTableProperties,
+    search,
+  } = props
 
-  public defaultColumns = [
-    {
-      // as function so that runIdcolumn works too
-      Header: () => <div>Sample ID</div>,
+  const defaultColumns = useMemo(
+    () => [
+      {
+        // as function so that runIdcolumn works too
+        Header: () => <div>Sample ID</div>,
+        accessor: 'sample_id',
+        sortable: true,
+        Cell: cell_func,
+      },
+      {
+        Header: 'Environment',
+        sortable: true,
+        accessor: 'environment',
+      },
+    ],
+    [cell_func]
+  )
+
+  const kronaColumn = useMemo(
+    () => ({
+      Header: () => (
+        <div>
+          Krona Plot{' '}
+          <span id="singleMTipTabKrona">
+            <Octicon name="info" />
+          </span>
+          <UncontrolledTooltip target="singleMTipTabKrona" autohide={false} placement="bottom">
+            Includes abundance for all taxonomies found in this sample (unaffected by filters)
+          </UncontrolledTooltip>
+        </div>
+      ),
       accessor: 'sample_id',
       sortable: true,
-      Cell: this.props.cell_func,
-    },
-    {
-      Header: 'Environment',
+      Cell: krona_func,
+    }),
+    [krona_func]
+  )
+
+  const runIdColumn = useMemo(
+    () => ({
+      Header: () => (
+        <div>
+          Sandpiper community profile{' '}
+          <span id="singleMTipTabSandpiper">
+            <Octicon name="info" />
+          </span>
+          <UncontrolledTooltip target="singleMTipTabSandpiper" autohide={false} placement="bottom">
+            Link to{' '}
+            <a href={'https://github.com/wwood/singlem'} target="_blank" rel="noopener noreferrer">
+              SingleM
+            </a>{' '}
+            community profiles from shotgun metagenome datasets at the{' '}
+            <a href="https://sandpiper.qut.edu.au/" target="_blank" rel="noopener noreferrer">
+              Sandpiper Database
+            </a>
+          </UncontrolledTooltip>
+        </div>
+      ),
+      accessor: 'run_id',
       sortable: true,
-      accessor: 'environment',
-    },
-  ]
+      Cell: cell_func_run_id,
+    }),
+    [cell_func_run_id]
+  )
 
-  public kronaColumn = {
-    Header: () => (
-      <div>
-        Krona Plot{' '}
-        <span id="singleMTipTabKrona">
-          <Octicon name="info" />
-        </span>
-        <UncontrolledTooltip target="singleMTipTabKrona" autohide={false} placement="bottom">
-          Includes abundance for all taxonomies found in this sample (unaffected by filters)
-        </UncontrolledTooltip>
-      </div>
-    ),
-    accessor: 'sample_id',
-    sortable: true,
-    Cell: this.props.krona_func,
-  }
-
-  public runIdColumn = {
-    Header: () => (
-      <div>
-        Sandpiper community profile{' '}
-        <span id="singleMTipTabSandpiper">
-          <Octicon name="info" />
-        </span>
-        <UncontrolledTooltip target="singleMTipTabSandpiper" autohide={false} placement="bottom">
-          Link to{' '}
-          <a href={'https://github.com/wwood/singlem'} target="_blank" rel="noopener noreferrer">
-            SingleM
-          </a>{' '}
-          community profiles from shotgun metagenome datasets at the{' '}
-          <a href="https://sandpiper.qut.edu.au/" target="_blank" rel="noopener noreferrer">
-            Sandpiper Database
-          </a>
-        </UncontrolledTooltip>
-      </div>
-    ),
-    accessor: 'run_id',
-    sortable: true,
-    Cell: this.props.cell_func_run_id,
-  }
-
-  constructor(props) {
-    super(props)
-    this.onSortedChange = this.onSortedChange.bind(this)
-    this.onPageChange = this.onPageChange.bind(this)
-    this.onPageSizeChange = this.onPageSizeChange.bind(this)
-  }
-
-  public getColumns() {
-    const extraColumns = map(this.props.extraColumns, (field) => ({
+  const columns = useMemo(() => {
+    const extraCols = map(extraColumns, (field) => ({
       Header: _get(field, 'displayName', field.name),
       accessor: field.name,
       sortable: _get(field, 'sortable', true),
     }))
 
-    if (this.props.metagenome) {
-      return this.defaultColumns
-        .concat(this.kronaColumn)
-        .concat(this.runIdColumn)
-        .concat(extraColumns)
-    } else {
-      return this.defaultColumns.concat(this.kronaColumn).concat(extraColumns)
+    if (metagenome) {
+      return defaultColumns.concat(kronaColumn, runIdColumn, extraCols)
     }
-  }
 
-  public render() {
-    return (
-      <>
-        <Alert color="secondary" className="text-center">
-          <h6 className="alert-heading">
-            {this.props.results.cleared
-              ? 'Please use the search button to start your search'
-              : this.props.results.isLoading
-              ? `Searching samples...`
-              : `Found ${this.props.results.rowsCount} samples`}
-          </h6>
-        </Alert>
-        <ReactTable
-          // We use key= to force ReactTable to respect the page= prop. Without
-          // this it won't reset to page 1 for new searches. This is a
-          // workaround for what is probably a bug in react-table 6.10.0
-          key={this.props.results.page}
-          columns={this.getColumns()}
-          manual={true}
-          loading={this.props.results.isLoading}
-          data={this.props.results.data}
-          page={this.props.results.page}
-          pageSize={this.props.results.pageSize}
-          pages={this.props.results.pages}
-          className="-striped -highlight"
-          onSortedChange={this.onSortedChange}
-          onPageChange={this.onPageChange}
-          onPageSizeChange={this.onPageSizeChange}
-          noDataText={this.props.results.cleared ? 'No search performed yet' : 'No rows found'}
-          getTheadProps={(thead) => ({
-            // fix the header not aligning with cells, including the column separators
-            style: {
-              paddingLeft: 0,
-              paddingRight: 0,
-              paddingTop: '8px',
-              paddingBottom: '8px',
-            },
-          })}
-          getTdProps={(cellInfo) => ({
-            style: {
-              textAlign: 'center',
-            },
-          })}
-        />
-      </>
-    )
-  }
+    if (contextual) {
+      return defaultColumns.concat(extraCols)
+    }
 
-  public onPageChange(pageIndex) {
-    this.props.changeTableProperties({
-      ...this.props.results,
+    return defaultColumns.concat(kronaColumn, extraCols)
+  }, [defaultColumns, kronaColumn, runIdColumn, extraColumns, metagenome])
+
+  const onPageChange = (pageIndex) => {
+    changeTableProperties({
+      ...results,
       page: pageIndex,
     })
-
-    if (this.props.results.pages > 0) {
-      this.props.search()
-    }
+    if (results.pages > 0) search()
   }
 
-  public onPageSizeChange(pageSize) {
-    this.props.changeTableProperties({
-      ...this.props.results,
+  const onPageSizeChange = (pageSize) => {
+    changeTableProperties({
+      ...results,
       pageSize,
     })
-
-    if (this.props.results.pages > 0) {
-      this.props.search()
-    }
+    if (results.pages > 0) search()
   }
 
-  public onSortedChange(sorted) {
-    this.props.changeTableProperties({
-      ...this.props.results,
+  const onSortedChange = (sorted) => {
+    changeTableProperties({
+      ...results,
       sorted,
     })
-
-    if (this.props.results.pages > 0) {
-      this.props.search()
-    }
+    if (results.pages > 0) search()
   }
+
+  return (
+    <>
+      <Alert color="secondary" className="text-center">
+        <h6 className="alert-heading">
+          {results.cleared
+            ? 'Please use the search button to start your search'
+            : results.isLoading
+              ? `Searching samples...`
+              : `Found ${results.rowsCount} samples`}
+        </h6>
+      </Alert>
+      <ReactTable
+        // We use key= to force ReactTable to respect the page= prop. Without
+        // this it won't reset to page 1 for new searches. This is a
+        // workaround for what is probably a bug in react-table 6.10.0
+        key={results.page}
+        columns={columns}
+        manual={true}
+        loading={results.isLoading}
+        data={results.data}
+        page={results.page}
+        pageSize={results.pageSize}
+        pages={results.pages}
+        className="-striped -highlight"
+        onSortedChange={onSortedChange}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        noDataText={results.cleared ? 'No search performed yet' : 'No rows found'}
+        getTheadProps={(thead) => ({
+          // fix the header not aligning with cells, including the column separators
+          style: {
+            paddingLeft: 0,
+            paddingRight: 0,
+            paddingTop: '8px',
+            paddingBottom: '8px',
+          },
+        })}
+        getTdProps={(cellInfo) => ({
+          style: {
+            textAlign: 'center',
+          },
+        })}
+      />
+    </>
+  )
 }
+
+export default SearchResultsTable
