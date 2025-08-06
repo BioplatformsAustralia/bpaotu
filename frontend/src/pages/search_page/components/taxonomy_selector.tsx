@@ -1,9 +1,9 @@
-import { map } from 'lodash'
 import * as React from 'react'
-import { Col, FormGroup, Label, UncontrolledTooltip } from 'reactstrap'
+import { map } from 'lodash'
+import { Col, FormGroup } from 'reactstrap'
 import Select from 'react-select'
 
-import Octicon from 'components/octicon'
+import { FilterHeader } from 'components/filter_header'
 
 export default class DropDownSelector extends React.Component<any> {
   constructor(props) {
@@ -43,15 +43,7 @@ export default class DropDownSelector extends React.Component<any> {
   public render() {
     return (
       <FormGroup row={true}>
-        <Label sm={3}>
-          {this.props.label + ' '}
-          <span id={this.props.label + 'Tip'}>
-            <Octicon name="info" />
-          </span>
-          <UncontrolledTooltip target={this.props.label + 'Tip'} placement="auto">
-            {this.props.info}
-          </UncontrolledTooltip>
-        </Label>
+        <FilterHeader label={this.props.label} info={this.props.info} />
         <Col sm={9}>
           <Select
             isSearchable={true}
