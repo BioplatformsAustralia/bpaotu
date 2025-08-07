@@ -189,6 +189,7 @@ const ContextualFilterCard = (props) => {
                   key={`${fltr.name}-${index}`}
                   index={index}
                   filter={fltr}
+                  dataDefinitions={dataDefinitions}
                   dataDefinition={find(dataDefinitions, (dd) => dd.name === fltr.name)}
                   options={sampleIntegrityWarningFilterOptions}
                   optionsLoading={optionsLoading}
@@ -198,7 +199,6 @@ const ContextualFilterCard = (props) => {
                   changeValue={changeSampleIntegrityWarningFilterValue}
                   changeValue2={changeSampleIntegrityWarningFilterValue2}
                   changeValues={changeSampleIntegrityWarningFilterValues}
-                  definitions={definitions}
                 />
               ))}
             </Alert>
@@ -227,23 +227,25 @@ const ContextualFilterCard = (props) => {
           </Row>
         )}
 
-        {contextualFilters.map((fltr, index) => (
-          <ContextualFilter
-            key={`${fltr.name}-${index}`}
-            index={index}
-            filter={fltr}
-            dataDefinition={find(dataDefinitions, (dd) => dd.name === fltr.name)}
-            options={contextualFilterOptions}
-            optionsLoading={optionsLoading}
-            remove={removeContextualFilter}
-            select={selectContextualFilter}
-            changeOperator={changeContextualFilterOperator}
-            changeValue={changeContextualFilterValue}
-            changeValue2={changeContextualFilterValue2}
-            changeValues={changeContextualFilterValues}
-            definitions={definitions}
-          />
-        ))}
+        {contextualFilters.map((fltr, index) => {
+          return (
+            <ContextualFilter
+              key={`${fltr.name}-${index}`}
+              index={index}
+              filter={fltr}
+              dataDefinitions={dataDefinitions}
+              dataDefinition={find(dataDefinitions, (dd) => dd.name === fltr.name)}
+              options={contextualFilterOptions}
+              optionsLoading={optionsLoading}
+              remove={removeContextualFilter}
+              select={selectContextualFilter}
+              changeOperator={changeContextualFilterOperator}
+              changeValue={changeContextualFilterValue}
+              changeValue2={changeContextualFilterValue2}
+              changeValues={changeContextualFilterValues}
+            />
+          )
+        })}
       </CardBody>
       <CardFooter className="text-center">
         <Button color="success" onClick={addContextualFilter}>
@@ -267,6 +269,7 @@ const mapStateToProps = (state) => {
     sampleIntegrityWarningFilters: state.searchPage.filters.sampleIntegrityWarning.filters,
     sampleIntegrityWarningFiltersMode: state.searchPage.filters.sampleIntegrityWarning.filtersMode,
     dataDefinitions: state.contextualDataDefinitions.filters,
+    definitions: state.contextualDataDefinitions.values,
     contextualFilterOptions: getFilterOptions(
       state.contextualDataDefinitions.filters.filter(
         (x) => x.name !== 'sample_integrity_warnings_id'
@@ -282,7 +285,6 @@ const mapStateToProps = (state) => {
     optionsLoading: state.contextualDataDefinitions.isLoading,
     definitions_url: state.contextualDataDefinitions.definitions_url,
     scientific_manual_url: state.contextualDataDefinitions.scientific_manual_url,
-    definitions: state.contextualDataDefinitions.values,
   }
 }
 
