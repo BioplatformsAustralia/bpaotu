@@ -1,7 +1,6 @@
 import React from 'react'
 import { concat, map } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Col, FormGroup, Input, Label, UncontrolledTooltip } from 'reactstrap'
 import Select from 'react-select'
 
@@ -14,9 +13,19 @@ export const EnvironmentInfo =
 
 const defaultOption = { value: '', label: '---' }
 
-const EnvironmentFilter = ({ selected, options, selectEnvironment, selectEnvironmentOperator }) => {
-  const renderOption = (option) => ({ value: option.id, label: option.name })
+const EnvironmentFilter = () => {
+  const dispatch = useDispatch()
 
+  const { selected } = useSelector((state: any) => ({
+    selected: state.searchPage.filters.contextual.selectedEnvironment,
+  }))
+
+  const { options, loading } = useSelector((state: any) => ({
+    options: state.contextualDataDefinitions.environment,
+    loading: state.contextualDataDefinitions.isLoading,
+  }))
+
+  const renderOption = (option) => ({ value: option.id, label: option.name })
   const renderOptions = () => concat([defaultOption], map(options, renderOption))
 
   return (
@@ -35,7 +44,7 @@ const EnvironmentFilter = ({ selected, options, selectEnvironment, selectEnviron
           type="select"
           name="operator"
           value={selected.operator}
-          onChange={(evt) => selectEnvironmentOperator(evt.target.value)}
+          onChange={(evt) => dispatch(selectEnvironmentOperator(evt.target.value))}
         >
           <option value="is">is</option>
           <option value="isnot">isn't</option>
@@ -48,29 +57,11 @@ const EnvironmentFilter = ({ selected, options, selectEnvironment, selectEnviron
           options={renderOptions()}
           defaultValue={defaultOption}
           value={map(options, renderOption).filter((option) => option.value === selected.value)}
-          onChange={(evt) => selectEnvironment(evt.value)}
+          onChange={(evt) => dispatch(selectEnvironment(evt.value))}
         />
       </Col>
     </FormGroup>
   )
 }
 
-const mapStateToProps = (state) => {
-  return {
-    selected: state.searchPage.filters.contextual.selectedEnvironment,
-    optionsLoading: state.contextualDataDefinitions.isLoading,
-    options: state.contextualDataDefinitions.environment,
-  }
-}
-
-const mapDispatchToProps = (dispatch: any) => {
-  return bindActionCreators(
-    {
-      selectEnvironment,
-      selectEnvironmentOperator,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(EnvironmentFilter)
+export default EnvironmentFilter
