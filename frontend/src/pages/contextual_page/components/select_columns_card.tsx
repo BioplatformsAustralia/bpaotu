@@ -1,48 +1,52 @@
-import React, { useEffect } from 'react'
-import { bindActionCreators } from 'redux'
-import { connect } from 'react-redux'
+import React, { useEffect, useCallback } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { Button, Card, CardBody, CardFooter, CardHeader } from 'reactstrap'
 import { find } from 'lodash'
 
-import { Button, Card, CardBody, CardFooter, CardHeader } from 'reactstrap'
-
-import { ContextualDropDown } from 'components/contextual_drop_down'
-
 import { fetchContextualDataDefinitions } from 'reducers/contextual_data_definitions'
-
 import { search } from '../reducers/search'
 import { addColumn, clearColumns, removeColumn, selectColumn } from '../reducers/select_columns'
 
-const SelectColumnsCard = (props) => {
-  const {
-    columns,
-    dataDefinitions,
-    optionsLoading,
-    fetchContextualDataDefinitions,
-    addColumn,
-    removeColumn,
-    selectColumn,
-    clearColumns,
-    search,
-  } = props
+import { ContextualDropDown } from 'components/contextual_drop_down'
 
+const SelectColumnsCard = () => {
+  const dispatch = useDispatch()
+
+  const { columns, dataDefinitions, optionsLoading } = useSelector((state: any) => ({
+    columns: state.contextualPage.selectColumns.columns,
+    dataDefinitions: state.contextualDataDefinitions.values,
+    optionsLoading: state.contextualDataDefinitions.isLoading,
+  }))
+
+  // Fetch data definitions on mount
   useEffect(() => {
-    fetchContextualDataDefinitions()
-  }, [fetchContextualDataDefinitions])
+    dispatch(fetchContextualDataDefinitions())
+  }, [dispatch])
 
-  const onRemoveColumn = (...args: any[]) => {
-    removeColumn(...args)
-    search()
-  }
+  const onRemoveColumn = useCallback(
+    (...args: any[]) => {
+      dispatch(removeColumn(...args))
+      dispatch(search())
+    },
+    [dispatch]
+  )
 
-  const onSelectColumn = (...args: any[]) => {
-    selectColumn(...args)
-    search()
-  }
+  const onSelectColumn = useCallback(
+    (...args: any[]) => {
+      dispatch(selectColumn(...args))
+      dispatch(search())
+    },
+    [dispatch]
+  )
 
-  const onClearColumns = () => {
-    clearColumns()
-    search()
-  }
+  const onClearColumns = useCallback(() => {
+    dispatch(clearColumns())
+    dispatch(search())
+  }, [dispatch])
+
+  const onAddColumn = useCallback(() => {
+    dispatch(addColumn())
+  }, [dispatch])
 
   return (
     <Card>
@@ -62,7 +66,7 @@ const SelectColumnsCard = (props) => {
         ))}
       </CardBody>
       <CardFooter className="text-center">
-        <Button color="success" onClick={addColumn}>
+        <Button color="success" onClick={onAddColumn}>
           Add
         </Button>
         <Button color="warning" onClick={onClearColumns}>
@@ -73,26 +77,4 @@ const SelectColumnsCard = (props) => {
   )
 }
 
-const mapStateToProps = (state) => {
-  return {
-    columns: state.contextualPage.selectColumns.columns,
-    dataDefinitions: state.contextualDataDefinitions.values,
-    optionsLoading: state.contextualDataDefinitions.isLoading,
-  }
-}
-
-const mapDispatchToProps = (dispatch: any) => {
-  return bindActionCreators(
-    {
-      fetchContextualDataDefinitions,
-      addColumn,
-      removeColumn,
-      selectColumn,
-      clearColumns,
-      search,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(SelectColumnsCard)
+export default SelectColumnsCard
