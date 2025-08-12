@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import { isEmpty } from 'lodash'
@@ -7,7 +8,17 @@ import 'react-table/react-table.css'
 import { fieldsToColumns, SearchResultsTable } from 'components/search_results_table'
 import { changeTableProperties, search } from '../reducers/search'
 
-function mapStateToProps(state) {
+const ContextualSearchResultsTable = (props) => {
+  useEffect(() => {
+    if (isEmpty(props.results.data)) {
+      props.search()
+    }
+  }, [props.results.data, props.search])
+
+  return <SearchResultsTable contextual {...props} />
+}
+
+const mapStateToProps = (state) => {
   return {
     results: state.contextualPage.results,
     extraColumns: fieldsToColumns(
@@ -17,7 +28,7 @@ function mapStateToProps(state) {
   }
 }
 
-function mapDispatchToProps(dispatch) {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       changeTableProperties,
@@ -25,14 +36,6 @@ function mapDispatchToProps(dispatch) {
     },
     dispatch
   )
-}
-
-class ContextualSearchResultsTable extends SearchResultsTable {
-  public componentDidMount() {
-    if (isEmpty(this.props.results.data)) {
-      this.props.search()
-    }
-  }
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(ContextualSearchResultsTable)

@@ -1,5 +1,5 @@
+import React from 'react'
 import { isEmpty, map, reject } from 'lodash'
-import * as React from 'react'
 import { connect } from 'react-redux'
 
 import { Card, CardBody, CardHeader } from 'reactstrap'
@@ -7,7 +7,7 @@ import { Card, CardBody, CardHeader } from 'reactstrap'
 import { ExportDataButton } from 'components/export_data_button'
 
 import { EmptyOTUQuery } from 'search'
-import SearchResultsTable from './search_results_table'
+import ContextualSearchResultsTable from './search_results_table'
 
 const SearchResultsCard = (props) => {
   const { ckanAuthToken, extraColumns, sorting } = props
@@ -37,7 +37,7 @@ const SearchResultsCard = (props) => {
           </div>
         </CardHeader>
         <CardBody>
-          <SearchResultsTable />
+          <ContextualSearchResultsTable {...props} />
         </CardBody>
       </Card>
     </div>
