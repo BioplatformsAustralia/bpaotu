@@ -464,7 +464,7 @@ class DataImporter:
                 otu_hash = row['otu']
                 otu_id = otu_lookup.get(otu_hash)
 
-                if otu_id is None:
+                if otu_id is None and not is_metaxa_otu(otu_hash):
                     raise DataImportError(f"Unknown OTU hash: {row['otu']}")
 
                 amplicon_id = mappings.get('amplicon').get(row.get('amplicon', ''), "")
