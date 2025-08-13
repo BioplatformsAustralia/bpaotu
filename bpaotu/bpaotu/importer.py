@@ -150,7 +150,8 @@ class TaxonomyRowsIterator:
                     raise DataImportError("No amplicon column header in {}".format(fname))
                 traits_header_index = header.index(self.traits_header) if self.traits_header in header else -1
                 if header[0] != self.otu_header:
-                    raise DataImportError("First column must be OTU in {}".format(fname))
+                    print("First column must be OTU in {}".format(fname))
+                    # raise DataImportError("First column must be OTU in {}".format(fname))
                 # Assume all the taxonomy fields are before the amplicon field
                 taxo_header_lower = header[1:amplicon_header_index]
                 h = set(taxo_header_lower)
