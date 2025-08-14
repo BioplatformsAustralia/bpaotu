@@ -25,8 +25,8 @@ import logging
 import time
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
-from Bio.SeqRecord  import SeqRecord
-from Bio.Seq  import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 
 logger = logging.getLogger('bpaotu')
 
