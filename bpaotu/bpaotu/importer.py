@@ -420,6 +420,8 @@ class DataImporter:
         with tmp_csv_file() as (w_otu, otu_fd), tmp_csv_file() as (w_seq, seq_fd):
             logger.info("Writing OTU hashes to temporary CSV file {}".format(otu_fd.name))
             logger.info("Writing OTU sequences to temporary CSV file {}".format(seq_fd.name))
+
+            # the id for each otu needs to match the id for the sequence
             for (_id, row) in enumerate(fasta_rows_iter, 1):
                 w_otu.writerow([_id, row['otu_hash']])
                 w_seq.writerow([_id, row['sequence']])
@@ -429,6 +431,22 @@ class DataImporter:
 
             logger.info(f"Loading OTU sequences from {seq_fd.name}")
             self.load_from_csv("COPY sequence (id, seq) FROM STDIN CSV", seq_fd)
+
+        # metaxa do not have sequences, just a SHA1 string that starts with mxa_
+        # these need to be in the OTU table, but won't a corresponding record in the Sequence table
+        # so there is no fasta file because there are no corresponding sequences
+        # as a result, the mxa_ otu codes will not be loaded above and we need to do it manually
+        # TODO: we should do it here in bulk,
+        # but will try adding them manually as they are encountered (which was the original approach)
+
+        # regardless we need to set the serial sequence value so that pg does not start id values from 1
+        # this is because the bulk load (FROM STDIN CSV) bypasses pg's sequence generator for id
+
+        with self._engine.begin() as conn:
+            conn.execute(text(
+                "SELECT setval(pg_get_serial_sequence('otu.otu', 'id'), "
+                "(SELECT COALESCE(MAX(id), 1) FROM otu.otu))"
+            ))
 
 
         taxonomy_rows_iter = TaxonomyRowsIterator(
@@ -464,8 +482,22 @@ class DataImporter:
                 otu_hash = row['otu']
                 otu_id = otu_lookup.get(otu_hash)
 
-                if otu_id is None and not is_metaxa_otu(otu_hash):
-                    raise DataImportError(f"Unknown OTU hash: {row['otu']}")
+                if otu_id is None:
+                    # is this right?
+                    if is_metaxa_otu(otu_hash):
+                        # insert row into otu and get the id assigned by db and store in otu_id
+                        with self._engine.begin() as conn:
+                            result = conn.execute(
+                                insert(OTU)
+                                .values(code=otu_hash)
+                                .returning(OTU.id)
+                            )
+                            otu_id = result.scalar()
+
+                        # store it in the lookup so we don’t insert the same OTU twice
+                        otu_lookup[otu_hash] = otu_id
+                    else:
+                        raise DataImportError(f"Unknown OTU hash: {otu_hash}")
 
                 amplicon_id = mappings.get('amplicon').get(row.get('amplicon', ''), "")
                 taxonomy_row = [_id,
