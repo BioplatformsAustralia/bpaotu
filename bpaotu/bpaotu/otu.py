@@ -740,7 +740,7 @@ class SampleContext(SchemaMixin, Base):
     slope_aspect = Column(CIText)
     slope_aspect_meth = Column(CIText)
     slope_gradient = Column(Float)
-    slope_gradient_meth = Column(Float)
+    slope_gradient_meth = Column(CIText)
     sodium = Column(Float)
     sodium_meth = Column(CIText)
     specific_host = Column(CIText)
