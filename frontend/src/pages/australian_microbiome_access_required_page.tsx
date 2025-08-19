@@ -11,12 +11,12 @@ export default (props) => {
         <h4 className="alert-heading">Australian Microbiome Data Access Required</h4>
         <p>You do not have access to the Australian Microbiome data.</p>
         <p>
-        Please request membership via the
-        <a href={ckanURL('member-request/new')} memberships </a>
-        page on the Bioplatforms Australia Data Portal.
+          Please request membership via the <a href={ckanURL('member-request/new')}>memberships</a>{' '}
+          page on the Bioplatforms Australia Data Portal.
         </p>
         <p>
-          Please contact <a href="mailto:help@bioplatforms.com">help@bioplatforms.com</a> for additional support.
+          Please contact <a href="mailto:help@bioplatforms.com">help@bioplatforms.com</a> for
+          additional support.
         </p>
       </Alert>
     </Container>
