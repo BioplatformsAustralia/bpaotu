@@ -13,6 +13,8 @@ import { openKronaModal } from '../reducers/krona_modal'
 import { openMetagenomeModal, openMetagenomeModalSearch } from '../reducers/metagenome_modal'
 import { GalaxySubmission } from '../reducers/types'
 
+import { runOtuExport, cancelOtuExport } from '../reducers/otu_export'
+
 import { metaxaAmpliconStringMatch } from 'app/constants'
 
 import BlastModal from './blast_search_modal'

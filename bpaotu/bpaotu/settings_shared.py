@@ -44,6 +44,9 @@ BASE_URL = SCRIPT_NAME
 BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
 BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
 
+OTU_EXPORT_PATH = env.get('otu_export_path', '/data/otu-export/')
+OTU_EXPORT_URL = env.get('otu_export_url', STATIC_URL)
+
 
 ## ckan config
 

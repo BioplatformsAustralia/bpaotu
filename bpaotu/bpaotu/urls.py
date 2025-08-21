@@ -35,6 +35,9 @@ urlpatterns = [
     url(r'^private/api/v1/cancel_comparison$', views.cancel_comparison, name="cancel_comparison"),
     url(r'^private/api/v1/clear_comparison$', views.clear_comparison, name="clear_comparison"),
     url(r'^private/api/v1/comparison_submission$', views.comparison_submission, name="comparison_submission"),
+    url(r'^private/api/v1/submit_otuexport$', views.submit_otuexport, name="submit_otuexport"),
+    url(r'^private/api/v1/cancel_otuexport$', views.cancel_otuexport, name="cancel_otuexport"),
+    url(r'^private/api/v1/otuexport_submission$', views.otuexport_submission, name="otuexport_submission"),
     url(r'^private/api/v1/export$', views.otu_export, name="otu_export"),
     url(r'^private/api/v1/export_biom$', views.otu_biom_export, name="otu_biom_export"),
     url(

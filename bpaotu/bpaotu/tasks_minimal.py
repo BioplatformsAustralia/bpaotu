@@ -12,6 +12,7 @@ from django.conf import settings
 from .biom import save_biom_zip_file
 from .blast import BlastWrapper
 from .galaxy_client import get_users_galaxy
+from .otu_export import OtuExportWrapper
 from .sample_meta import update_from_ckan
 from .sample_comparison import SampleComparisonWrapper
 from .submission import Submission
@@ -41,6 +42,61 @@ def debug_task(self):
 @app.task(ignore_result=True)
 def periodic_ckan_update():
     update_from_ckan()
+
+
+##
+## OTU Export
+##
+
+@app.task()
+def submit_otuexport(submission_id, query):
+    submission = Submission.create(submission_id)
+
+    submission.query = query
+
+    chain = setup_otuexport.s() | run_otuexport.s()
+
+    chain(submission_id)
+
+    return submission_id
+
+@app.task()
+def setup_otuexport(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_otuexport_wrapper(submission)
+    wrapper.setup()
+
+    return submission_id
+
+@app.task()
+def run_otuexport(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_otuexport_wrapper(submission)
+    fname, row_count = wrapper.run()
+    submission.result_url = settings.OTU_EXPORT_URL + '/' + fname
+    submission.row_count = row_count
+
+    return submission_id
+
+@app.task()
+def cancel_otuexport(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_otuexport_wrapper(submission)
+    wrapper.cancel()
+
+    return submission_id
+
+@app.task()
+def cleanup_otuexport(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_otuexport_wrapper(submission)
+    wrapper.cleanup()
+
+    return submission_id
+
+def _make_otuexport_wrapper(submission):
+    return OtuExportWrapper(
+        submission.submission_id, submission.query, submission.status)
 
 
 ##
