@@ -49,6 +49,20 @@ export interface PageState {
     contextual: any // TODO
     sampleIntegrityWarning: any
   }
+  blastSearch: {
+    status: string
+    sequenceValue: string
+    blastParams: {
+      qcov_hsp_perc: string
+      perc_identity: string
+    }
+    alerts: any[]
+    imageSrc: string
+    resultUrl: string
+    isSubmitting: boolean
+    isFinished: boolean
+    submissions: any[]
+  }
   blastSearchModal: {
     isOpen: boolean
     rowsCount: number
@@ -169,6 +183,20 @@ export const searchPageInitialState: PageState = {
       filtersMode: 'and',
       filters: [],
     },
+  },
+  blastSearch: {
+    status: 'init',
+    sequenceValue: '',
+    blastParams: {
+      qcov_hsp_perc: '60',
+      perc_identity: '95',
+    },
+    alerts: [],
+    imageSrc: '',
+    resultUrl: '',
+    isSubmitting: false,
+    isFinished: false,
+    submissions: [],
   },
   blastSearchModal: {
     isOpen: false,

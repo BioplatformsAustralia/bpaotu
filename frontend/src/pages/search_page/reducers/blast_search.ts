@@ -5,7 +5,7 @@ import { executeBlast, executeCancelBlast, getBlastSubmission } from 'api'
 import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 
 import { describeSearch } from './search'
-import { BlastSubmission, ErrorList } from './types'
+import { BlastSubmission, ErrorList, searchPageInitialState } from './types'
 
 export const HANDLE_BLAST_SEQUENCE = 'HANDLE_BLAST_SEQUENCE'
 export const HANDLE_BLAST_PARAMETERS = 'HANDLE_BLAST_PARAMETERS'
@@ -44,21 +44,6 @@ export const {
 
   CLEAR_BLAST_ALERT
 )
-
-const blastInitialState = {
-  status: 'init',
-  sequenceValue: '',
-  blastParams: {
-    qcov_hsp_perc: '60',
-    perc_identity: '95',
-  },
-  alerts: [],
-  imageSrc: '',
-  resultUrl: '',
-  isSubmitting: false,
-  isFinished: false,
-  submissions: [],
-}
 
 export const runBlast = () => (dispatch, getState) => {
   const state = getState()
@@ -210,8 +195,8 @@ export default handleActions(
 
         let isSubmitting: any = state.isSubmitting
         let isFinished: any = false
-        let resultUrl: any = blastInitialState.resultUrl
-        let imageSrc: any = blastInitialState.imageSrc
+        let resultUrl: any = searchPageInitialState.blastSearch.resultUrl
+        let imageSrc: any = searchPageInitialState.blastSearch.imageSrc
         let newAlerts: any = state.alerts
 
         // if (action.payload.data.submission.result_url) {
@@ -307,5 +292,5 @@ export default handleActions(
       }
     },
   },
-  blastInitialState
+  searchPageInitialState.blastSearch
 )
