@@ -15,7 +15,7 @@ import { GalaxySubmission } from '../reducers/types'
 
 import { metaxaAmpliconStringMatch } from 'app/constants'
 
-import BlastModal from './blast_modal'
+import BlastModal from './blast_search_modal'
 import SamplesMapModal from './samples_map_modal'
 import SamplesGraphModal from './samples_graph_modal'
 import SamplesComparisonModal from './samples_comparison_modal'

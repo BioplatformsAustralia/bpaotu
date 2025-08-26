@@ -49,7 +49,7 @@ export interface PageState {
     contextual: any // TODO
     sampleIntegrityWarning: any
   }
-  blastModal: {
+  blastSearchModal: {
     isOpen: boolean
     rowsCount: number
   }
@@ -170,7 +170,7 @@ export const searchPageInitialState: PageState = {
       filters: [],
     },
   },
-  blastModal: {
+  blastSearchModal: {
     isOpen: false,
     rowsCount: -1, // to prevent clash with "0" which prevents running blast search
   },

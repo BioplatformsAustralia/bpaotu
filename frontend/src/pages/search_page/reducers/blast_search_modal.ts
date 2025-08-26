@@ -8,8 +8,8 @@ import { searchPageInitialState } from './types'
 export const {
   openBlastModal,
   closeBlastModal,
-  blastModalFetchSamplesStarted,
-  blastModalFetchSamplesEnded,
+  blastSearchModalFetchSamplesStarted,
+  blastSearchModalFetchSamplesEnded,
 } = createActions(
   'OPEN_BLAST_MODAL',
   'CLOSE_BLAST_MODAL',
@@ -22,11 +22,11 @@ export const fetchBlastModalSamples = () => (dispatch, getState) => {
   const state = getState()
   const filters = describeSearch(state)
 
-  dispatch(blastModalFetchSamplesStarted())
+  dispatch(blastSearchModalFetchSamplesStarted())
   handleSimpleAPIResponse(
     dispatch,
     partial(executeBlastOtuSearch, filters),
-    blastModalFetchSamplesEnded
+    blastSearchModalFetchSamplesEnded
   )
 }
 
@@ -40,16 +40,16 @@ export default handleActions(
       ...state,
       isOpen: false,
     }),
-    [blastModalFetchSamplesStarted as any]: (state, action) => ({
+    [blastSearchModalFetchSamplesStarted as any]: (state, action) => ({
       ...state,
       isLoading: true,
       rowsCount: -1, // to avoid clash with "0"
     }),
-    [blastModalFetchSamplesEnded as any]: (state, action: any) => ({
+    [blastSearchModalFetchSamplesEnded as any]: (state, action: any) => ({
       ...state,
       isLoading: false,
       rowsCount: action.payload.data.rowsCount,
     }),
   },
-  searchPageInitialState.blastModal
+  searchPageInitialState.blastSearchModal
 )

@@ -18,7 +18,7 @@ import SearchRunningIcon from './components/search_running_icon'
 import SearchFinishedIcon from './components/search_finished_icon'
 import { SearchResultsCard, MetagenomeSearchResultsCard } from './components/search_results_card'
 
-import { openBlastModal } from './reducers/blast_modal'
+import { openBlastModal } from './reducers/blast_search_modal'
 import { openSamplesMapModal } from './reducers/samples_map_modal'
 import { openSamplesGraphModal } from './reducers/samples_graph_modal'
 import { openSamplesComparisonModal } from './reducers/samples_comparison_modal'

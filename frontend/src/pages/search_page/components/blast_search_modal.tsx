@@ -7,8 +7,8 @@ import { Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
 import { TourContext } from 'providers/tour_provider'
 import BlastSearchCard from './blast_search_card'
 
-import { closeBlastModal, fetchBlastModalSamples } from '../reducers/blast_modal'
-import './blast_modal.css'
+import { closeBlastModal, fetchBlastModalSamples } from '../reducers/blast_search_modal'
+import './blast_search_modal.css'
 
 import SearchFilters from './search_filters'
 
@@ -120,7 +120,7 @@ const BlastModal = (props) => {
 }
 
 const mapStateToProps = (state) => {
-  const { isOpen, isLoading, rowsCount } = state.searchPage.blastModal
+  const { isOpen, isLoading, rowsCount } = state.searchPage.blastSearchModal
   return {
     isOpen,
     isLoading,
