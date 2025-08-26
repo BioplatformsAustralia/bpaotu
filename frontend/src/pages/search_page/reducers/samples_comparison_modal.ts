@@ -1,11 +1,8 @@
 import { createActions, handleActions } from 'redux-actions'
-import { searchPageInitialState } from './types'
-
 import { executeComparison, executeCancelComparison, getComparisonSubmission } from 'api'
 import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
-
 import { describeSearch } from './search'
-import { ComparisonSubmission, ErrorList } from './types'
+import { ComparisonSubmission, ErrorList, searchPageInitialState } from './types'
 
 import { get as _get, isNumber, last } from 'lodash'
 
@@ -13,45 +10,35 @@ export const {
   openSamplesComparisonModal,
   closeSamplesComparisonModal,
 
+  samplesComparisonModalClearPlotData,
   samplesComparisonModalSetSelectedMethod,
   samplesComparisonModalSetSelectedFilter,
   samplesComparisonModalSetSelectedFilterExtra,
-
   handleUmapParameters,
-
   runComparisonStarted,
   runComparisonEnded,
   comparisonSubmissionUpdateStarted,
   comparisonSubmissionUpdateEnded,
   cancelComparisonStarted,
   cancelComparisonEnded,
-
-  clearComparisonAlert,
-
-  samplesComparisonModalClearPlotData,
 } = createActions(
   'OPEN_SAMPLES_COMPARISON_MODAL',
   'CLOSE_SAMPLES_COMPARISON_MODAL',
 
+  'SAMPLES_COMPARISON_MODAL_CLEAR_PLOT_DATA',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_METHOD',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER_EXTRA',
-
   'HANDLE_UMAP_PARAMETERS',
-
   'RUN_COMPARISON_STARTED',
   'RUN_COMPARISON_ENDED',
   'COMPARISON_SUBMISSION_UPDATE_STARTED',
   'COMPARISON_SUBMISSION_UPDATE_ENDED',
   'CANCEL_COMPARISON_STARTED',
-  'CANCEL_COMPARISON_ENDED',
-
-  'CLEAR_COMPARISON_ALERT',
-
-  'SAMPLES_COMPARISON_MODAL_CLEAR_PLOT_DATA'
+  'CANCEL_COMPARISON_ENDED'
 )
 
-const COMPARISON_SUBMISSION_POLL_FREQUENCY_MS = 2000
+const COMPARISON_SUBMISSION_POLL_FREQUENCY_MS = 5000
 
 export const setSelectedMethod = (selectedMethod) => (dispatch, getState) => {
   dispatch(samplesComparisonModalSetSelectedMethod(selectedMethod))
@@ -339,18 +326,6 @@ export default handleActions(
       isFinished: true,
       status: 'cancelled',
     }),
-    [clearComparisonAlert as any]: (state, action) => {
-      const index = action.payload
-      const alerts = isNumber(index)
-        ? removeElementAtIndex(state.alerts, index)
-        : state.alerts.filter((a) => a.color === 'danger') // never auto-remove errors
-      return {
-        ...state,
-        alerts,
-        isFinished: false,
-        status: 'init',
-      }
-    },
   },
   searchPageInitialState.samplesComparisonModal
 )

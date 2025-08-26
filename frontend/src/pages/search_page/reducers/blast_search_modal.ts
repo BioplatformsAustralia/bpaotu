@@ -1,3 +1,9 @@
+import { createActions, handleActions } from 'redux-actions'
+import { executeBlastOtuSearch, executeBlast, executeCancelBlast, getBlastSubmission } from 'api'
+import { handleSimpleAPIResponse, changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
+import { describeSearch } from './search'
+import { BlastSubmission, ErrorList, searchPageInitialState } from './types'
+
 import {
   filter,
   get as _get,
@@ -9,18 +15,14 @@ import {
   reject,
   upperCase,
 } from 'lodash'
-import { createActions, handleActions } from 'redux-actions'
-import { executeBlastOtuSearch, executeBlast, executeCancelBlast, getBlastSubmission } from 'api'
-import { handleSimpleAPIResponse, changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
-import { describeSearch } from './search'
-import { BlastSubmission, ErrorList, searchPageInitialState } from './types'
 
 export const {
   openBlastModal,
   closeBlastModal,
+  clearBlastAlert,
+
   blastSearchModalFetchSamplesStarted,
   blastSearchModalFetchSamplesEnded,
-
   handleBlastSequence,
   handleBlastParameters,
   runBlastStarted,
@@ -29,13 +31,13 @@ export const {
   blastSubmissionUpdateEnded,
   cancelBlastStarted,
   cancelBlastEnded,
-  clearBlastAlert,
 } = createActions(
   'OPEN_BLAST_MODAL',
   'CLOSE_BLAST_MODAL',
+  'CLEAR_BLAST_ALERT',
+
   'BLAST_SEARCH_MODAL_FETCH_SAMPLES_STARTED',
   'BLAST_SEARCH_MODAL_FETCH_SAMPLES_ENDED',
-
   'HANDLE_BLAST_SEQUENCE',
   'HANDLE_BLAST_PARAMETERS',
   'RUN_BLAST_STARTED',
@@ -43,8 +45,7 @@ export const {
   'BLAST_SUBMISSION_UPDATE_STARTED',
   'BLAST_SUBMISSION_UPDATE_ENDED',
   'CANCEL_BLAST_STARTED',
-  'CANCEL_BLAST_ENDED',
-  'CLEAR_BLAST_ALERT'
+  'CANCEL_BLAST_ENDED'
 )
 
 const BLAST_SUBMISSION_POLL_FREQUENCY_MS = 5000
@@ -153,6 +154,18 @@ export default handleActions(
       ...state,
       isOpen: false,
     }),
+    [clearBlastAlert as any]: (state, action) => {
+      const index = action.payload
+      const alerts = isNumber(index)
+        ? removeElementAtIndex(state.alerts, index)
+        : state.alerts.filter((a) => a.color === 'danger') // never auto-remove errors
+      return {
+        ...state,
+        alerts,
+        isFinished: false,
+        imageSrc: '',
+      }
+    },
     [blastSearchModalFetchSamplesStarted as any]: (state, action) => ({
       ...state,
       isLoading: true,
@@ -314,18 +327,6 @@ export default handleActions(
       isFinished: true,
       status: 'cancelled',
     }),
-    [clearBlastAlert as any]: (state, action) => {
-      const index = action.payload
-      const alerts = isNumber(index)
-        ? removeElementAtIndex(state.alerts, index)
-        : state.alerts.filter((a) => a.color === 'danger') // never auto-remove errors
-      return {
-        ...state,
-        alerts,
-        imageSrc: '',
-        isFinished: false,
-      }
-    },
   },
   searchPageInitialState.blastSearchModal
 )
