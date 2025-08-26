@@ -145,8 +145,8 @@ const SearchPage = (props) => {
 function mapStateToProps(state) {
   return {
     isSearchInProgress: state.searchPage.results.isLoading,
-    isBlastSearchRunning: state.searchPage.blastSearch.isSubmitting,
-    isBlastSearchFinished: state.searchPage.blastSearch.isFinished,
+    isBlastSearchRunning: state.searchPage.blastSearchModal.isSubmitting,
+    isBlastSearchFinished: state.searchPage.blastSearchModal.isFinished,
     isComparisonRunning: state.searchPage.samplesComparisonModal.isLoading,
     isComparisonFinished: state.searchPage.samplesComparisonModal.isFinished,
     errors: state.searchPage.results.errors,

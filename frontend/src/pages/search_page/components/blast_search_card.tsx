@@ -24,7 +24,7 @@ import {
   handleBlastParameters,
   runBlast,
   cancelBlast,
-} from '../reducers/blast_search'
+} from '../reducers/blast_search_modal'
 import { getAmpliconFilter } from '../reducers/amplicon'
 
 const blastStatusMapping = {
@@ -231,18 +231,18 @@ const mapStateToProps = (state, props) => {
   const selectedAmplicon = getAmpliconFilter(state)
 
   return {
-    alerts: state.searchPage.blastSearch.alerts,
-    blastParams: state.searchPage.blastSearch.blastParams,
-    blastStatus: state.searchPage.blastSearch.status,
-    imageSrc: state.searchPage.blastSearch.imageSrc,
+    alerts: state.searchPage.blastSearchModal.alerts,
+    blastParams: state.searchPage.blastSearchModal.blastParams,
+    blastStatus: state.searchPage.blastSearchModal.status,
+    imageSrc: state.searchPage.blastSearchModal.imageSrc,
     isAmpliconSelected: selectedAmplicon.value,
-    isSubmitting: state.searchPage.blastSearch.isSubmitting,
-    sequenceValue: state.searchPage.blastSearch.sequenceValue,
+    isSubmitting: state.searchPage.blastSearchModal.isSubmitting,
+    sequenceValue: state.searchPage.blastSearchModal.sequenceValue,
 
     isSearchDisabled:
       selectedAmplicon.value === '' ||
-      state.searchPage.blastSearch.sequenceValue === '' ||
-      state.searchPage.blastSearch.isSubmitting,
+      state.searchPage.blastSearchModal.sequenceValue === '' ||
+      state.searchPage.blastSearchModal.isSubmitting,
   }
 }
 

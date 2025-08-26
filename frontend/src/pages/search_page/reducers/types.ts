@@ -49,23 +49,21 @@ export interface PageState {
     contextual: any // TODO
     sampleIntegrityWarning: any
   }
-  blastSearch: {
+  blastSearchModal: {
+    isOpen: boolean
+    isSubmitting: boolean
+    isFinished: boolean
     status: string
     sequenceValue: string
     blastParams: {
       qcov_hsp_perc: string
       perc_identity: string
     }
+    rowsCount: number
+    submissions: any[]
     alerts: any[]
     imageSrc: string
     resultUrl: string
-    isSubmitting: boolean
-    isFinished: boolean
-    submissions: any[]
-  }
-  blastSearchModal: {
-    isOpen: boolean
-    rowsCount: number
   }
   taxonomySearchModal: {
     searchStringInput: string
@@ -184,22 +182,20 @@ export const searchPageInitialState: PageState = {
       filters: [],
     },
   },
-  blastSearch: {
+  blastSearchModal: {
+    isOpen: false,
+    isSubmitting: false,
+    isFinished: false,
     status: 'init',
     sequenceValue: '',
     blastParams: {
       qcov_hsp_perc: '60',
       perc_identity: '95',
     },
+    submissions: [],
     alerts: [],
     imageSrc: '',
     resultUrl: '',
-    isSubmitting: false,
-    isFinished: false,
-    submissions: [],
-  },
-  blastSearchModal: {
-    isOpen: false,
     rowsCount: -1, // to prevent clash with "0" which prevents running blast search
   },
   taxonomySearchModal: {
