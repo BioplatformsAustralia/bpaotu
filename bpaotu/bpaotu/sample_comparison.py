@@ -1,21 +1,15 @@
-from bpaotu.celery import app
-
-import os.path
-import logging
-import shutil
-import json
 import io
-from time import time
+import json
 
 from django.conf import settings
-
 from django.db import connection
 from psycopg2.extensions import adapt
 
+from .base_task_wrapper import BaseTaskWrapper
 from .params import param_to_filters, selected_contextual_filters
 from .query import SampleQuery
 from .submission import Submission
-from .task_utils import NumpyEncoder, find_task_id_for_submission
+from .task_utils import NumpyEncoder
 
 import numpy as np
 import pandas as pd
@@ -27,100 +21,28 @@ logger = logging.getLogger('bpaotu')
 
 SHARED_DIR = "/data/shared/comparison"
 
-class SampleComparisonWrapper:
+class SampleComparisonWrapper(BaseTaskWrapper):
     def __init__(self, submission_id, query, status, umap_params_string):
-        self._submission_id = submission_id
-        self._status = status
+        super().__init__(submission_id, status, "comparison")
         self._query = query
         self._params, _ = param_to_filters(query)
         umap_params = json.loads(umap_params_string)
         self._param_min_dist = float(umap_params['min_dist'])
         self._param_n_neighbors = int(umap_params['n_neighbors'])
         self._param_spread = float(umap_params['spread'])
-        self._submission_dir = os.path.join(SHARED_DIR, submission_id)
-
-
-    def _status_update(self, submission, text):
-        this_timestamp = time()
-        timestamps_ = json.loads(submission.timestamps)
-
-        # log with time taken since last status update
-        if timestamps_:
-            prev_step = timestamps_[-1]
-            prev_label, prev_timestamp = list(prev_step.items())[0]
-            step_duration = this_timestamp - prev_timestamp
-            logger.info(f"Status: {text} ({prev_label} took {step_duration:.1f}s)")
-        else:
-            logger.info(f"Status: {text}")
-
-        # append new timestampe and update submission
-        timestamps_.append({ text: this_timestamp })
-        submission.status = text
-        submission.timestamps = json.dumps(timestamps_)
-
-    def _in(self, filename):
-        "return path to filename within submission dir"
-        return os.path.join(self._submission_dir, filename)
-
-
-    def setup(self):
-        return self._setup()
-
-    def run(self):
-        return self._run()
-
-    def cancel(self):
-        return self._cancel()
-
-    def cleanup(self):
-        self._cleanup();
-
-
-    def _setup(self):
-        submission = Submission(self._submission_id)
-        submission.timestamps = json.dumps([])
-
-        self._status_update(submission, 'init')
-        os.makedirs(self._submission_dir, exist_ok=True)
-        logger.info(f'Submission directory created: {self._submission_dir}')
-
-    def _cancel(self):
-        submission = Submission(self._submission_id)
-
-        try:
-            task_id = find_task_id_for_submission(self._submission_id)
-            if task_id:
-                app.control.revoke(task_id, terminate=True, signal='SIGKILL')
-
-                self._status_update(submission, 'cancelled')
-                submission.cancelled = 'true'
-                return True
-        except Exception as e:
-            print('error', e)
-            logger.exception('Error in cancel sample comparison')
-            return False
-
-        self._cleanup();
-
-    def _cleanup(self):
-        try:
-            shutil.rmtree(self._submission_dir)
-            logger.info(f"Submission directory removed: {self._submission_dir}")
-        except FileNotFoundError:
-            logger.info(f"Could not remove submission directory (FileNotFoundError): {self._submission_dir}")
 
 
     def _estimate_pivot_size(self, df):
         nunique_sample_id = df["sample_id"].nunique()
         nunique_otu_id = df["otu_id"].nunique()
         dtype_size = np.dtype(np.int64).itemsize
-        logger.info(f'Pivot dimensions: {nunique_sample_id} x {nunique_otu_id} (sample_id x otu_id )')
+        self._log('info', f"Pivot dimensions: {nunique_sample_id} x {nunique_otu_id} (sample_id x otu_id )")
 
         estimated_index_bytes = nunique_sample_id * 50 # size per sample is an estimate
         estimated_data_bytes = nunique_sample_id * nunique_otu_id * dtype_size
         estimated_bytes = estimated_index_bytes + estimated_data_bytes
         estimated_mb = estimated_bytes / (1024 ** 2)
-        logger.info(f"Estimated pivot memory usage: {estimated_mb:.2f} MB")
+        self._log('info', f"Estimated pivot memory usage: {estimated_mb:.2f} MB")
 
         return nunique_sample_id, nunique_otu_id, estimated_mb
 
@@ -141,7 +63,7 @@ class SampleComparisonWrapper:
 
 
     def _build_abundance_dataframe(self):
-        logger.info('Building abundance dataframe in memory')
+        self._log('info', "Building abundance dataframe in memory")
 
         submission = Submission(self._submission_id)
         self._status_update(submission, 'fetch')
@@ -215,7 +137,7 @@ class SampleComparisonWrapper:
 
         actual_bytes = rect_df.memory_usage(deep=True).sum()
         actual_mb = actual_bytes / (1024 ** 2)
-        logger.info(f"Actual pivot memory_usage: {actual_mb:.2f} MB")
+        self._log('info', f"Actual pivot memory_usage: {actual_mb:.2f} MB")
 
         self._status_update(submission, 'calc_distances_bc')
         dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)

@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 
 import json
-import base64
 import tempfile
 
 from django.conf import settings
@@ -52,6 +51,7 @@ def periodic_ckan_update():
 def submit_blast(submission_id, query, search_string, blast_params_string):
     submission = Submission.create(submission_id)
 
+    submission.status = 'init'
     submission.query = query
     submission.search_string = search_string
     submission.blast_params_string = blast_params_string
@@ -74,16 +74,7 @@ def setup_blast(submission_id):
 def run_blast(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_blast_wrapper(submission)
-    fname, image_contents, row_count = wrapper.run()
-    submission.result_url = settings.BLAST_RESULTS_URL + '/' + fname
-
-    # if result has an image then encode image contents as a Base64 string
-    image_base64 = ''
-    if image_contents:
-        image_base64 = base64.b64encode(image_contents).decode('utf-8')
-
-    submission.image_contents = image_base64
-    submission.row_count = row_count
+    wrapper.run()
 
     return submission_id
 
