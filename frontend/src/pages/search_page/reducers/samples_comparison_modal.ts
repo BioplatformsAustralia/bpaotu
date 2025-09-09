@@ -1,5 +1,10 @@
 import { createActions, handleActions } from 'redux-actions'
-import { executeComparison, executeCancelComparison, getComparisonSubmission } from 'api'
+import {
+  executeComparison,
+  executeCancelComparison,
+  executeClearComparison,
+  getComparisonSubmission,
+} from 'api'
 import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
 import { ComparisonSubmission, ErrorList, searchPageInitialState } from './types'
@@ -15,12 +20,15 @@ export const {
   samplesComparisonModalSetSelectedFilter,
   samplesComparisonModalSetSelectedFilterExtra,
   handleUmapParameters,
+  resetUmapParameters,
   runComparisonStarted,
   runComparisonEnded,
   comparisonSubmissionUpdateStarted,
   comparisonSubmissionUpdateEnded,
   cancelComparisonStarted,
   cancelComparisonEnded,
+  clearComparisonStarted,
+  clearComparisonEnded,
 } = createActions(
   'OPEN_SAMPLES_COMPARISON_MODAL',
   'CLOSE_SAMPLES_COMPARISON_MODAL',
@@ -30,15 +38,18 @@ export const {
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER_EXTRA',
   'HANDLE_UMAP_PARAMETERS',
+  'RESET_UMAP_PARAMETERS',
   'RUN_COMPARISON_STARTED',
   'RUN_COMPARISON_ENDED',
   'COMPARISON_SUBMISSION_UPDATE_STARTED',
   'COMPARISON_SUBMISSION_UPDATE_ENDED',
   'CANCEL_COMPARISON_STARTED',
-  'CANCEL_COMPARISON_ENDED'
+  'CANCEL_COMPARISON_ENDED',
+  'CLEAR_COMPARISON_STARTED',
+  'CLEAR_COMPARISON_ENDED'
 )
 
-const COMPARISON_SUBMISSION_POLL_FREQUENCY_MS = 5000
+const COMPARISON_SUBMISSION_POLL_FREQUENCY_MS = 2000
 
 export const setSelectedMethod = (selectedMethod) => (dispatch, getState) => {
   dispatch(samplesComparisonModalSetSelectedMethod(selectedMethod))
@@ -56,26 +67,28 @@ export const clearPlotData = () => (dispatch, getState) => {
   dispatch(samplesComparisonModalClearPlotData())
 }
 
-export const runComparison = (umapParams) => (dispatch, getState) => {
-  const state = getState()
+export const runComparison =
+  (umapParams, submissionId = null) =>
+  (dispatch, getState) => {
+    const state = getState()
+    const filters = describeSearch(state)
 
-  dispatch(runComparisonStarted())
+    // pass submissionId as action payload to determine if this is submission or resubmission
+    dispatch(runComparisonStarted(submissionId))
 
-  const filters = describeSearch(state)
-
-  executeComparison(filters, umapParams)
-    .then((data) => {
-      if (_get(data, 'data.errors', []).length > 0) {
-        dispatch(runComparisonEnded(new ErrorList(...data.data.errors)))
-        return
-      }
-      dispatch(runComparisonEnded(data))
-      dispatch(autoUpdateComparisonSubmission())
-    })
-    .catch((error) => {
-      dispatch(runComparisonEnded(new ErrorList('Unhandled server-side error!')))
-    })
-}
+    executeComparison(filters, umapParams, submissionId)
+      .then((data) => {
+        if (_get(data, 'data.errors', []).length > 0) {
+          dispatch(runComparisonEnded(new ErrorList(...data.data.errors)))
+          return
+        }
+        dispatch(runComparisonEnded(data))
+        dispatch(autoUpdateComparisonSubmission())
+      })
+      .catch((error) => {
+        dispatch(runComparisonEnded(new ErrorList('Unhandled server-side error!')))
+      })
+  }
 
 export const cancelComparison = () => (dispatch, getState) => {
   const state = getState()
@@ -97,6 +110,29 @@ export const cancelComparison = () => (dispatch, getState) => {
     })
     .catch((error) => {
       dispatch(cancelComparisonEnded(new ErrorList('Unhandled server-side error!')))
+    })
+}
+
+export const clearComparison = () => (dispatch, getState) => {
+  const state = getState()
+
+  dispatch(clearComparisonStarted())
+
+  // get the most recently added submissionId
+  // (repeated calls to runComparison add a new submissionId)
+  const { submissions } = state.searchPage.samplesComparisonModal
+  const submissionId = submissions[submissions.length - 1].submissionId
+
+  executeClearComparison(submissionId)
+    .then((data) => {
+      if (_get(data, 'data.errors', []).length > 0) {
+        dispatch(clearComparisonEnded(new ErrorList(data.data.errors)))
+        return
+      }
+      dispatch(clearComparisonEnded(data))
+    })
+    .catch((error) => {
+      dispatch(clearComparisonEnded(new ErrorList('Unhandled server-side error!')))
     })
 }
 
@@ -133,6 +169,7 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
     .catch((error) => {
       if (error.response && error.response.status === 504) {
         // status: 504, statusText: "Gateway Time-out"
+        console.log('autoUpdateComparisonSubmission', 'error', error)
         dispatch(
           comparisonSubmissionUpdateEnded(
             new Error(
@@ -178,11 +215,17 @@ export default handleActions(
         umapParams: { ...state.umapParams, [action.payload.param]: action.payload.value },
       }
     },
+    [resetUmapParameters as any]: (state, action: any) => {
+      return {
+        ...state,
+        umapParams: searchPageInitialState.samplesComparisonModal.umapParams,
+      }
+    },
     [runComparisonStarted as any]: (state, action: any) => ({
       ...state,
       isLoading: true,
       isFinished: false,
-      status: 'init',
+      status: action.payload ? 'reload' : 'init',
       errors: [],
     }),
     [runComparisonEnded as any]: {
@@ -325,6 +368,18 @@ export default handleActions(
       isLoading: false,
       isFinished: true,
       status: 'cancelled',
+    }),
+    [clearComparisonStarted as any]: (state, action: any) => ({
+      ...state,
+      isLoading: false,
+      isFinished: false,
+      status: 'clearing',
+    }),
+    [clearComparisonEnded as any]: (state, action: any) => ({
+      ...state,
+      isLoading: false,
+      isFinished: true,
+      status: 'cleared',
     }),
   },
   searchPageInitialState.samplesComparisonModal

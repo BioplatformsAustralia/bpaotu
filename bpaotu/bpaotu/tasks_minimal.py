@@ -103,6 +103,13 @@ def _make_blast_wrapper(submission):
 ## Sample Comparison
 ##
 
+
+# TODO:
+# split chain run into dist_bc, dist_j, umap_bc and umap_j
+# create group/chord/chain as needed
+# separate tasks so they can run at the same time
+# apply_async() ?
+
 @app.task()
 def submit_sample_comparison(submission_id, query, umap_params_string):
     submission = Submission.create(submission_id)
@@ -111,11 +118,22 @@ def submit_sample_comparison(submission_id, query, umap_params_string):
     submission.query = query
     submission.umap_params_string = umap_params_string
 
-    # TODO:
-    # split run into dist_bc, dist_j, umap_bc and umap_j
-    # create group/chord/chain as needed
-    # apply_async() ?
     chain = setup_comparison.s() | run_comparison.s()
+
+    chain(submission_id)
+
+    return submission_id
+
+@app.task()
+def submit_sample_comparison_params_changed(submission_id, query, umap_params_string):
+    submission = Submission(submission_id)
+    submission.reset()
+
+    submission.status = 'reload'
+    submission.query = query
+    submission.umap_params_string = umap_params_string
+
+    chain = run_comparison_params_changed.s()
 
     chain(submission_id)
 
@@ -133,15 +151,37 @@ def setup_comparison(submission_id):
 def run_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
-    wrapper.run()
+    try:
+        wrapper.run()
+    except ValueError as e:
+        if "min_dist must be less than or equal to spread" in str(e):
+            submission.error = str(e)
+        else:
+            raise # re-raise unexpected ValueErrors
 
     return submission_id
 
 @app.task
-def cancel_sample_comparison(submission_id):
+def run_comparison_params_changed(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
-    results = wrapper.cancel()
+    try:
+        wrapper.run_params_changed()
+    except FileNotFoundError as e:
+        # fallback to normal run_comparison
+        logging.warning(f"Params-changed run failed, falling back to full run for submission {submission_id}")
+        return run_comparison(submission_id)
+    except ValueError as e:
+        submission.error = str(e)
+        logging.error(str(e))
+
+    return submission_id
+
+@app.task
+def cancel_comparison(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_sample_comparison_wrapper(submission)
+    wrapper.cancel()
 
     return submission_id
 

@@ -278,10 +278,15 @@ export function executeKrona(filters, sampleId) {
   })
 }
 
-export function executeComparison(filters, umapParams) {
+export function executeComparison(filters, umapParams, submissionId = null) {
   const formData = new FormData()
   formData.append('query', JSON.stringify(filters))
   formData.append('umap_params', JSON.stringify(umapParams))
+
+  // if resubmitting with changed params
+  if (submissionId) {
+    formData.append('submission_id', submissionId)
+  }
 
   return axios({
     method: 'post',
@@ -297,6 +302,14 @@ export function executeCancelComparison(submissionId) {
   return axios({
     method: 'post',
     url: window.otu_search_config.cancel_comparison_endpoint,
+    data: { submissionId: submissionId },
+  })
+}
+
+export function executeClearComparison(submissionId) {
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.clear_comparison_endpoint,
     data: { submissionId: submissionId },
   })
 }

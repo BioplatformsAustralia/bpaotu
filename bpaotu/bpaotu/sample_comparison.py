@@ -31,6 +31,8 @@ class SampleComparisonWrapper(BaseTaskWrapper):
         self._param_n_neighbors = int(umap_params['n_neighbors'])
         self._param_spread = float(umap_params['spread'])
 
+    def run_params_changed(self):
+        self._run_params_changed()
 
     def _estimate_pivot_size(self, df):
         nunique_sample_id = df["sample_id"].nunique()
@@ -98,11 +100,7 @@ class SampleComparisonWrapper(BaseTaskWrapper):
 
 
     def _run(self):
-        # access the submission so we can change the status
         submission = Submission(self._submission_id)
-
-        from fastdist import fastdist
-        import umap.umap_ as umap # this takes a while
         
         _params, _errors = param_to_filters(self._query)
 
@@ -139,14 +137,104 @@ class SampleComparisonWrapper(BaseTaskWrapper):
         actual_mb = actual_bytes / (1024 ** 2)
         self._log('info', f"Actual pivot memory_usage: {actual_mb:.2f} MB")
 
+        # this is the sample_ids
+        rect_index = rect_df.index
+
+        dist_matrix_braycurtis, dist_matrix_jaccard = self._calc_distance_matrices(rect_df)
+
+        pairs_braycurtis_umap, pairs_jaccard_umap = self._calc_umap_embeddings(rect_index, dist_matrix_braycurtis, dist_matrix_jaccard)
+
+        abundance_matrix = {
+            'sample_ids': rect_index.tolist(),
+            'points': {
+                'braycurtis': pairs_braycurtis_umap,
+                'jaccard': pairs_jaccard_umap
+            }
+        }
+
+        abundance_path = self._in("abundance_matrix.json")
+        with open(abundance_path, "w") as f:
+            json.dump(abundance_matrix, f, cls=NumpyEncoder)
+
+        contextual_path = self._attach_contextual()
+
+        submission.results_files = json.dumps({
+            "abundance_matrix_file": abundance_path,
+            "contextual_file": contextual_path
+        })
+
+        self._status_update(submission, 'complete')
+
+        return True
+
+
+    ## TODO; we want to support adding different contextual fields to group colours by later on
+    ## (but not conditions, because that would change the results) 
+    def _run_params_changed(self):
+        submission = Submission(self._submission_id)
+
+        # set status to init for duration calculation (setup is not called) then use defined reload status
+        self._status_update(submission, 'init')
+
+        # load the distance matrix files back in from prior run
+        self._status_update(submission, 'reload')
+
+        abundance_path = self._in("abundance_matrix.json")
+
+        with open(abundance_path, "r") as f:
+            abundance_matrix = json.load(f)
+
+        with open(self._in("dist_matrix_braycurtis.json"), "r") as f:
+            dist_matrix_braycurtis = json.load(f)
+
+        with open(self._in("dist_matrix_jaccard.json"), "r") as f:
+            dist_matrix_jaccard= json.load(f)
+
+        # calculate umap with new params
+        # status updates are done within _calc_umap_embeddings
+        pairs_braycurtis_umap, pairs_jaccard_umap = self._calc_umap_embeddings(abundance_matrix["sample_ids"], dist_matrix_braycurtis, dist_matrix_jaccard)
+
+        # update abundance matrix and save result (overwrite existing file)
+        abundance_matrix['points'] = {
+            'braycurtis': pairs_braycurtis_umap,
+            'jaccard': pairs_jaccard_umap,
+        }
+
+        with open(abundance_path, "w") as f:
+            json.dump(abundance_matrix, f, cls=NumpyEncoder)
+
+        self._status_update(submission, 'complete')
+
+
+    def _calc_distance_matrices(self, rect_df):
+        from fastdist import fastdist
+
+        submission = Submission(self._submission_id)
+
         self._status_update(submission, 'calc_distances_bc')
         dist_matrix_braycurtis = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.braycurtis, "braycurtis", return_matrix=True)
 
         # self._status_update(submission, 'calc_distances_j')
         # dist_matrix_jaccard = fastdist.matrix_pairwise_distance(rect_df.values, fastdist.jaccard, "jaccard", return_matrix=True)
+        dist_matrix_jaccard = []
+
+        # save the distance matrices for any future resubmissions
+        with open(self._in("dist_matrix_braycurtis.json"), "w") as f:
+            json.dump(dist_matrix_braycurtis, f, cls=NumpyEncoder)
+
+        with open(self._in("dist_matrix_jaccard.json"), "w") as f:
+            json.dump(dist_matrix_jaccard, f, cls=NumpyEncoder)
+
+        return dist_matrix_braycurtis, dist_matrix_jaccard
+
+
+    def _calc_umap_embeddings(self, rect_index, dist_matrix_braycurtis, dist_matrix_jaccard):
+        import umap.umap_ as umap # this takes a few seconds
+
+        submission = Submission(self._submission_id)
 
         def calc_umap(method, dist_matrix):
-            dist_matrix_df = pd.DataFrame(dist_matrix, index=rect_df.index, columns=rect_df.index)
+            dist_matrix_df = pd.DataFrame(dist_matrix, index=rect_index, columns=rect_index)
 
             n_neighbors = self._param_n_neighbors
             spread = self._param_spread
@@ -156,13 +244,11 @@ class SampleComparisonWrapper(BaseTaskWrapper):
                                 n_neighbors=n_neighbors,
                                 spread=spread,
                                 min_dist=min_dist,
-                                metric='precomputed',
-                                random_state=0)
+                                metric='precomputed')
 
             embeddings = reducer.fit_transform(dist_matrix_df.values)
 
             return method, pd.DataFrame(data=embeddings, columns=['dim1', 'dim2'], index=dist_matrix_df.index)
-
 
         self._status_update(submission, 'calc_umap_bc')
         results_braycurtis_umap = calc_umap('braycurtis', dist_matrix_braycurtis)[1]
@@ -172,34 +258,25 @@ class SampleComparisonWrapper(BaseTaskWrapper):
 
         pairs_braycurtis_umap = list(zip(results_braycurtis_umap.dim1.values, results_braycurtis_umap.dim2.values))
         # pairs_jaccard_umap = list(zip(results_jaccard_umap.dim1.values, results_jaccard_umap.dim2.values))
-
-        sample_ids = rect_df.index.tolist()
-        otu_ids = rect_df.columns.tolist()
-
-        dist_matrix_jaccard = []
         pairs_jaccard_umap = []
 
-        abundance_matrix = {
-            'sample_ids': sample_ids,
-            'otu_ids': otu_ids,
-            'matrix_braycurtis': dist_matrix_braycurtis,
-            'matrix_jaccard': dist_matrix_jaccard,
-        }
+        return pairs_braycurtis_umap, pairs_jaccard_umap
 
-        abundance_matrix['points'] = {
-            'braycurtis': pairs_braycurtis_umap,
-            'jaccard': pairs_jaccard_umap,
-        }
+
+    def _attach_contextual(self):
+        submission = Submission(self._submission_id)
 
         self._status_update(submission, 'contextual_start')
 
         contextual_filtering = True
         additional_headers = selected_contextual_filters(self._query, contextual_filtering=contextual_filtering)
-        all_headers = ['id', 'am_environment_id', 'vegetation_type_id', 'imos_site_code', 'env_broad_scale_id', 'env_local_scale_id', 'ph',
-                       'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt', 'phosphorus_colwell', 'sample_type_id',
-                       'temp', 'nitrate_nitrite', 'nitrite', 'chlorophyll_ctd', 'salinity', 'silicate'] + additional_headers
+        all_headers = [
+            'id', 'am_environment_id', 'vegetation_type_id', 'imos_site_code', 'env_broad_scale_id',
+            'env_local_scale_id', 'ph', 'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt',
+            'phosphorus_colwell', 'sample_type_id', 'temp', 'nitrate_nitrite', 'nitrite',
+            'chlorophyll_ctd', 'salinity', 'silicate'
+        ] + additional_headers
         all_headers_unique = list(set(all_headers))
-
 
         with SampleQuery(self._params) as query:
             results = query.matching_sample_graph_data(all_headers_unique)
@@ -207,33 +284,13 @@ class SampleComparisonWrapper(BaseTaskWrapper):
         sample_results = {}
         if results:
             ndata = np.array(results)
-
             for x in ndata:
-                sample_id_column = all_headers_unique.index('id')
-                sample_id = x[sample_id_column]
+                sample_id = x[all_headers_unique.index('id')]
                 sample_data = dict(zip(all_headers_unique, x.tolist()))
                 sample_results[sample_id] = sample_data
 
-        abundance_matrix.pop('matrix_jaccard', None)
-        abundance_matrix.pop('matrix_braycurtis', None)
-
-        abundance_path = self._in("abundance_matrix.json")
         contextual_path = self._in("contextual.json")
-
-        with open(abundance_path, "w") as f:
-            json.dump(abundance_matrix, f, cls=NumpyEncoder)
-
         with open(contextual_path, "w") as f:
             json.dump(sample_results, f, cls=NumpyEncoder)
 
-        results_files = {
-            "abundance_matrix_file": abundance_path,
-            "contextual_file": contextual_path
-        }
-
-        submission.results_files = json.dumps(results_files)
-
-        self._status_update(submission, 'complete')
-
-        return True
-
+        return contextual_path

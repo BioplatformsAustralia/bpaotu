@@ -1,5 +1,79 @@
+import React from 'react'
 import { groupBy, isEmpty } from 'lodash'
 import * as d3 from 'd3'
+
+export const comparisonStatusMapping = {
+  init: 'Initialising',
+  fetch: 'Fetching samples',
+  fetched_to_df: 'Loading samples into dataframe',
+  sort: 'Sorting samples',
+  pivot: 'Pivoting data',
+  reload: 'Retrieving distance matrices',
+  // single-threaded:
+  calc_distances_bc: 'Calculating distance matrix (Bray-Curtis)',
+  calc_distances_j: 'Calculating distance matrix (Jaccard)',
+  calc_umap_bc: 'Calculating umap points (Bray-Curtis)',
+  calc_umap_j: 'Calculating umap points (Jaccard)',
+  // multi-threaded:
+  calc_distances_both_pending: (
+    <>
+      Calculating distance matrices
+      <br />
+      <small>(Bray-Curtis: pending, Jaccard: pending)</small>
+    </>
+  ),
+  calc_distances_braycurtis_done: (
+    <>
+      Calculating distance matrices
+      <br />
+      <small>(Bray-Curtis: done, Jaccard: pending)</small>
+    </>
+  ),
+  calc_distances_jacaard_done: (
+    <>
+      Calculating distance matrices
+      <br />
+      <small>(Bray-Curtis: pending, Jaccard: done)</small>
+    </>
+  ),
+  calc_distances_both_done: (
+    <>
+      Calculating distance matrices
+      <br />
+      <small>(Bray-Curtis: done, Jaccard: done)</small>
+    </>
+  ),
+  calc_umap_both_pending: (
+    <>
+      Calculating umap points
+      <br />
+      <small>(Bray-Curtis: pending, Jaccard: pending)</small>
+    </>
+  ),
+  calc_umap_braycurtis_done: (
+    <>
+      Calculating umap points
+      <br />
+      <small>(Bray-Curtis: done, Jaccard: pending)</small>
+    </>
+  ),
+  calc_umap_jacaard_done: (
+    <>
+      Calculating umap points
+      <br />
+      <small>(Bray-Curtis: pending, Jaccard: done)</small>
+    </>
+  ),
+  calc_umap_both_done: (
+    <>
+      Calculating umap points
+      <br />
+      <small>(Bray-Curtis: done, Jaccard: done)</small>
+    </>
+  ),
+  contextual_start: 'Collating contextual data',
+  complete: 'Complete',
+}
 
 // string fields that should be grouped and coloured by values
 // i.e. not for fields with free text, but fields like site codes or other classifications

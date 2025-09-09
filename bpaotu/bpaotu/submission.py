@@ -1,3 +1,4 @@
+import json
 import redis
 
 from .settings_shared import redis_url
@@ -30,3 +31,21 @@ class Submission:
         """Retrieve all fields and their values for this submission"""
         values = redis_client.hgetall(self.submission_id)
         return values
+
+    def reset(self):
+        """
+        Reset state for a resubmission (clears error/results/timestamps/status).
+        Compatible with redis-py < 3.5 and >= 3.5.
+        """
+        data = {
+            'status': 'init',
+            'timestamps': json.dumps([]),
+            # 'results_files': '{}',
+            'error': ''
+        }
+        try:
+            # redis-py >= 3.5
+            redis_client.hset(self.submission_id, mapping=data)
+        except TypeError:
+            # fallback for redis-py < 3.5
+            redis_client.hmset(self.submission_id, data)

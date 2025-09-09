@@ -16,6 +16,7 @@ import {
 import RangeSlider from 'react-bootstrap-range-slider'
 import SanitizedHTML from 'react-sanitized-html'
 import {
+  comparisonStatusMapping,
   filterOptionsSubset,
   filterDataType,
   processContinuous,
@@ -28,8 +29,10 @@ import {
   clearPlotData,
   closeSamplesComparisonModal,
   handleUmapParameters,
+  resetUmapParameters,
   runComparison,
   cancelComparison,
+  clearComparison,
   setSelectedMethod,
   setSelectedFilter,
   setSelectedFilterExtra,
@@ -38,78 +41,6 @@ import {
 import SearchFilters from './search_filters'
 
 import Plot from 'react-plotly.js'
-
-const comparisonStatusMapping = {
-  init: 'Initialising',
-  fetch: 'Fetching samples',
-  fetched_to_df: 'Loading samples into dataframe',
-  sort: 'Sorting samples',
-  pivot: 'Pivoting data',
-  // single-threaded:
-  calc_distances_bc: 'Calculating distance matrix (Bray-Curtis)',
-  calc_distances_j: 'Calculating distance matrix (Jaccard)',
-  calc_umap_bc: 'Calculating umap points (Bray-Curtis)',
-  calc_umap_j: 'Calculating umap points (Jaccard)',
-  // multi-threaded:
-  calc_distances_both_pending: (
-    <>
-      Calculating distance matrices
-      <br />
-      <small>(Bray-Curtis: pending, Jaccard: pending)</small>
-    </>
-  ),
-  calc_distances_braycurtis_done: (
-    <>
-      Calculating distance matrices
-      <br />
-      <small>(Bray-Curtis: done, Jaccard: pending)</small>
-    </>
-  ),
-  calc_distances_jacaard_done: (
-    <>
-      Calculating distance matrices
-      <br />
-      <small>(Bray-Curtis: pending, Jaccard: done)</small>
-    </>
-  ),
-  calc_distances_both_done: (
-    <>
-      Calculating distance matrices
-      <br />
-      <small>(Bray-Curtis: done, Jaccard: done)</small>
-    </>
-  ),
-  calc_umap_both_pending: (
-    <>
-      Calculating umap points
-      <br />
-      <small>(Bray-Curtis: pending, Jaccard: pending)</small>
-    </>
-  ),
-  calc_umap_braycurtis_done: (
-    <>
-      Calculating umap points
-      <br />
-      <small>(Bray-Curtis: done, Jaccard: pending)</small>
-    </>
-  ),
-  calc_umap_jacaard_done: (
-    <>
-      Calculating umap points
-      <br />
-      <small>(Bray-Curtis: pending, Jaccard: done)</small>
-    </>
-  ),
-  calc_umap_both_done: (
-    <>
-      Calculating umap points
-      <br />
-      <small>(Bray-Curtis: done, Jaccard: done)</small>
-    </>
-  ),
-  contextual_start: 'Collating contextual data',
-  complete: 'Complete',
-}
 
 const LoadingSpinnerOverlay = ({ status }) => {
   const loadingstyle = {
@@ -193,6 +124,7 @@ const SamplesComparisonModal = (props) => {
     isCancelled,
     runComparison,
     cancelComparison,
+    clearComparison,
     closeSamplesComparisonModal,
 
     selectedMethod,
@@ -204,6 +136,7 @@ const SamplesComparisonModal = (props) => {
 
     umapParams,
     handleUmapParameters,
+    resetUmapParameters,
 
     clearPlotData,
     contextual,
@@ -213,7 +146,15 @@ const SamplesComparisonModal = (props) => {
     // mem_usage,
     // timestamps,
     errors,
+    submissions,
   } = props
+
+  const lastSubmission = submissions.slice(-1)[0]
+
+  let submissionId
+  if (lastSubmission) {
+    submissionId = lastSubmission.submissionId
+  }
 
   // console.log('SamplesComparisonModal', 'comparisonStatus', comparisonStatus)
   // console.log('SamplesComparisonModal', 'contextual', contextual)
@@ -256,23 +197,22 @@ const SamplesComparisonModal = (props) => {
 
   // console.log('SamplesComparisonModal', 'plotDataTransformed', plotDataTransformed)
 
-  // Fetch data if the modal is opened
-  useEffect(() => {
-    if (isOpen) {
-      // runComparison()
-    }
-  }, [isOpen])
-
   // Clear the plot if data is being refetched
-  // Also, clear selectedFilter in case new search does not have that filter in it
   useEffect(() => {
     if (isOpen) {
       if (isLoading) {
         clearPlotData()
-        setSelectedFilter('')
       }
     }
   }, [isOpen, isLoading, clearPlotData])
+
+  // // Clear selectedFilter if new search does not have that filter in it
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     if ???
+  //       setSelectedFilter('')
+  //   }
+  // }, [isOpen, isLoading, setSelectedFilter])
 
   const plotHasData = plotData[selectedMethod] && plotData[selectedMethod].length > 0
   const showExtraControls = plotHasData
@@ -338,10 +278,21 @@ const SamplesComparisonModal = (props) => {
         <div style={{ marginLeft: 30, display: 'inline-block' }}>
           {isLoading ? (
             <Button onClick={cancelComparison}>Cancel</Button>
+          ) : submissionId ? (
+            <>
+              <Button onClick={() => runComparison(umapParams, submissionId)} color="primary">
+                Run New Comparison
+              </Button>
+              <Button onClick={clearComparison} color="link">
+                Clear
+              </Button>
+            </>
           ) : (
-            <Button onClick={() => runComparison(umapParams)} color="primary">
-              Run Comparison
-            </Button>
+            <>
+              <Button onClick={() => runComparison(umapParams)} color="primary">
+                Run Comparison
+              </Button>
+            </>
           )}
         </div>
       </ModalHeader>
@@ -364,7 +315,7 @@ const SamplesComparisonModal = (props) => {
                 {/*<option value="jaccard">Jaccard</option>*/}
               </select>
             </Col>
-            <Col xs="3">&nbsp;</Col>
+            <Col xs="3"></Col>
             {showExtraControls && (
               <>
                 <Col xs="2" style={{ textAlign: 'right' }}>
@@ -441,6 +392,54 @@ const SamplesComparisonModal = (props) => {
                 &nbsp;
               </Col>
             )}
+          </Row>
+        </Container>
+        <Container>
+          <Row>
+            <Col xs="1">
+              <p>n_neighbors</p>
+              <Input
+                name="n_neighbors"
+                value={umapParams['n_neighbors']}
+                onChange={(evt) =>
+                  handleUmapParameters({
+                    param: 'n_neighbors',
+                    value: evt.target.value,
+                  })
+                }
+              />
+            </Col>
+            <Col xs="1">
+              <p>spread</p>
+              <Input
+                name="spread"
+                value={umapParams['spread']}
+                onChange={(evt) =>
+                  handleUmapParameters({
+                    param: 'spread',
+                    value: evt.target.value,
+                  })
+                }
+              />
+            </Col>
+            <Col xs="1">
+              <p>min_dist</p>
+              <Input
+                name="min_dist"
+                value={umapParams['min_dist']}
+                onChange={(evt) =>
+                  handleUmapParameters({
+                    param: 'min_dist',
+                    value: evt.target.value,
+                  })
+                }
+              />
+            </Col>
+            <Col xs="2">
+              <Button onClick={resetUmapParameters} size="sm">
+                Reset to defaults
+              </Button>
+            </Col>
           </Row>
         </Container>
         <Container style={{ width: '100%', maxWidth: chartWidth }}>
@@ -583,8 +582,10 @@ const mapDispatchToProps = (dispatch) => {
       clearPlotData,
       closeSamplesComparisonModal,
       handleUmapParameters,
+      resetUmapParameters,
       runComparison,
       cancelComparison,
+      clearComparison,
       setSelectedMethod,
       setSelectedFilter,
       setSelectedFilterExtra,
@@ -594,34 +595,3 @@ const mapDispatchToProps = (dispatch) => {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(SamplesComparisonModal)
-
-// <Input
-//   name="n_neighbors"
-//   value={umapParams['n_neighbors']}
-//   onChange={(evt) =>
-//     handleUmapParameters({
-//       param: 'n_neighbors',
-//       value: evt.target.value,
-//     })
-//   }
-// />
-// <Input
-//   name="spread"
-//   value={umapParams['spread']}
-//   onChange={(evt) =>
-//     handleUmapParameters({
-//       param: 'spread',
-//       value: evt.target.value,
-//     })
-//   }
-// />
-// <Input
-//   name="min_dist"
-//   value={umapParams['min_dist']}
-//   onChange={(evt) =>
-//     handleUmapParameters({
-//       param: 'min_dist',
-//       value: evt.target.value,
-//     })
-//   }
-// />
