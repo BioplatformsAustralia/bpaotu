@@ -24,6 +24,7 @@ services:
 
   runserver:
     image: bioplatformsaustralia/bpaotu
+    user: root
     env_file:
       - .env_local
     environment:
@@ -45,6 +46,7 @@ services:
 
   celeryworker:
     image: bioplatformsaustralia/bpaotu-worker
+    user: root
     env_file:
       - .env_local
     environment:
@@ -53,7 +55,6 @@ services:
       - PYTHONPATH=/app/bpaotu
       - DJANGO_SETTINGS_MODULE=bpaotu.settings_celery
     volumes:
-      - .:/app
       - ./data/dev:/data
       - shared-data:/shared
     depends_on:
