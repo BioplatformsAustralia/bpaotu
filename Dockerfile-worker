@@ -10,15 +10,21 @@ COPY environment-celery.yml .
 RUN conda env create -f environment-celery.yml && conda clean --all --yes
 ENV PATH=/opt/conda/envs/celeryenv/bin:$PATH
 
-# Use this to set the default conda environoment for an interactive shell
+# This sets the default conda envirnoment for an interactive shell
+# Note: these lines are also needed in the entrypoint function
 RUN echo "source /opt/conda/etc/profile.d/conda.sh && conda activate celeryenv" >> /root/.bashrc
 
-# Set working directory so bpaotu app is available
+# Copy and set working directory so bpaotu app is available
 WORKDIR /app
 COPY . /app
+
+# Ensure worker entrypoint script is executable
+RUN chmod +x /app/docker-worker-entrypoint.sh
 
 # Notes:
 # Don't set HOME to /app because other containers used /data as home
 
 # Run the celery worker for bpaotu when container starts
-CMD ["celery", "-A", "bpaotu", "worker", "--loglevel=info"]
+# Default CMD provided for docker compose (puppet runs command explicitly)
+ENTRYPOINT ["/app/docker-worker-entrypoint.sh"]
+CMD ["celery_worker"]
