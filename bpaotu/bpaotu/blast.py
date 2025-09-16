@@ -26,7 +26,7 @@ import numpy as np
 
 logger = logging.getLogger('bpaotu')
 
-SHARED_DIR = "/shared/blast"
+SHARED_DIR = "/data/shared/blast"
 
 class BlastWrapper:
     BLAST_COLUMNS = ['qlen', 'slen', 'length', 'pident', 'evalue', 'bitscore']

@@ -25,7 +25,7 @@ from .util import log_msg
 
 logger = logging.getLogger('bpaotu')
 
-SHARED_DIR = "/shared/comparison"
+SHARED_DIR = "/data/shared/comparison"
 
 class SampleComparisonWrapper:
     def __init__(self, submission_id, query, status, umap_params_string):
