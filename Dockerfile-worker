@@ -14,7 +14,13 @@ ENV PATH=/opt/conda/envs/celeryenv/bin:$PATH
 # Note: these lines are also needed in the entrypoint function
 RUN echo "source /opt/conda/etc/profile.d/conda.sh && conda activate celeryenv" >> /root/.bashrc
 
-# Copy and set working directory so bpaotu app is available
+# uid and gid must match runserver Dockerfile
+RUN addgroup --gid 1000 bioplatforms \
+  && adduser --disabled-password --home /data --no-create-home --system -q --uid 1000 --ingroup bioplatforms bioplatforms \
+  && mkdir /data /app \
+  && chown bioplatforms:bioplatforms /data
+
+# Copy and set working directory so app is available
 WORKDIR /app
 COPY . /app
 
@@ -24,7 +30,10 @@ RUN chmod +x /app/docker-worker-entrypoint.sh
 # Notes:
 # Don't set HOME to /app because other containers used /data as home
 
-# Run the celery worker for bpaotu when container starts
+# Switch to non-root user
+USER bioplatforms
+
+# Run the celery worker when container starts
 # Default CMD provided for docker compose (puppet runs command explicitly)
 ENTRYPOINT ["/app/docker-worker-entrypoint.sh"]
 CMD ["celery_worker"]
