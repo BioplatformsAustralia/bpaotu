@@ -1,14 +1,14 @@
 import React, { useEffect, useContext } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { Col, Container, Row } from 'reactstrap'
+import { Col, Container, Row, UncontrolledTooltip } from 'reactstrap'
 
 import { triggerHashedIdentify } from 'app/analytics'
 import { useAnalytics } from 'use-analytics'
 import { withAnalytics } from 'use-analytics'
 
 import AnimateHelix from 'components/animate_helix'
-import SearchButton from 'components/search_button'
+import SearchButton, { DisabledButton } from 'components/search_button'
 import { TourContext } from 'providers/tour_provider'
 
 import { AmpliconTaxonomyFilterCard } from './components/amplicon_taxonomy_filter_card'
@@ -98,12 +98,15 @@ const SearchPage = (props) => {
               />
             </Col>
             <Col sm={{ size: 2 }} style={{ position: 'relative' }}>
-              <SearchButton
+              <DisabledButton
                 id="BLASTSearchButton"
                 octicon="beaker"
                 text="BLAST search"
-                onClick={blastSearch}
+                // onClick={blastSearch}
               />
+              <UncontrolledTooltip target="BLASTSearchButton" placement="auto">
+                BLAST Search is currently disabled
+              </UncontrolledTooltip>
               {props.isBlastSearchRunning && <SearchRunningIcon />}
               {props.isBlastSearchFinished && <SearchFinishedIcon />}
             </Col>
