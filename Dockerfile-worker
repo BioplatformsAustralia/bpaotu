@@ -1,9 +1,22 @@
 FROM continuumio/miniconda3
 
 # System packages
+# wget, bzip2, ca-certificates; required to download and extract the ncbi-blast tarball
+# libgomp1 is GNU OpenMP runtime; required by BLAST's multithreading
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  ncbi-blast+ \
-  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+        wget \
+        bzip2 \
+        ca-certificates \
+        libgomp1 \
+        && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*;
+
+# Install specific version NCBI BLAST+ rather than apt-get version
+ENV BLAST_VERSION=2.17.0
+RUN wget -O /tmp/ncbi-blast.tar.gz \
+      https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/${BLAST_VERSION}/ncbi-blast-${BLAST_VERSION}+-x64-linux.tar.gz; \
+    tar -xzf /tmp/ncbi-blast.tar.gz -C /opt; \
+    ln -s /opt/ncbi-blast-${BLAST_VERSION}+/bin/* /usr/local/bin/; \
+    rm -rf /tmp/ncbi-blast.tar.gz
 
 # Create dedicated conda environment for celery worker and set it as default
 COPY environment-celery.yml .
