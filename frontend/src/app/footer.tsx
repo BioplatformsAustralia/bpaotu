@@ -2,13 +2,9 @@ import React from 'react'
 import { join } from 'lodash'
 import { Link } from 'react-router-dom'
 import { useAnalytics } from 'use-analytics'
-import { useDispatch, useSelector } from 'react-redux'
-
-import { openBlastModal } from 'pages/search_page/reducers/blast_modal'
 
 const Footer = () => {
   const { track } = useAnalytics()
-  const dispatch = useDispatch()
 
   const logoPNG = (name) =>
     join([window.otu_search_config.static_base_url.replace(/\/$/, ''), 'bpa-logos', name], '/')
@@ -68,8 +64,7 @@ const Footer = () => {
         <div>
           {window.otu_search_config.version && (
             <p style={{ fontSize: 12, marginTop: 4 }}>
-              <span onClick={() => dispatch(openBlastModal())}>Version:</span>{' '}
-              {window.otu_search_config.version}
+              Version: {window.otu_search_config.version}
             </p>
           )}
         </div>
