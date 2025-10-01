@@ -275,6 +275,12 @@ class DataImporter:
         update_from_ckan()
         self.complete()
 
+    def run_refresh(self):
+        logger.info('Refreshing OTUSampleOTU')
+        refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
+        update_from_ckan()
+        self.complete()
+
     def ontology_init(self):
         # set blank as an option for all ontologies, bar Environment
         all_cls = set(
