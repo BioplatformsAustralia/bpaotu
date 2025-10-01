@@ -2,27 +2,15 @@
 FROM python:3.9-slim-bullseye
 
 # System packages
-# wget, bzip2, ca-certificates; required to download and extract the ncbi-blast tarball
 # git; required for pip packages on github
-# libgomp1 is GNU OpenMP runtime; required by BLAST's multithreading
+# ncbi-blast+; required for BLAST search
 # gdal-bin, libgeos-3.9.0; required by django.contrib.gis.db.backends.postgis database engine
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  wget \
-  bzip2 \
-  ca-certificates \
   git \
-  libgomp1 \
+  ncbi-blast+ \
   gdal-bin \
   libgeos-3.9.0 \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*;
-
-# Install specific version NCBI BLAST+ rather than apt-get version
-ENV BLAST_VERSION=2.17.0
-RUN wget -O /tmp/ncbi-blast.tar.gz \
-      https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/${BLAST_VERSION}/ncbi-blast-${BLAST_VERSION}+-x64-linux.tar.gz; \
-    tar -xzf /tmp/ncbi-blast.tar.gz -C /opt; \
-    ln -s /opt/ncbi-blast-${BLAST_VERSION}+/bin/* /usr/local/bin/; \
-    rm -rf /tmp/ncbi-blast.tar.gz
 
 # uid and gid must match runserver Dockerfile
 RUN addgroup --gid 1000 bioplatforms \
