@@ -10,10 +10,6 @@ function info () {
 if [ "$1" = 'celery_worker' ]; then
     info "[Run] Starting celery_worker"
 
-    # activate conda environment and run celery
-    source /opt/conda/etc/profile.d/conda.sh
-    conda activate celeryenv
-
     set -x
     exec celery -A bpaotu worker --loglevel=info
 fi

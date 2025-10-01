@@ -1,14 +1,20 @@
-FROM continuumio/miniconda3
+# Base image: use the same as Dockerfile-base
+FROM python:3.9-slim-bullseye
 
 # System packages
 # wget, bzip2, ca-certificates; required to download and extract the ncbi-blast tarball
+# git; required for pip packages on github
 # libgomp1 is GNU OpenMP runtime; required by BLAST's multithreading
+# gdal-bin, libgeos-3.9.0; required by django.contrib.gis.db.backends.postgis database engine
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        wget \
-        bzip2 \
-        ca-certificates \
-        libgomp1 \
-        && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*;
+  wget \
+  bzip2 \
+  ca-certificates \
+  git \
+  libgomp1 \
+  gdal-bin \
+  libgeos-3.9.0 \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*;
 
 # Install specific version NCBI BLAST+ rather than apt-get version
 ENV BLAST_VERSION=2.17.0
@@ -18,23 +24,17 @@ RUN wget -O /tmp/ncbi-blast.tar.gz \
     ln -s /opt/ncbi-blast-${BLAST_VERSION}+/bin/* /usr/local/bin/; \
     rm -rf /tmp/ncbi-blast.tar.gz
 
-# Create dedicated conda environment for celery worker and set it as default
-COPY environment-celery.yml .
-RUN conda env create -f environment-celery.yml && conda clean --all --yes
-ENV PATH=/opt/conda/envs/celeryenv/bin:$PATH
-
-# This sets the default conda envirnoment for an interactive shell
-# Note: these lines are also needed in the entrypoint function
-RUN echo "source /opt/conda/etc/profile.d/conda.sh && conda activate celeryenv" >> /root/.bashrc
-
 # uid and gid must match runserver Dockerfile
 RUN addgroup --gid 1000 bioplatforms \
   && adduser --disabled-password --home /data --no-create-home --system -q --uid 1000 --ingroup bioplatforms bioplatforms \
   && mkdir /data /app \
   && chown bioplatforms:bioplatforms /data
 
-# Copy and set working directory so app is available
 WORKDIR /app
+
+COPY ./requirements/worker-requirements.txt /app/bpaotu/
+RUN pip install --no-cache-dir --upgrade -r bpaotu/worker-requirements.txt
+
 COPY . /app
 
 # Ensure worker entrypoint script is executable

@@ -1,3 +1,4 @@
+# Base image: use the same as Dockerfile-worker
 FROM python:3.9-slim-bullseye
 LABEL maintainer=https://github.com/BioplatformsAustralia/bpaotu
 
