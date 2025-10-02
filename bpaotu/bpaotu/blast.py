@@ -105,9 +105,8 @@ class BlastWrapper:
 
     def _cleanup(self):
         try:
-            # shutil.rmtree(self._submission_dir)
-            # logger.info(f"Submission directory removed: {self._submission_dir}")
-            logger.info(f"Submission directory NOT removed: {self._submission_dir}")
+            shutil.rmtree(self._submission_dir)
+            logger.info(f"Submission directory removed: {self._submission_dir}")
         except FileNotFoundError:
             logger.info(f"Could not remove submission directory (FileNotFoundError): {self._submission_dir}")
 
