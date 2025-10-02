@@ -26,25 +26,30 @@ export default (props) => {
   )
 }
 
-export const DisabledButton = (props) => {
-  const id = props.id
-
+export const DisabledButton = ({ id, size, octicon, text, tooltip, onClick }) => {
   return (
-    <Button
-      id={id}
-      block={true}
-      color="secondary"
-      size={props.size}
-      disabled={true}
-      style={{ cursor: 'not-allowed' }}
-      onClick={props.onClick}
-    >
-      {props.octicon && (
-        <span style={{ marginRight: 8 }}>
-          <Octicon name={props.octicon} />
-        </span>
+    <>
+      <Button
+        id={id}
+        block={true}
+        color="secondary"
+        size={size}
+        disabled={true}
+        style={{ cursor: 'not-allowed' }}
+        onClick={onClick}
+      >
+        {octicon && (
+          <span style={{ marginRight: 8 }}>
+            <Octicon name={octicon} />
+          </span>
+        )}
+        <span>{text}</span>
+      </Button>
+      {tooltip && (
+        <UncontrolledTooltip target={id} placement="auto">
+          {tooltip}
+        </UncontrolledTooltip>
       )}
-      <span>{props.text}</span>
-    </Button>
+    </>
   )
 }
