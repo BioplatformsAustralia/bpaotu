@@ -18,11 +18,6 @@ from .util import format_sample_id
 import pandas as pd
 import numpy as np
 
-
-logger = logging.getLogger('bpaotu')
-
-SHARED_DIR = "/data/shared/blast"
-
 class BlastWrapper(BaseTaskWrapper):
     BLAST_COLUMNS = ['qlen', 'slen', 'length', 'pident', 'evalue', 'bitscore']
 

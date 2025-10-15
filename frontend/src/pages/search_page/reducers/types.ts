@@ -87,7 +87,9 @@ export interface PageState {
     isOpen: boolean
     isLoading: boolean
     isFinished: boolean
+    isCancelling: boolean
     isCancelled: boolean
+    hasDirectory: boolean
     selectedMethod: string
     selectedFilter: string
     selectedFilterExtra: string
@@ -220,7 +222,9 @@ export const searchPageInitialState: PageState = {
     isOpen: false,
     isLoading: false,
     isFinished: false,
+    isCancelling: false,
     isCancelled: false,
+    hasDirectory: false,
     status: 'init',
     selectedMethod: 'braycurtis',
     selectedFilter: '',

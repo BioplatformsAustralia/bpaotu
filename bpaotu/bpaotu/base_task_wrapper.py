@@ -9,7 +9,7 @@ from .task_utils import find_task_id_for_submission
 
 logger = logging.getLogger('bpaotu')
 
-BASE_SHARED_DIR = "/shared"
+BASE_SHARED_DIR = "/data/shared"
 
 class BaseTaskWrapper:
     def __init__(self, submission_id, status, shared_subdir):
@@ -73,6 +73,7 @@ class BaseTaskWrapper:
         submission.timestamps = json.dumps([])
         self._status_update(submission, 'init')
         os.makedirs(self._submission_dir, exist_ok=True)
+        # TODO: we could check and log if the directory already exists
         self._log('info', f"Submission directory created: {self._submission_dir}")
 
     def _cancel(self):

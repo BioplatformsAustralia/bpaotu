@@ -1202,11 +1202,11 @@ def comparison_submission(request):
             logger.error(f"Could not load result files for submission {submission_id}: {e}")
 
         ## dont clean up here, move to an endpoint triggered by clicking the X
-        # tasks_minimal.cleanup_comparison(submission_id)
+        # tasks_minimal.cleanup_sample_comparison(submission_id)
 
     elif state == 'error':
         response['submission']['error'] = submission.error
-        tasks_minimal.cleanup_comparison(submission_id)
+        tasks_minimal.cleanup_sample_comparison(submission_id)
 
     elif not task_found:
         error = submission.error or (
@@ -1215,7 +1215,7 @@ def comparison_submission(request):
 
         response['submission']['state'] = 'error'
         response['submission']['error'] = error
-        tasks_minimal.cleanup_comparison(submission_id)
+        tasks_minimal.cleanup_sample_comparison(submission_id)
 
     else:
         # still ongoing
@@ -1548,7 +1548,9 @@ def timestamps_relative(json_timestamps):
 
     return relative
 
-def timestamps_duration(timestamps):
+def timestamps_duration(json_timestamps):
+    timestamps = json.loads(json_timestamps)
+
     duration = timestamps[-1]['complete'] - timestamps[0]['init']
     return round(duration, 2)
 

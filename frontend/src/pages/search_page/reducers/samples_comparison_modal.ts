@@ -49,7 +49,7 @@ export const {
   'CLEAR_COMPARISON_ENDED'
 )
 
-const COMPARISON_SUBMISSION_POLL_FREQUENCY_MS = 2000
+const COMPARISON_SUBMISSION_POLL_FREQUENCY_MS = 5000
 
 export const setSelectedMethod = (selectedMethod) => (dispatch, getState) => {
   dispatch(samplesComparisonModalSetSelectedMethod(selectedMethod))
@@ -92,6 +92,7 @@ export const runComparison =
 
 export const cancelComparison = () => (dispatch, getState) => {
   const state = getState()
+  console.log('cancelComparison', 'state', state.searchPage.samplesComparisonModal)
 
   dispatch(cancelComparisonStarted())
 
@@ -115,6 +116,7 @@ export const cancelComparison = () => (dispatch, getState) => {
 
 export const clearComparison = () => (dispatch, getState) => {
   const state = getState()
+  console.log('clearComparison', 'state', state.searchPage.samplesComparisonModal)
 
   dispatch(clearComparisonStarted())
 
@@ -138,6 +140,15 @@ export const clearComparison = () => (dispatch, getState) => {
 
 export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
   const state = getState()
+  console.log('autoUpdateComparisonSubmission', 'state', state.searchPage.samplesComparisonModal)
+
+  // before polling; check to see if it has been cancelled or cleared (TODO)
+  const { isCancelled } = state.searchPage.samplesComparisonModal
+
+  if (isCancelled) return
+
+  console.log('polling...')
+
   const getLastSubmission: () => ComparisonSubmission = () =>
     last(state.searchPage.samplesComparisonModal.submissions)
   const lastSubmission = getLastSubmission()
@@ -224,6 +235,8 @@ export default handleActions(
     [runComparisonStarted as any]: (state, action: any) => ({
       ...state,
       isLoading: true,
+      isCancelling: false,
+      isCancelled: false,
       isFinished: false,
       status: action.payload ? 'reload' : 'init',
       errors: [],
@@ -269,6 +282,7 @@ export default handleActions(
 
         let isLoading: any = state.isLoading
         let isFinished: any = false
+        let hasDirectory: any = false
         let results: any = searchPageInitialState.samplesComparisonModal.results
         let plotData: any = searchPageInitialState.samplesComparisonModal.plotData
 
@@ -308,6 +322,8 @@ export default handleActions(
             //   }
             // }),
           }
+
+          hasDirectory = true
         }
 
         const errors = action.payload.data.submission.error
@@ -329,6 +345,7 @@ export default handleActions(
           isLoading: isLoading,
           isFinished: isFinished,
           isCancelled: !!actionSubmission.cancelled,
+          hasDirectory: hasDirectory,
           mem_usage: action.payload.data.mem_usage,
           timestamps: action.payload.data.submission.timestamps,
           errors: errors,
@@ -361,24 +378,26 @@ export default handleActions(
       ...state,
       isLoading: false,
       isFinished: false,
+      isCancelling: true,
       status: 'cancelling',
     }),
     [cancelComparisonEnded as any]: (state, action: any) => ({
+      // if cancelling the first run, reset the modal,
       ...state,
       isLoading: false,
-      isFinished: true,
-      status: 'cancelled',
+      isFinished: false, // clear icon on button
+      isCancelling: false,
+      isCancelled: true,
+      status: 'init',
     }),
     [clearComparisonStarted as any]: (state, action: any) => ({
       ...state,
-      isLoading: false,
-      isFinished: false,
       status: 'clearing',
     }),
     [clearComparisonEnded as any]: (state, action: any) => ({
-      ...state,
-      isLoading: false,
-      isFinished: true,
+      // reset the modal, but keep it open and retain the state
+      ...searchPageInitialState.samplesComparisonModal,
+      isOpen: true,
       status: 'cleared',
     }),
   },

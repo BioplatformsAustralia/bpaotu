@@ -122,6 +122,7 @@ const SamplesComparisonModal = (props) => {
     isOpen,
     isLoading,
     isCancelled,
+    hasDirectory,
     runComparison,
     cancelComparison,
     clearComparison,
@@ -148,6 +149,9 @@ const SamplesComparisonModal = (props) => {
     errors,
     submissions,
   } = props
+
+  // console.log('samplesComparisonModal', 'hasDirectory', hasDirectory)
+  // console.log('samplesComparisonModal', 'submissions', submissions)
 
   const lastSubmission = submissions.slice(-1)[0]
 
@@ -267,6 +271,36 @@ const SamplesComparisonModal = (props) => {
 
   // console.log('SamplesComparisonModal', 'plotDataTransformedTooltip', plotDataTransformedTooltip)
 
+  const renderControlButtons = () => {
+    if (isLoading) return <Button onClick={cancelComparison}>Cancel</Button>
+
+    const showRunNewComparison = hasDirectory
+    const showRunComparison = !showRunNewComparison
+
+    if (showRunComparison) {
+      return (
+        <>
+          <Button onClick={() => runComparison(umapParams)} color="primary">
+            Run Comparison
+          </Button>
+        </>
+      )
+    }
+
+    if (showRunNewComparison) {
+      return (
+        <>
+          <Button onClick={() => runComparison(umapParams, submissionId)} color="primary">
+            Run New Comparison
+          </Button>
+          <Button onClick={clearComparison} color="link">
+            Clear
+          </Button>
+        </>
+      )
+    }
+  }
+
   return (
     <Modal isOpen={isOpen} data-tut="reactour__SamplesComparison" id="reactour__SamplesComparison">
       <ModalHeader
@@ -275,26 +309,7 @@ const SamplesComparisonModal = (props) => {
         id="CloseSamplesComparisonModal"
       >
         Interactive Sample Comparison Search
-        <div style={{ marginLeft: 30, display: 'inline-block' }}>
-          {isLoading ? (
-            <Button onClick={cancelComparison}>Cancel</Button>
-          ) : submissionId ? (
-            <>
-              <Button onClick={() => runComparison(umapParams, submissionId)} color="primary">
-                Run New Comparison
-              </Button>
-              <Button onClick={clearComparison} color="link">
-                Clear
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button onClick={() => runComparison(umapParams)} color="primary">
-                Run Comparison
-              </Button>
-            </>
-          )}
-        </div>
+        <div style={{ marginLeft: 30, display: 'inline-block' }}>{renderControlButtons()}</div>
       </ModalHeader>
       <ModalBody>
         {isError && !isCancelled && <ErrorOverlay errors={errors} />}
@@ -523,6 +538,7 @@ const mapStateToProps = (state) => {
     isLoading,
     isFinished,
     isCancelled,
+    hasDirectory,
 
     selectedMethod,
     setSelectedMethod,
@@ -550,6 +566,7 @@ const mapStateToProps = (state) => {
     isLoading,
     isFinished,
     isCancelled,
+    hasDirectory,
 
     selectedMethod,
     setSelectedMethod,

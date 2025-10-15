@@ -17,10 +17,6 @@ import pandas as pd
 # debug
 from .util import log_msg
 
-logger = logging.getLogger('bpaotu')
-
-SHARED_DIR = "/data/shared/comparison"
-
 class SampleComparisonWrapper(BaseTaskWrapper):
     def __init__(self, submission_id, query, status, umap_params_string):
         super().__init__(submission_id, status, "comparison")

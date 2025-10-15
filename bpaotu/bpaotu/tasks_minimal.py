@@ -118,7 +118,7 @@ def submit_sample_comparison(submission_id, query, umap_params_string):
     submission.query = query
     submission.umap_params_string = umap_params_string
 
-    chain = setup_comparison.s() | run_comparison.s()
+    chain = setup_sample_comparison.s() | run_sample_comparison.s()
 
     chain(submission_id)
 
@@ -133,14 +133,14 @@ def submit_sample_comparison_params_changed(submission_id, query, umap_params_st
     submission.query = query
     submission.umap_params_string = umap_params_string
 
-    chain = run_comparison_params_changed.s()
+    chain = run_sample_comparison_params_changed.s()
 
     chain(submission_id)
 
     return submission_id
 
 @app.task
-def setup_comparison(submission_id):
+def setup_sample_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
     wrapper.setup()
@@ -148,7 +148,7 @@ def setup_comparison(submission_id):
     return submission_id
 
 @app.task
-def run_comparison(submission_id):
+def run_sample_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
     try:
@@ -162,15 +162,20 @@ def run_comparison(submission_id):
     return submission_id
 
 @app.task
-def run_comparison_params_changed(submission_id):
+def run_sample_comparison_params_changed(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
     try:
         wrapper.run_params_changed()
     except FileNotFoundError as e:
-        # fallback to normal run_comparison
+        # fallback to normal run_sample_comparison if file (or directory) is not found
+        # note that we run the setup task again to ensure the directory exists
         logging.warning(f"Params-changed run failed, falling back to full run for submission {submission_id}")
-        return run_comparison(submission_id)
+
+        chain = setup_sample_comparison.s() | run_sample_comparison.s()
+        chain(submission_id)
+
+        return submission_id
     except ValueError as e:
         submission.error = str(e)
         logging.error(str(e))
@@ -178,7 +183,7 @@ def run_comparison_params_changed(submission_id):
     return submission_id
 
 @app.task
-def cancel_comparison(submission_id):
+def cancel_sample_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
     wrapper.cancel()
@@ -186,7 +191,7 @@ def cancel_comparison(submission_id):
     return submission_id
 
 @app.task
-def cleanup_comparison(submission_id):
+def cleanup_sample_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
     wrapper.cleanup()
