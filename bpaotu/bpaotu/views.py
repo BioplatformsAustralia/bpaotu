@@ -988,7 +988,7 @@ def blast_submission(request):
     submission_id = request.GET['submission_id']
     submission = Submission(submission_id)
     state = submission.status
-    timestamps = timestamps_relative(json.loads(submission.timestamps))
+    timestamps = timestamps_relative(submission.timestamps)
 
     response = {
         'success': True,
@@ -1093,7 +1093,7 @@ def comparison_submission(request):
     submission_id = request.GET['submission_id']
     submission = Submission(submission_id)
     state = submission.status
-    timestamps = timestamps_relative(json.loads(submission.timestamps))
+    timestamps = timestamps_relative(submission.timestamps)
 
     # look for an active task with the submission_id in the task args
     active_tasks = get_active_celery_tasks()
@@ -1452,23 +1452,30 @@ def metagenome_request(request):
         return HttpResponseServerError(str(e), content_type="text/plain")
 
 
-def timestamps_relative(timestamps):
+def timestamps_relative(json_timestamps):
     """
     Calculate timestamps relative to the init timestamp
+    json_timestamps is the json value from the submission object
     """
 
-    if not timestamps or not isinstance(timestamps, list):
-        # Input must be a non-empty list of dictionaries, just return as is
-        return timestamps
-    
+    # No value in redis store yet
+    if not json_timestamps:
+        return json_timestamps
+
+    # If it's already a Python list or dict, leave it alone; otherwise, try to parse JSON string
+    if isinstance(json_timestamps, (list, dict)):
+        timestamps = json_timestamps
+    else:
+        timestamps = json.loads(json_timestamps)
+
     init_time = None
     for item in timestamps:
         if 'init' in item:
             init_time = item['init']
             break
 
+    # If missing 'init' timestamp, just return as is
     if init_time is None:
-        # Missing 'init' timestamp, just return as is
         return timestamps
 
     relative = []

@@ -16,6 +16,8 @@ data/
 *.tags
 *.tags1
 .biom
+
+.env
 .env_local
 
 node_modules

@@ -51,7 +51,7 @@ developed to access data from the Australian Microbiome.
 
 - [Install Docker and the Docker Compose plugin](https://docs.docker.com/compose/install/)
 
-- Generate `./.env_local`. This should contain `KEY=value` lines. See `./.env`
+- Generate `./.env_local`. This should contain `KEY=value` lines. See `./.env_local.template`
   for keys. This must have a valid `CKAN_API_KEY` so that site images and sample
   metagenome data can be fetched during development. You can use your personal
   `CKAN_API_KEY` in the development environment. This key can be found on the
@@ -62,10 +62,17 @@ developed to access data from the Australian Microbiome.
   files that can be used by React to supply environment variables to the
   frontend[info](https://create-react-app.dev/docs/adding-custom-environment-variables/#what-other-env-files-can-be-used)
 
-  In particular, the only purpose of `./.env` is to document the available keys
+  The only purpose of `./.env_local.template` is to document the available keys
   for manual generation of `./.env_local`.
 
   Ensure that other keys have a value set so the page will work (dummy values are fine). In particaular, CKAN_DEVEL_USER_EMAIL and BPAOTU_AUTH_SECRET_KEY need values, and possibly others.
+
+- Generate `./.env`. This should contain `KEY=value` lines. See `./.env.template` for keys.
+  This must have valid `POSTGRES_USER`, `POSTGRES_PASSWORD` and `REDIS_PASSWORD` values.
+
+  Note that `.env` is used to supply environment variables to the `docker-compose.yml` file,
+  and that these variables are not passed to any container. This way sensitive information
+  is not included in `docker-compose.yml`.
 
 - Build the docker images
 

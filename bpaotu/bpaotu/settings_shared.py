@@ -56,13 +56,22 @@ CKAN_SERVER = {
 
 ## redis config
 
-REDIS_DB = env.get('REDIS_DB', '0')
 REDIS_HOST = env.get('REDIS_HOST', 'cache')
+REDIS_PORT = env.get('REDIS_PORT', '6379')
+REDIS_DB = env.get('REDIS_DB', '0')
+REDIS_PASSWORD = env.get('REDIS_PASSWORD', None)
+
+def redis_url(db_num=0):
+    """Return redis:// URL with password if set."""
+    if REDIS_PASSWORD:
+        return f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{db_num}"
+    else:
+        return f"redis://{REDIS_HOST}:{REDIS_PORT}/{db_num}"
 
 CACHES = {
     'default': {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": env.getlist("cache", ["redis://cache:6379/1"]),
+        "LOCATION": redis_url(1),
         "TIMEOUT": 3600,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient"
@@ -78,7 +87,7 @@ CACHES['contextual_schema_definition_results'] = CACHES['default']
 
 ## celery config
 
-CELERY_BROKER_URL = env.get('CELERY_BROKER_URL', 'redis://cache')
+CELERY_BROKER_URL = redis_url(2)
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 # CELERY_TASK_IGNORE_RESULT = True # working on killing tasks with out of memory error
 

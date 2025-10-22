@@ -1,9 +1,12 @@
+# note that while docker passes the .env file env variables through automatically
+# we have kept them in below to be explicit
+
 services:
   db:
     image: mdillon/postgis:10
     environment:
-      - POSTGRES_USER=webapp
-      - POSTGRES_PASSWORD=webapp
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     command:
       - "postgres"
       - "-c"
@@ -21,6 +24,7 @@ services:
 
   cache:
     image: redis:3-alpine
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
 
   runserver:
     image: bioplatformsaustralia/bpaotu

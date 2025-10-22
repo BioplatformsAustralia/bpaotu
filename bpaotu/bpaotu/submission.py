@@ -1,14 +1,12 @@
 import redis
 
-from django.conf import settings
+from .settings_shared import redis_url
 
-redis_client = redis.StrictRedis(host=settings.REDIS_HOST, db=settings.REDIS_DB)
-
+redis_client = redis.StrictRedis.from_url(redis_url(), decode_responses=True)
+# decode_responses=True automatically encodes keys and decodes values as UTF-8
 
 class Submission:
-    """
-    track a submission (Galaxy, BLAST, ...) as it progresses
-    """
+    """Track a submission (BLAST, galaxy, comparison ...) as it progresses"""
 
     def __init__(self, submission_id):
         self.submission_id = submission_id
@@ -25,15 +23,10 @@ class Submission:
         redis_client.hset(self.submission_id, name, value)
 
     def __getattr__(self, name):
-        value = redis_client.hget(self.submission_id.encode('utf8'), name.encode('utf8'))
-        return None if value is None else value.decode('utf8')
-
+        value = redis_client.hget(self.submission_id, name)
+        return value
 
     def get_all_values(self):
-        """
-        Retrieve all fields and their values for this submission
-        """
-    
+        """Retrieve all fields and their values for this submission"""
         values = redis_client.hgetall(self.submission_id)
-    
-        return {key.decode('utf8'): value.decode('utf8') for key, value in values.items()}
+        return values
