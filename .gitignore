@@ -25,7 +25,6 @@ yarn-error.log
 bpaotu/bpaotu/frontend/dist
 bpaotu/bpaotu/static/bpaotu/js/*-bundle*.js
 
-.env
 _skip_warmcache
 
 yarn_cache/

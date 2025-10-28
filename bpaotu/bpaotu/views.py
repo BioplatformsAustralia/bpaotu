@@ -1515,11 +1515,8 @@ def metagenome_request(request):
         return HttpResponseServerError(str(e), content_type="text/plain")
 
 
-def timestamps_relative(json_timestamps):
-    """
-    Calculate timestamps relative to the init timestamp
-    json_timestamps is the json value from the submission object
-    """
+def prep_timestamps(json_timestamps):
+    """json_timestamps can be JSON string or a python list"""
 
     # No value in redis store yet
     if not json_timestamps:
@@ -1530,6 +1527,18 @@ def timestamps_relative(json_timestamps):
         timestamps = json_timestamps
     else:
         timestamps = json.loads(json_timestamps)
+
+    return timestamps
+
+def timestamps_relative(json_timestamps):
+    """
+    Calculate timestamps relative to the init timestamp
+    json_timestamps is the json value from the submission object
+    """
+
+    timestamps = prep_timestamps(json_timestamps)
+    if not timestamps:
+        return timestamps
 
     init_time = None
     for item in timestamps:
@@ -1549,7 +1558,9 @@ def timestamps_relative(json_timestamps):
     return relative
 
 def timestamps_duration(json_timestamps):
-    timestamps = json.loads(json_timestamps)
+    timestamps = prep_timestamps(json_timestamps)
+    if not timestamps:
+        return timestamps
 
     duration = timestamps[-1]['complete'] - timestamps[0]['init']
     return round(duration, 2)
