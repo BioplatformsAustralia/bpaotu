@@ -112,6 +112,50 @@ const ErrorOverlay = ({ errors }) => {
   )
 }
 
+const umapTooltipLookup = {
+  n_neighbors: 'Controls how UMAP balances local versus global structure in the data',
+  spread:
+    'Controls the overall scale of the embedding; larger values result in more spread-out clusters',
+  min_dist: 'Controls how tightly UMAP is allowed to pack points together',
+}
+
+const ParamControl = ({ param, value, tooltip, onChange }) => {
+  const variableLabelWidth = 8
+  const variableInputWidth = 4
+
+  const spanId = `${param}-tip`
+
+  const labelDivStyle = {
+    position: 'relative',
+    marginTop: '8px',
+    marginBottom: '8px',
+  } as React.CSSProperties
+
+  const labelStyle = {
+    marginLeft: '8px',
+    marginTop: '0.3rem',
+  } as React.CSSProperties
+
+  return (
+    <>
+      <Col xs={variableLabelWidth}>
+        <div style={labelDivStyle}>
+          <span id={spanId} style={{ cursor: 'pointer' }}>
+            <Octicon name="info" />
+          </span>
+          <span style={labelStyle}>{param}</span>
+          <UncontrolledTooltip target={spanId} placement="auto">
+            {tooltip}
+          </UncontrolledTooltip>
+        </div>
+      </Col>
+      <Col xs={variableInputWidth}>
+        <Input name={param} value={value} onChange={onChange} />
+      </Col>
+    </>
+  )
+}
+
 const SamplesComparisonModal = (props) => {
   const umapParamsRef = useRef(null)
 
@@ -293,70 +337,6 @@ const SamplesComparisonModal = (props) => {
   }
 
   const renderUmapControls = (umapParamsRef) => {
-    const variableLabelWidth = 8
-    const variableInputWidth = 4
-
-    const labelDivStyle = {
-      position: 'relative',
-      marginTop: '8px',
-      marginBottom: '8px',
-    } as React.CSSProperties
-
-    const labelStyle = {
-      marginLeft: '8px',
-      marginTop: '0.3rem',
-    } as React.CSSProperties
-
-    const umapTooltipLookup = {
-      n_neighbors: 'Controls how UMAP balances local versus global structure in the data',
-      spread:
-        'Controls the overall scale of the embedding; larger values result in more spread-out clusters',
-      min_dist: 'Controls how tightly UMAP is allowed to pack points together',
-    }
-
-    const ParamLabel = ({ param }) => {
-      const spanId = `${param}-tip`
-      const tooltip = umapTooltipLookup[param]
-
-      return (
-        <div style={labelDivStyle}>
-          <span id={spanId}>
-            <Octicon name="info" />
-          </span>
-          <span style={labelStyle}>{param}</span>
-          <UncontrolledTooltip target={spanId} placement="auto">
-            {tooltip}
-          </UncontrolledTooltip>
-        </div>
-      )
-    }
-
-    const ParamInput = ({ param }) => (
-      <Input
-        name={param}
-        value={umapParams[param]}
-        onChange={(evt) =>
-          handleUmapParameters({
-            param: param,
-            value: evt.target.value,
-          })
-        }
-      />
-    )
-
-    const ParamControl = ({ param }) => {
-      return (
-        <>
-          <Col xs={variableLabelWidth}>
-            <ParamLabel param={param} />
-          </Col>
-          <Col xs={variableInputWidth}>
-            <ParamInput param={param} />
-          </Col>
-        </>
-      )
-    }
-
     return (
       <div
         ref={umapParamsRef}
@@ -373,20 +353,18 @@ const SamplesComparisonModal = (props) => {
         }}
       >
         <Container>
+          {Object.keys(umapTooltipLookup).map((param) => (
+            <Row key={param}>
+              <ParamControl
+                param={param}
+                value={umapParams[param]}
+                tooltip={umapTooltipLookup[param]}
+                onChange={(e) => handleUmapParameters({ param, value: e.target.value })}
+              />
+            </Row>
+          ))}
           <Row>
-            <ParamControl param="n_neighbors" />
-          </Row>
-          <Row>
-            <ParamControl param="spread" />
-          </Row>
-          <Row>
-            <ParamControl param="min_dist" />
-          </Row>
-          <Row>
-            <Col
-              xs={variableLabelWidth + variableInputWidth}
-              style={{ marginTop: 10, textAlign: 'right' }}
-            >
+            <Col style={{ marginTop: 10, textAlign: 'right' }}>
               <Button onClick={resetUmapParameters} size="sm" color="link">
                 Reset to defaults
               </Button>
