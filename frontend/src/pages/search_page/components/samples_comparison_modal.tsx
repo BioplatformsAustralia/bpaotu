@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import {
@@ -7,6 +7,8 @@ import {
   Container,
   Col,
   Input,
+  Label,
+  UncontrolledTooltip,
   Row,
   Modal,
   ModalBody,
@@ -24,6 +26,7 @@ import {
 } from '../components/util/comparison'
 
 import AnimateHelix from 'components/animate_helix'
+import Octicon from 'components/octicon'
 
 import {
   clearPlotData,
@@ -105,13 +108,15 @@ const ErrorOverlay = ({ errors }) => {
           ))}
         </ul>
       </Alert>
-      {/*</div>*/}
     </div>
   )
 }
 
 const SamplesComparisonModal = (props) => {
+  const umapParamsRef = useRef(null)
+
   const [markerSize, setMarkerSize] = useState(12)
+  const [showUmapParameters, setShowUmapParameters] = useState(false)
 
   const chartWidth = window.innerWidth * 0.7
   const chartHeight = window.innerHeight * 0.7
@@ -150,9 +155,6 @@ const SamplesComparisonModal = (props) => {
     submissions,
   } = props
 
-  // console.log('samplesComparisonModal', 'hasDirectory', hasDirectory)
-  // console.log('samplesComparisonModal', 'submissions', submissions)
-
   const lastSubmission = submissions.slice(-1)[0]
 
   let submissionId
@@ -160,19 +162,7 @@ const SamplesComparisonModal = (props) => {
     submissionId = lastSubmission.submissionId
   }
 
-  // console.log('SamplesComparisonModal', 'comparisonStatus', comparisonStatus)
-  // console.log('SamplesComparisonModal', 'contextual', contextual)
-  // console.log('SamplesComparisonModal', 'plotData', plotData)
-  // console.log('SamplesComparisonModal', 'umapParams', umapParams)
-  // console.log('SamplesComparisonModal', 'mem_usage', mem_usage)
-  // console.log('SamplesComparisonModal', 'timestamps', timestamps)
-
   const selectedFilterObject = contextualFilters.find((x) => x.name === selectedFilter)
-
-  // console.log('SamplesComparisonModal', 'selectedMethod', selectedMethod)
-  // console.log('SamplesComparisonModal', 'selectedFilter', selectedFilter)
-  // console.log('SamplesComparisonModal', 'selectedFilterObject', selectedFilterObject)
-  // console.log('SamplesComparisonModal', 'selectedFilterExtra', selectedFilterExtra)
 
   const isError = errors && errors.length > 0
   const { isContinuous, isDate, isDiscrete } = filterDataType({
@@ -199,8 +189,6 @@ const SamplesComparisonModal = (props) => {
     )
   }
 
-  // console.log('SamplesComparisonModal', 'plotDataTransformed', plotDataTransformed)
-
   // Clear the plot if data is being refetched
   useEffect(() => {
     if (isOpen) {
@@ -209,6 +197,14 @@ const SamplesComparisonModal = (props) => {
       }
     }
   }, [isOpen, isLoading, clearPlotData])
+
+  const handleClick = (e) => {
+    // if umapParamsRef.current exists and the clicked target is NOT inside it
+    if (umapParamsRef.current && !umapParamsRef.current.contains(e.target)) {
+      console.log('Clicked outside popup!')
+      setShowUmapParameters(false)
+    }
+  }
 
   // // Clear selectedFilter if new search does not have that filter in it
   // useEffect(() => {
@@ -269,40 +265,145 @@ const SamplesComparisonModal = (props) => {
     }
   })
 
-  // console.log('SamplesComparisonModal', 'plotDataTransformedTooltip', plotDataTransformedTooltip)
-
   const renderControlButtons = () => {
     if (isLoading) return <Button onClick={cancelComparison}>Cancel</Button>
 
-    const showRunNewComparison = hasDirectory
+    const showRunNewComparison = plotHasData
     const showRunComparison = !showRunNewComparison
 
-    if (showRunComparison) {
-      return (
-        <>
+    return (
+      <div style={{ display: 'flex', gap: '10px', position: 'relative' }}>
+        {showRunComparison && (
           <Button onClick={() => runComparison(umapParams)} color="primary">
             Run Comparison
           </Button>
+        )}
+        {showRunNewComparison && (
+          <>
+            <Button onClick={() => runComparison(umapParams, submissionId)} color="primary">
+              Run New Comparison
+            </Button>
+            <Button onClick={clearComparison} color="link">
+              Clear
+            </Button>
+          </>
+        )}
+      </div>
+    )
+  }
+
+  const renderUmapControls = (umapParamsRef) => {
+    const variableLabelWidth = 8
+    const variableInputWidth = 4
+
+    const labelDivStyle = {
+      position: 'relative',
+      marginTop: '8px',
+      marginBottom: '8px',
+    } as React.CSSProperties
+
+    const labelStyle = {
+      marginLeft: '8px',
+      marginTop: '0.3rem',
+    } as React.CSSProperties
+
+    const umapTooltipLookup = {
+      n_neighbors: 'Controls how UMAP balances local versus global structure in the data',
+      spread:
+        'Controls the overall scale of the embedding; larger values result in more spread-out clusters',
+      min_dist: 'Controls how tightly UMAP is allowed to pack points together',
+    }
+
+    const ParamLabel = ({ param }) => {
+      const spanId = `${param}-tip`
+      const tooltip = umapTooltipLookup[param]
+
+      return (
+        <div style={labelDivStyle}>
+          <span id={spanId}>
+            <Octicon name="info" />
+          </span>
+          <span style={labelStyle}>{param}</span>
+          <UncontrolledTooltip target={spanId} placement="auto">
+            {tooltip}
+          </UncontrolledTooltip>
+        </div>
+      )
+    }
+
+    const ParamInput = ({ param }) => (
+      <Input
+        name={param}
+        value={umapParams[param]}
+        onChange={(evt) =>
+          handleUmapParameters({
+            param: param,
+            value: evt.target.value,
+          })
+        }
+      />
+    )
+
+    const ParamControl = ({ param }) => {
+      return (
+        <>
+          <Col xs={variableLabelWidth}>
+            <ParamLabel param={param} />
+          </Col>
+          <Col xs={variableInputWidth}>
+            <ParamInput param={param} />
+          </Col>
         </>
       )
     }
 
-    if (showRunNewComparison) {
-      return (
-        <>
-          <Button onClick={() => runComparison(umapParams, submissionId)} color="primary">
-            Run New Comparison
-          </Button>
-          <Button onClick={clearComparison} color="link">
-            Clear
-          </Button>
-        </>
-      )
-    }
+    return (
+      <div
+        ref={umapParamsRef}
+        style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          marginTop: '8px',
+          background: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+          padding: '12px 0px',
+          zIndex: 10,
+        }}
+      >
+        <Container>
+          <Row>
+            <ParamControl param="n_neighbors" />
+          </Row>
+          <Row>
+            <ParamControl param="spread" />
+          </Row>
+          <Row>
+            <ParamControl param="min_dist" />
+          </Row>
+          <Row>
+            <Col
+              xs={variableLabelWidth + variableInputWidth}
+              style={{ marginTop: 10, textAlign: 'right' }}
+            >
+              <Button onClick={resetUmapParameters} size="sm" color="link">
+                Reset to defaults
+              </Button>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+    )
   }
 
   return (
-    <Modal isOpen={isOpen} data-tut="reactour__SamplesComparison" id="reactour__SamplesComparison">
+    <Modal
+      isOpen={isOpen}
+      onClick={handleClick}
+      data-tut="reactour__SamplesComparison"
+      id="reactour__SamplesComparison"
+    >
       <ModalHeader
         toggle={closeSamplesComparisonModal}
         data-tut="reactour__CloseSamplesComparisonModal"
@@ -316,6 +417,7 @@ const SamplesComparisonModal = (props) => {
         {isLoading && <LoadingSpinnerOverlay status={comparisonStatus} />}
         {/* controls layout is 2 rows, each in their own container, divided into 12 parts (set by xs prop) */}
         <Container>
+          {/* 1st row of controls */}
           <Row>
             <Col xs="2">Dissimilarity method:</Col>
             <Col xs="4" style={{ paddingLeft: 0, paddingRight: 0 }}>
@@ -343,6 +445,7 @@ const SamplesComparisonModal = (props) => {
             )}
           </Row>
         </Container>
+        {/* 2nd row of controls */}
         <Container style={{ paddingTop: 3 }}>
           <Row>
             <Col xs="2"></Col>
@@ -409,60 +512,40 @@ const SamplesComparisonModal = (props) => {
             )}
           </Row>
         </Container>
+        {/* 3rd row of controls */}
         <Container>
           <Row>
-            <Col xs="1">
-              <p>n_neighbors</p>
-              <Input
-                name="n_neighbors"
-                value={umapParams['n_neighbors']}
-                onChange={(evt) =>
-                  handleUmapParameters({
-                    param: 'n_neighbors',
-                    value: evt.target.value,
-                  })
-                }
-              />
+            <Col xs="2">UMAP parameters:</Col>
+            <Col xs="3" style={{ paddingLeft: 0, paddingRight: 0 }}>
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <Button
+                  onClick={() => setShowUmapParameters((prev) => !prev)}
+                  color="secondary"
+                  size="sm"
+                >
+                  View
+                </Button>
+                {showUmapParameters && renderUmapControls(umapParamsRef)}
+              </div>
             </Col>
-            <Col xs="1">
-              <p>spread</p>
-              <Input
-                name="spread"
-                value={umapParams['spread']}
-                onChange={(evt) =>
-                  handleUmapParameters({
-                    param: 'spread',
-                    value: evt.target.value,
-                  })
-                }
-              />
-            </Col>
-            <Col xs="1">
-              <p>min_dist</p>
-              <Input
-                name="min_dist"
-                value={umapParams['min_dist']}
-                onChange={(evt) =>
-                  handleUmapParameters({
-                    param: 'min_dist',
-                    value: evt.target.value,
-                  })
-                }
-              />
-            </Col>
-            <Col xs="2">
-              <Button onClick={resetUmapParameters} size="sm">
-                Reset to defaults
-              </Button>
-            </Col>
+            <Col xs="6">&nbsp;</Col>
           </Row>
         </Container>
-        <Container style={{ width: '100%', maxWidth: chartWidth }}>
+
+        <Container style={{ width: '100%', maxWidth: chartWidth, marginTop: '10px' }}>
           <Plot
             data={plotDataTransformedTooltip}
             layout={{
               // width: chartWidth,
               height: chartHeight,
+              margin: { l: 0, r: 0, b: 0, t: 0 },
               legend: { orientation: 'h' },
               paper_bgcolor: 'white',
               plot_bgcolor: 'white',
@@ -505,29 +588,17 @@ const SamplesComparisonModal = (props) => {
             }}
             config={{ displayLogo: false, scrollZoom: false, displayModeBar: true }}
             useResizeHandler
-            style={{ width: '100%', height: '100%', marginTop: '0px' }}
+            style={{
+              width: '100%',
+              height: '100%',
+              marginTop: '0px',
+            }}
           />
         </Container>
       </ModalBody>
       <ModalFooter>
         <SearchFilters static={true} handleSearchFilterClick={console.log} />
       </ModalFooter>
-      {/*<Tutorial
-        steps={steps}
-        isOpen={isComparisonSubtourOpen}
-        showCloseButton={false}
-        showNumber={false}
-        onRequestClose={() => {
-          setIsComparisonSubtourOpen(false)
-          setIsMainTourOpen(true)
-          const node = document.getElementById('CloseSamplesComparisonModal')
-          const closeButton = node.querySelector('.close')
-          if (closeButton instanceof HTMLElement) {
-            closeButton.click()
-          }
-        }}
-        lastStepNextButton={'Back to Tutorial'}
-      />*/}
     </Modal>
   )
 }
