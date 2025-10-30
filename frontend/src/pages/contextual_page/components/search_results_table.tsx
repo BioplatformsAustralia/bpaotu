@@ -1,38 +1,38 @@
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import React, { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { isEmpty } from 'lodash'
 
 import 'react-table/react-table.css'
-
 import { fieldsToColumns, SearchResultsTable } from 'components/search_results_table'
 import { changeTableProperties, search } from '../reducers/search'
 
-function mapStateToProps(state) {
-  return {
+const ContextualSearchResultsTable = () => {
+  const dispatch = useDispatch()
+
+  const { results, extraColumns, sorting } = useSelector((state: any) => ({
     results: state.contextualPage.results,
     extraColumns: fieldsToColumns(
       state.contextualPage.selectColumns.columns,
       state.contextualDataDefinitions
     ),
-  }
-}
+    sorting: state.contextualPage.results.sorted,
+  }))
 
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      changeTableProperties,
-      search,
-    },
-    dispatch
+  useEffect(() => {
+    if (isEmpty(results.data)) {
+      dispatch(search())
+    }
+  }, [results.data, dispatch])
+
+  return (
+    <SearchResultsTable
+      contextual
+      results={results}
+      extraColumns={extraColumns}
+      changeTableProperties={(...args) => dispatch(changeTableProperties(...args))}
+      search={() => dispatch(search())}
+    />
   )
 }
 
-class ContextualSearchResultsTable extends SearchResultsTable {
-  public componentDidMount() {
-    if (isEmpty(this.props.results.data)) {
-      this.props.search()
-    }
-  }
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(ContextualSearchResultsTable)
+export default ContextualSearchResultsTable

@@ -3,8 +3,7 @@ import { handleActions } from 'redux-actions'
 
 import { metagenomeModeReducer, selectedAmpliconReducer } from './amplicon'
 import selectedTraitReducer from './trait'
-import blastSearchReducer from './blast_search'
-import blastModalReducer from './blast_modal'
+import blastSearchModalReducer from './blast_search_modal'
 import contextualReducer from './contextual'
 import sampleIntegrityWarningReducer from './sample_integrity_warning'
 import samplesMapModalReducer from './samples_map_modal'
@@ -39,8 +38,7 @@ const filtersReducer = combineReducers({
 
 const pageReducer = combineReducers({
   filters: filtersReducer,
-  blastModal: blastModalReducer,
-  blastSearch: blastSearchReducer,
+  blastSearchModal: blastSearchModalReducer,
   taxonomySearchModal: taxonomySearchModalReducer,
   samplesMapModal: samplesMapModalReducer,
   samplesGraphModal: samplesGraphModalReducer,

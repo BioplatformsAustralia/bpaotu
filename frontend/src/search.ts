@@ -36,6 +36,7 @@ export interface SearchConfig {
   search_sample_sites_comparison_endpoint: string
   submit_comparison_endpoint: string
   cancel_comparison_endpoint: string
+  clear_comparison_endpoint: string
   comparison_submission_endpoint: string
   search_blast_otus_endpoint: string
   required_table_headers_endpoint: string

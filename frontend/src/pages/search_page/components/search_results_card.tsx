@@ -15,7 +15,7 @@ import { GalaxySubmission } from '../reducers/types'
 
 import { metaxaAmpliconStringMatch } from 'app/constants'
 
-import BlastModal from './blast_modal'
+import BlastModal from './blast_search_modal'
 import SamplesMapModal from './samples_map_modal'
 import SamplesGraphModal from './samples_graph_modal'
 import SamplesComparisonModal from './samples_comparison_modal'
@@ -191,7 +191,7 @@ const _MetagenomeSearchResultsCard = (props) => {
           <SearchResultsTable
             cell_func={(cell_props) => cell_button(cell_props, props.openMetagenomeModal)}
             krona_func={(cell_props) => krona_button(cell_props, props.openKronaModal)}
-            metagenome={true}
+            metagenome
           />
         </CardBody>
       </Card>

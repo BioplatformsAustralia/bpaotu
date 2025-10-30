@@ -49,9 +49,21 @@ export interface PageState {
     contextual: any // TODO
     sampleIntegrityWarning: any
   }
-  blastModal: {
+  blastSearchModal: {
     isOpen: boolean
+    isSubmitting: boolean
+    isFinished: boolean
+    status: string
+    sequenceValue: string
+    blastParams: {
+      qcov_hsp_perc: string
+      perc_identity: string
+    }
     rowsCount: number
+    submissions: any[]
+    alerts: any[]
+    imageSrc: string
+    resultUrl: string
   }
   taxonomySearchModal: {
     searchStringInput: string
@@ -75,7 +87,9 @@ export interface PageState {
     isOpen: boolean
     isLoading: boolean
     isFinished: boolean
+    isCancelling: boolean
     isCancelled: boolean
+    hasDirectory: boolean
     selectedMethod: string
     selectedFilter: string
     selectedFilterExtra: string
@@ -170,8 +184,20 @@ export const searchPageInitialState: PageState = {
       filters: [],
     },
   },
-  blastModal: {
+  blastSearchModal: {
     isOpen: false,
+    isSubmitting: false,
+    isFinished: false,
+    status: 'init',
+    sequenceValue: '',
+    blastParams: {
+      qcov_hsp_perc: '60',
+      perc_identity: '95',
+    },
+    submissions: [],
+    alerts: [],
+    imageSrc: '',
+    resultUrl: '',
     rowsCount: -1, // to prevent clash with "0" which prevents running blast search
   },
   taxonomySearchModal: {
@@ -196,19 +222,21 @@ export const searchPageInitialState: PageState = {
     isOpen: false,
     isLoading: false,
     isFinished: false,
+    isCancelling: false,
     isCancelled: false,
+    hasDirectory: false,
+    status: 'init',
     selectedMethod: 'braycurtis',
     selectedFilter: '',
     selectedFilterExtra: 'year',
-    status: 'init',
-    alerts: [],
-    errors: [],
-    submissions: [],
     umapParams: {
       min_dist: 0.1,
       n_neighbors: 15,
       spread: 1.0,
     },
+    alerts: [],
+    errors: [],
+    submissions: [],
     results: { abundanceMatrix: {}, contextual: {} },
     plotData: { jaccard: [], braycurtis: [] },
     mem_usage: { mem: '', swap: '', cpu: '' },

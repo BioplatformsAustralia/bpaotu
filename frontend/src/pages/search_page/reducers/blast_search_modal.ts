@@ -1,63 +1,65 @@
-import { filter, get as _get, includes, isNumber, join, last, reject, upperCase } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-
-import { executeBlast, executeCancelBlast, getBlastSubmission } from 'api'
-import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
-
+import { executeBlastOtuSearch, executeBlast, executeCancelBlast, getBlastSubmission } from 'api'
+import { handleSimpleAPIResponse, changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
-import { BlastSubmission, ErrorList } from './types'
+import { BlastSubmission, ErrorList, searchPageInitialState } from './types'
 
-export const HANDLE_BLAST_SEQUENCE = 'HANDLE_BLAST_SEQUENCE'
-export const HANDLE_BLAST_PARAMETERS = 'HANDLE_BLAST_PARAMETERS'
-export const RUN_BLAST_STARTED = 'RUN_BLAST_STARTED'
-export const RUN_BLAST_ENDED = 'RUN_BLAST_ENDED'
-export const BLAST_SUBMISSION_UPDATE_STARTED = 'BLAST_SUBMISSION_UPDATE_STARTED'
-export const BLAST_SUBMISSION_UPDATE_ENDED = 'BLAST_SUBMISSION_UPDATE_ENDED'
-export const CANCEL_BLAST_STARTED = 'CANCEL_BLAST_STARTED'
-export const CANCEL_BLAST_ENDED = 'CANCEL_BLAST_ENDED'
-export const CLEAR_BLAST_ALERT = 'CLEAR_BLAST_ALERT'
-
-const BLAST_SUBMISSION_POLL_FREQUENCY_MS = 5000
+import {
+  filter,
+  get as _get,
+  includes,
+  isNumber,
+  join,
+  last,
+  partial,
+  reject,
+  upperCase,
+} from 'lodash'
 
 export const {
+  openBlastModal,
+  closeBlastModal,
+  clearBlastAlert,
+
+  blastSearchModalFetchSamplesStarted,
+  blastSearchModalFetchSamplesEnded,
   handleBlastSequence,
   handleBlastParameters,
-
   runBlastStarted,
   runBlastEnded,
   blastSubmissionUpdateStarted,
   blastSubmissionUpdateEnded,
   cancelBlastStarted,
   cancelBlastEnded,
-
-  clearBlastAlert,
 } = createActions(
-  HANDLE_BLAST_SEQUENCE,
-  HANDLE_BLAST_PARAMETERS,
+  'OPEN_BLAST_MODAL',
+  'CLOSE_BLAST_MODAL',
+  'CLEAR_BLAST_ALERT',
 
-  RUN_BLAST_STARTED,
-  RUN_BLAST_ENDED,
-  BLAST_SUBMISSION_UPDATE_STARTED,
-  BLAST_SUBMISSION_UPDATE_ENDED,
-  CANCEL_BLAST_STARTED,
-  CANCEL_BLAST_ENDED,
-
-  CLEAR_BLAST_ALERT
+  'BLAST_SEARCH_MODAL_FETCH_SAMPLES_STARTED',
+  'BLAST_SEARCH_MODAL_FETCH_SAMPLES_ENDED',
+  'HANDLE_BLAST_SEQUENCE',
+  'HANDLE_BLAST_PARAMETERS',
+  'RUN_BLAST_STARTED',
+  'RUN_BLAST_ENDED',
+  'BLAST_SUBMISSION_UPDATE_STARTED',
+  'BLAST_SUBMISSION_UPDATE_ENDED',
+  'CANCEL_BLAST_STARTED',
+  'CANCEL_BLAST_ENDED'
 )
 
-const blastInitialState = {
-  status: 'init',
-  sequenceValue: '',
-  blastParams: {
-    qcov_hsp_perc: '60',
-    perc_identity: '95',
-  },
-  alerts: [],
-  imageSrc: '',
-  resultUrl: '',
-  isSubmitting: false,
-  isFinished: false,
-  submissions: [],
+const BLAST_SUBMISSION_POLL_FREQUENCY_MS = 5000
+
+export const fetchBlastModalSamples = () => (dispatch, getState) => {
+  const state = getState()
+  const filters = describeSearch(state)
+
+  dispatch(blastSearchModalFetchSamplesStarted())
+  handleSimpleAPIResponse(
+    dispatch,
+    partial(executeBlastOtuSearch, filters),
+    blastSearchModalFetchSamplesEnded
+  )
 }
 
 export const runBlast = () => (dispatch, getState) => {
@@ -66,8 +68,8 @@ export const runBlast = () => (dispatch, getState) => {
   dispatch(runBlastStarted())
 
   const filters = describeSearch(state)
-  const searchParameters = state.searchPage.blastSearch.blastParams
-  const searchString = state.searchPage.blastSearch.sequenceValue
+  const searchParameters = state.searchPage.blastSearchModal.blastParams
+  const searchString = state.searchPage.blastSearchModal.sequenceValue
 
   executeBlast(searchString, searchParameters, filters)
     .then((data) => {
@@ -90,7 +92,7 @@ export const cancelBlast = () => (dispatch, getState) => {
 
   // get the most recently added submissionId
   // (repeated calls to runBlast add a new submissionId)
-  const { submissions } = state.searchPage.blastSearch
+  const { submissions } = state.searchPage.blastSearchModal
   const submissionId = submissions[submissions.length - 1].submissionId
 
   executeCancelBlast(submissionId)
@@ -108,7 +110,7 @@ export const cancelBlast = () => (dispatch, getState) => {
 
 export const autoUpdateBlastSubmission = () => (dispatch, getState) => {
   const getLastSubmission: () => BlastSubmission = () =>
-    last(getState().searchPage.blastSearch.submissions)
+    last(getState().searchPage.blastSearchModal.submissions)
   const lastSubmission = getLastSubmission()
   getBlastSubmission(lastSubmission.submissionId)
     .then((data) => {
@@ -132,6 +134,7 @@ export const autoUpdateBlastSubmission = () => (dispatch, getState) => {
       dispatch(blastSubmissionUpdateEnded(new Error('Unhandled server-side error!')))
     })
 }
+
 function alert(text, color = 'primary') {
   return { color, text }
 }
@@ -143,6 +146,36 @@ const BLAST_ALERT_ERROR = alert('An error occured while running BLAST.', 'danger
 
 export default handleActions(
   {
+    [openBlastModal as any]: (state, action) => ({
+      ...state,
+      isOpen: true,
+    }),
+    [closeBlastModal as any]: (state, action) => ({
+      ...state,
+      isOpen: false,
+    }),
+    [clearBlastAlert as any]: (state, action) => {
+      const index = action.payload
+      const alerts = isNumber(index)
+        ? removeElementAtIndex(state.alerts, index)
+        : state.alerts.filter((a) => a.color === 'danger') // never auto-remove errors
+      return {
+        ...state,
+        alerts,
+        isFinished: false,
+        imageSrc: '',
+      }
+    },
+    [blastSearchModalFetchSamplesStarted as any]: (state, action) => ({
+      ...state,
+      isLoading: true,
+      rowsCount: -1, // to avoid clash with "0"
+    }),
+    [blastSearchModalFetchSamplesEnded as any]: (state, action: any) => ({
+      ...state,
+      isLoading: false,
+      rowsCount: action.payload.data.rowsCount,
+    }),
     [handleBlastSequence as any]: (state, action: any) => ({
       ...state,
       sequenceValue: join(
@@ -210,8 +243,8 @@ export default handleActions(
 
         let isSubmitting: any = state.isSubmitting
         let isFinished: any = false
-        let resultUrl: any = blastInitialState.resultUrl
-        let imageSrc: any = blastInitialState.imageSrc
+        let resultUrl: any = searchPageInitialState.blastSearchModal.resultUrl
+        let imageSrc: any = searchPageInitialState.blastSearchModal.imageSrc
         let newAlerts: any = state.alerts
 
         // if (action.payload.data.submission.result_url) {
@@ -294,18 +327,6 @@ export default handleActions(
       isFinished: true,
       status: 'cancelled',
     }),
-    [clearBlastAlert as any]: (state, action) => {
-      const index = action.payload
-      const alerts = isNumber(index)
-        ? removeElementAtIndex(state.alerts, index)
-        : state.alerts.filter((a) => a.color === 'danger') // never auto-remove errors
-      return {
-        ...state,
-        alerts,
-        imageSrc: '',
-        isFinished: false,
-      }
-    },
   },
-  blastInitialState
+  searchPageInitialState.blastSearchModal
 )

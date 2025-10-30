@@ -9,83 +9,95 @@ import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
 
 import { selectEnvironment } from '../../reducers/contextual'
 
-class PieChartEnvironment extends React.Component<any> {
-  render() {
-    let filter = this.props.filter
-    let graphData = this.props.contextualGraphdata[filter]
-    let title = 'AM Environment Plot'
+const PieChartEnvironment = (props) => {
+  const {
+    filter,
+    contextualGraphdata,
+    options,
+    width,
+    height,
+    selectEnvironment,
+    fetchContextualDataForGraph,
+    fetchTaxonomyDataForGraph,
+    selectToScroll,
+    selectTab,
+  } = props
 
-    let labels = []
-    let values = []
-    let text = []
+  const graphData = contextualGraphdata[filter]
+  const title = 'AM Environment Plot'
 
-    if (graphData && graphData.length > 1) {
-      text = graphData[0]
-      values = graphData[1]
+  let labels: string[] = []
+  let values: any[] = []
+  let text: any[] = []
+
+  if (graphData && graphData.length > 1) {
+    text = graphData[0]
+    values = graphData[1]
+  }
+
+  for (let selected_txt of text) {
+    for (let option of options) {
+      if (option.id === selected_txt) labels.push(option.name)
     }
+  }
 
-    for (let selected_txt of text) {
-      for (let option of this.props.options) {
-        if (option.id === selected_txt) labels.push(option.name)
-      }
-    }
-
-    let chart_data = [
-      {
-        values: values,
-        labels: labels,
-        text: text,
-        textinfo: 'label+value+percent',
-        automargin: true,
-        opacity: 0.8,
-        insidetextorientation: 'radial',
-        textposition: 'inside',
-        font: {
-          family: 'Heebo, Overpass, sans-serif',
-        },
-        type: 'pie',
-        marker: {
-          line: {
-            width: 2,
-            color: 'white',
-          },
+  const chart_data = [
+    {
+      values,
+      labels,
+      text,
+      textinfo: 'label+value+percent',
+      automargin: true,
+      opacity: 0.8,
+      insidetextorientation: 'radial',
+      textposition: 'inside',
+      font: {
+        family: 'Heebo, Overpass, sans-serif',
+      },
+      type: 'pie',
+      marker: {
+        line: {
+          width: 2,
+          color: 'white',
         },
       },
-    ]
+    },
+  ]
 
-    return (
-      <>
-        <Plot
-          data={chart_data}
-          layout={{
-            autosize: true,
-            width: this.props.width,
-            height: this.props.height,
-            title: { text: title, font: { size: 20 } },
-            hovermode: 'closest',
-          }}
-          config={plotly_chart_config(title)}
-          onClick={(e) => {
-            const { points } = e
-            if (points) {
-              let env_val = points[0].text
-              let textData = chart_data[0].text
-              if (!textData.includes(env_val)) env_val = ''
-              this.props.selectEnvironment(env_val)
-              this.props.fetchContextualDataForGraph()
-              this.props.fetchTaxonomyDataForGraph()
-              this.props.selectToScroll(this.props.filter)
-              this.props.selectTab('tab_' + this.props.filter)
-            }
-          }}
-        />
-        <span id={this.props.filter}></span>
-      </>
-    )
+  const handleClick = (e: any) => {
+    const { points } = e
+    if (points) {
+      let env_val = points[0].text
+      let textData = chart_data[0].text
+      if (!textData.includes(env_val)) env_val = ''
+      selectEnvironment(env_val)
+      fetchContextualDataForGraph()
+      fetchTaxonomyDataForGraph()
+      selectToScroll(filter)
+      selectTab('tab_' + filter)
+    }
   }
+
+  return (
+    <>
+      <Plot
+        data={chart_data}
+        layout={{
+          autosize: true,
+          width,
+          height,
+          title: { text: title, font: { size: 20 } },
+          hovermode: 'closest',
+        }}
+        config={plotly_chart_config(title)}
+        onClick={handleClick}
+      />
+      <span id={filter}></span>
+    </>
+  )
 }
 
-function mapStateToProps(state) {
+function mapStateToProps(state: any) {
   return {
     selected: state.searchPage.filters.contextual.selectedEnvironment,
     options: state.contextualDataDefinitions.environment,

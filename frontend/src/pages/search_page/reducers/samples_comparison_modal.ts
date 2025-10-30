@@ -1,11 +1,13 @@
 import { createActions, handleActions } from 'redux-actions'
-import { searchPageInitialState } from './types'
-
-import { executeComparison, executeCancelComparison, getComparisonSubmission } from 'api'
+import {
+  executeComparison,
+  executeCancelComparison,
+  executeClearComparison,
+  getComparisonSubmission,
+} from 'api'
 import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
-
 import { describeSearch } from './search'
-import { ComparisonSubmission, ErrorList } from './types'
+import { ComparisonSubmission, ErrorList, searchPageInitialState } from './types'
 
 import { get as _get, isNumber, last } from 'lodash'
 
@@ -13,45 +15,41 @@ export const {
   openSamplesComparisonModal,
   closeSamplesComparisonModal,
 
+  samplesComparisonModalClearPlotData,
   samplesComparisonModalSetSelectedMethod,
   samplesComparisonModalSetSelectedFilter,
   samplesComparisonModalSetSelectedFilterExtra,
-
   handleUmapParameters,
-
+  resetUmapParameters,
   runComparisonStarted,
   runComparisonEnded,
   comparisonSubmissionUpdateStarted,
   comparisonSubmissionUpdateEnded,
   cancelComparisonStarted,
   cancelComparisonEnded,
-
-  clearComparisonAlert,
-
-  samplesComparisonModalClearPlotData,
+  clearComparisonStarted,
+  clearComparisonEnded,
 } = createActions(
   'OPEN_SAMPLES_COMPARISON_MODAL',
   'CLOSE_SAMPLES_COMPARISON_MODAL',
 
+  'SAMPLES_COMPARISON_MODAL_CLEAR_PLOT_DATA',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_METHOD',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER',
   'SAMPLES_COMPARISON_MODAL_SET_SELECTED_FILTER_EXTRA',
-
   'HANDLE_UMAP_PARAMETERS',
-
+  'RESET_UMAP_PARAMETERS',
   'RUN_COMPARISON_STARTED',
   'RUN_COMPARISON_ENDED',
   'COMPARISON_SUBMISSION_UPDATE_STARTED',
   'COMPARISON_SUBMISSION_UPDATE_ENDED',
   'CANCEL_COMPARISON_STARTED',
   'CANCEL_COMPARISON_ENDED',
-
-  'CLEAR_COMPARISON_ALERT',
-
-  'SAMPLES_COMPARISON_MODAL_CLEAR_PLOT_DATA'
+  'CLEAR_COMPARISON_STARTED',
+  'CLEAR_COMPARISON_ENDED'
 )
 
-const COMPARISON_SUBMISSION_POLL_FREQUENCY_MS = 2000
+const COMPARISON_SUBMISSION_POLL_FREQUENCY_MS = 5000
 
 export const setSelectedMethod = (selectedMethod) => (dispatch, getState) => {
   dispatch(samplesComparisonModalSetSelectedMethod(selectedMethod))
@@ -69,26 +67,28 @@ export const clearPlotData = () => (dispatch, getState) => {
   dispatch(samplesComparisonModalClearPlotData())
 }
 
-export const runComparison = (umapParams) => (dispatch, getState) => {
-  const state = getState()
+export const runComparison =
+  (umapParams, submissionId = null) =>
+  (dispatch, getState) => {
+    const state = getState()
+    const filters = describeSearch(state)
 
-  dispatch(runComparisonStarted())
+    // pass submissionId as action payload to determine if this is submission or resubmission
+    dispatch(runComparisonStarted(submissionId))
 
-  const filters = describeSearch(state)
-
-  executeComparison(filters, umapParams)
-    .then((data) => {
-      if (_get(data, 'data.errors', []).length > 0) {
-        dispatch(runComparisonEnded(new ErrorList(...data.data.errors)))
-        return
-      }
-      dispatch(runComparisonEnded(data))
-      dispatch(autoUpdateComparisonSubmission())
-    })
-    .catch((error) => {
-      dispatch(runComparisonEnded(new ErrorList('Unhandled server-side error!')))
-    })
-}
+    executeComparison(filters, umapParams, submissionId)
+      .then((data) => {
+        if (_get(data, 'data.errors', []).length > 0) {
+          dispatch(runComparisonEnded(new ErrorList(...data.data.errors)))
+          return
+        }
+        dispatch(runComparisonEnded(data))
+        dispatch(autoUpdateComparisonSubmission())
+      })
+      .catch((error) => {
+        dispatch(runComparisonEnded(new ErrorList('Unhandled server-side error!')))
+      })
+  }
 
 export const cancelComparison = () => (dispatch, getState) => {
   const state = getState()
@@ -113,8 +113,41 @@ export const cancelComparison = () => (dispatch, getState) => {
     })
 }
 
+export const clearComparison = () => (dispatch, getState) => {
+  const state = getState()
+  console.log('clearComparison', 'state', state.searchPage.samplesComparisonModal)
+
+  dispatch(clearComparisonStarted())
+
+  // get the most recently added submissionId
+  // (repeated calls to runComparison add a new submissionId)
+  const { submissions } = state.searchPage.samplesComparisonModal
+  const submissionId = submissions[submissions.length - 1].submissionId
+
+  executeClearComparison(submissionId)
+    .then((data) => {
+      if (_get(data, 'data.errors', []).length > 0) {
+        dispatch(clearComparisonEnded(new ErrorList(data.data.errors)))
+        return
+      }
+      dispatch(clearComparisonEnded(data))
+    })
+    .catch((error) => {
+      dispatch(clearComparisonEnded(new ErrorList('Unhandled server-side error!')))
+    })
+}
+
 export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
   const state = getState()
+  console.log('autoUpdateComparisonSubmission', 'state', state.searchPage.samplesComparisonModal)
+
+  // before polling; check to see if it has been cancelled or cleared (TODO)
+  const { isCancelled } = state.searchPage.samplesComparisonModal
+
+  if (isCancelled) return
+
+  console.log('polling...')
+
   const getLastSubmission: () => ComparisonSubmission = () =>
     last(state.searchPage.samplesComparisonModal.submissions)
   const lastSubmission = getLastSubmission()
@@ -146,6 +179,7 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
     .catch((error) => {
       if (error.response && error.response.status === 504) {
         // status: 504, statusText: "Gateway Time-out"
+        console.log('autoUpdateComparisonSubmission', 'error', error)
         dispatch(
           comparisonSubmissionUpdateEnded(
             new Error(
@@ -191,11 +225,19 @@ export default handleActions(
         umapParams: { ...state.umapParams, [action.payload.param]: action.payload.value },
       }
     },
+    [resetUmapParameters as any]: (state, action: any) => {
+      return {
+        ...state,
+        umapParams: searchPageInitialState.samplesComparisonModal.umapParams,
+      }
+    },
     [runComparisonStarted as any]: (state, action: any) => ({
       ...state,
       isLoading: true,
+      isCancelling: false,
+      isCancelled: false,
       isFinished: false,
-      status: 'init',
+      status: action.payload ? 'reload' : 'init',
       errors: [],
     }),
     [runComparisonEnded as any]: {
@@ -237,8 +279,8 @@ export default handleActions(
           return newState
         })(lastSubmission)
 
-        let isLoading: any = state.isLoading
-        let isFinished: any = false
+        let isLoading: boolean = state.isLoading
+        let isFinished: boolean = false
         let results: any = searchPageInitialState.samplesComparisonModal.results
         let plotData: any = searchPageInitialState.samplesComparisonModal.plotData
 
@@ -250,7 +292,7 @@ export default handleActions(
           const { abundanceMatrix, contextual } = results
           const sample_ids = abundanceMatrix.sample_ids
           const pointsBC = abundanceMatrix.points['braycurtis']
-          // const pointsJ = abundanceMatrix.points['jaccard']
+          const pointsJ = abundanceMatrix.points['jaccard']
 
           // apply a jitter so that points aren't put on the same place (makes graph misleading)
           // need to retain the original value to put in the tooltip though
@@ -267,6 +309,7 @@ export default handleActions(
               }
             }),
             jaccard: [],
+            //// jaccard currently disabled
             // jaccard: sample_ids.map((s, i) => {
             //   return {
             //     text: s,
@@ -304,7 +347,8 @@ export default handleActions(
           errors: errors,
           status: actionSubmissionState,
           results: results,
-          plotData: plotData,
+          // plotData: plotData,
+          ...(isFinished && { plotData: plotData }),
         }
       },
       throw: (state, action) => {
@@ -327,30 +371,40 @@ export default handleActions(
         }
       },
     },
-    [cancelComparisonStarted as any]: (state, action: any) => ({
-      ...state,
-      isLoading: false,
-      isFinished: false,
-      status: 'cancelling',
-    }),
-    [cancelComparisonEnded as any]: (state, action: any) => ({
-      ...state,
-      isLoading: false,
-      isFinished: true,
-      status: 'cancelled',
-    }),
-    [clearComparisonAlert as any]: (state, action) => {
-      const index = action.payload
-      const alerts = isNumber(index)
-        ? removeElementAtIndex(state.alerts, index)
-        : state.alerts.filter((a) => a.color === 'danger') // never auto-remove errors
+    [cancelComparisonStarted as any]: (state, action: any) => {
       return {
         ...state,
-        alerts,
+        isLoading: false,
         isFinished: false,
+        isCancelling: true,
+        status: 'cancelling',
+      }
+    },
+    [cancelComparisonEnded as any]: (state, action: any) => {
+      // if cancelling the first run, reset the modal,
+      // if cancelling a re-run, restore previous results
+
+      console.log('clearComparisonEnded', 'state', state)
+
+      return {
+        ...state,
+        isLoading: false,
+        isFinished: false, // clear icon on button
+        isCancelling: false,
+        isCancelled: true,
         status: 'init',
       }
     },
+    [clearComparisonStarted as any]: (state, action: any) => ({
+      ...state,
+      status: 'clearing',
+    }),
+    [clearComparisonEnded as any]: (state, action: any) => ({
+      // reset the modal, but keep it open and retain the state
+      ...searchPageInitialState.samplesComparisonModal,
+      isOpen: true,
+      status: 'cleared',
+    }),
   },
   searchPageInitialState.samplesComparisonModal
 )

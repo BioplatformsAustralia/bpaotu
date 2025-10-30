@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import re
+import threading
 import time
 import uuid
 from collections import OrderedDict, defaultdict
@@ -136,6 +137,7 @@ def api_config(request):
         'search_sample_sites_endpoint': reverse('otu_search_sample_sites'),
         'submit_comparison_endpoint': reverse('submit_comparison'),
         'cancel_comparison_endpoint': reverse('cancel_comparison'),
+        'clear_comparison_endpoint': reverse('clear_comparison'),
         'comparison_submission_endpoint': reverse('comparison_submission'),
         'search_blast_otus_endpoint': reverse('otu_search_blast_otus'),
         'required_table_headers_endpoint': reverse('required_table_headers'),
@@ -1033,20 +1035,43 @@ def submit_comparison(request):
         if errors:
             raise OTUError(*errors)
 
-        # we pass the query and not the params to avoid serialising the params to json
+        # POST params
+        # - pass the query string and not the computed params to avoid serialising the params to json
+        # - if a submission_id is passed, then this means that this is a resubmission to calculate with new umap_params
         query = request.POST.get('query')
         umap_params_string = request.POST.get('umap_params', "{}")
+        submission_id = request.POST.get('submission_id')
 
+        # new submission
         # because the initial submit task call has to be with delay we need to create the Submission id here
         # the submit task will create the Submission in cache and start the rest of the task
-        submission_id = str(uuid.uuid4())
-        result = tasks_minimal.submit_sample_comparison.delay(submission_id, query, umap_params_string)
+        if not submission_id:
+            submission_id = str(uuid.uuid4())
+            Submission.create(submission_id)
+            task = tasks_minimal.submit_sample_comparison
+            track_event = 'otu_sample_comparison'
 
-        track(request, 'otu_sample_comparison', search_params_track_args(params))
+        # resubmission with changed params
+        # reset redis fields so polling restarts cleanly
+        # duplicate key issues?
+        else:
+            task = tasks_minimal.submit_sample_comparison_params_changed
+            track_event = 'otu_sample_comparison_changed_params'
+
+        task.delay(submission_id, query, umap_params_string)
+
+        track(request, track_event, search_params_track_args(params))
 
         return JsonResponse({
             'success': True,
             'submission_id': submission_id,
+        })
+    except ValueError as exc:
+        logger.exception('Error in submit to sample comparison')
+        logger.exception(exc)
+        return JsonResponse({
+            'success': False,
+            'errors': [str(t) for t in exc.errors],
         })
     except OTUError as exc:
         logger.exception('Error in submit to sample comparison')
@@ -1080,6 +1105,39 @@ def cancel_comparison(request):
             })
     except OTUError as exc:
         logger.exception('Error in cancel sample comparison')
+        logger.exception(exc)
+        return JsonResponse({
+            'success': False,
+            'cancelled': False,
+            'errors': exc.errors,
+        })
+
+@require_CKAN_auth
+@require_POST
+def clear_comparison(request):
+    try:
+        body_unicode = request.body.decode('utf-8')
+        body_data = json.loads(body_unicode)
+        submission_id = body_data['submissionId']
+
+        logger.info(submission_id)
+
+        result = tasks_minimal.cleanup_sample_comparison(submission_id)
+
+        if result:
+            return JsonResponse({
+                'success': True,
+                'submission_id': submission_id,
+                'cancelled': True,
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'submission_id': submission_id,
+                'cancelled': False,
+            })
+    except OTUError as exc:
+        logger.exception('Error in clear sample comparison')
         logger.exception(exc)
         return JsonResponse({
             'success': False,
@@ -1143,16 +1201,21 @@ def comparison_submission(request):
         except Exception as e:
             logger.error(f"Could not load result files for submission {submission_id}: {e}")
 
-        tasks_minimal.cleanup_comparison(submission_id)
+        ## dont clean up here, move to an endpoint triggered by clicking the X
+        # tasks_minimal.cleanup_sample_comparison(submission_id)
 
     elif state == 'error':
         response['submission']['error'] = submission.error
-        tasks_minimal.cleanup_comparison(submission_id)
+        tasks_minimal.cleanup_sample_comparison(submission_id)
 
     elif not task_found:
+        error = submission.error or (
+            'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
+        )
+
         response['submission']['state'] = 'error'
-        response['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
-        tasks_minimal.cleanup_comparison(submission_id)
+        response['submission']['error'] = error
+        tasks_minimal.cleanup_sample_comparison(submission_id)
 
     else:
         # still ongoing
@@ -1452,11 +1515,8 @@ def metagenome_request(request):
         return HttpResponseServerError(str(e), content_type="text/plain")
 
 
-def timestamps_relative(json_timestamps):
-    """
-    Calculate timestamps relative to the init timestamp
-    json_timestamps is the json value from the submission object
-    """
+def prep_timestamps(json_timestamps):
+    """json_timestamps can be JSON string or a python list"""
 
     # No value in redis store yet
     if not json_timestamps:
@@ -1467,6 +1527,18 @@ def timestamps_relative(json_timestamps):
         timestamps = json_timestamps
     else:
         timestamps = json.loads(json_timestamps)
+
+    return timestamps
+
+def timestamps_relative(json_timestamps):
+    """
+    Calculate timestamps relative to the init timestamp
+    json_timestamps is the json value from the submission object
+    """
+
+    timestamps = prep_timestamps(json_timestamps)
+    if not timestamps:
+        return timestamps
 
     init_time = None
     for item in timestamps:
@@ -1485,7 +1557,11 @@ def timestamps_relative(json_timestamps):
 
     return relative
 
-def timestamps_duration(timestamps):
+def timestamps_duration(json_timestamps):
+    timestamps = prep_timestamps(json_timestamps)
+    if not timestamps:
+        return timestamps
+
     duration = timestamps[-1]['complete'] - timestamps[0]['init']
     return round(duration, 2)
 
@@ -1501,7 +1577,7 @@ def track(request, event, args=None):
         try:
             email = request.ckan_data['email']
             ident = hash_ckan_email(email)
-            mp.track(ident, event, args or {})
+            threading.Thread(target=lambda: mp.track(ident, event, args or {})).start()
         except Exception as e:
             print(f"Mixpanel tracking failed: {e}")
     else:

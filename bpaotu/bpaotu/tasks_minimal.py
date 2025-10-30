@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 
 import json
-import base64
 import tempfile
 
 from django.conf import settings
@@ -52,6 +51,7 @@ def periodic_ckan_update():
 def submit_blast(submission_id, query, search_string, blast_params_string):
     submission = Submission.create(submission_id)
 
+    submission.status = 'init'
     submission.query = query
     submission.search_string = search_string
     submission.blast_params_string = blast_params_string
@@ -74,16 +74,7 @@ def setup_blast(submission_id):
 def run_blast(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_blast_wrapper(submission)
-    fname, image_contents, row_count = wrapper.run()
-    submission.result_url = settings.BLAST_RESULTS_URL + '/' + fname
-
-    # if result has an image then encode image contents as a Base64 string
-    image_base64 = ''
-    if image_contents:
-        image_base64 = base64.b64encode(image_contents).decode('utf-8')
-
-    submission.image_contents = image_base64
-    submission.row_count = row_count
+    wrapper.run()
 
     return submission_id
 
@@ -112,6 +103,13 @@ def _make_blast_wrapper(submission):
 ## Sample Comparison
 ##
 
+
+# TODO:
+# split chain run into dist_bc, dist_j, umap_bc and umap_j
+# create group/chord/chain as needed
+# separate tasks so they can run at the same time
+# apply_async() ?
+
 @app.task()
 def submit_sample_comparison(submission_id, query, umap_params_string):
     submission = Submission.create(submission_id)
@@ -120,18 +118,29 @@ def submit_sample_comparison(submission_id, query, umap_params_string):
     submission.query = query
     submission.umap_params_string = umap_params_string
 
-    # TODO:
-    # split run into dist_bc, dist_j, umap_bc and umap_j
-    # create group/chord/chain as needed
-    # apply_async() ?
-    chain = setup_comparison.s() | run_comparison.s()
+    chain = setup_sample_comparison.s() | run_sample_comparison.s()
+
+    chain(submission_id)
+
+    return submission_id
+
+@app.task()
+def submit_sample_comparison_params_changed(submission_id, query, umap_params_string):
+    submission = Submission(submission_id)
+    submission.reset()
+
+    submission.status = 'reload'
+    submission.query = query
+    submission.umap_params_string = umap_params_string
+
+    chain = run_sample_comparison_params_changed.s()
 
     chain(submission_id)
 
     return submission_id
 
 @app.task
-def setup_comparison(submission_id):
+def setup_sample_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
     wrapper.setup()
@@ -139,10 +148,37 @@ def setup_comparison(submission_id):
     return submission_id
 
 @app.task
-def run_comparison(submission_id):
+def run_sample_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
-    wrapper.run()
+    try:
+        wrapper.run()
+    except ValueError as e:
+        if "min_dist must be less than or equal to spread" in str(e):
+            submission.error = str(e)
+        else:
+            raise # re-raise unexpected ValueErrors
+
+    return submission_id
+
+@app.task
+def run_sample_comparison_params_changed(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_sample_comparison_wrapper(submission)
+    try:
+        wrapper.run_params_changed()
+    except FileNotFoundError as e:
+        # fallback to normal run_sample_comparison if file (or directory) is not found
+        # note that we run the setup task again to ensure the directory exists
+        logging.warning(f"Params-changed run failed, falling back to full run for submission {submission_id}")
+
+        chain = setup_sample_comparison.s() | run_sample_comparison.s()
+        chain(submission_id)
+
+        return submission_id
+    except ValueError as e:
+        submission.error = str(e)
+        logging.error(str(e))
 
     return submission_id
 
@@ -150,12 +186,12 @@ def run_comparison(submission_id):
 def cancel_sample_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
-    results = wrapper.cancel()
+    wrapper.cancel()
 
     return submission_id
 
 @app.task
-def cleanup_comparison(submission_id):
+def cleanup_sample_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
     wrapper.cleanup()
