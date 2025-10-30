@@ -159,6 +159,9 @@ class SampleComparisonWrapper(BaseTaskWrapper):
             "contextual_file": contextual_path
         })
 
+        # since cleapnup/cancel are defined in base_task_wrapper this uses the generically named flag defined in that
+        submission.skip_cleanup_on_cancel = 1
+
         self._status_update(submission, 'complete')
 
         return True

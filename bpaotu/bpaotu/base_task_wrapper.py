@@ -45,27 +45,27 @@ class BaseTaskWrapper:
         return path
 
     def setup(self):
-        self._log('info', "Starting setup")
+        self._log('debug', "Starting setup")
         result = self._setup()
-        self._log('info', "Finished setup")
+        self._log('debug', "Finished setup")
         return result
 
     def run(self):
-        self._log('info', "Starting run")
+        self._log('debug', "Starting run")
         result = self._run()
-        self._log('info', "Finished run")
+        self._log('debug', "Finished run")
         return result
 
     def cancel(self):
-        self._log('info', "Starting cancel")
+        self._log('debug', "Starting cancel")
         result = self._cancel()
-        self._log('info', "Finished cancel")
+        self._log('debug', "Finished cancel")
         return result
 
     def cleanup(self):
-        self._log('info', "Starting cleanup")
+        self._log('debug', "Starting cleanup")
         result = self._cleanup()
-        self._log('info', "Finished cleanup")
+        self._log('debug', "Finished cleanup")
         return result
 
     def _setup(self):
@@ -74,7 +74,7 @@ class BaseTaskWrapper:
         self._status_update(submission, 'init')
         os.makedirs(self._submission_dir, exist_ok=True)
         # TODO: we could check and log if the directory already exists
-        self._log('info', f"Submission directory created: {self._submission_dir}")
+        self._log('debug', f"Submission directory created: {self._submission_dir}")
 
     def _cancel(self):
         submission = Submission(self._submission_id)
@@ -85,14 +85,21 @@ class BaseTaskWrapper:
                 self._status_update(submission, 'cancelled')
                 submission.cancelled = 'true'
                 self._log('info', f"Task cancelled (task_id={task_id})")
-                return True
             else:
                 self._log('warning', "No task ID found; cannot cancel")
         except Exception as e:
             self._log('exception', f"Error cancelling task: {e}")
-            return False
 
-        self._cleanup()
+        # default behaviour is to cleanup on a cancel
+        # but allow a task to retain existing directory if necessary
+        # (e.g. sample comparion: cancelling the first run, do a full cleanup; cancelling a re-run, retain existing directory for further reanalysis)
+        if submission.skip_cleanup_on_cancel:
+            self._log('info', "Skipping cleanup during cancel")
+        else:
+            self._log('info', "Performing cleanup during cancel")
+            self._cleanup()
+
+        return True
 
     def _cleanup(self):
         try:

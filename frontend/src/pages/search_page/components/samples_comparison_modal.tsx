@@ -171,7 +171,6 @@ const SamplesComparisonModal = (props) => {
     isOpen,
     isLoading,
     isCancelled,
-    hasDirectory,
     runComparison,
     cancelComparison,
     clearComparison,
@@ -233,30 +232,12 @@ const SamplesComparisonModal = (props) => {
     )
   }
 
-  // Clear the plot if data is being refetched
-  useEffect(() => {
-    if (isOpen) {
-      if (isLoading) {
-        clearPlotData()
-      }
-    }
-  }, [isOpen, isLoading, clearPlotData])
-
   const handleClick = (e) => {
     // if umapParamsRef.current exists and the clicked target is NOT inside it
     if (umapParamsRef.current && !umapParamsRef.current.contains(e.target)) {
-      console.log('Clicked outside popup!')
       setShowUmapParameters(false)
     }
   }
-
-  // // Clear selectedFilter if new search does not have that filter in it
-  // useEffect(() => {
-  //   if (isOpen) {
-  //     if ???
-  //       setSelectedFilter('')
-  //   }
-  // }, [isOpen, isLoading, setSelectedFilter])
 
   const plotHasData = plotData[selectedMethod] && plotData[selectedMethod].length > 0
   const showExtraControls = plotHasData
@@ -310,10 +291,17 @@ const SamplesComparisonModal = (props) => {
   })
 
   const renderControlButtons = () => {
-    if (isLoading) return <Button onClick={cancelComparison}>Cancel</Button>
-
     const showRunNewComparison = plotHasData
     const showRunComparison = !showRunNewComparison
+
+    if (isLoading) {
+      // if a different button is required
+      if (showRunNewComparison) {
+        return <Button onClick={cancelComparison}>Cancel</Button>
+      } else {
+        return <Button onClick={cancelComparison}>Cancel</Button>
+      }
+    }
 
     return (
       <div style={{ display: 'flex', gap: '10px', position: 'relative' }}>
@@ -519,7 +507,9 @@ const SamplesComparisonModal = (props) => {
 
         <Container style={{ width: '100%', maxWidth: chartWidth, marginTop: '10px' }}>
           <Plot
-            data={plotDataTransformedTooltip}
+            // clear plot when loading
+            // (but don't reset the data, so if run is cancelled then previous data is returned)
+            data={isLoading ? [] : plotDataTransformedTooltip}
             layout={{
               // width: chartWidth,
               height: chartHeight,
@@ -587,7 +577,6 @@ const mapStateToProps = (state) => {
     isLoading,
     isFinished,
     isCancelled,
-    hasDirectory,
 
     selectedMethod,
     setSelectedMethod,
@@ -615,7 +604,6 @@ const mapStateToProps = (state) => {
     isLoading,
     isFinished,
     isCancelled,
-    hasDirectory,
 
     selectedMethod,
     setSelectedMethod,

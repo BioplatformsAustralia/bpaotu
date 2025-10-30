@@ -92,7 +92,6 @@ export const runComparison =
 
 export const cancelComparison = () => (dispatch, getState) => {
   const state = getState()
-  console.log('cancelComparison', 'state', state.searchPage.samplesComparisonModal)
 
   dispatch(cancelComparisonStarted())
 
@@ -280,9 +279,8 @@ export default handleActions(
           return newState
         })(lastSubmission)
 
-        let isLoading: any = state.isLoading
-        let isFinished: any = false
-        let hasDirectory: any = false
+        let isLoading: boolean = state.isLoading
+        let isFinished: boolean = false
         let results: any = searchPageInitialState.samplesComparisonModal.results
         let plotData: any = searchPageInitialState.samplesComparisonModal.plotData
 
@@ -294,7 +292,7 @@ export default handleActions(
           const { abundanceMatrix, contextual } = results
           const sample_ids = abundanceMatrix.sample_ids
           const pointsBC = abundanceMatrix.points['braycurtis']
-          // const pointsJ = abundanceMatrix.points['jaccard']
+          const pointsJ = abundanceMatrix.points['jaccard']
 
           // apply a jitter so that points aren't put on the same place (makes graph misleading)
           // need to retain the original value to put in the tooltip though
@@ -311,6 +309,7 @@ export default handleActions(
               }
             }),
             jaccard: [],
+            //// jaccard currently disabled
             // jaccard: sample_ids.map((s, i) => {
             //   return {
             //     text: s,
@@ -322,8 +321,6 @@ export default handleActions(
             //   }
             // }),
           }
-
-          hasDirectory = true
         }
 
         const errors = action.payload.data.submission.error
@@ -345,13 +342,13 @@ export default handleActions(
           isLoading: isLoading,
           isFinished: isFinished,
           isCancelled: !!actionSubmission.cancelled,
-          hasDirectory: hasDirectory,
           mem_usage: action.payload.data.mem_usage,
           timestamps: action.payload.data.submission.timestamps,
           errors: errors,
           status: actionSubmissionState,
           results: results,
-          plotData: plotData,
+          // plotData: plotData,
+          ...(isFinished && { plotData: plotData }),
         }
       },
       throw: (state, action) => {
@@ -374,22 +371,30 @@ export default handleActions(
         }
       },
     },
-    [cancelComparisonStarted as any]: (state, action: any) => ({
-      ...state,
-      isLoading: false,
-      isFinished: false,
-      isCancelling: true,
-      status: 'cancelling',
-    }),
-    [cancelComparisonEnded as any]: (state, action: any) => ({
+    [cancelComparisonStarted as any]: (state, action: any) => {
+      return {
+        ...state,
+        isLoading: false,
+        isFinished: false,
+        isCancelling: true,
+        status: 'cancelling',
+      }
+    },
+    [cancelComparisonEnded as any]: (state, action: any) => {
       // if cancelling the first run, reset the modal,
-      ...state,
-      isLoading: false,
-      isFinished: false, // clear icon on button
-      isCancelling: false,
-      isCancelled: true,
-      status: 'init',
-    }),
+      // if cancelling a re-run, restore previous results
+
+      console.log('clearComparisonEnded', 'state', state)
+
+      return {
+        ...state,
+        isLoading: false,
+        isFinished: false, // clear icon on button
+        isCancelling: false,
+        isCancelled: true,
+        status: 'init',
+      }
+    },
     [clearComparisonStarted as any]: (state, action: any) => ({
       ...state,
       status: 'clearing',
