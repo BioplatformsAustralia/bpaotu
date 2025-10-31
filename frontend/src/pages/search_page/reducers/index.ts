@@ -3,6 +3,7 @@ import { handleActions } from 'redux-actions'
 
 import { metagenomeModeReducer, selectedAmpliconReducer } from './amplicon'
 import selectedTraitReducer from './trait'
+import otuExportReducer from './otu_export'
 import blastSearchModalReducer from './blast_search_modal'
 import contextualReducer from './contextual'
 import sampleIntegrityWarningReducer from './sample_integrity_warning'
@@ -43,6 +44,7 @@ const pageReducer = combineReducers({
   samplesMapModal: samplesMapModalReducer,
   samplesGraphModal: samplesGraphModalReducer,
   samplesComparisonModal: samplesComparisonModalReducer,
+  otuExport: otuExportReducer,
   metagenomeModal: metagenomeModalReducer,
   kronaModal: kronaModalReducer,
   galaxy: submitToGalaxyReducer,

@@ -72,9 +72,7 @@ def setup_otuexport(submission_id):
 def run_otuexport(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_otuexport_wrapper(submission)
-    fname, row_count = wrapper.run()
-    submission.result_url = settings.OTU_EXPORT_URL + '/' + fname
-    submission.row_count = row_count
+    wrapper.run()
 
     return submission_id
 

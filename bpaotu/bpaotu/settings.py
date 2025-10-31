@@ -130,6 +130,9 @@ STATIC_SERVER_PATH = STATIC_ROOT
 
 BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
 BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
+OTU_EXPORT_PATH = env.get('otu_export_path', '/data/otu-export/')
+OTU_EXPORT_URL = env.get('otu_export_url', STATIC_URL)
+
 STATICFILES_DIRS = [
     # FIXME. This is almost certainly wrong, and should be handled by MEDIA_ROOT
     # and MEDIA_URL instead. In particular, `django-admin collectstatic` will
@@ -142,8 +145,14 @@ STATICFILES_DIRS = [
     # https://docs.djangoproject.com/en/2.2/ref/contrib/staticfiles/#static-file-development-view
     # Since it's not obviously breaking anything in production, I'm leaving it
     # alone for now. (DH, Nov 2022)
+    #
+    # Oct 2025 Update:
+    # Neither this nor BpaotuConfig seem to be creating the directory
+    # on development when rebuilding containers (OTU_EXPORT_PATH not being created)
     BLAST_RESULTS_PATH,
+    OTU_EXPORT_PATH,
 ]
+
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

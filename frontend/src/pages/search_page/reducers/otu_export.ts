@@ -18,19 +18,20 @@ export const {
   cancelOtuExportEnded,
   clearOtuExportAlert,
 } = createActions(
-  'RUN_OTUEXPORT_STARTED',
-  'RUN_OTUEXPORT_ENDED',
-  'OTUEXPORT_SUBMISSION_UPDATE_STARTED',
-  'OTUEXPORT_SUBMISSION_UPDATE_ENDED',
-  'CANCEL_OTUEXPORT_STARTED',
-  'CANCEL_OTUEXPORT_ENDED',
-  'CLEAR_OTUEXPORT_ALERT'
+  'RUN_OTU_EXPORT_STARTED',
+  'RUN_OTU_EXPORT_ENDED',
+  'OTU_EXPORT_SUBMISSION_UPDATE_STARTED',
+  'OTU_EXPORT_SUBMISSION_UPDATE_ENDED',
+  'CANCEL_OTU_EXPORT_STARTED',
+  'CANCEL_OTU_EXPORT_ENDED',
+  'CLEAR_OTU_EXPORT_ALERT'
 )
 
 const SUBMISSION_POLL_FREQUENCY_MS = 2000
 
 export const runOtuExport = () => (dispatch, getState) => {
   const state = getState()
+  console.log('runOtuExport', 'state', state)
 
   dispatch(runOtuExportStarted())
 
@@ -57,7 +58,7 @@ export const cancelOtuExport = () => (dispatch, getState) => {
 
   // get the most recently added submissionId
   // (repeated calls to runOtuExport add a new submissionId)
-  const { submissions } = state.searchPage.samplesOtuExport
+  const { submissions } = state.searchPage.otuExport
   const submissionId = submissions[submissions.length - 1].submissionId
 
   executeCancelOtuExport(submissionId)
@@ -76,7 +77,7 @@ export const cancelOtuExport = () => (dispatch, getState) => {
 export const autoUpdateOtuExportSubmission = () => (dispatch, getState) => {
   const state = getState()
   const getLastSubmission: () => OtuExportSubmission = () =>
-    last(state.searchPage.samplesOtuExport.submissions)
+    last(state.searchPage.otuExport.submissions)
   const lastSubmission = getLastSubmission()
 
   getOtuExportSubmission(lastSubmission.submissionId)
@@ -166,12 +167,12 @@ export default handleActions(
 
         let isLoading: any = state.isLoading
         let isFinished: any = false
-        let results: any = searchPageInitialState.samplesOtuExport.results
+        let resultUrl: any = searchPageInitialState.blastSearchModal.resultUrl
 
         if (actionSubmissionState === 'complete') {
           isLoading = false
           isFinished = true
-          results = action.payload.data.submission.results
+          resultUrl = action.payload.data.submission.result_url
         }
 
         const errors = action.payload.data.submission.error
@@ -196,8 +197,7 @@ export default handleActions(
           timestamps: action.payload.data.submission.timestamps,
           errors: errors,
           status: actionSubmissionState,
-          results: results,
-          plotData: plotData,
+          resultUrl: resultUrl,
         }
       },
       throw: (state, action) => {
@@ -245,5 +245,5 @@ export default handleActions(
       }
     },
   },
-  searchPageInitialState.samplesOtuExport
+  searchPageInitialState.otuExport
 )

@@ -61,6 +61,7 @@ export interface PageState {
     alerts: any[]
     errors: any[]
     submissions: any[]
+    resultUrl: string
   }
   blastSearchModal: {
     isOpen: boolean
@@ -202,6 +203,7 @@ export const searchPageInitialState: PageState = {
     alerts: [],
     errors: [],
     submissions: [],
+    resultUrl: '',
   },
   blastSearchModal: {
     isOpen: false,

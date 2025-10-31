@@ -74,6 +74,27 @@ const download = (baseURL, props, onlyContextual = false) => {
   window.open(url)
 }
 
+const OtuExportBox = ({ state, clear }) => {
+  return (
+    <div>
+      <Alert color="info" className="text-center" toggle={clear}>
+        <p>status: {state.status}</p>
+        <p>
+          {state.isLoading && 'isLoading'} {state.isFinished && 'isFinished'}
+        </p>
+        <p>
+          {state.resultUrl && (
+            <a target="_blank" href={state.resultUrl} className="alert-link">
+              download here
+            </a>
+          )}{' '}
+          {state.resultUrl}
+        </p>
+      </Alert>
+    </div>
+  )
+}
+
 const _SearchResultsCard = (props) => {
   const isGalaxySubmissionDisabled = () => {
     if (props.galaxy.isSubmitting) {
@@ -89,6 +110,11 @@ const _SearchResultsCard = (props) => {
     download(window.otu_search_config.export_biom_endpoint, props)
   }
 
+  const exportCSVPacket = () => {
+    console.log('exportCSVPacket')
+    props.runOtuExport()
+  }
+
   const exportCSV = () => {
     download(window.otu_search_config.export_endpoint, props)
   }
@@ -97,11 +123,20 @@ const _SearchResultsCard = (props) => {
     download(window.otu_search_config.export_endpoint, props, true)
   }
 
+  console.log('props.otuExport', props.otuExport)
+
   return (
     <div>
       <Card>
         <CardHeader>
           <div className="text-center">
+            <ExportDataButton
+              id="ExportOtuContextualPacket"
+              size="sm"
+              octicon="desktop-download"
+              text="PACKET"
+              onClick={exportCSVPacket}
+            />
             <ExportDataButton
               id="ExportOtuContextual"
               size="sm"
@@ -146,6 +181,7 @@ const _SearchResultsCard = (props) => {
           </div>
         </CardHeader>
         <CardBody>
+          <OtuExportBox state={props.otuExport} clear={props.clearOtuExport} />
           <AlertBoxes alerts={props.galaxy.alerts} clearAlerts={props.clearGalaxyAlert} />
           <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
           <SearchResultsTable
@@ -221,6 +257,7 @@ function mapStateToProps(state) {
     tips: state.searchPage.tips,
     metaxaAmpliconSelected: metaxaOptionId === selectedAmpliconId,
     describeSearch: () => describeSearch(state),
+    otuExport: state.searchPage.otuExport,
   }
 }
 
@@ -233,6 +270,7 @@ function mapDispatchToProps(dispatch) {
       clearTips,
       showPhinchTip,
       openKronaModal,
+      runOtuExport,
     },
     dispatch
   )
@@ -247,6 +285,7 @@ function mapMgDispatchToProps(dispatch) {
       showPhinchTip,
       openMetagenomeModalSearch,
       openMetagenomeModal,
+      runOtuExport,
     },
     dispatch
   )

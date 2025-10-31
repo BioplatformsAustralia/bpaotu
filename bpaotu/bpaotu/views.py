@@ -929,6 +929,130 @@ def galaxy_submission(request):
 
 @require_CKAN_auth
 @require_POST
+def submit_otuexport(request):
+    try:
+        params, errors = param_to_filters(request.POST['query'])
+        if errors:
+            raise OTUError(*errors)
+
+        # we pass the query and not the params to avoid serialising the params to json
+        query = request.POST.get('query')
+        umap_params_string = request.POST.get('umap_params', "{}")
+
+        # because the initial submit task call has to be with delay we need to create the Submission id here
+        # the submit task will create the Submission in cache and start the rest of the task
+        submission_id = str(uuid.uuid4())
+        result = tasks_minimal.submit_otuexport.delay(submission_id, query)
+
+        track(request, 'otu_otuexport', search_params_track_args(params))
+
+        return JsonResponse({
+            'success': True,
+            'submission_id': submission_id,
+        })
+    except OTUError as exc:
+        logger.exception('Error in submit to sample otuexport')
+        logger.exception(exc)
+        return JsonResponse({
+            'success': False,
+            'errors': [str(t) for t in exc.errors],
+        })
+
+@require_CKAN_auth
+@require_POST
+def cancel_otuexport(request):
+    try:
+        body_unicode = request.body.decode('utf-8')
+        body_data = json.loads(body_unicode)
+        submission_id = body_data['submissionId']
+
+        result = tasks_minimal.cancel_otuexport(submission_id)
+
+        if result:
+            return JsonResponse({
+                'success': True,
+                'submission_id': submission_id,
+                'cancelled': True,
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'submission_id': submission_id,
+                'cancelled': False,
+            })
+    except OTUError as exc:
+        logger.exception('Error in cancel sample otuexport')
+        logger.exception(exc)
+        return JsonResponse({
+            'success': False,
+            'cancelled': False,
+            'errors': exc.errors,
+        })
+
+@require_CKAN_auth
+@require_GET
+def otuexport_submission(request):
+    submission_id = request.GET['submission_id']
+    submission = Submission(submission_id)
+    state = submission.status
+    timestamps = timestamps_relative(json.loads(submission.timestamps))
+
+    # look for an active task with the submission_id in the task args
+    active_tasks = get_active_celery_tasks()
+    task_found = any(submission_id in task["args"] for task in active_tasks)
+
+    response = {
+        'success': True,
+        'mem_usage': mem_usage_obj(),
+        'submission': {
+            'id': submission_id,
+            'state': state,
+            'task_found': task_found,
+            'timestamps': timestamps,
+            'duration': None,
+            'result_url': submission.result_url,
+        }
+    }
+
+    # testing to see if both get set
+    # this is set in the cancel() method
+    if submission.cancelled:
+        response['submission']["cancelled"] = True
+        logger.info("***** submission.cancelled")
+
+    if state == 'cancelled':
+        logger.info("***** state == cancelled")
+
+    if state == 'complete':
+        try:
+            duration = timestamps_duration(timestamps)
+            response['submission']['duration'] = duration
+
+            logger.info(f"duration: {duration}")
+            logger.info(f"timestamps: {timestamps}")
+        except Exception as e:
+            logger.warning("Could not calculate duration of sample otuexport; %s" % getattr(e, 'message', repr(e)))
+
+        tasks_minimal.cleanup_otuexport(submission_id)
+
+    elif state == 'error':
+        response['submission']['error'] = submission.error
+        tasks_minimal.cleanup_otuexport(submission_id)
+
+    elif not task_found:
+        response['submission']['state'] = 'error'
+        response['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
+        tasks_minimal.cleanup_otuexport(submission_id)
+
+    else:
+        # still ongoing
+        pass
+
+    return JsonResponse(response)
+
+
+@require_CKAN_auth
+@require_POST
 def submit_blast(request):
     try:
         query = request.POST['query']
@@ -1167,10 +1291,10 @@ def comparison_submission(request):
         'submission': {
             'id': submission_id,
             'state': state,
+            'task_found': task_found,
+            'timestamps': timestamps,
             'duration': None,
             'results': results,
-            'timestamps': timestamps,
-            'task_found': task_found,
         }
     }
 
@@ -1219,142 +1343,6 @@ def comparison_submission(request):
         response['submission']['state'] = 'error'
         response['submission']['error'] = error
         tasks_minimal.cleanup_sample_comparison(submission_id)
-
-    else:
-        # still ongoing
-        pass
-
-
-    return JsonResponse(response)
-
-@require_CKAN_auth
-@require_POST
-def submit_otuexport(request):
-    try:
-        params, errors = param_to_filters(request.POST['query'])
-        if errors:
-            raise OTUError(*errors)
-
-        # we pass the query and not the params to avoid serialising the params to json
-        query = request.POST.get('query')
-        umap_params_string = request.POST.get('umap_params', "{}")
-
-        # because the initial submit task call has to be with delay we need to create the Submission id here
-        # the submit task will create the Submission in cache and start the rest of the task
-        submission_id = str(uuid.uuid4())
-        result = tasks_minimal.submit_sample_otuexport.delay(submission_id, query, umap_params_string)
-
-        track(request, 'otu_sample_otuexport', search_params_track_args(params))
-
-        return JsonResponse({
-            'success': True,
-            'submission_id': submission_id,
-        })
-    except OTUError as exc:
-        logger.exception('Error in submit to sample otuexport')
-        logger.exception(exc)
-        return JsonResponse({
-            'success': False,
-            'errors': [str(t) for t in exc.errors],
-        })
-
-@require_CKAN_auth
-@require_POST
-def cancel_otuexport(request):
-    try:
-        body_unicode = request.body.decode('utf-8')
-        body_data = json.loads(body_unicode)
-        submission_id = body_data['submissionId']
-
-        result = tasks_minimal.cancel_sample_otuexport(submission_id)
-
-        if result:
-            return JsonResponse({
-                'success': True,
-                'submission_id': submission_id,
-                'cancelled': True,
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'submission_id': submission_id,
-                'cancelled': False,
-            })
-    except OTUError as exc:
-        logger.exception('Error in cancel sample otuexport')
-        logger.exception(exc)
-        return JsonResponse({
-            'success': False,
-            'cancelled': False,
-            'errors': exc.errors,
-        })
-
-@require_CKAN_auth
-@require_GET
-def otuexport_submission(request):
-    submission_id = request.GET['submission_id']
-    submission = Submission(submission_id)
-    state = submission.status
-    timestamps = timestamps_relative(json.loads(submission.timestamps))
-
-    # look for an active task with the submission_id in the task args
-    active_tasks = get_active_celery_tasks()
-    task_found = any(submission_id in task["args"] for task in active_tasks)
-
-    results = { 'abundanceMatrix': {}, 'contextual': {} }
-    response = {
-        'success': True,
-        'mem_usage': mem_usage_obj(),
-        'submission': {
-            'id': submission_id,
-            'state': state,
-            'duration': None,
-            'results': results,
-            'timestamps': timestamps,
-            'task_found': task_found,
-        }
-    }
-
-    # testing to see if both get set
-    # this is set in the cancel() method
-    if submission.cancelled:
-        response['submission']["cancelled"] = True
-        logger.info("***** submission.cancelled")
-
-    if state == 'cancelled':
-        logger.info("***** state == cancelled")
-
-
-    if state == 'complete':
-        try:
-            duration = timestamps_duration(timestamps)
-            response['submission']['duration'] = duration
-
-            logger.info(f"duration: {duration}")
-            logger.info(f"timestamps: {timestamps}")
-        except Exception as e:
-            logger.warning("Could not calculate duration of sample otuexport; %s" % getattr(e, 'message', repr(e)))
-
-        try:
-            results_files = json.loads(submission.results_files)
-            results = {
-                'abundanceMatrix': json.load(open(results_files['abundance_matrix_file'])),
-                'contextual': json.load(open(results_files['contextual_file'])),
-            }
-            response['submission']['results'] = results
-        except Exception as e:
-            logger.error(f"Could not load result files for submission {submission_id}: {e}")
-
-        tasks_minimal.cleanup_otuexport(submission_id)
-
-    elif state == 'error':
-        response['submission']['error'] = submission.error
-        tasks_minimal.cleanup_otuexport(submission_id)
-
-    elif not task_found:
-        response['submission']['state'] = 'error'
-        response['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
-        tasks_minimal.cleanup_otuexport(submission_id)
 
     else:
         # still ongoing
