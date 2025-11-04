@@ -46,7 +46,8 @@ BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
 
 OTU_EXPORT_PATH = env.get('otu_export_path', '/data/otu-export/')
 OTU_EXPORT_URL = env.get('otu_export_url', STATIC_URL)
-
+OTU_EXPORT_FILE_TIMEOUT = env.get('otu_export_file_timeout', 72)
+OTU_EXPORT_EMAIL = env.get('metagenome_request_email', 'root-noreply@amotu.it.csiro.au') # 'am-data-requests@bioplatforms.com'
 
 ## ckan config
 

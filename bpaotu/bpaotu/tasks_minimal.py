@@ -92,6 +92,14 @@ def cleanup_otuexport(submission_id):
 
     return submission_id
 
+@app.task()
+def notify_otuexport(submission_id, full_url, user_email):
+    submission = Submission(submission_id)
+    wrapper = _make_otuexport_wrapper(submission)
+    wrapper.notify(full_url, user_email)
+
+    return submission_id
+
 def _make_otuexport_wrapper(submission):
     return OtuExportWrapper(
         submission.submission_id, submission.query, submission.status)

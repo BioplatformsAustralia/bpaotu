@@ -1018,22 +1018,27 @@ def otuexport_submission(request):
     # this is set in the cancel() method
     if submission.cancelled:
         response['submission']["cancelled"] = True
-        logger.info("***** submission.cancelled")
+        logger.debug("***** submission.cancelled")
 
     if state == 'cancelled':
-        logger.info("***** state == cancelled")
+        logger.debug("***** state == cancelled")
 
     if state == 'complete':
         try:
             duration = timestamps_duration(timestamps)
             response['submission']['duration'] = duration
 
-            logger.info(f"duration: {duration}")
-            logger.info(f"timestamps: {timestamps}")
+            logger.debug(f"duration: {duration}")
+            logger.debug(f"timestamps: {timestamps}")
         except Exception as e:
             logger.warning("Could not calculate duration of sample otuexport; %s" % getattr(e, 'message', repr(e)))
 
         tasks_minimal.cleanup_otuexport(submission_id)
+
+        # determine the full download url here while we have access to the request
+        full_url = request.build_absolute_uri(submission.result_url)
+        user_email = request.ckan_data['email']
+        tasks_minimal.notify_otuexport.delay(submission_id, full_url, user_email)
 
     elif state == 'error':
         response['submission']['error'] = submission.error
@@ -1136,8 +1141,8 @@ def blast_submission(request):
         try:
             duration = timestamps_duration(timestamps)
             response['submission']['duration'] = duration
-            logger.info(f"duration: {duration}")
-            logger.info(f"timestamps: {timestamps}")
+            logger.debug(f"duration: {duration}")
+            logger.debug(f"timestamps: {timestamps}")
         except Exception as e:
             logger.warning("Could not calculate duration of BLAST search; %s" % getattr(e, 'message', repr(e)))
 
@@ -1247,8 +1252,6 @@ def clear_comparison(request):
         body_data = json.loads(body_unicode)
         submission_id = body_data['submissionId']
 
-        logger.info(submission_id)
-
         result = tasks_minimal.cleanup_sample_comparison(submission_id)
 
         if result:
@@ -1302,10 +1305,10 @@ def comparison_submission(request):
     # this is set in the cancel() method
     if submission.cancelled:
         response['submission']["cancelled"] = True
-        logger.info("***** submission.cancelled")
+        logger.debug("***** submission.cancelled")
 
     if state == 'cancelled':
-        logger.info("***** state == cancelled")
+        logger.debug("***** state == cancelled")
 
 
     if state == 'complete':
@@ -1313,8 +1316,8 @@ def comparison_submission(request):
             duration = timestamps_duration(timestamps)
             response['submission']['duration'] = duration
 
-            logger.info(f"duration: {duration}")
-            logger.info(f"timestamps: {timestamps}")
+            logger.debug(f"duration: {duration}")
+            logger.debug(f"timestamps: {timestamps}")
         except Exception as e:
             logger.warning("Could not calculate duration of sample comparison; %s" % getattr(e, 'message', repr(e)))
 

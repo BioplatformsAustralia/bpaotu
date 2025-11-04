@@ -75,21 +75,57 @@ const download = (baseURL, props, onlyContextual = false) => {
 }
 
 const OtuExportBox = ({ state, clear }) => {
+  const { isLoading, isFinished, status, resultUrl } = state
+
+  if (!isLoading && !isFinished) return null
+
+  const statusTextMap = {
+    init: 'Initialising download...',
+    processing: (
+      <>
+        Your request is being processed. The results will be available for download here when it is
+        complete.
+        <br />
+        You will also be emailed a link when it is complete, so you can close this window without
+        interrupting the data export.
+      </>
+    ),
+    cancelling: 'Cancelling...',
+    complete: (
+      <>
+        Your search is complete.
+        <br />
+        Download the results from this link:
+      </>
+    ),
+  }
+
+  const text = statusTextMap[status]
+
   return (
-    <div>
-      <Alert color="info" className="text-center" toggle={clear}>
-        <p>status: {state.status}</p>
-        <p>
-          {state.isLoading && 'isLoading'} {state.isFinished && 'isFinished'}
-        </p>
-        <p>
-          {state.resultUrl && (
-            <a target="_blank" href={state.resultUrl} className="alert-link">
-              download here
+    <div
+      style={{
+        marginTop: 12,
+        marginBottom: 12,
+        display: 'flex',
+        justifyContent: 'center',
+      }}
+    >
+      <Alert
+        color="info"
+        className="text-center"
+        toggle={clear}
+        style={{ marginBottom: 0, width: '50%' }}
+      >
+        <span>{text}</span>
+        {resultUrl && (
+          <span>
+            <a target="_blank" href={resultUrl} className="alert-link">
+              {' '}
+              download results
             </a>
-          )}{' '}
-          {state.resultUrl}
-        </p>
+          </span>
+        )}
       </Alert>
     </div>
   )
@@ -122,8 +158,6 @@ const _SearchResultsCard = (props) => {
   const exportCSVOnlyContextual = () => {
     download(window.otu_search_config.export_endpoint, props, true)
   }
-
-  console.log('props.otuExport', props.otuExport)
 
   return (
     <div>
@@ -179,9 +213,9 @@ const _SearchResultsCard = (props) => {
               />
             )}
           </div>
+          <OtuExportBox state={props.otuExport} clear={props.clearOtuExport} />
         </CardHeader>
         <CardBody>
-          <OtuExportBox state={props.otuExport} clear={props.clearOtuExport} />
           <AlertBoxes alerts={props.galaxy.alerts} clearAlerts={props.clearGalaxyAlert} />
           <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
           <SearchResultsTable

@@ -125,6 +125,7 @@ export default handleActions(
       isFinished: false,
       status: 'init',
       errors: [],
+      resultUrl: '',
     }),
     [runOtuExportEnded as any]: {
       next: (state, action: any) => {

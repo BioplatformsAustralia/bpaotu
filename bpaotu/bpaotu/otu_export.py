@@ -2,8 +2,10 @@ import io
 import os
 import csv
 import json
+import logging
 
 from django.conf import settings
+from django.core.mail import send_mail
 from contextlib import suppress
 from urllib.parse import urljoin
 
@@ -13,10 +15,16 @@ from .submission import Submission
 from .tabular import tabular_zip_file_generator
 from .util import make_timestamp
 
+logger = logging.getLogger('bpaotu')
+
 class OtuExportWrapper(BaseTaskWrapper):
     def __init__(self, submission_id, query, status):
         super().__init__(submission_id, status, "otu-export")
         self._query = query
+
+    def notify(self, full_url, user_email):
+        result = self._notify(full_url, user_email)
+        return result
 
     def _run(self):
         # access the submission so we can change the status
@@ -44,3 +52,52 @@ class OtuExportWrapper(BaseTaskWrapper):
         self._status_update(submission, 'complete')
 
         return True
+
+    def _notify(self, full_url, user_email):
+        # access the submission so we can change the status
+        submission = Submission(self._submission_id)
+
+        try:
+            am_email ="Australian Microbiome Data Requests <{}>".format(settings.OTU_EXPORT_EMAIL)
+            body = self._email_text(full_url)
+
+            send_mail(
+                "Australian Microbiome: OTU Export Download Available",
+                body,
+                am_email, [user_email])
+
+        except Exception as e:
+            logger.critical("Error sending notify email", exc_info=True)
+            return False
+
+        return True
+
+    def _email_text(self, full_url):
+        submission = Submission(self._submission_id)
+
+        file_timeout = settings.OTU_EXPORT_FILE_TIMEOUT
+        params, _ = param_to_filters(self._query)
+        submission_id = self._submission_id
+
+        return f"""\
+Australian Microbiome OTU Database - OTU Export
+-----------------------------------------------
+
+Your search results are ready for download here:
+{full_url}
+
+This file will be available for {file_timeout} hours.
+
+The search was executed for:
+{params.describe()}
+
+Submission ID:
+{submission_id}
+
+---------------------------------------------------
+How to cite Australian Microbiome data:
+https://www.australianmicrobiome.com/protocols/acknowledgements/
+
+Australian Microbiome data use policy:
+https://www.australianmicrobiome.com/protocols/data-policy/
+"""
