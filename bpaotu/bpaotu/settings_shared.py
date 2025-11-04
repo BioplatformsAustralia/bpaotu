@@ -125,6 +125,7 @@ DATABASES = {
 
 ## logging
 
+LOG_LEVEL = env.get('log_level', "INFO")
 LOG_DIRECTORY = env.get('log_directory', os.path.join(WEBAPP_ROOT, "log"))
 with suppress(OSError):
     if not os.path.exists(LOG_DIRECTORY):
@@ -222,7 +223,7 @@ LOGGING = {
         },
         'bpaotu': {
             'handlers': ['console_prod', 'file'],
-            'level': 'INFO',
+            'level': LOG_LEVEL,
             'propagate': False,
         },
         'libs': {
