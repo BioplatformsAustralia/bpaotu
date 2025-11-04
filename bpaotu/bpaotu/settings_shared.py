@@ -39,6 +39,26 @@ STATIC_SERVER_PATH = STATIC_ROOT
 BASE_URL = SCRIPT_NAME
 
 
+## email
+
+DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'Bioplaforms Data Portal <help@bioplatforms.com>')
+EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU] ')
+EMAIL_BACKEND = env.get('BPAOTU_EMAIL_BACKEND', "anymail.backends.amazon_ses.EmailBackend")
+EMAIL_BACKEND = 'django.core.mail.backends.sendmail.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@yourdomain.com'
+EMAIL_HOST = env.get('BPAOTU_EMAIL_HOST', 'localhost')
+
+ANYMAIL = {
+    "AMAZON_SES_MESSAGE_TAG_NAME": "Type",
+    "AMAZON_SES_CLIENT_PARAMS": {
+        # example: override normal Boto credentials specifically for Anymail
+        "aws_access_key_id": env.get("AWS_ACCESS_KEY_FOR_ANYMAIL_SES"),
+        "aws_secret_access_key": env.get("AWS_SECRET_KEY_FOR_ANYMAIL_SES"),
+        "region_name": env.get("AWS_REGION_FOR_ANYMAIL_SES"),
+    },
+}
+
+
 ## task specific config
 
 BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
@@ -48,6 +68,7 @@ OTU_EXPORT_PATH = env.get('otu_export_path', '/data/otu-export/')
 OTU_EXPORT_URL = env.get('otu_export_url', STATIC_URL)
 OTU_EXPORT_FILE_TIMEOUT = env.get('otu_export_file_timeout', 72)
 OTU_EXPORT_EMAIL = env.get('metagenome_request_email', 'root-noreply@amotu.it.csiro.au') # 'am-data-requests@bioplatforms.com'
+
 
 ## ckan config
 

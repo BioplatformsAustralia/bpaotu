@@ -36,23 +36,6 @@ X_FRAME_OPTIONS = env.get("x_frame_options", 'DENY')
 ADMINS = [("alert", env.get("alert_email", "root@localhost"))]
 MANAGERS = ADMINS
 
-# anymail email
-DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'Bioplaforms Data Portal <help@bioplatforms.com>')
-EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU] ')
-SERVER_EMAIL = env.get('DJANGO_SERVER_EMAIL', DEFAULT_FROM_EMAIL)
-EMAIL_BACKEND = env.get('bpaotu_email_backend', "anymail.backends.amazon_ses.EmailBackend")
-EMAIL_HOST = env.get('bpaotu_email_host', 'localhost')
-
-ANYMAIL = {
-    "AMAZON_SES_MESSAGE_TAG_NAME": "Type",
-    "AMAZON_SES_CLIENT_PARAMS": {
-        # example: override normal Boto credentials specifically for Anymail
-        "aws_access_key_id": env.get("AWS_ACCESS_KEY_FOR_ANYMAIL_SES"),
-        "aws_secret_access_key": env.get("AWS_SECRET_KEY_FOR_ANYMAIL_SES"),
-        "region_name": env.get("AWS_REGION_FOR_ANYMAIL_SES"),
-    },
-}
-
 ALLOWED_HOSTS = env.getlist("allowed_hosts", ["*"])
 
 CKAN_SERVER = {
