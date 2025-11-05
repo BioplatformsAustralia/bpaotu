@@ -11,7 +11,7 @@ export const ExportDataButton = (props) => {
       id={id}
       data-tut={dataTut}
       size={props.size}
-      style={{ marginRight: 10 }}
+      style={{ marginLeft: 6, marginRight: 6 }}
       outline={true}
       color="primary"
       disabled={props.disabled}
