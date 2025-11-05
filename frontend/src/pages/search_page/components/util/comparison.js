@@ -103,15 +103,16 @@ export const filterDataType = ({ selectedFilter, selectedFilterObject }) => {
 }
 
 // Filter keys that have null values for all samples
-export const filterOptionsSubset = (contextual, contextualFilters) => {
+// contextualData: an object of contextual data for each sample (each sample id is a key)
+export const filterOptionsSubset = (contextualData, contextualFilters) => {
   // all key options
   const filterOptionKeys =
-    Object.keys(contextual).length > 0 ? Object.keys(Object.values(contextual)[0]) : []
+    Object.keys(contextualData).length > 0 ? Object.keys(Object.values(contextualData)[0]) : []
 
   // keys with all null values
   const keysWithAllNullValues = filterOptionKeys.filter((key) => {
     // Check if all samples have null value for the current key
-    return Object.values(contextual).every((sample) => sample[key] === null)
+    return Object.values(contextualData).every((sample) => sample[key] === null)
   })
 
   // only return those with not all null values

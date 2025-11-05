@@ -1014,15 +1014,6 @@ def otuexport_submission(request):
         }
     }
 
-    # testing to see if both get set
-    # this is set in the cancel() method
-    if submission.cancelled:
-        response['submission']["cancelled"] = True
-        logger.debug("***** submission.cancelled")
-
-    if state == 'cancelled':
-        logger.debug("***** state == cancelled")
-
     if state == 'complete':
         try:
             duration = timestamps_duration(timestamps)
@@ -1184,8 +1175,7 @@ def submit_comparison(request):
             track_event = 'otu_sample_comparison'
 
         # resubmission with changed params
-        # reset redis fields so polling restarts cleanly
-        # duplicate key issues?
+        # this task resets redis fields so polling restarts cleanly
         else:
             task = tasks.submit_sample_comparison_params_changed
             track_event = 'otu_sample_comparison_changed_params'
@@ -1300,16 +1290,6 @@ def comparison_submission(request):
             'results': results,
         }
     }
-
-    # testing to see if both get set
-    # this is set in the cancel() method
-    if submission.cancelled:
-        response['submission']["cancelled"] = True
-        logger.debug("***** submission.cancelled")
-
-    if state == 'cancelled':
-        logger.debug("***** state == cancelled")
-
 
     if state == 'complete':
         try:

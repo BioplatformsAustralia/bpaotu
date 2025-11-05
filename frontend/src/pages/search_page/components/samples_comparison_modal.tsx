@@ -119,7 +119,7 @@ const umapTooltipLookup = {
   min_dist: 'Controls how tightly UMAP is allowed to pack points together',
 }
 
-const ParamControl = ({ param, value, tooltip, onChange }) => {
+const ParamControl = ({ param, value, tooltip, onChange, onKeyPress }) => {
   const variableLabelWidth = 8
   const variableInputWidth = 4
 
@@ -150,7 +150,7 @@ const ParamControl = ({ param, value, tooltip, onChange }) => {
         </div>
       </Col>
       <Col xs={variableInputWidth}>
-        <Input name={param} value={value} onChange={onChange} />
+        <Input name={param} value={value} onChange={onChange} onKeyPress={onKeyPress} />
       </Col>
     </>
   )
@@ -187,10 +187,11 @@ const SamplesComparisonModal = (props) => {
     handleUmapParameters,
     resetUmapParameters,
 
-    clearPlotData,
-    contextual,
-    plotData,
+    contextualData,
     contextualFilters,
+    plotData,
+    clearPlotData,
+
     comparisonStatus,
     // mem_usage,
     // timestamps,
@@ -214,7 +215,7 @@ const SamplesComparisonModal = (props) => {
   })
 
   // Only show filter options that don't have null values for all samples
-  const filterOptions = filterOptionsSubset(contextual, contextualFilters)
+  const filterOptions = filterOptionsSubset(contextualData, contextualFilters)
 
   // data is either continuous or not (i.e. discrete)
   // if discrete, then different possibilities (ontology, string, date) are handled separately within
@@ -325,6 +326,11 @@ const SamplesComparisonModal = (props) => {
   }
 
   const renderUmapControls = (umapParamsRef) => {
+    const closeAndRun = () => {
+      setShowUmapParameters(false)
+      runComparison(umapParams, submissionId)
+    }
+
     return (
       <div
         ref={umapParamsRef}
@@ -348,6 +354,12 @@ const SamplesComparisonModal = (props) => {
                 value={umapParams[param]}
                 tooltip={umapTooltipLookup[param]}
                 onChange={(e) => handleUmapParameters({ param, value: e.target.value })}
+                onKeyPress={(e) => {
+                  // Run if pressing enter
+                  if (e.charCode === 13) {
+                    closeAndRun()
+                  }
+                }}
               />
             </Row>
           ))}
@@ -355,6 +367,13 @@ const SamplesComparisonModal = (props) => {
             <Col style={{ marginTop: 10, textAlign: 'right' }}>
               <Button onClick={resetUmapParameters} size="sm" color="link">
                 Reset to defaults
+              </Button>
+            </Col>
+          </Row>
+          <Row>
+            <Col style={{ marginTop: 10, textAlign: 'right' }}>
+              <Button onClick={closeAndRun} size="sm" color="primary">
+                Run
               </Button>
             </Col>
           </Row>
@@ -417,7 +436,6 @@ const SamplesComparisonModal = (props) => {
             <Col xs="2"></Col>
             <Col xs="4" style={{ paddingLeft: 0, paddingRight: 0 }}>
               <select
-                placeholder={'(Select a contextual filter)'}
                 value={selectedFilter}
                 onChange={(e) => {
                   setSelectedFilter(e.target.value)
@@ -591,13 +609,11 @@ const mapStateToProps = (state) => {
     alerts,
     errors,
     submissions,
-    results,
+    contextualData,
     plotData,
     // mem_usage,
     // timestamps,
   } = state.searchPage.samplesComparisonModal
-
-  const { abundanceMatrix, contextual } = results
 
   return {
     isOpen,
@@ -614,12 +630,9 @@ const mapStateToProps = (state) => {
 
     umapParams,
 
-    results,
-    plotData,
-    abundanceMatrix,
-    contextual,
-
+    contextualData,
     contextualFilters: state.contextualDataDefinitions.filters,
+    plotData,
 
     comparisonStatus: status,
     alerts,

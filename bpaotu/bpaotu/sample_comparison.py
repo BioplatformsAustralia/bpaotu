@@ -35,6 +35,9 @@ class SampleComparisonWrapper(BaseTaskWrapper):
         else:
             self._log('warn', "SampleComparisonWrapper `umap_params_string` parameter is None")
 
+    def run_contextual_only(self):
+        self._run_contextual_only()
+
     def run_params_changed(self):
         self._run_params_changed()
 
@@ -174,9 +177,11 @@ class SampleComparisonWrapper(BaseTaskWrapper):
 
         return True
 
+    def _run_contextual_only(self):
+        contextual_path = self._attach_contextual()
 
-    ## TODO; we want to support adding different contextual fields to group colours by later on
-    ## (but not conditions, because that would change the results) 
+        return True
+
     def _run_params_changed(self):
         submission = Submission(self._submission_id)
 
@@ -259,11 +264,10 @@ class SampleComparisonWrapper(BaseTaskWrapper):
 
         self._status_update(submission, 'calc_umap_bc')
         results_braycurtis_umap = calc_umap('braycurtis', dist_matrix_braycurtis)[1]
+        pairs_braycurtis_umap = list(zip(results_braycurtis_umap.dim1.values, results_braycurtis_umap.dim2.values))
 
         # self._status_update(submission, 'calc_umap_j')
         # results_jaccard_umap = calc_umap('jaccard', dist_matrix_jaccard)[1]
-
-        pairs_braycurtis_umap = list(zip(results_braycurtis_umap.dim1.values, results_braycurtis_umap.dim2.values))
         # pairs_jaccard_umap = list(zip(results_jaccard_umap.dim1.values, results_jaccard_umap.dim2.values))
         pairs_jaccard_umap = []
 

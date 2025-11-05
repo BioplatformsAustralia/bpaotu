@@ -120,6 +120,7 @@ export interface PageState {
       abundanceMatrix: any
       contextual: any
     }
+    contextualData: any
     plotData: {
       jaccard: any[]
       braycurtis: any[]
@@ -259,6 +260,7 @@ export const searchPageInitialState: PageState = {
     errors: [],
     submissions: [],
     results: { abundanceMatrix: {}, contextual: {} },
+    contextualData: {},
     plotData: { jaccard: [], braycurtis: [] },
     mem_usage: { mem: '', swap: '', cpu: '' },
     timestamps: [],

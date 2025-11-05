@@ -7,7 +7,7 @@ from bpaotu.celery import app
 from .submission import Submission
 from .task_utils import find_task_id_for_submission
 
-logger = logging.getLogger('bpaotu')
+logger = logging.getLogger('bpaotu-alt')
 
 BASE_SHARED_DIR = "/data/shared"
 
@@ -83,7 +83,6 @@ class BaseTaskWrapper:
             if task_id:
                 app.control.revoke(task_id, terminate=True, signal='SIGKILL')
                 self._status_update(submission, 'cancelled')
-                submission.cancelled = 'true'
                 self._log('info', f"Task cancelled (task_id={task_id})")
             else:
                 self._log('warning', "No task ID found; cannot cancel")

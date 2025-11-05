@@ -14,7 +14,10 @@ from django.conf import settings
 from .biom import save_biom_zip_file
 from .blast import BlastWrapper
 from .galaxy_client import get_users_galaxy
+from .otu import SampleContext
 from .otu_export import OtuExportWrapper
+from .params import param_to_filters
+from .query import SampleQuery
 from .sample_meta import update_from_ckan
 from .sample_comparison import SampleComparisonWrapper
 from .submission import Submission
@@ -212,17 +215,46 @@ def submit_sample_comparison(submission_id, query, umap_params_string):
 @shared_task()
 def submit_sample_comparison_params_changed(submission_id, query, umap_params_string):
     submission = Submission(submission_id)
-    submission.reset()
 
-    submission.status = 'reload'
-    submission.query = query
-    submission.umap_params_string = umap_params_string
+    # check if submission already has a query associated
+    # (there's a chance this could be run with a fresh query)
+    # if the new query is the same then just redo umap point
+    # if the new query is different then determine if it would change the result set
+    # - if not, then just rebuild the contextual and redo umap points
+    # - if so, then do a full new run
+    if submission.query:
+        # logger.debug('submission has query')
+        if submission.query == query:
+            # logger.debug('submission query is same as new query')
+            chain = run_sample_comparison_params_changed.s()
+        else:
+            # logger.debug('submission query is different to new query')
+            params1, errors1 = param_to_filters(submission.query)
+            params2, errors2 = param_to_filters(query)
+            ids1 = get_sorted_sample_ids(params1)
+            ids2 = get_sorted_sample_ids(params2)
 
-    chain = run_sample_comparison_params_changed.s()
+            if ids1 == ids2:
+                # logger.debug('different queries have the same samples')
+                # rebuild contextual data first then run comparison from umap stage
+                chain = run_sample_comparison_contextual.s() | run_sample_comparison_params_changed.s()
+            else:
+                # logger.debug('different queries have different samples')
+                # run full submit_sample_comparison instead
+                return submit_sample_comparison.delay(submission_id, query, umap_params_string)
 
-    chain(submission_id)
+        submission.reset()
+        submission.status = 'reload'
+        submission.query = query
+        submission.umap_params_string = umap_params_string
 
-    return submission_id
+        chain(submission_id)
+
+        return submission_id
+    else:
+        # logger.debug('submission has no query')
+        # submission has no query; run submit_sample_comparison from scratch instead
+        return submit_sample_comparison.delay(submission_id, query, umap_params_string)
 
 @shared_task
 def setup_sample_comparison(submission_id):
@@ -247,6 +279,14 @@ def run_sample_comparison(submission_id):
     return submission_id
 
 @shared_task
+def run_sample_comparison_contextual(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_sample_comparison_wrapper(submission)
+    wrapper.run_contextual_only()
+
+    return submission_id
+
+@shared_task
 def run_sample_comparison_params_changed(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
@@ -255,7 +295,7 @@ def run_sample_comparison_params_changed(submission_id):
     except FileNotFoundError as e:
         # fallback to normal run_sample_comparison if file (or directory) is not found
         # note that we run the setup task again to ensure the directory exists
-        logging.warning(f"Params-changed run failed, falling back to full run for submission {submission_id}")
+        logger.warning(f"Params-changed run failed, falling back to full run for submission {submission_id}")
 
         chain = setup_sample_comparison.s() | run_sample_comparison.s()
         chain(submission_id)
@@ -263,7 +303,7 @@ def run_sample_comparison_params_changed(submission_id):
         return submission_id
     except ValueError as e:
         submission.error = str(e)
-        logging.error(str(e))
+        logger.error(str(e))
 
     return submission_id
 
@@ -396,3 +436,9 @@ def create_galaxy_submission_object(email, query):
     submission.annotation = params.describe()
 
     return submission_id
+
+
+def get_sorted_sample_ids(params):
+    with SampleQuery(params) as query:
+        ids = [r[0] for r in query.matching_samples(SampleContext.id)]
+        return sorted(ids, key=lambda v: (0, int(v)) if v.isdecimal() else (1, v))

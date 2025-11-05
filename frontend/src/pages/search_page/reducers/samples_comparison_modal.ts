@@ -217,6 +217,7 @@ export default handleActions(
     }),
     [samplesComparisonModalClearPlotData as any]: (state, action: any) => ({
       ...state,
+      contextualData: searchPageInitialState.samplesComparisonModal.contextualData,
       plotData: searchPageInitialState.samplesComparisonModal.plotData,
     }),
     [handleUmapParameters as any]: (state, action: any) => {
@@ -282,6 +283,8 @@ export default handleActions(
         let isLoading: boolean = state.isLoading
         let isFinished: boolean = false
         let results: any = searchPageInitialState.samplesComparisonModal.results
+        // contextualData and plotData are stored separately to allow restoring in modal after a cancel
+        let contextualData: any = searchPageInitialState.samplesComparisonModal.contextualData
         let plotData: any = searchPageInitialState.samplesComparisonModal.plotData
 
         if (actionSubmissionState === 'complete') {
@@ -293,6 +296,8 @@ export default handleActions(
           const sample_ids = abundanceMatrix.sample_ids
           const pointsBC = abundanceMatrix.points['braycurtis']
           const pointsJ = abundanceMatrix.points['jaccard']
+
+          contextualData = contextual
 
           // apply a jitter so that points aren't put on the same place (makes graph misleading)
           // need to retain the original value to put in the tooltip though
@@ -347,7 +352,8 @@ export default handleActions(
           errors: errors,
           status: actionSubmissionState,
           results: results,
-          // plotData: plotData,
+          // only change xData if the submission was finished
+          ...(isFinished && { contextualData: contextualData }),
           ...(isFinished && { plotData: plotData }),
         }
       },
