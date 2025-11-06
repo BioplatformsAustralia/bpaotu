@@ -11,7 +11,7 @@ if [ "$1" = 'celery_worker' ]; then
     info "[Run] Starting celery_worker"
 
     set -x
-    exec celery -A bpaotu worker --loglevel=info
+    exec celery -A bpaotu worker --loglevel=info -B
 fi
 
 # fallback; run given command

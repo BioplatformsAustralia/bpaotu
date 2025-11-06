@@ -20,12 +20,20 @@ from .util import log_msg
 class SampleComparisonWrapper(BaseTaskWrapper):
     def __init__(self, submission_id, query, status, umap_params_string):
         super().__init__(submission_id, status, "comparison")
-        self._query = query
-        self._params, _ = param_to_filters(query)
-        umap_params = json.loads(umap_params_string)
-        self._param_min_dist = float(umap_params['min_dist'])
-        self._param_n_neighbors = int(umap_params['n_neighbors'])
-        self._param_spread = float(umap_params['spread'])
+
+        if query:
+            self._query = query
+            self._params, _ = param_to_filters(query)
+        else:
+            self._log('warn', "SampleComparisonWrapper `query` parameter is None")
+
+        if umap_params_string:
+            umap_params = json.loads(umap_params_string)
+            self._param_min_dist = float(umap_params['min_dist'])
+            self._param_n_neighbors = int(umap_params['n_neighbors'])
+            self._param_spread = float(umap_params['spread'])
+        else:
+            self._log('warn', "SampleComparisonWrapper `umap_params_string` parameter is None")
 
     def run_params_changed(self):
         self._run_params_changed()

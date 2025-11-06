@@ -34,7 +34,7 @@ from django.core.cache import caches
 
 from celery import current_app
 
-from . import tasks_minimal
+from . import tasks
 from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
@@ -891,7 +891,7 @@ def do_on_galaxy(galaxy_action):
 def submit_to_galaxy(request, email):
     '''Submits the search results as a biom file into a new history in Galaxy.'''
     user_created = galaxy_ensure_user(email)
-    submission_id = tasks_minimal.submit_to_galaxy.delay(email, request.POST['query'])
+    submission_id = tasks.submit_to_galaxy.delay(email, request.POST['query'])
     return submission_id, user_created
 
 
@@ -901,7 +901,7 @@ def submit_to_galaxy(request, email):
 def execute_workflow_on_galaxy(request, email):
     user_created = galaxy_ensure_user(email)
     workflow_id = get_krona_workflow(email)
-    submission_id = tasks_minimal.execute_workflow_on_galaxy(email, request.POST['query'], workflow_id)
+    submission_id = tasks.execute_workflow_on_galaxy(email, request.POST['query'], workflow_id)
     return submission_id, user_created
 
 
@@ -942,7 +942,7 @@ def submit_otuexport(request):
         # because the initial submit task call has to be with delay we need to create the Submission id here
         # the submit task will create the Submission in cache and start the rest of the task
         submission_id = str(uuid.uuid4())
-        result = tasks_minimal.submit_otuexport.delay(submission_id, query)
+        result = tasks.submit_otuexport.delay(submission_id, query)
 
         track(request, 'otu_otuexport', search_params_track_args(params))
 
@@ -966,7 +966,7 @@ def cancel_otuexport(request):
         body_data = json.loads(body_unicode)
         submission_id = body_data['submissionId']
 
-        result = tasks_minimal.cancel_otuexport(submission_id)
+        result = tasks.cancel_otuexport(submission_id)
 
         if result:
             return JsonResponse({
@@ -1033,21 +1033,21 @@ def otuexport_submission(request):
         except Exception as e:
             logger.warning("Could not calculate duration of sample otuexport; %s" % getattr(e, 'message', repr(e)))
 
-        tasks_minimal.cleanup_otuexport(submission_id)
+        tasks.cleanup_otuexport(submission_id)
 
         # determine the full download url here while we have access to the request
         full_url = request.build_absolute_uri(submission.result_url)
         user_email = request.ckan_data['email']
-        tasks_minimal.notify_otuexport.delay(submission_id, full_url, user_email)
+        tasks.notify_otuexport.delay(submission_id, full_url, user_email)
 
     elif state == 'error':
         response['submission']['error'] = submission.error
-        tasks_minimal.cleanup_otuexport(submission_id)
+        tasks.cleanup_otuexport(submission_id)
 
     elif not task_found:
         response['submission']['state'] = 'error'
         response['submission']['error'] = 'Server-side error. It is possible that the result set is too large! Please run a search with fewer samples.'
-        tasks_minimal.cleanup_otuexport(submission_id)
+        tasks.cleanup_otuexport(submission_id)
 
     else:
         # still ongoing
@@ -1069,7 +1069,7 @@ def submit_blast(request):
         blast_params_string = request.POST['blast_params']
 
         submission_id = str(uuid.uuid4())
-        result = tasks_minimal.submit_blast.delay(submission_id, query, search_string, blast_params_string)
+        result = tasks.submit_blast.delay(submission_id, query, search_string, blast_params_string)
 
         track(request, 'otu_blast_search', { 'blast_params': json.loads(blast_params_string) })
 
@@ -1093,7 +1093,7 @@ def cancel_blast(request):
         body_data = json.loads(body_unicode)
         submission_id = body_data['submissionId']
 
-        result = tasks_minimal.cancel_blast(submission_id)
+        result = tasks.cancel_blast(submission_id)
 
         if result:
             return JsonResponse({
@@ -1146,11 +1146,11 @@ def blast_submission(request):
         except Exception as e:
             logger.warning("Could not calculate duration of BLAST search; %s" % getattr(e, 'message', repr(e)))
 
-        tasks_minimal.cleanup_blast(submission_id)
+        tasks.cleanup_blast(submission_id)
 
     elif state == 'error':
         response['submission']['error'] = submission.error
-        tasks_minimal.cleanup_blast(submission_id)
+        tasks.cleanup_blast(submission_id)
 
     else:
         # still ongoing
@@ -1180,14 +1180,14 @@ def submit_comparison(request):
         if not submission_id:
             submission_id = str(uuid.uuid4())
             Submission.create(submission_id)
-            task = tasks_minimal.submit_sample_comparison
+            task = tasks.submit_sample_comparison
             track_event = 'otu_sample_comparison'
 
         # resubmission with changed params
         # reset redis fields so polling restarts cleanly
         # duplicate key issues?
         else:
-            task = tasks_minimal.submit_sample_comparison_params_changed
+            task = tasks.submit_sample_comparison_params_changed
             track_event = 'otu_sample_comparison_changed_params'
 
         task.delay(submission_id, query, umap_params_string)
@@ -1221,7 +1221,7 @@ def cancel_comparison(request):
         body_data = json.loads(body_unicode)
         submission_id = body_data['submissionId']
 
-        result = tasks_minimal.cancel_sample_comparison(submission_id)
+        result = tasks.cancel_sample_comparison(submission_id)
 
         if result:
             return JsonResponse({
@@ -1252,7 +1252,7 @@ def clear_comparison(request):
         body_data = json.loads(body_unicode)
         submission_id = body_data['submissionId']
 
-        result = tasks_minimal.cleanup_sample_comparison(submission_id)
+        result = tasks.cleanup_sample_comparison(submission_id)
 
         if result:
             return JsonResponse({
@@ -1332,11 +1332,11 @@ def comparison_submission(request):
             logger.error(f"Could not load result files for submission {submission_id}: {e}")
 
         ## dont clean up here, move to an endpoint triggered by clicking the X
-        # tasks_minimal.cleanup_sample_comparison(submission_id)
+        # tasks.cleanup_sample_comparison(submission_id)
 
     elif state == 'error':
         response['submission']['error'] = submission.error
-        tasks_minimal.cleanup_sample_comparison(submission_id)
+        tasks.cleanup_sample_comparison(submission_id)
 
     elif not task_found:
         error = submission.error or (
@@ -1345,7 +1345,7 @@ def comparison_submission(request):
 
         response['submission']['state'] = 'error'
         response['submission']['error'] = error
-        tasks_minimal.cleanup_sample_comparison(submission_id)
+        tasks.cleanup_sample_comparison(submission_id)
 
     else:
         # still ongoing

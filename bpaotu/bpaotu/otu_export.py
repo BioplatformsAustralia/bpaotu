@@ -75,7 +75,18 @@ class OtuExportWrapper(BaseTaskWrapper):
     def _email_text(self, full_url):
         submission = Submission(self._submission_id)
 
-        file_timeout = settings.OTU_EXPORT_FILE_TIMEOUT
+        lines = [
+            "Your search results are ready for download here:",
+            full_url,
+        ]
+
+        cleanup_expiry = settings.PERIODIC_DOWNLOAD_RESULTS_CLEANUP_EXPIRY_HOURS
+        if cleanup_expiry > 0:
+            lines.append(f"")
+            lines.append(f"This file will be available for {cleanup_expiry} hours.")
+
+        body_text = "\n".join(lines)
+
         params, _ = param_to_filters(self._query)
         submission_id = self._submission_id
 
@@ -83,10 +94,7 @@ class OtuExportWrapper(BaseTaskWrapper):
 Australian Microbiome OTU Database - OTU Export
 -----------------------------------------------
 
-Your search results are ready for download here:
-{full_url}
-
-This file will be available for {file_timeout} hours.
+{body_text}
 
 The search was executed for:
 {params.describe()}

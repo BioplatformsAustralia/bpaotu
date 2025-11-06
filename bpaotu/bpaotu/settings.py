@@ -21,8 +21,6 @@ BPAOTU_SCIENTIFIC_MANUAL_URL = "https://research.csiro.au/ambsm/"
 
 BPAOTU_MAP_CENTRE_LONGITUDE = 133.775
 
-BPAOTU_CKAN_POLL_INTERVAL = 3600 # Seconds between CKAN queries for new resources
-
 
 # django-secure
 SECURE_SSL_REDIRECT = env.get("secure_ssl_redirect", PRODUCTION)
