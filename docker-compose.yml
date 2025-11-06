@@ -56,6 +56,10 @@ services:
       - PYTHONPATH=/app/bpaotu
       - DJANGO_SETTINGS_MODULE=bpaotu.settings_celery
     volumes:
+      ## this would prevent needing to rebuild worker container after each code change
+      ## but is causing issues:
+      ## Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: exec: "/app/docker-worker-entrypoint.sh": permission denied: unknown
+      # - .:/app
       - ./data/dev:/data
     depends_on:
       - db

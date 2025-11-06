@@ -19,6 +19,7 @@ celery==5.5.3
 ccg-django-utils # settings env config
 colorlog==4.1.0 # logging
 psutil # debugging memory usage
+django-anymail[amazon_ses]==7.1.0 # send_mail
 
 ## Task related
 # periodic ckan update
@@ -35,3 +36,6 @@ fastparquet==0.8
 pyarrow==8
 # galaxy
 requests==2.32.4
+# otu export
+biopython==1.80
+git+https://github.com/BioplatformsAustralia/bpa-ingest.git@6.11.6

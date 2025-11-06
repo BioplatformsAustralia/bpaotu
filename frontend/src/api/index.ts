@@ -322,6 +322,36 @@ export function getComparisonSubmission(submissionId) {
   })
 }
 
+export function executeOtuExport(filters) {
+  const formData = new FormData()
+  formData.append('query', JSON.stringify(filters))
+
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.submit_otuexport_endpoint,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+}
+
+export function executeCancelOtuExport(submissionId) {
+  return axios({
+    method: 'post',
+    url: window.otu_search_config.cancel_otuexport_endpoint,
+    data: { submissionId: submissionId },
+  })
+}
+
+export function getOtuExportSubmission(submissionId) {
+  return axios.get(window.otu_search_config.otuexport_submission_endpoint, {
+    params: {
+      submission_id: submissionId,
+    },
+  })
+}
+
 export function apiCookieConsentAccepted() {
   return axios
     .get(window.otu_search_config.cookie_consent_accepted_endpoint.toString())

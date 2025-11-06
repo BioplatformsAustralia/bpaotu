@@ -38,6 +38,9 @@ export interface SearchConfig {
   cancel_comparison_endpoint: string
   clear_comparison_endpoint: string
   comparison_submission_endpoint: string
+  submit_otuexport_endpoint: string
+  cancel_otuexport_endpoint: string
+  otuexport_submission_endpoint: string
   search_blast_otus_endpoint: string
   required_table_headers_endpoint: string
   contextual_csv_download_endpoint: string

@@ -10,3 +10,4 @@ class BpaotuConfig(AppConfig):
         # See settings.STATICFILES_DIRS
         with suppress(FileExistsError, PermissionError):
             os.mkdir(settings.BLAST_RESULTS_PATH)
+            os.mkdir(settings.OTU_EXPORT_PATH)

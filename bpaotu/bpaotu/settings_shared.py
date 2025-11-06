@@ -2,6 +2,7 @@
 
 import os
 from ccg_django_utils.conf import EnvConfig
+from celery.schedules import crontab
 from contextlib import suppress
 
 from ._version import __version__
@@ -39,10 +40,33 @@ STATIC_SERVER_PATH = STATIC_ROOT
 BASE_URL = SCRIPT_NAME
 
 
+## email
+
+DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'Bioplaforms Data Portal <help@bioplatforms.com>')
+EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU] ')
+EMAIL_BACKEND = env.get('BPAOTU_EMAIL_BACKEND', "anymail.backends.amazon_ses.EmailBackend")
+DEFAULT_FROM_EMAIL = 'noreply@yourdomain.com'
+EMAIL_HOST = env.get('BPAOTU_EMAIL_HOST', 'localhost')
+
+ANYMAIL = {
+    "AMAZON_SES_MESSAGE_TAG_NAME": "Type",
+    "AMAZON_SES_CLIENT_PARAMS": {
+        # example: override normal Boto credentials specifically for Anymail
+        "aws_access_key_id": env.get("AWS_ACCESS_KEY_FOR_ANYMAIL_SES"),
+        "aws_secret_access_key": env.get("AWS_SECRET_KEY_FOR_ANYMAIL_SES"),
+        "region_name": env.get("AWS_REGION_FOR_ANYMAIL_SES"),
+    },
+}
+
+
 ## task specific config
 
 BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
 BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
+
+OTU_EXPORT_PATH = env.get('otu_export_path', '/data/otu-export/')
+OTU_EXPORT_URL = env.get('otu_export_url', STATIC_URL)
+OTU_EXPORT_EMAIL = env.get('metagenome_request_email', 'root-noreply@amotu.it.csiro.au') # 'am-data-requests@bioplatforms.com'
 
 
 ## ckan config
@@ -72,7 +96,7 @@ CACHES = {
     'default': {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": redis_url(1),
-        "TIMEOUT": 3600,
+        "EXPIRY": 3600,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient"
         },
@@ -87,6 +111,7 @@ CACHES['contextual_schema_definition_results'] = CACHES['default']
 
 ## celery config
 
+CELERY_TIMEZONE = TIME_ZONE
 CELERY_BROKER_URL = redis_url(2)
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 # CELERY_TASK_IGNORE_RESULT = True # working on killing tasks with out of memory error
@@ -95,7 +120,31 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
-CELERY_TIMEZONE = TIME_ZONE
+
+## celery beat config
+
+PERIODIC_CKAN_UPDATE_INTERVAL = 3600 # Seconds between CKAN queries for new resources
+PERIODIC_DOWNLOAD_RESULTS_CLEANUP_EXPIRY_HOURS = env.get('periodic_download_results_cleanup_expiry_hours', 72)
+PERIODIC_DOWNLOAD_RESULTS_CLEANUP_EXPIRY = PERIODIC_DOWNLOAD_RESULTS_CLEANUP_EXPIRY_HOURS * 3600
+PERIODIC_DOWNLOAD_RESULTS_CLEANUP_TIME = os.getenv("PERIODIC_DOWNLOAD_RESULTS_CLEANUP_TIME", "01:00")
+
+try:
+    cleanup_time_hour, cleanup_time_minute = map(int, PERIODIC_DOWNLOAD_RESULTS_CLEANUP_TIME.split(":"))
+except ValueError:
+    # fallback safely to 1am if env var is malformed
+    cleanup_time_hour, cleanup_time_minute = 1, 0
+
+CELERY_BEAT_SCHEDULE_FILENAME = '/tmp/celerybeat-schedule'
+CELERY_BEAT_SCHEDULE = {
+    "periodic-ckan-update": {
+        "task": "bpaotu.tasks.periodic_ckan_update",
+        "schedule": PERIODIC_CKAN_UPDATE_INTERVAL,
+    },
+    "periodic-download-results-cleanup": {
+        "task": "bpaotu.tasks.periodic_download_results_cleanup",
+        "schedule": crontab(hour=cleanup_time_hour, minute=cleanup_time_minute),
+    },
+}
 
 
 ## database config
@@ -121,6 +170,7 @@ DATABASES = {
 
 ## logging
 
+LOG_LEVEL = env.get('log_level', "INFO")
 LOG_DIRECTORY = env.get('log_directory', os.path.join(WEBAPP_ROOT, "log"))
 with suppress(OSError):
     if not os.path.exists(LOG_DIRECTORY):
@@ -218,7 +268,7 @@ LOGGING = {
         },
         'bpaotu': {
             'handlers': ['console_prod', 'file'],
-            'level': 'INFO',
+            'level': LOG_LEVEL,
             'propagate': False,
         },
         'libs': {

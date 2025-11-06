@@ -34,6 +34,13 @@ export interface ComparisonSubmission {
   error?: string
 }
 
+export interface OtuExportSubmission {
+  submissionId: string
+  finished: boolean
+  succeeded: boolean
+  error?: string
+}
+
 export interface Alert {
   color: string
   text: string
@@ -48,6 +55,13 @@ export interface PageState {
     selectedTrait: OperatorAndValue
     contextual: any // TODO
     sampleIntegrityWarning: any
+  }
+  otuExport: {
+    status: string
+    alerts: any[]
+    errors: any[]
+    submissions: any[]
+    resultUrl: string
   }
   blastSearchModal: {
     isOpen: boolean
@@ -183,6 +197,13 @@ export const searchPageInitialState: PageState = {
       filtersMode: 'and',
       filters: [],
     },
+  },
+  otuExport: {
+    status: 'init',
+    alerts: [],
+    errors: [],
+    submissions: [],
+    resultUrl: '',
   },
   blastSearchModal: {
     isOpen: false,

@@ -1,5 +1,7 @@
-from bpaotu.celery import app
+from celery import shared_task
 
+import os
+import time
 import logging
 import uuid
 import numpy as np
@@ -12,6 +14,7 @@ from django.conf import settings
 from .biom import save_biom_zip_file
 from .blast import BlastWrapper
 from .galaxy_client import get_users_galaxy
+from .otu_export import OtuExportWrapper
 from .sample_meta import update_from_ckan
 from .sample_comparison import SampleComparisonWrapper
 from .submission import Submission
@@ -30,24 +33,106 @@ GALAXY_HISTORY_NAME_MAX = 255
 
 
 ##
-## Misc Tasks
+## Periodic Tasks
 ## 
 
-@app.task(bind=True)
-def debug_task(self):
-    print('Request: {0!r}'.format(self.request))
-    return "debug_task OK"
-
-@app.task(ignore_result=True)
+@shared_task(ignore_result=True)
 def periodic_ckan_update():
     update_from_ckan()
+
+@shared_task(ignore_result=True)
+def periodic_download_results_cleanup():
+    if not settings.PERIODIC_DOWNLOAD_RESULTS_CLEANUP_EXPIRY > 0:
+        logger.info('Skipping check for outdated download packets to remove')
+        return
+    
+    logger.info('Checking for outdated download packets to remove')
+
+    now = time.time()
+
+    DIRECTORIES = ['/data/blast-output', '/data/otu-export']
+    for directory in DIRECTORIES:
+        for root, dirs, files in os.walk(directory):
+            for filename in files:
+                filepath = os.path.join(root, filename)
+                if now - os.path.getmtime(filepath) > settings.PERIODIC_DOWNLOAD_RESULTS_CLEANUP_EXPIRY:
+                    try:
+                        logger.info(f"Deleting: {filepath}")
+                        os.remove(filepath)
+                    except FileNotFoundError:
+                        logger.warning(f"File already removed: {filepath}")
+                    except PermissionError:
+                        logger.error(f"Permission denied deleting file: {filepath}")
+                    except OSError as e:
+                        logger.error(f"Error deleting file {filepath}: {e}")
+
+
+##
+## OTU Export
+##
+
+@shared_task()
+def submit_otuexport(submission_id, query):
+    submission = Submission.create(submission_id)
+
+    submission.query = query
+
+    chain = setup_otuexport.s() | run_otuexport.s()
+
+    chain(submission_id)
+
+    return submission_id
+
+@shared_task()
+def setup_otuexport(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_otuexport_wrapper(submission)
+    wrapper.setup()
+
+    return submission_id
+
+@shared_task()
+def run_otuexport(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_otuexport_wrapper(submission)
+    wrapper.run()
+
+    return submission_id
+
+@shared_task()
+def cancel_otuexport(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_otuexport_wrapper(submission)
+    wrapper.cancel()
+
+    return submission_id
+
+@shared_task()
+def cleanup_otuexport(submission_id):
+    submission = Submission(submission_id)
+    wrapper = _make_otuexport_wrapper(submission)
+    wrapper.cleanup()
+
+    return submission_id
+
+@shared_task()
+def notify_otuexport(submission_id, full_url, user_email):
+    submission = Submission(submission_id)
+    wrapper = _make_otuexport_wrapper(submission)
+    wrapper.notify(full_url, user_email)
+
+    return submission_id
+
+def _make_otuexport_wrapper(submission):
+    return OtuExportWrapper(
+        submission.submission_id, submission.query, submission.status)
 
 
 ##
 ## BLAST Search
 ##
 
-@app.task()
+@shared_task()
 def submit_blast(submission_id, query, search_string, blast_params_string):
     submission = Submission.create(submission_id)
 
@@ -62,7 +147,7 @@ def submit_blast(submission_id, query, search_string, blast_params_string):
 
     return submission_id
 
-@app.task()
+@shared_task()
 def setup_blast(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_blast_wrapper(submission)
@@ -70,7 +155,7 @@ def setup_blast(submission_id):
 
     return submission_id
 
-@app.task()
+@shared_task()
 def run_blast(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_blast_wrapper(submission)
@@ -78,7 +163,7 @@ def run_blast(submission_id):
 
     return submission_id
 
-@app.task()
+@shared_task()
 def cancel_blast(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_blast_wrapper(submission)
@@ -86,7 +171,7 @@ def cancel_blast(submission_id):
 
     return submission_id
 
-@app.task()
+@shared_task()
 def cleanup_blast(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_blast_wrapper(submission)
@@ -110,7 +195,7 @@ def _make_blast_wrapper(submission):
 # separate tasks so they can run at the same time
 # apply_async() ?
 
-@app.task()
+@shared_task()
 def submit_sample_comparison(submission_id, query, umap_params_string):
     submission = Submission.create(submission_id)
 
@@ -124,7 +209,7 @@ def submit_sample_comparison(submission_id, query, umap_params_string):
 
     return submission_id
 
-@app.task()
+@shared_task()
 def submit_sample_comparison_params_changed(submission_id, query, umap_params_string):
     submission = Submission(submission_id)
     submission.reset()
@@ -139,7 +224,7 @@ def submit_sample_comparison_params_changed(submission_id, query, umap_params_st
 
     return submission_id
 
-@app.task
+@shared_task
 def setup_sample_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
@@ -147,7 +232,7 @@ def setup_sample_comparison(submission_id):
 
     return submission_id
 
-@app.task
+@shared_task
 def run_sample_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
@@ -161,7 +246,7 @@ def run_sample_comparison(submission_id):
 
     return submission_id
 
-@app.task
+@shared_task
 def run_sample_comparison_params_changed(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
@@ -182,7 +267,7 @@ def run_sample_comparison_params_changed(submission_id):
 
     return submission_id
 
-@app.task
+@shared_task
 def cancel_sample_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
@@ -190,7 +275,7 @@ def cancel_sample_comparison(submission_id):
 
     return submission_id
 
-@app.task
+@shared_task
 def cleanup_sample_comparison(submission_id):
     submission = Submission(submission_id)
     wrapper = _make_sample_comparison_wrapper(submission)
@@ -207,14 +292,14 @@ def _make_sample_comparison_wrapper(submission):
 ## Galaxy Submission
 ##
 
-@app.task
+@shared_task
 def submit_to_galaxy(email, query):
     submission_id = create_galaxy_submission_object(email, query)
     upload_biom_to_history_chain(submission_id)
 
     return submission_id
 
-@app.task
+@shared_task
 def execute_workflow_on_galaxy(email, query, workflow_id):
     submission_id = create_galaxy_submission_object(email, query)
     chain = upload_biom_to_history_chain | execute_workflow.s(workflow_id)
@@ -222,7 +307,7 @@ def execute_workflow_on_galaxy(email, query, workflow_id):
 
     return submission_id
 
-@app.task
+@shared_task
 def save_biom_file(submission_id):
     submission = Submission(submission_id)
 
@@ -235,7 +320,7 @@ def save_biom_file(submission_id):
 
     return submission_id
 
-@app.task
+@shared_task
 def create_history_with_file(submission_id):
     submission = Submission(submission_id)
     full_file_name = submission.biom_zip_file_name
@@ -253,7 +338,7 @@ def create_history_with_file(submission_id):
 
     return submission_id
 
-@app.task(bind=True, max_retries=ALWAYS_RETRY)
+@shared_task(bind=True, max_retries=ALWAYS_RETRY)
 def check_upload_status(self, submission_id):
     submission = Submission(submission_id)
 
@@ -267,7 +352,7 @@ def check_upload_status(self, submission_id):
 
     return submission_id
 
-@app.task
+@shared_task
 def delete_biom_file(submission_id):
     submission = Submission(submission_id)
     biom_file_name = submission.biom_zip_file_name
@@ -287,7 +372,7 @@ def delete_biom_file(submission_id):
 upload_biom_to_history_chain = (
     save_biom_file.s() | create_history_with_file.s() | check_upload_status.s() | delete_biom_file.s())
 
-@app.task
+@shared_task
 def execute_workflow(submission_id, workflow_id):
     submission = Submission(submission_id)
 
