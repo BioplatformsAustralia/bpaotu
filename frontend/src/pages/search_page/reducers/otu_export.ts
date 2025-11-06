@@ -31,7 +31,6 @@ const SUBMISSION_POLL_FREQUENCY_MS = 2000
 
 export const runOtuExport = () => (dispatch, getState) => {
   const state = getState()
-  console.log('runOtuExport', 'state', state)
 
   dispatch(runOtuExportStarted())
 

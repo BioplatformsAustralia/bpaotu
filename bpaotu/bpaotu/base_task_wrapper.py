@@ -73,8 +73,7 @@ class BaseTaskWrapper:
         submission.timestamps = json.dumps([])
         self._status_update(submission, 'init')
         os.makedirs(self._submission_dir, exist_ok=True)
-        # TODO: we could check and log if the directory already exists
-        self._log('debug', f"Submission directory created: {self._submission_dir}")
+        self._log('info', f"Submission directory created: {self._submission_dir}")
 
     def _cancel(self):
         submission = Submission(self._submission_id)
@@ -93,9 +92,9 @@ class BaseTaskWrapper:
         # but allow a task to retain existing directory if necessary
         # (e.g. sample comparion: cancelling the first run, do a full cleanup; cancelling a re-run, retain existing directory for further reanalysis)
         if submission.skip_cleanup_on_cancel:
-            self._log('info', "Skipping cleanup during cancel")
+            self._log('debug', "Skipping cleanup during cancel")
         else:
-            self._log('info', "Performing cleanup during cancel")
+            self._log('debug', "Performing cleanup during cancel")
             self._cleanup()
 
         return True

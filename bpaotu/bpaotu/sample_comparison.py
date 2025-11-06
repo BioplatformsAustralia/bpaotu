@@ -14,8 +14,6 @@ from .task_utils import NumpyEncoder
 import numpy as np
 import pandas as pd
 
-# debug
-from .util import log_msg
 
 class SampleComparisonWrapper(BaseTaskWrapper):
     def __init__(self, submission_id, query, status, umap_params_string):

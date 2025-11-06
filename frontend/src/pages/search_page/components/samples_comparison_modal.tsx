@@ -165,8 +165,6 @@ const SamplesComparisonModal = (props) => {
   const chartWidth = window.innerWidth * 0.7
   const chartHeight = window.innerHeight * 0.7
 
-  // console.log('SamplesComparisonModal', 'props', props)
-
   const {
     isOpen,
     isLoading,

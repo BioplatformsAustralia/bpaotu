@@ -141,13 +141,13 @@ def sanitise(filename):
     return re.sub(r'[\W]+', '-', filename)
 
 def fasta_rows(query):
-    logger.info('Finding all needed otu ids')
+    logger.debug('Finding all needed otu ids')
 
     otu_ids = []
     for row in query.matching_otu_ids().yield_per(1000):
         otu_ids.append(row[0])
 
-    logger.info(f'Found all needed otu ids: {len(otu_ids)}')
+    logger.debug(f'Found all needed otu ids: {len(otu_ids)}')
 
     for otu_id, otu_code, seq in query.matching_otus(otu_ids).yield_per(1000):
         yield SeqRecord(

@@ -45,8 +45,6 @@ const AlertBoxes = (props) => (
 const cell_button = (cell_props, openMetagenomeModal) => (
   <Button
     onClick={() => {
-      console.log('cell_button', 'cell_props', cell_props)
-      console.log('cell_button', 'openMetagenomeModal', openMetagenomeModal)
       openMetagenomeModal(cell_props.row.sample_id)
     }}
   >

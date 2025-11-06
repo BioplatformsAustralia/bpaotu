@@ -32,7 +32,6 @@ const ContextualFilter = (props) => {
     }
   }, [changeValue, index])
 
-  console.log('ContextualFilter', 'dataDefinition', dataDefinition)
   const type = dataDefinition && dataDefinition.type
   const TypeToOperatorAndValue = {
     string: StringOperatorAndValue,

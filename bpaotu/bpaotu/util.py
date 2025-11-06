@@ -108,9 +108,3 @@ def pprint_ntuple(nt):
         if name not in excluded_keys:
             _str = _str + '{}={}, '.format(name, value)
     return _str
-
-def log_msg(*args, show_mem=False, **kwargs):
-    message = ' '.join(str(arg) for arg in args)
-    logger.info(message)
-    if show_mem:
-        mem_usage()

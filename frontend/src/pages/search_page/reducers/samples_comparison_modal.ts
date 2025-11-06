@@ -115,7 +115,6 @@ export const cancelComparison = () => (dispatch, getState) => {
 
 export const clearComparison = () => (dispatch, getState) => {
   const state = getState()
-  console.log('clearComparison', 'state', state.searchPage.samplesComparisonModal)
 
   dispatch(clearComparisonStarted())
 
@@ -139,14 +138,11 @@ export const clearComparison = () => (dispatch, getState) => {
 
 export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
   const state = getState()
-  console.log('autoUpdateComparisonSubmission', 'state', state.searchPage.samplesComparisonModal)
 
   // before polling; check to see if it has been cancelled or cleared (TODO)
   const { isCancelled } = state.searchPage.samplesComparisonModal
 
   if (isCancelled) return
-
-  console.log('polling...')
 
   const getLastSubmission: () => ComparisonSubmission = () =>
     last(state.searchPage.samplesComparisonModal.submissions)
@@ -179,7 +175,6 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
     .catch((error) => {
       if (error.response && error.response.status === 504) {
         // status: 504, statusText: "Gateway Time-out"
-        console.log('autoUpdateComparisonSubmission', 'error', error)
         dispatch(
           comparisonSubmissionUpdateEnded(
             new Error(
@@ -389,8 +384,6 @@ export default handleActions(
     [cancelComparisonEnded as any]: (state, action: any) => {
       // if cancelling the first run, reset the modal,
       // if cancelling a re-run, restore previous results
-
-      console.log('clearComparisonEnded', 'state', state)
 
       return {
         ...state,

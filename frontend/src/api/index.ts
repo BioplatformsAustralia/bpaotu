@@ -136,8 +136,6 @@ export function metagenomeRequest(sample_ids, fileTypes) {
 }
 
 export function executeKronaRequest(sample_id) {
-  console.log('kronaRequest', 'sample_id', sample_id)
-
   return axios({
     method: 'post',
     url: window.otu_search_config.krona_request_endpoint,

@@ -59,14 +59,13 @@ class BlastWrapper(BaseTaskWrapper):
         submission = Submission(self._submission_id)
         self._status_update(submission, 'fetch')
 
-        self._log('info', 'Finding all needed otu ids')
+        self._log('debug', 'Finding all needed otu ids')
         otu_ids = []
         with SampleQuery(self._params) as query:
             for row in query.matching_otu_ids().yield_per(1000):
                 otu_ids.append(row[0])
-        self._log('info', f'Found all needed otu ids: {len(otu_ids)}')
+        self._log('debug', f'Found all needed otu ids: {len(otu_ids)}')
 
-        self._log('info', 'Making db.fasta file')
         self._status_update(submission, 'making_db_fasta')
         with open(self._in('db.fasta'), 'w') as fd:
             # write out the OTU database in FASTA format,
@@ -75,13 +74,6 @@ class BlastWrapper(BaseTaskWrapper):
                 for otu_id, otu_code, seq in query.matching_otus(otu_ids).yield_per(1000):
                     fd.write('>id_{}\n{}\n'.format(otu_id, seq))
 
-        ## debugging
-        # import shutil
-        # shutil.copy(os.path.join(settings.BLAST_RESULTS_PATH, 'db.fasta'), self._in('db.fasta'))
-
-        self._log('info', 'Completed making db.fasta file')
-
-        self._log('info', 'Making blastdb')
         self._status_update(submission, 'makeblastdb')
         self._run_cmd([
             'makeblastdb',
@@ -89,7 +81,6 @@ class BlastWrapper(BaseTaskWrapper):
             '-dbtype', 'nucl',
             '-parse_seqids'
         ])
-        self._log('info', 'Completed making blastdb')
 
     def _max_target_seqs(self):
         command = ['grep', '-c', '>', self._in('db.fasta')]
@@ -100,10 +91,8 @@ class BlastWrapper(BaseTaskWrapper):
         submission = Submission(self._submission_id)
         self._status_update(submission, 'write_query')
 
-        self._log('info', 'Making query.fasta query file')
         with open(self._in('query.fasta'), 'w') as fd:
             fd.write('>user_provided_search_string\n{}\n'.format(self._search_string))
-        self._log('info', 'Completed making query.fasta query file')
 
     def _blast_command(self):
         return [
@@ -122,16 +111,14 @@ class BlastWrapper(BaseTaskWrapper):
     def _execute_blast(self):
         submission = Submission(self._submission_id)
         self._status_update(submission, 'execute_blast')
-        self._log('info', 'Executing BLAST command')
         try:
             self._run_cmd(self._blast_command())
-            self._log('info', 'BLAST execution completed')
         except subprocess.CalledProcessError as e:
             self._log('exception', f"BLAST command failed: {e}")
             raise
 
     def _blast_results(self):
-        self._log('info', 'Retrieving blast results')
+        self._log('debug', 'Retrieving blast results')
         results = {}
         with open(self._in('results.out')) as results_fd:
             reader = csv.reader(results_fd, dialect='excel-tab')
@@ -141,7 +128,7 @@ class BlastWrapper(BaseTaskWrapper):
                 # this tries to account for both
                 otu_id = int(row[0].replace('ref|', '').replace('id_', '').strip('|'))
                 results[otu_id] = row[1:]
-        self._log('info', 'Finished retrieving blast results')
+        self._log('debug', 'Finished retrieving blast results')
         return results
 
     def _rewritten_blast_result_rows_raw(self):
