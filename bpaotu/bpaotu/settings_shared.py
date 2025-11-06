@@ -45,7 +45,6 @@ BASE_URL = SCRIPT_NAME
 DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'Bioplaforms Data Portal <help@bioplatforms.com>')
 EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU] ')
 EMAIL_BACKEND = env.get('BPAOTU_EMAIL_BACKEND', "anymail.backends.amazon_ses.EmailBackend")
-EMAIL_BACKEND = 'django.core.mail.backends.sendmail.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@yourdomain.com'
 EMAIL_HOST = env.get('BPAOTU_EMAIL_HOST', 'localhost')
 
