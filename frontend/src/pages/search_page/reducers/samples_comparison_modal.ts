@@ -4,6 +4,7 @@ import {
   executeCancelComparison,
   executeClearComparison,
   getComparisonSubmission,
+  getComparisonDistanceMatrices,
 } from 'api'
 import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
@@ -188,6 +189,36 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
     })
 }
 
+export const downloadDistanceMatrices = () => (dispatch, getState) => {
+  const state = getState()
+
+  console.log('downloadDistanceMatrices', 'state', state)
+
+  const getLastSubmission: () => ComparisonSubmission = () =>
+    last(state.searchPage.samplesComparisonModal.submissions)
+  const lastSubmission = getLastSubmission()
+
+  console.log('lastSubmission', 'lastSubmission', lastSubmission)
+
+  getComparisonDistanceMatrices(lastSubmission.submissionId, state.auth.ckanAuthToken)
+
+  return state
+}
+
+export const downloadCode = () => (dispatch, getState) => {
+  const state = getState()
+
+  console.log('downloadCode', 'state', state)
+
+  const getLastSubmission: () => ComparisonSubmission = () =>
+    last(state.searchPage.samplesComparisonModal.submissions)
+  const lastSubmission = getLastSubmission()
+
+  console.log('lastSubmission', 'state', state)
+
+  return state
+}
+
 export default handleActions(
   {
     [openSamplesComparisonModal as any]: (state, action) => ({
@@ -287,12 +318,12 @@ export default handleActions(
           isFinished = true
           results = action.payload.data.submission.results
 
-          const { abundanceMatrix, contextual } = results
-          const sample_ids = abundanceMatrix.sample_ids
-          const pointsBC = abundanceMatrix.points['braycurtis']
-          const pointsJ = abundanceMatrix.points['jaccard']
+          const { ordination, contextual } = results
+          const sample_ids = ordination.sample_ids
+          const pointsBC = ordination.points['braycurtis']
+          const pointsJ = ordination.points['jaccard']
 
-          contextualData = contextual
+          contextualData = contextual.samples
 
           // apply a jitter so that points aren't put on the same place (makes graph misleading)
           // need to retain the original value to put in the tooltip though
@@ -305,7 +336,7 @@ export default handleActions(
                 xj: pointsBC[i][0] + (Math.random() * 2 - 1) * jitterAmount,
                 y: pointsBC[i][1],
                 yj: pointsBC[i][1] + (Math.random() * 2 - 1) * jitterAmount,
-                ...contextual[s],
+                ...contextualData[s],
               }
             }),
             jaccard: [],
@@ -317,7 +348,7 @@ export default handleActions(
             //     xj: pointsJ[i][0] + (Math.random() * 2 - 1) * jitterAmount,
             //     y: pointsJ[i][1],
             //     yj: pointsJ[i][1] + (Math.random() * 2 - 1) * jitterAmount,
-            //     ...contextual[s],
+            //     ...contextualData[s],
             //   }
             // }),
           }

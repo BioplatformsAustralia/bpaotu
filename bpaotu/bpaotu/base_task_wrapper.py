@@ -19,6 +19,10 @@ class BaseTaskWrapper:
         self._submission_dir = os.path.join(BASE_SHARED_DIR, shared_subdir, submission_id)
         self._timestamps = json.dumps([])
 
+        # save the submission directory
+        submission = Submission(self._submission_id)
+        submission.submission_directory = self._submission_dir
+
     def _log(self, level, message):
         prefix = f"[{self.__class__.__name__} | {self._submission_id}]"
         getattr(logger, level)(f"{prefix} {message}")

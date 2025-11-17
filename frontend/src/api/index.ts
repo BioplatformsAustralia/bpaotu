@@ -320,6 +320,15 @@ export function getComparisonSubmission(submissionId) {
   })
 }
 
+export function getComparisonDistanceMatrices(submissionId, ckanAuthToken) {
+  const params = new URLSearchParams()
+  params.set('token', ckanAuthToken)
+  params.set('submission_id', submissionId)
+
+  const url = `${window.otu_search_config.comparison_download_distance_matrices_endpoint}?${params.toString()}`
+  window.open(url)
+}
+
 export function executeOtuExport(filters) {
   const formData = new FormData()
   formData.append('query', JSON.stringify(filters))

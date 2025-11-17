@@ -117,7 +117,7 @@ export interface PageState {
       spread: number
     }
     results: {
-      abundanceMatrix: any
+      ordination: any
       contextual: any
     }
     contextualData: any
@@ -259,7 +259,7 @@ export const searchPageInitialState: PageState = {
     alerts: [],
     errors: [],
     submissions: [],
-    results: { abundanceMatrix: {}, contextual: {} },
+    results: { ordination: {}, contextual: {} },
     contextualData: {},
     plotData: { jaccard: [], braycurtis: [] },
     mem_usage: { mem: '', swap: '', cpu: '' },

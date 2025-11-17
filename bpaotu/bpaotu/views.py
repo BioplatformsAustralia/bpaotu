@@ -46,6 +46,7 @@ from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilter
                     MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
                     TaxonomyFilter, TaxonomyOptions)
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
+from .sample_comparison import comparison_zip_file_generator
 from .spatial import spatial_query
 from .submission import Submission
 from .tabular import tabular_zip_file_generator
@@ -130,6 +131,7 @@ def api_config(request):
         'cancel_comparison_endpoint': reverse('cancel_comparison'),
         'clear_comparison_endpoint': reverse('clear_comparison'),
         'comparison_submission_endpoint': reverse('comparison_submission'),
+        'comparison_download_distance_matrices_endpoint': reverse('comparison_download_distance_matrices'),
         'submit_otuexport_endpoint': reverse('submit_otuexport'),
         'cancel_otuexport_endpoint': reverse('cancel_otuexport'),
         'otuexport_submission_endpoint': reverse('otuexport_submission'),
@@ -1212,7 +1214,7 @@ def comparison_submission(request):
     active_tasks = get_active_celery_tasks()
     task_found = any(submission_id in task["args"] for task in active_tasks)
 
-    results = { 'abundanceMatrix': {}, 'contextual': {} }
+    results = { 'ordination': {}, 'contextual': {} }
     response = {
         'success': True,
         'mem_usage': mem_usage_obj(),
@@ -1239,7 +1241,7 @@ def comparison_submission(request):
         try:
             results_files = json.loads(submission.results_files)
             results = {
-                'abundanceMatrix': json.load(open(results_files['abundance_matrix_file'])),
+                'ordination': json.load(open(results_files['ordination_file'])),
                 'contextual': json.load(open(results_files['contextual_file'])),
             }
             response['submission']['results'] = results
@@ -1268,6 +1270,22 @@ def comparison_submission(request):
 
 
     return JsonResponse(response)
+
+
+@require_CKAN_auth
+@require_GET
+def comparison_download_distance_matrices(request):
+    submission_id = request.GET['submission_id']
+
+    # track(request, event, search_params_track_args(params))
+
+    zf = comparison_zip_file_generator(submission_id)
+    response = StreamingHttpResponse(zf, content_type='application/zip')
+    filename = f"distance-matrices-{submission_id}.zip"
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+
+    return response
+
 
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
