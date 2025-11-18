@@ -165,6 +165,25 @@ cd KronaTools
 ./install.pl --prefix ./
 ```
 
+### jupyter notebook
+
+The jupyter and ipython are included in the dev-requirements so that a jupyter notebook can be run in the Django app environment.
+
+- Add the default jupyter port to the runserver service in the docker-compose.yml file
+
+  ```
+  ports:
+  - "8000:8000"
+  - "8888:8888" # Jupyter port
+  ```
+
+- Run the jupyter notebook server in the container
+
+  `docker compose exec runserver bash`
+  `jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root`
+
+- Open the URL given on the host machine
+
 ## Input data description
 
 BPA-OTU loads input data to generate a PostgreSQL schema named `otu`. The
