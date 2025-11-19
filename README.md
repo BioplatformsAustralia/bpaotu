@@ -177,12 +177,27 @@ The jupyter and ipython are included in the dev-requirements so that a jupyter n
   - "8888:8888" # Jupyter port
   ```
 
-- Run the jupyter notebook server in the container
+- Run the jupyter notebook server in the container. This will use the home directory of the runserver container as the notebook directory.
 
   `docker compose exec runserver bash`
   `jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root`
 
 - Open the URL given on the host machine
+
+#### Sample Comparison Example Code
+
+To edit the notebooks that have the code examples for the Sample Comparison export, the following notebook directory must be selected instead:
+
+`jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --notebook-dir=/app/bpaotu/bpaotu/resources/`
+
+Note that the code examples reference the JSON data files relative to the directory of the code example, since this is how they are packaged up for user download. To develop with these notebooks, it is necessary to copy the relevant files to the resources/examples directory. For this reason, the .gitignore includes an entry for \*.json files in this directory so that they can be placed there in a development environment without committing to the repository.
+
+To convert the notebooks to updated example code files:
+
+`docker compose exec runserver bash`
+`python /app/bpaotu/manage.py export_comparison_examples`
+
+These should be committed to the repository so that they are available for download in production.
 
 ## Input data description
 

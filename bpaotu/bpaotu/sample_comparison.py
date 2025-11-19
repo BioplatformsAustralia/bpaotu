@@ -323,15 +323,25 @@ def comparison_zip_file_generator(submission_id):
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     zf.writestr('info.txt', info_text(params))
 
-    files_to_include = [
+    export_files_to_include = [
         'dist_matrix_braycurtis.json',
         # 'dist_matrix_jaccard.json',
         'ordination.json',
         'contextual.json',
     ]
 
-    for file in files_to_include:
+    for file in export_files_to_include:
         file_path = os.path.join(submission.submission_directory, file)
+        if file_path and os.path.exists(file_path):
+            arcname = os.path.basename(file_path)
+            zf.write(file_path, arcname=arcname)
+
+    example_files_to_include = [
+        '/app/bpaotu/bpaotu/resources/examples/comparison_code_python_example.py',
+        '/app/bpaotu/bpaotu/resources/examples/comparison_code_R_example.R',
+    ]
+
+    for file_path in example_files_to_include:
         if file_path and os.path.exists(file_path):
             arcname = os.path.basename(file_path)
             zf.write(file_path, arcname=arcname)
@@ -363,6 +373,13 @@ Files included:
 
    The contextual data for each sample included in the ordination.
    Each sample ID is a key in the JSON object.
+
+-  comparison_code_python_example.py
+-  comparison_code_R_example.R
+
+   Example Python and R scripts for importing and plotting
+   the json data included in the comparison export.
+
 
 Search parameters:
 ------------------

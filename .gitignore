@@ -23,6 +23,8 @@ data/
 node_modules
 yarn-error.log
 bpaotu/bpaotu/frontend/dist
+bpaotu/bpaotu/resources/examples/.ipynb_checkpoints/*
+bpaotu/bpaotu/resources/examples/*.json
 bpaotu/bpaotu/static/bpaotu/js/*-bundle*.js
 
 _skip_warmcache

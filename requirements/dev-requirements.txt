@@ -3,5 +3,12 @@ coverage
 django-discover-runner
 docutils
 flake8
+
+# jupyter
 jupyter
 ipython
+
+# code example notebooks
+nbconvert
+matplotlib==3.8.3
+seaborn
