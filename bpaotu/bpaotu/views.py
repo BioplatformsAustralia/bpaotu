@@ -36,7 +36,7 @@ from .ckan_auth import require_CKAN_auth
 from .contextual import contextual_definitions, get_contextual_schema_definition, make_environment_lookup
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .krona import KronaPlot
-from .models import NonDenoisedDataRequest, MetagenomeRequest
+from .models import MetagenomeRequest
 from .otu import (OTUAmplicon, SampleContext, TaxonomySource, format_taxonomy_name)
 from .params import clean_amplicon_filter, make_clean_taxonomy_filter, param_to_filters, selected_contextual_filters
 from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilterTermTime,
@@ -121,7 +121,6 @@ def api_config(request):
         'submit_to_galaxy_endpoint': reverse('submit_to_galaxy'),
         'execute_workflow_on_galaxy_endpoint': reverse('execute_workflow_on_galaxy'),
         'galaxy_submission_endpoint': reverse('galaxy_submission'),
-        'nondenoised_request_endpoint': reverse('nondenoised_request'),
         'krona_request_endpoint': reverse('krona_request'),
         'submit_blast_endpoint': reverse('submit_blast'),
         'cancel_blast_endpoint': reverse('cancel_blast'),
@@ -533,84 +532,6 @@ def _parse_contextual_term(filter_spec):
 @require_POST
 def required_table_headers(request):
     return otu_search(request, contextual_filtering=False)
-
-
-ACKNOWLEDGEMENT_EMAIL_TEMPLATE = """\
-Your request for non-denoised data from the Australian Microbiome has been received.
-
-We will be in touch once the data is available, or if we require further information.
-
-The details of your request are provided below for your reference.
-
-User email: {email}
-
-Request ID:
-{id}
-
-Requested amplicon:
-{amplicon}
-
-Requested samples:
-{selected_samples}
-
-Match sequence:
-{match_sequence}
-
-Taxonomy string:
-{taxonomy_string}
-"""
-
-
-NONDENOISED_EMAIL_TEMPLATE = """\
-A request for non-denoised data has been received.
-
-User email: {email}
-
-Request ID:
-{id}
-
-Requested amplicon:
-{amplicon}
-
-Requested samples:
-{selected_samples}
-
-Match sequence:
-{match_sequence}
-
-Taxonomy string:
-{taxonomy_string}
-"""
-
-
-@require_CKAN_auth
-@require_POST
-def nondenoised_request(request):
-    attrs = {
-        k: request.POST.get(k, '')
-        for k in ('match_sequence', 'taxonomy_string')
-    }
-    with OntologyInfo() as info:
-        amplicon_id = request.POST.get('selected_amplicon', '')
-        attrs['amplicon'] = info.id_to_value(OTUAmplicon, amplicon_id)
-    attrs['email'] = request.ckan_data.get('email')
-    attrs['selected_samples'] = '\n'.join(json.loads(request.POST.get('selected_samples', '[]')))
-
-    request_object = NonDenoisedDataRequest(**attrs)
-    request_object.save()
-    attrs['id'] = request_object.id
-
-    track(request, 'otu_nondenoised_data_request')
-
-    send_mail(
-        "[ND#{}] Australian Microbiome: Data request received".format(request_object.id),
-        ACKNOWLEDGEMENT_EMAIL_TEMPLATE.format(**attrs),
-        "Australian Microbiome Data Requests <am-data-requests@bioplatforms.com>", [attrs['email']])
-    send_mail(
-        "[ND#{}] Non-denoised data request".format(request_object.id),
-        NONDENOISED_EMAIL_TEMPLATE.format(**attrs),
-        "Australian Microbiome Data Requests <am-data-requests@bioplatforms.com>", [settings.NONDENOISED_REQUEST_EMAIL])
-    return JsonResponse({'okay': True})
 
 
 @require_CKAN_auth
