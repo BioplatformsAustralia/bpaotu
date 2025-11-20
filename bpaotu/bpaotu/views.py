@@ -604,7 +604,6 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
 ## Galaxy ##
 
 def do_on_galaxy(galaxy_action):
-
     @wraps(galaxy_action)
     def galaxy_wrapper_view(request):
         try:
@@ -643,6 +642,9 @@ def submit_to_galaxy(request, email):
     '''Submits the search results as a biom file into a new history in Galaxy.'''
     user_created = galaxy_ensure_user(email)
     submission_id = tasks.submit_to_galaxy.delay(email, request.POST['query'])
+
+    track(request, "otu_submit_to_galaxy", submission_id)
+
     return submission_id, user_created
 
 
@@ -653,6 +655,9 @@ def execute_workflow_on_galaxy(request, email):
     user_created = galaxy_ensure_user(email)
     workflow_id = get_krona_workflow(email)
     submission_id = tasks.execute_workflow_on_galaxy(email, request.POST['query'], workflow_id)
+
+    track(request, "otu_execute_workflow_on_galaxy", submission_id)
+    
     return submission_id, user_created
 
 
