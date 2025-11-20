@@ -32,7 +32,6 @@ export interface SearchConfig {
   cancel_blast_endpoint: string
   blast_submission_endpoint: string
   search_sample_sites_endpoint: string
-  search_sample_sites_comparison_endpoint: string
   submit_comparison_endpoint: string
   cancel_comparison_endpoint: string
   clear_comparison_endpoint: string
@@ -44,7 +43,6 @@ export interface SearchConfig {
   search_blast_otus_endpoint: string
   required_table_headers_endpoint: string
   contextual_csv_download_endpoint: string
-  contextual_schema_definition_endpoint: string
   mixpanel_token: string
   cookie_consent_accepted_endpoint: string
   cookie_consent_declined_endpoint: string
