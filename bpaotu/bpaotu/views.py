@@ -61,10 +61,6 @@ logger = logging.getLogger('bpaotu')
 
 mp = Mixpanel(settings.MIXPANEL_TOKEN) if getattr(settings, "MIXPANEL_TOKEN", None) else None
 
-# See datatables.net serverSide documentation for details
-ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
-COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
-
 CACHE_1DAY = (60 * 60 * 24)
 
 
@@ -91,17 +87,9 @@ class HttpResponseNoContent(HttpResponse):
         pass
 
 
-
-
-def normalise_blast_search_string(s):
-    cleaned = s.strip().upper()
-    used_chars = set(cleaned)
-    permitted_chars = set('GATC')
-    invalid = used_chars - permitted_chars
-    if invalid:
-        raise OTUError("BLAST search string contains invalid characters: {}".format(invalid))
-    return cleaned
-
+# --------------------------------------------------------------------------- #
+# Inital page load endpoints ------------------------------------------------ #
+# --------------------------------------------------------------------------- #
 
 @require_GET
 @ensure_csrf_cookie
@@ -137,7 +125,6 @@ def api_config(request):
         'search_blast_otus_endpoint': reverse('otu_search_blast_otus'),
         'required_table_headers_endpoint': reverse('required_table_headers'),
         'contextual_csv_download_endpoint': reverse('contextual_csv_download_endpoint'),
-        'contextual_schema_definition': reverse('contextual_schema_definition'),
         'mixpanel_token': settings.MIXPANEL_TOKEN,
         'cookie_consent_accepted_endpoint': reverse('cookie_consent_accepted'),
         'cookie_consent_declined_endpoint': reverse('cookie_consent_declined'),
@@ -158,28 +145,6 @@ def api_config(request):
 
 @require_CKAN_auth
 @require_GET
-def cookie_consent_declined(request):
-    if settings.MIXPANEL_TOKEN:
-        mp = Mixpanel(settings.MIXPANEL_TOKEN)
-        mp.track('None', 'Cookie consent declined')
-    else:
-        logger.info("No MIXPANEL_TOKEN")
-
-    return HttpResponseNoContent()
-
-@require_CKAN_auth
-@require_GET
-def cookie_consent_accepted(request):
-    if settings.MIXPANEL_TOKEN:
-        mp = Mixpanel(settings.MIXPANEL_TOKEN)
-        mp.track('None', 'Cookie consent accepted')
-    else:
-        logger.info("No MIXPANEL_TOKEN")
-
-    return HttpResponseNoContent()
-
-@require_CKAN_auth
-@require_GET
 def reference_data_options(request):
     """
     private API: return the available amplicons and taxonomic rank names
@@ -191,7 +156,6 @@ def reference_data_options(request):
         'amplicons': amplicons,
         'ranks': taxonomy_labels
     })
-
 
 @require_CKAN_auth
 @require_GET
@@ -208,7 +172,6 @@ def trait_options(request):
     return JsonResponse({
         'possibilities': vals
     })
-
 
 @require_CKAN_auth
 @require_GET
@@ -271,7 +234,6 @@ def taxonomy_options(request):
         'initial': initial,
     })
 
-
 @require_CKAN_auth
 @require_GET
 def contextual_fields(request):
@@ -285,6 +247,181 @@ def contextual_fields(request):
         'definitions_url': get_contextual_schema_definition().get("download_url"),
         'scientific_manual_url': get_scientific_manual_url()
     })
+
+
+# --------------------------------------------------------------------------- #
+# Search page endpoints ----------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+
+## Main search functions and table ##
+
+# technically we should be using GET, but the specification
+# of the query (plus the datatables params) is large: so we
+# avoid the issues of long URLs by simply POSTing the query
+@require_CKAN_auth
+@require_POST
+def otu_search(request, contextual_filtering=True):
+    def _int_get_param(param_name):
+        param = request.POST.get(param_name)
+        try:
+            return int(param) if param is not None else None
+        except ValueError:
+            return None
+
+    start = _int_get_param('start')
+    length = _int_get_param('length')
+
+    additional_headers = json.loads(request.POST.get('columns', '[]'))
+    all_headers = ['sample_id', 'environment'] + additional_headers
+
+    environment_lookup = make_environment_lookup()
+
+    sorting = _parse_table_sorting(json.loads(request.POST.get('sorting', '[]')), all_headers)
+
+    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
+    if errors:
+        return JsonResponse({
+            'errors': [str(t) for t in errors],
+            'data': [],
+            'rowsCount': 0,
+        })
+
+    with SampleQuery(params) as query:
+        results = query.matching_sample_headers(additional_headers, sorting)
+
+    result_count = len(results)
+
+    if start >= result_count:
+        start = (result_count // length) * length
+    results = results[start:start + length]
+
+    def get_environment(environment_id):
+        if environment_id is None:
+            return None
+        return environment_lookup[environment_id]
+
+    def map_result(row):
+        d = dict(zip(all_headers, row))
+        d['environment'] = get_environment(d['environment'])
+        d['run_id'] = sample_run_id_dict.get(d['sample_id'])
+        return d
+
+    # only send event once per actual search
+    # - exclude other request paths that call this method (e.g. contextual export)
+    # - only after clicking 'Sample search' (not when using pagination controls, i.e. start is 0)
+    if request.path.split('/')[-1] == 'search' and start == 0:
+        if params.contextual_filter.metagenome_only:
+            event = 'otu_sample_search_metagenome'
+        else:
+            event = 'otu_sample_search'
+
+        track(request, event, search_params_track_args(params))
+
+    return JsonResponse({
+        'data': [map_result(row) for row in results],
+        'rowsCount': result_count,
+    })
+
+@require_CKAN_auth
+@require_GET
+def otu_export(request):
+    """
+    this view takes:
+     - contextual filters
+     - taxonomic filters
+    produces a Zip file containing:
+      - an CSV of all the contextual data samples matching the query
+      - an CSV of all the OTUs matching the query, with counts against Sample IDs
+    """
+    timestamp = make_timestamp()
+    params, errors = param_to_filters(request.GET['q'])
+    only_contextual = request.GET['only_contextual']
+
+    # many endpoints make use of this, so determine the purpose
+    if only_contextual == 't':
+        if params.contextual_filter.metagenome_only:
+            event = 'otu_export_CSV_only_contextual_metagenome'
+        else:
+            event = 'otu_export_CSV_only_contextual'
+    else:
+        event = 'otu_export_CSV'
+
+    track(request, event, search_params_track_args(params))
+
+    zf = tabular_zip_file_generator(params, only_contextual)
+    response = StreamingHttpResponse(zf, content_type='application/zip')
+    filename = params.filename(timestamp, '-csv.zip')
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+
+    return response
+
+@require_CKAN_auth
+@require_GET
+def otu_biom_export(request):
+    timestamp = make_timestamp()
+    params, errors = param_to_filters(request.GET['q'])
+
+    track(request, 'otu_export_BIOM', search_params_track_args(params))
+
+    zf = biom_zip_file_generator(params, timestamp)
+    response = StreamingHttpResponse(zf, content_type='application/zip')
+    filename = params.filename(timestamp, '.biom.zip')
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+
+    return response
+
+@require_CKAN_auth
+@require_POST
+def krona_request(request):
+    params, errors = param_to_filters(request.POST['query'])
+
+    sample_id = request.POST["sample_id"].strip('"')
+    if not sample_id:
+        return JsonResponse({ "error": "sample_id is required as param" }, status=400)
+
+    krona = KronaPlot(params, sample_id)
+    html, krona_params_hash = krona.produce_krona_html()
+
+    track(request, "otu_krona_plot_request", krona_params_hash)
+
+    return JsonResponse({ "sample_id": sample_id, "html": html })
+
+
+## Taxonomy search ##
+
+@require_CKAN_auth
+@require_GET
+def taxonomy_search(request):
+    """
+    private API: given taxonomy constraints, return the possible options
+    """
+
+    selected_amplicon = json.loads(request.GET['selected_amplicon'])
+    taxonomy_search_string = json.loads(request.GET['taxonomy_search_string'])
+
+    if not taxonomy_search_string:
+        return JsonResponse({
+            'error': 'No search string',
+            'results': [],
+        })
+
+    track(request, 'otu_taxonomy_search', { 'taxonomy_search_string': taxonomy_search_string })
+
+    with TaxonomyOptions() as options:
+        results = options.search(selected_amplicon, taxonomy_search_string)
+        serialised_results = [serialise_taxa_search_result(result) for result in results]
+
+    return JsonResponse({
+        'results': serialised_results,
+    })
+
+def serialise_taxa_search_result(result):
+    return {
+        'taxonomy': result[0].to_dict(),
+    }
+
+
+## Graphs ##
 
 @require_CKAN_auth
 @require_POST
@@ -464,254 +601,9 @@ def taxonomy_graph_fields(request, contextual_filtering=True):
     })
 
 
-@require_CKAN_auth
-@require_GET
-def taxonomy_search(request):
-    """
-    private API: given taxonomy constraints, return the possible options
-    """
-
-    selected_amplicon = json.loads(request.GET['selected_amplicon'])
-    taxonomy_search_string = json.loads(request.GET['taxonomy_search_string'])
-
-    if not taxonomy_search_string:
-        return JsonResponse({
-            'error': 'No search string',
-            'results': [],
-        })
-
-    track(request, 'otu_taxonomy_search', { 'taxonomy_search_string': taxonomy_search_string })
-
-    with TaxonomyOptions() as options:
-        results = options.search(selected_amplicon, taxonomy_search_string)
-        serialized_results = [serialize_taxa_search_result(result) for result in results]
-
-    return JsonResponse({
-        'results': serialized_results,
-    })
-
-def serialize_taxa_search_result(result):
-    return {
-        'taxonomy': result[0].to_dict(),
-    }
-
-
-def _parse_contextual_term(filter_spec):
-    field_name = filter_spec['field']
-
-    operator = filter_spec.get('operator')
-    column = SampleContext.__table__.columns[field_name]
-    typ = str(column.type)
-    if column.name == 'id':
-        if len(filter_spec['is']) == 0:
-            raise ValueError("Value can't be empty")
-        return ContextualFilterTermSampleID(field_name, operator, [t for t in filter_spec['is']])
-    elif hasattr(column, 'ontology_class'):
-        return ContextualFilterTermOntology(field_name, operator, int(filter_spec['is']))
-    elif typ == 'DATE':
-        return ContextualFilterTermDate(
-            field_name, operator, parse_date(filter_spec['from']), parse_date(filter_spec['to']))
-    elif typ == 'TIME':
-        return ContextualFilterTermTime(
-            field_name, operator, parse_time(filter_spec['from']), parse_time(filter_spec['to']))
-    elif typ == 'FLOAT':
-        return (ContextualFilterTermLongitude
-                if field_name == 'longitude'
-                else ContextualFilterTermFloat)(
-            field_name, operator, parse_float(filter_spec['from']), parse_float(filter_spec['to']))
-    elif typ == 'CITEXT':
-        value = str(filter_spec['contains'])
-        # if value == '':
-        #     raise ValueError("Value can't be empty")
-        return ContextualFilterTermString(field_name, operator, value)
-    else:
-        raise ValueError("invalid filter term type: %s", typ)
-
-
-
-@require_POST
-def required_table_headers(request):
-    return otu_search(request, contextual_filtering=False)
-
-
-@require_CKAN_auth
-@require_POST
-def krona_request(request):
-    params, errors = param_to_filters(request.POST['query'])
-
-    sample_id = request.POST["sample_id"].strip('"')
-    if not sample_id:
-        return JsonResponse({ "error": "sample_id is required as param" }, status=400)
-
-    krona = KronaPlot(params, sample_id)
-    html, krona_params_hash = krona.produce_krona_html()
-
-    track(request, "otu_krona_plot_request", krona_params_hash)
-
-    return JsonResponse({ "sample_id": sample_id, "html": html })
-
-@require_CKAN_auth
-@require_POST
-def otu_search_sample_sites(request):
-    params, errors = param_to_filters(request.POST['otu_query'])
-    if errors:
-        return JsonResponse({
-            'errors': [str(e) for e in errors],
-            'data': [],
-            'sample_otus': []
-        })
-    data, sample_otus = spatial_query(params)
-
-    site_image_lookup_table = get_site_image_lookup_table()
-
-    for d in data:
-        key = (str(d['latitude']), str(d['longitude']))
-        d['site_images'] = site_image_lookup_table.get(key)
-
-    track(request, 'otu_interactive_map_search', search_params_track_args(params))
-
-    return JsonResponse({ 'data': data, 'sample_otus': sample_otus })
-
-
-@require_CKAN_auth
-@require_POST
-def otu_search_blast_otus(request):
-    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=True)
-    if errors:
-        return JsonResponse({
-            'errors': [str(e) for e in errors],
-            'rowsCount': 0,
-        })
-
-    with SampleQuery(params) as query:
-        results = query.matching_sample_headers()
-
-    result_count = len(results)
-
-    return JsonResponse({
-        'rowsCount': result_count,
-    })
-
-# technically we should be using GET, but the specification
-# of the query (plus the datatables params) is large: so we
-# avoid the issues of long URLs by simply POSTing the query
-@require_CKAN_auth
-@require_POST
-def otu_search(request, contextual_filtering=True):
-    def _int_get_param(param_name):
-        param = request.POST.get(param_name)
-        try:
-            return int(param) if param is not None else None
-        except ValueError:
-            return None
-
-    start = _int_get_param('start')
-    length = _int_get_param('length')
-
-    additional_headers = json.loads(request.POST.get('columns', '[]'))
-    all_headers = ['sample_id', 'environment'] + additional_headers
-
-    environment_lookup = make_environment_lookup()
-
-    sorting = _parse_table_sorting(json.loads(request.POST.get('sorting', '[]')), all_headers)
-
-    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
-    if errors:
-        return JsonResponse({
-            'errors': [str(t) for t in errors],
-            'data': [],
-            'rowsCount': 0,
-        })
-
-    with SampleQuery(params) as query:
-        results = query.matching_sample_headers(additional_headers, sorting)
-
-    result_count = len(results)
-
-    if start >= result_count:
-        start = (result_count // length) * length
-    results = results[start:start + length]
-
-    def get_environment(environment_id):
-        if environment_id is None:
-            return None
-        return environment_lookup[environment_id]
-
-    def map_result(row):
-        d = dict(zip(all_headers, row))
-        d['environment'] = get_environment(d['environment'])
-        d['run_id'] = sample_run_id_dict.get(d['sample_id'])
-        return d
-
-    # only send event once per actual search
-    # - exclude other request paths that call this method (e.g. contextual export)
-    # - only after clicking 'Sample search' (not when using pagination controls, i.e. start is 0)
-    if request.path.split('/')[-1] == 'search' and start == 0:
-        if params.contextual_filter.metagenome_only:
-            event = 'otu_sample_search_metagenome'
-        else:
-            event = 'otu_sample_search'
-
-        track(request, event, search_params_track_args(params))
-
-    return JsonResponse({
-        'data': [map_result(row) for row in results],
-        'rowsCount': result_count,
-    })
-
-
-@require_CKAN_auth
-@require_GET
-def otu_biom_export(request):
-    timestamp = make_timestamp()
-    params, errors = param_to_filters(request.GET['q'])
-
-    track(request, 'otu_export_BIOM', search_params_track_args(params))
-
-    zf = biom_zip_file_generator(params, timestamp)
-    response = StreamingHttpResponse(zf, content_type='application/zip')
-    filename = params.filename(timestamp, '.biom.zip')
-    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
-
-    return response
-
-
-@require_CKAN_auth
-@require_GET
-def otu_export(request):
-    """
-    this view takes:
-     - contextual filters
-     - taxonomic filters
-    produces a Zip file containing:
-      - an CSV of all the contextual data samples matching the query
-      - an CSV of all the OTUs matching the query, with counts against Sample IDs
-    """
-    timestamp = make_timestamp()
-    params, errors = param_to_filters(request.GET['q'])
-    only_contextual = request.GET['only_contextual']
-
-    # many endpoints make use of this, so determine the purpose
-    if only_contextual == 't':
-        if params.contextual_filter.metagenome_only:
-            event = 'otu_export_CSV_only_contextual_metagenome'
-        else:
-            event = 'otu_export_CSV_only_contextual'
-    else:
-        event = 'otu_export_CSV'
-
-    track(request, event, search_params_track_args(params))
-
-    zf = tabular_zip_file_generator(params, only_contextual)
-    response = StreamingHttpResponse(zf, content_type='application/zip')
-    filename = params.filename(timestamp, '-csv.zip')
-    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
-
-    return response
-
+## Galaxy ##
 
 def do_on_galaxy(galaxy_action):
-
     @wraps(galaxy_action)
     def galaxy_wrapper_view(request):
         try:
@@ -750,6 +642,9 @@ def submit_to_galaxy(request, email):
     '''Submits the search results as a biom file into a new history in Galaxy.'''
     user_created = galaxy_ensure_user(email)
     submission_id = tasks.submit_to_galaxy.delay(email, request.POST['query'])
+
+    track(request, "otu_submit_to_galaxy", submission_id)
+
     return submission_id, user_created
 
 
@@ -760,6 +655,9 @@ def execute_workflow_on_galaxy(request, email):
     user_created = galaxy_ensure_user(email)
     workflow_id = get_krona_workflow(email)
     submission_id = tasks.execute_workflow_on_galaxy(email, request.POST['query'], workflow_id)
+
+    track(request, "otu_execute_workflow_on_galaxy", submission_id)
+    
     return submission_id, user_created
 
 
@@ -784,6 +682,8 @@ def galaxy_submission(request):
         }
     })
 
+
+## Control endpoints for background tasks ##
 
 @require_CKAN_auth
 @require_POST
@@ -888,6 +788,8 @@ def otuexport_submission(request):
         full_url = request.build_absolute_uri(submission.result_url)
         user_email = request.ckan_data['email']
         tasks.notify_otuexport.delay(submission_id, full_url, user_email)
+
+        track(request, 'otu_otuexport_complete')
 
     elif state == 'error':
         response['submission']['error'] = submission.error
@@ -996,6 +898,8 @@ def blast_submission(request):
             logger.warning("Could not calculate duration of BLAST search; %s" % getattr(e, 'message', repr(e)))
 
         tasks.cleanup_blast(submission_id)
+        
+        track(request, 'otu_blast_search_complete')
 
     elif state == 'error':
         response['submission']['error'] = submission.error
@@ -1171,6 +1075,8 @@ def comparison_submission(request):
 
         ## dont clean up here, move to an endpoint triggered by clicking the X
         # tasks.cleanup_sample_comparison(submission_id)
+        
+        track(request, "otu_sample_comparison_complete")
 
     elif state == 'error':
         response['submission']['error'] = submission.error
@@ -1193,12 +1099,33 @@ def comparison_submission(request):
     return JsonResponse(response)
 
 
+## Misc endpoints for background tasks ##
+
+@require_CKAN_auth
+@require_POST
+def otu_search_blast_otus(request):
+    params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=True)
+    if errors:
+        return JsonResponse({
+            'errors': [str(e) for e in errors],
+            'rowsCount': 0,
+        })
+
+    with SampleQuery(params) as query:
+        results = query.matching_sample_headers()
+
+    result_count = len(results)
+
+    return JsonResponse({
+        'rowsCount': result_count,
+    })
+
 @require_CKAN_auth
 @require_GET
 def comparison_download_distance_matrices(request):
     submission_id = request.GET['submission_id']
 
-    # track(request, event, search_params_track_args(params))
+    track(request, "otu_sample_comparison_download")
 
     zf = comparison_zip_file_generator(submission_id)
     response = StreamingHttpResponse(zf, content_type='application/zip')
@@ -1207,6 +1134,180 @@ def comparison_download_distance_matrices(request):
 
     return response
 
+
+# --------------------------------------------------------------------------- #
+# Metagenome tab ------------------------------------------------------------ #
+# --------------------------------------------------------------------------- #
+
+@require_CKAN_auth
+@require_POST
+def metagenome_search(request):
+    """Returns list of Sample IDs for search params when opening Metagenome data request modal"""
+    try:
+        params, errors = param_to_filters(request.POST.get('otu_query'))
+        if errors:
+            raise OTUError(*errors)
+        with SampleQuery(params) as query:
+            sample_ids = [r[0] for r in query.matching_samples(SampleContext.id)]
+            sample_ids.sort(key=lambda v: (0, int(v)) if v.isdecimal() else (1, v))
+        return JsonResponse(dict(sample_ids=sample_ids))
+    except Exception as e:
+        logger.critical("Error in metagenome_search", exc_info=True)
+        return HttpResponseServerError(str(e), content_type="text/plain")
+
+@require_CKAN_auth
+@require_POST
+def metagenome_request(request):
+    """Submits a request for the specified file types for the given list of Sample IDS"""
+    try:
+        sample_ids = json.loads(request.POST['sample_ids'])
+        file_types=json.loads(request.POST['selected_files'])
+        to_email = settings.METAGENOME_REQUEST_EMAIL
+        user_email=request.ckan_data.get('email')
+
+        mg_request = MetagenomeRequest.objects.create(
+            sample_ids='\n'.join(sample_ids),
+            file_types='\n'.join(file_types),
+            email=user_email)
+        request_id = mg_request.id
+        template_vars = dict(
+            user_email=user_email,
+            file_types=file_types,
+            timestamp=mg_request.created,
+            selected_samples=sample_ids,
+            request_id=request_id
+        )
+
+        track(request, 'otu_request_metagenome_files')
+
+        am_email ="Australian Microbiome Data Requests <{}>".format(to_email)
+
+        template = loader.get_template('mg-ack-email.txt')
+        body = template.render(template_vars, request)
+        send_mail(
+            "[MG#{}] Australian Microbiome: Metagenome data request received".format(request_id),
+             body,
+            am_email, [user_email])
+
+        template = loader.get_template('mg-request-email.txt')
+        body = template.render(template_vars, request)
+        send_mail(
+            "[MG#{}] Australian Microbiome: Metagenome data request".format(request_id),
+            body,
+            am_email, [to_email])
+
+        return JsonResponse({
+            'request_id': request_id,
+             'timestamp': mg_request.created,
+             'contact': to_email
+            })
+
+    except Exception as e:
+        logger.critical("Error in metagenome_request", exc_info=True)
+        return HttpResponseServerError(str(e), content_type="text/plain")
+
+
+# --------------------------------------------------------------------------- #
+# Contextual tab ------------------------------------------------------------ #
+# --------------------------------------------------------------------------- #
+
+@require_POST
+def required_table_headers(request):
+    """
+    Returns the requested page of contextual data.
+    Called whenever the search table columns, page, or numbers of rows is changed.
+    """
+    return otu_search(request, contextual_filtering=False)
+
+@require_CKAN_auth
+@require_GET
+def contextual_csv_download_endpoint(request):
+    data = request.GET.get('otu_query')
+
+    additional_headers = json.loads(request.GET.get('columns', '[]'))
+    all_headers = ['sample_id', 'environment'] + additional_headers
+
+    sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), all_headers)
+
+    params, errors = param_to_filters(data, contextual_filtering=False)
+    with SampleQuery(params) as query:
+        results = query.matching_sample_headers(additional_headers, sorting)
+
+    header = ['sample_id', 'bpa_project'] + additional_headers
+
+    track(request, 'otu_export_contextual_CSV', { 'columns': sorted(additional_headers) })
+
+    file_buffer = io.StringIO()
+    csv_writer = csv.writer(file_buffer)
+
+    def read_and_flush():
+        data = file_buffer.getvalue()
+        file_buffer.seek(0)
+        file_buffer.truncate()
+        return data
+
+    def yield_csv_function():
+        csv_writer.writerow(header)
+        yield read_and_flush()
+
+        for r in results:
+            row = []
+            row.append(r)
+
+            csv_writer.writerow(r)
+            yield read_and_flush()
+
+    response = StreamingHttpResponse(yield_csv_function(), content_type="text/csv")
+    response['Content-Disposition'] = 'attachment; filename="contextual_data.csv"'
+
+    return response
+
+
+# --------------------------------------------------------------------------- #
+# Map tab ------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+
+# also used for Interactive Map Search
+@require_CKAN_auth
+@require_POST
+def otu_search_sample_sites(request):
+    params, errors = param_to_filters(request.POST['otu_query'])
+    if errors:
+        return JsonResponse({
+            'errors': [str(e) for e in errors],
+            'data': [],
+            'sample_otus': []
+        })
+    data, sample_otus = spatial_query(params)
+
+    site_image_lookup_table = get_site_image_lookup_table()
+
+    for d in data:
+        key = (str(d['latitude']), str(d['longitude']))
+        d['site_images'] = site_image_lookup_table.get(key)
+
+    track(request, 'otu_interactive_map_search', search_params_track_args(params))
+
+    return JsonResponse({ 'data': data, 'sample_otus': sample_otus })
+
+
+# --------------------------------------------------------------------------- #
+# Misc Endpoints ------------------------------------------------------------ #
+# --------------------------------------------------------------------------- #
+
+@cache_page(CACHE_1DAY, cache="image_results")
+def site_image_thumbnail(request, package_id, resource_id):
+    '''
+    Return specified cached image or fetch image from ckan and resize before caching and returning.
+    '''
+
+    buf, content_type = fetch_image(package_id, resource_id)
+
+    if buf == None:
+        # not ideal, but detecting a non image will require a bit more changes
+        return HttpResponse('')
+    else:
+        return HttpResponse(buf.getvalue(), content_type=content_type)
 
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
@@ -1278,76 +1379,7 @@ def otu_log_download(request):
     filename = f"{metadata.revision_date}-csv.json"
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     return response
-
-@require_GET
-def contextual_schema_definition(request):
-    return JsonResponse(get_contextual_schema_definition())
-
-
-def get_scientific_manual_url():
-    return settings.BPAOTU_SCIENTIFIC_MANUAL_URL
-
-@require_CKAN_auth
-@require_GET
-def contextual_csv_download_endpoint(request):
-    data = request.GET.get('otu_query')
-
-    additional_headers = json.loads(request.GET.get('columns', '[]'))
-    all_headers = ['sample_id', 'environment'] + additional_headers
-
-    sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), all_headers)
-
-    params, errors = param_to_filters(data, contextual_filtering=False)
-    with SampleQuery(params) as query:
-        results = query.matching_sample_headers(additional_headers, sorting)
-
-    header = ['sample_id', 'bpa_project'] + additional_headers
-
-    track(request, 'otu_export_contextual_CSV', { 'columns': sorted(additional_headers) })
-
-    file_buffer = io.StringIO()
-    csv_writer = csv.writer(file_buffer)
-
-    def read_and_flush():
-        data = file_buffer.getvalue()
-        file_buffer.seek(0)
-        file_buffer.truncate()
-        return data
-
-    def yield_csv_function():
-        csv_writer.writerow(header)
-        yield read_and_flush()
-
-        for r in results:
-            row = []
-            row.append(r)
-
-            csv_writer.writerow(r)
-            yield read_and_flush()
-
-    response = StreamingHttpResponse(yield_csv_function(), content_type="text/csv")
-    response['Content-Disposition'] = 'attachment; filename="contextual_data.csv"'
-
-    return response
-
-
-def _parse_table_sorting(sorting, headers):
-    def parse_sorting(sort):
-        if 'id' not in sort:
-            return None
-        col_name = sort.get('id')
-        try:
-            col_idx = headers.index(col_name)
-        except ValueError:
-            return None
-        return {'col_idx': col_idx, 'desc': sort.get('desc', False)}
-
-    def reject_nones(xs):
-        return [x for x in xs if x is not None]
-
-    return reject_nones(parse_sorting(s) for s in sorting)
-
-
+ 
 def dev_only_ckan_check_permissions(request):
     if settings.PRODUCTION:
         raise Http404('View does not exist in production')
@@ -1378,88 +1410,35 @@ def dev_only_ckan_check_permissions(request):
 
     return HttpResponse(response)
 
-
-@cache_page(CACHE_1DAY, cache="image_results")
-def site_image_thumbnail(request, package_id, resource_id):
-    '''
-    Return specified cached image or fetch image from ckan and resize before caching and returning.
-    '''
-
-    buf, content_type = fetch_image(package_id, resource_id)
-
-    if buf == None:
-        # not ideal, but detecting a non image will require a bit more changes
-        return HttpResponse('')
+@require_CKAN_auth
+@require_GET
+def cookie_consent_declined(request):
+    if settings.MIXPANEL_TOKEN:
+        mp = Mixpanel(settings.MIXPANEL_TOKEN)
+        mp.track('None', 'Cookie consent declined')
     else:
-        return HttpResponse(buf.getvalue(), content_type=content_type)
+        logger.info("No MIXPANEL_TOKEN")
+
+    return HttpResponseNoContent()
 
 @require_CKAN_auth
-@require_POST
-def metagenome_search(request):
-    try:
-        params, errors = param_to_filters(request.POST.get('otu_query'))
-        if errors:
-            raise OTUError(*errors)
-        with SampleQuery(params) as query:
-            sample_ids = [r[0] for r in query.matching_samples(SampleContext.id)]
-            sample_ids.sort(
-                key=lambda v: (0, int(v)) if v.isdecimal() else (1, v))
-        return JsonResponse(
-            dict(sample_ids=sample_ids))
-    except Exception as e:
-        logger.critical("Error in metagenome_search", exc_info=True)
-        return HttpResponseServerError(str(e), content_type="text/plain")
+@require_GET
+def cookie_consent_accepted(request):
+    if settings.MIXPANEL_TOKEN:
+        mp = Mixpanel(settings.MIXPANEL_TOKEN)
+        mp.track('None', 'Cookie consent accepted')
+    else:
+        logger.info("No MIXPANEL_TOKEN")
 
-@require_CKAN_auth
-@require_POST
-def metagenome_request(request):
-    try:
-        sample_ids = json.loads(request.POST['sample_ids'])
-        file_types=json.loads(request.POST['selected_files'])
-        to_email = settings.METAGENOME_REQUEST_EMAIL
-        user_email=request.ckan_data.get('email')
+    return HttpResponseNoContent()
 
-        mg_request = MetagenomeRequest.objects.create(
-            sample_ids='\n'.join(sample_ids),
-            file_types='\n'.join(file_types),
-            email=user_email)
-        request_id = mg_request.id
-        template_vars = dict(
-            user_email=user_email,
-            file_types=file_types,
-            timestamp=mg_request.created,
-            selected_samples=sample_ids,
-            request_id=request_id
-        )
 
-        track(request, 'otu_request_metagenome_files')
+# --------------------------------------------------------------------------- #
+# Helpers ------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
 
-        am_email ="Australian Microbiome Data Requests <{}>".format(to_email)
-
-        template = loader.get_template('mg-ack-email.txt')
-        body = template.render(template_vars, request)
-        send_mail(
-            "[MG#{}] Australian Microbiome: Metagenome data request received".format(request_id),
-             body,
-            am_email, [user_email])
-
-        template = loader.get_template('mg-request-email.txt')
-        body = template.render(template_vars, request)
-        send_mail(
-            "[MG#{}] Australian Microbiome: Metagenome data request".format(request_id),
-            body,
-            am_email, [to_email])
-
-        return JsonResponse({
-            'request_id': request_id,
-             'timestamp': mg_request.created,
-             'contact': to_email
-            })
-
-    except Exception as e:
-        logger.critical("Error in metagenome_request", exc_info=True)
-        return HttpResponseServerError(str(e), content_type="text/plain")
-
+def get_scientific_manual_url():
+    return settings.BPAOTU_SCIENTIFIC_MANUAL_URL
 
 def prep_timestamps(json_timestamps):
     """json_timestamps can be JSON string or a python list"""
@@ -1516,7 +1495,6 @@ def get_active_celery_tasks():
     active_tasks = inspector.active()
     return [task for tasks in active_tasks.values() for task in tasks]
 
-
 def track(request, event, args=None):
     """Tracks an event in Mixpanel if enabled."""
     if mp:
@@ -1550,3 +1528,28 @@ def search_params_track_args(params):
         'search_contextual_filter': params.contextual_filter.to_dict(),
         'search_sample_integrity_warnings_filter': params.sample_integrity_warnings_filter.to_dict(),
     }
+
+def normalise_blast_search_string(s):
+    cleaned = s.strip().upper()
+    used_chars = set(cleaned)
+    permitted_chars = set('GATC')
+    invalid = used_chars - permitted_chars
+    if invalid:
+        raise OTUError("BLAST search string contains invalid characters: {}".format(invalid))
+    return cleaned
+
+def _parse_table_sorting(sorting, headers):
+    def parse_sorting(sort):
+        if 'id' not in sort:
+            return None
+        col_name = sort.get('id')
+        try:
+            col_idx = headers.index(col_name)
+        except ValueError:
+            return None
+        return {'col_idx': col_idx, 'desc': sort.get('desc', False)}
+
+    def reject_nones(xs):
+        return [x for x in xs if x is not None]
+
+    return reject_nones(parse_sorting(s) for s in sorting)

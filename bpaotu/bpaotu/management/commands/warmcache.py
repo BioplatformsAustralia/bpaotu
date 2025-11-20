@@ -2,7 +2,7 @@
 from django.core.management.base import BaseCommand
 from ...query import TaxonomyOptions, OntologyInfo, OTUQueryParams, CACHE_FOREVER, ContextualFilter, TaxonomyFilter
 from ...spatial import spatial_query
-from ...views import get_contextual_schema_definition
+from ...contextual import get_contextual_schema_definition
 from ...otu import  OTUAmplicon, taxonomy_ontology_classes
 from collections import OrderedDict
 from django.conf import settings

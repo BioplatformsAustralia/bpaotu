@@ -14,6 +14,11 @@ const Header = ({ userEmailAddress }) => {
   const [isOpen, setIsOpen] = useState(false)
   const toggle = () => setIsOpen(!isOpen)
 
+  const navLinkStyle = {
+    paddingLeft: '16px',
+    paddingRight: '16px',
+  } as React.CSSProperties
+
   const logoPNG =
     window.otu_search_config.static_base_url +
     join(['bpa-logos', 'BIO-RGB_Full-POS_Portal.png'], '/')
@@ -28,35 +33,41 @@ const Header = ({ userEmailAddress }) => {
         <Nav tabs className="navbar-nav">
           <NavItem>
             <NavLink
-              exact={true}
-              to="/"
+              style={navLinkStyle}
               activeClassName="active"
               tag={RRNavLink}
               data-tut="tabHighlighterAmplicon"
+              to="/"
+              exact={true}
             >
+              {/*<Octicon name="beaker" />*/}
               Amplicon
             </NavLink>
           </NavItem>
 
           <NavItem>
             <NavLink
-              to="/metagenome"
+              style={navLinkStyle}
               activeClassName="active"
               tag={RRNavLink}
               data-tut="tabHighlighterMetagenome"
+              to="/metagenome"
             >
+              {/*<Octicon name="list-unordered" />*/}
               Metagenome
             </NavLink>
           </NavItem>
 
           <NavItem>
-            <NavLink to="/contextual" activeClassName="active" tag={RRNavLink}>
+            <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/contextual">
+              {/*<Octicon name="file" />*/}
               Contextual
             </NavLink>
           </NavItem>
 
           <NavItem>
-            <NavLink to="/map" activeClassName="active" tag={RRNavLink}>
+            <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/map">
+              {/*<Octicon name="globe" />*/}
               Map
             </NavLink>
           </NavItem>
@@ -69,16 +80,7 @@ const Header = ({ userEmailAddress }) => {
           </NavItem>
 
           <NavItem>
-            <NavLink
-              target="_am"
-              href={
-                window.otu_search_config.ckan_base_url +
-                'organization/pages/australian-microbiome/processed'
-              }
-              onClick={() => {
-                track('otu_click_header_help')
-              }}
-            >
+            <NavLink href="mailto:help@bioplatforms.com?subject=Australian%20Microbiome%20Help">
               Help
             </NavLink>
           </NavItem>
