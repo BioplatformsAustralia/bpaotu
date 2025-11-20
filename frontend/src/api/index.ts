@@ -97,28 +97,6 @@ function doSearch(url, filters, options) {
   })
 }
 
-export function nondenoisedDataRequest(
-  selectedAmplicon,
-  selectedSamples,
-  matchSequence,
-  taxonomyString
-) {
-  const formData = new FormData()
-  formData.append('selected_amplicon', selectedAmplicon)
-  formData.append('selected_samples', JSON.stringify(selectedSamples))
-  formData.append('match_sequence', matchSequence)
-  formData.append('taxonomy_string', taxonomyString)
-
-  return axios({
-    method: 'post',
-    url: window.otu_search_config.nondenoised_request_endpoint,
-    data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  })
-}
-
 export function metagenomeRequest(sample_ids, fileTypes) {
   const formData = new FormData()
   formData.append('sample_ids', JSON.stringify(sample_ids))

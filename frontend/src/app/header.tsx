@@ -56,12 +56,6 @@ const Header = ({ userEmailAddress }) => {
           </NavItem>
 
           <NavItem>
-            <NavLink to="/non-denoised" activeClassName="active" tag={RRNavLink}>
-              Non-denoised data
-            </NavLink>
-          </NavItem>
-
-          <NavItem>
             <NavLink to="/map" activeClassName="active" tag={RRNavLink}>
               Map
             </NavLink>

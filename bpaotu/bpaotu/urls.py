@@ -16,7 +16,6 @@ urlpatterns = [
     url(r'^private/api/v1/contextual-fields$', views.contextual_fields, name="contextual_fields"),
     url(r'^private/api/v1/contextual-graph-fields$', views.contextual_graph_fields, name="contextual_graph_fields"),
     url(r'^private/api/v1/taxonomy-graph-fields$', views.taxonomy_graph_fields, name="taxonomy_graph_fields"),
-    url(r'^private/api/v1/nondenoised-request$', views.nondenoised_request, name="nondenoised_request"),
     url(r'^private/api/v1/krona-request$', views.krona_request, name="krona_request"),
     url(r'^private/api/v1/taxonomy-search$', views.taxonomy_search, name="taxonomy_search"),
     url(r'^private/api/v1/search$', views.otu_search, name="otu_search"),
