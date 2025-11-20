@@ -11,7 +11,6 @@ import re
 import threading
 import time
 import uuid
-from collections import OrderedDict, defaultdict
 from functools import wraps
 from operator import itemgetter
 from io import BytesIO
@@ -19,8 +18,6 @@ from xhtml2pdf import pisa
 
 from sqlalchemy import Float, Integer
 
-from bpaingest.projects.amdb.contextual import \
-    AustralianMicrobiomeSampleContextual
 from django.conf import settings
 from django.core.mail import send_mail
 from django.http import (Http404, HttpResponse, JsonResponse, HttpResponseServerError,
@@ -30,27 +27,26 @@ from django.urls import reverse
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
-from django.core.cache import caches
 
 from celery import current_app
 
 from . import tasks
 from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
+from .contextual import contextual_definitions, get_contextual_schema_definition, make_environment_lookup
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
-from .importer import DataImporter
 from .krona import KronaPlot
 from .models import NonDenoisedDataRequest, MetagenomeRequest
-from .otu import (Environment, OTUAmplicon, SampleContext, TaxonomySource, format_taxonomy_name)
+from .otu import (OTUAmplicon, SampleContext, TaxonomySource, format_taxonomy_name)
 from .params import clean_amplicon_filter, make_clean_taxonomy_filter, param_to_filters, selected_contextual_filters
 from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilterTermTime,
                     ContextualFilterTermFloat, ContextualFilterTermLongitude,
                     ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
                     MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
-                    TaxonomyFilter, TaxonomyOptions, get_sample_ids,
-                    SampleSchemaDefinition, make_cache_key, CACHE_7DAYS)
+                    TaxonomyFilter, TaxonomyOptions)
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
+from .sample_comparison import comparison_zip_file_generator
 from .spatial import spatial_query
 from .submission import Submission
 from .tabular import tabular_zip_file_generator
@@ -70,7 +66,6 @@ ORDERING_PATTERN = re.compile(r'^order\[(\d+)\]\[(dir|column)\]$')
 COLUMN_PATTERN = re.compile(r'^columns\[(\d+)\]\[(data|name|searchable|orderable)\]$')
 
 CACHE_1DAY = (60 * 60 * 24)
-CACHE_7DAYS = (60 * 60 * 24 * 7)
 
 
 class OTUError(Exception):
@@ -96,9 +91,6 @@ class HttpResponseNoContent(HttpResponse):
         pass
 
 
-def make_environment_lookup():
-    with OntologyInfo() as info:
-        return dict(info.get_values(Environment))
 
 
 def normalise_blast_search_string(s):
@@ -139,6 +131,7 @@ def api_config(request):
         'cancel_comparison_endpoint': reverse('cancel_comparison'),
         'clear_comparison_endpoint': reverse('clear_comparison'),
         'comparison_submission_endpoint': reverse('comparison_submission'),
+        'comparison_download_distance_matrices_endpoint': reverse('comparison_download_distance_matrices'),
         'submit_otuexport_endpoint': reverse('submit_otuexport'),
         'cancel_otuexport_endpoint': reverse('cancel_otuexport'),
         'otuexport_submission_endpoint': reverse('otuexport_submission'),
@@ -284,65 +277,9 @@ def taxonomy_options(request):
 @require_GET
 def contextual_fields(request):
     """
-    private API: return the available fields, and their types, so that
-    the contextual filtering UI can be built
+    private API: return all available fields and their types, so that the contextual filtering UI can be built
     """
-    field_definitions, classifications, ontology_classes, fields_by_type = {}, {}, {}, defaultdict(list)
-    field_units = AustralianMicrobiomeSampleContextual.units_for_fields()
-    contextual_schema_definition = get_contextual_schema_definition().get("definition", {})
-    for key, field in contextual_schema_definition.get("Field", {}).items():
-        if field in DataImporter.amd_ontologies:
-            field += '_id'
-        elif field == 'sample_id':
-            field = 'id'
-        field_definitions[field] = contextual_schema_definition.get("Field_Definition", {}).get(key)
-        am_environment = contextual_schema_definition.get("AM_enviro", {}).get(key).lstrip().rstrip()
-        am_environment_lookup = dict((t[1], t[0]) for t in make_environment_lookup().items())
-        am_environment_id = am_environment_lookup.get(am_environment, "")
-        if am_environment_id:
-            classifications[field] = am_environment_id
-
-
-    # TODO Note TS: I don't understand why do we group columns together by their type.
-    # Why can't we just got through them once and map them to the definitions?
-
-    # group together columns by their type. note special case
-    # handling for our ontology linkage columns
-    for column in SampleContext.__table__.columns:
-        if column.name == 'id':
-            continue
-        if hasattr(column, "ontology_class"):
-            ty = '_ontology'
-            ontology_classes[column.name] = column.ontology_class
-        else:
-            ty = str(column.type)
-        fields_by_type[ty].append(column.name)
-
-    def make_defn(typ, name, **kwargs):
-        r = kwargs.copy()
-        r.update({
-            'type': typ,
-            'name': name,
-            'environment': classifications.get(name),
-            'display_name': SampleContext.display_name(name),
-            'units': field_units.get(name),
-            'definition': field_definitions.get(name),
-        })
-        return r
-
-    with OntologyInfo() as info:
-        fields_with_values = [
-            (field_name, info.get_values_filtered(ontology_classes[field_name], field_name))
-            for field_name in fields_by_type['_ontology']]
-
-    definitions = (
-        [make_defn('sample_id', 'id', display_name='Sample ID', values=get_sample_ids())] +
-        [make_defn('date', field_name) for field_name in fields_by_type['DATE']] +
-        [make_defn('time', field_name) for field_name in fields_by_type['TIME']] +
-        [make_defn('float', field_name) for field_name in fields_by_type['FLOAT']] +
-        [make_defn('string', field_name) for field_name in fields_by_type['CITEXT']] +
-        [make_defn('ontology', field_name, values=values) for field_name, values in fields_with_values])
-    definitions.sort(key=lambda a: a['display_name'].lower())
+    definitions = contextual_definitions()
 
     return JsonResponse({
         'definitions': definitions,
@@ -1277,7 +1214,7 @@ def comparison_submission(request):
     active_tasks = get_active_celery_tasks()
     task_found = any(submission_id in task["args"] for task in active_tasks)
 
-    results = { 'abundanceMatrix': {}, 'contextual': {} }
+    results = { 'ordination': {}, 'contextual': {} }
     response = {
         'success': True,
         'mem_usage': mem_usage_obj(),
@@ -1304,7 +1241,7 @@ def comparison_submission(request):
         try:
             results_files = json.loads(submission.results_files)
             results = {
-                'abundanceMatrix': json.load(open(results_files['abundance_matrix_file'])),
+                'ordination': json.load(open(results_files['ordination_file'])),
                 'contextual': json.load(open(results_files['contextual_file'])),
             }
             response['submission']['results'] = results
@@ -1333,6 +1270,22 @@ def comparison_submission(request):
 
 
     return JsonResponse(response)
+
+
+@require_CKAN_auth
+@require_GET
+def comparison_download_distance_matrices(request):
+    submission_id = request.GET['submission_id']
+
+    # track(request, event, search_params_track_args(params))
+
+    zf = comparison_zip_file_generator(submission_id)
+    response = StreamingHttpResponse(zf, content_type='application/zip')
+    filename = f"distance-matrices-{submission_id}.zip"
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+
+    return response
+
 
 def otu_log(request):
     template = loader.get_template('bpaotu/otu_log.html')
@@ -1409,44 +1362,6 @@ def otu_log_download(request):
 def contextual_schema_definition(request):
     return JsonResponse(get_contextual_schema_definition())
 
-def contextual_schema_definition_query():
-    try:
-        with SampleSchemaDefinition() as query:
-            for path in query.get_schema_definition_url():
-                download_url = str(path)
-
-        # search the file for the "Schema_" sheet with the highest version number
-        schema_prefix = 'Schema_'
-        sheet_names = pd.ExcelFile(download_url).sheet_names
-        schema_sheet_names = list(filter(lambda k: schema_prefix in k, sheet_names))
-        sort_fn = lambda s: list(map(int, s.replace(schema_prefix, '').split('.')))
-        schema_sheet_names.sort(key=sort_fn, reverse=True)
-
-        df_definition = pd.read_excel(download_url, sheet_name=schema_sheet_names[0])
-        df_definition = df_definition.fillna(value="")
-    except IndexError as e:
-        logger.error(f"No sheet names match '{schema_prefix}'; sheet_names={sheet_names}; ({e})")
-        download_url = ""
-        df_definition = pd.DataFrame()
-    except Exception as e:
-        logger.error(f"Link {download_url} doesn't exist. {e}")
-        download_url = ""
-        df_definition = pd.DataFrame()
-    return {
-        'download_url': download_url,
-        'definition': df_definition.to_dict(),
-    }
-
-def get_contextual_schema_definition(cache_duration=CACHE_7DAYS, force_cache=False):
-    cache = caches['contextual_schema_definition_results']
-    key = make_cache_key('contextual_schema_definition_query')
-    result = None
-    if not force_cache:
-        result = cache.get(key)
-    if result is None:
-        result = contextual_schema_definition_query()
-        cache.set(key, result, cache_duration)
-    return result
 
 def get_scientific_manual_url():
     return settings.BPAOTU_SCIENTIFIC_MANUAL_URL

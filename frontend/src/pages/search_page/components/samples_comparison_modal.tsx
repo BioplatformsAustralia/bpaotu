@@ -31,6 +31,8 @@ import Octicon from 'components/octicon'
 import {
   clearPlotData,
   closeSamplesComparisonModal,
+  downloadDistanceMatrices,
+  downloadCode,
   handleUmapParameters,
   resetUmapParameters,
   runComparison,
@@ -112,6 +114,18 @@ const ErrorOverlay = ({ errors }) => {
   )
 }
 
+const popupStyle = {
+  position: 'absolute',
+  backgroundColor: 'rgb(244, 244, 244)',
+  top: 0,
+  left: 0,
+  marginTop: '32px',
+  borderRadius: '12px',
+  boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+  padding: '12px 0px',
+  zIndex: 10,
+} as React.CSSProperties
+
 const umapTooltipLookup = {
   n_neighbors: 'Controls how UMAP balances local versus global structure in the data',
   spread:
@@ -158,9 +172,11 @@ const ParamControl = ({ param, value, tooltip, onChange, onKeyPress }) => {
 
 const SamplesComparisonModal = (props) => {
   const umapParamsRef = useRef(null)
+  const downloadOptionsRef = useRef(null)
 
   const [markerSize, setMarkerSize] = useState(12)
   const [showUmapParameters, setShowUmapParameters] = useState(false)
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false)
 
   const chartWidth = window.innerWidth * 0.7
   const chartHeight = window.innerHeight * 0.7
@@ -173,6 +189,8 @@ const SamplesComparisonModal = (props) => {
     cancelComparison,
     clearComparison,
     closeSamplesComparisonModal,
+    downloadDistanceMatrices,
+    downloadCode,
 
     selectedMethod,
     selectedFilter,
@@ -236,11 +254,16 @@ const SamplesComparisonModal = (props) => {
     if (umapParamsRef.current && !umapParamsRef.current.contains(e.target)) {
       setShowUmapParameters(false)
     }
+
+    // if umapParamsRef.current exists and the clicked target is NOT inside it
+    if (downloadOptionsRef.current && !downloadOptionsRef.current.contains(e.target)) {
+      setShowDownloadOptions(false)
+    }
   }
 
   const plotHasData = plotData[selectedMethod] && plotData[selectedMethod].length > 0
+  const showDownloadControls = plotHasData
   const showExtraControls = plotHasData
-  const showStress = plotHasData
 
   // use jittered x, y values for plotting and original values for tooltip (using customdata)
   const plotDataTransformedTooltip = plotDataTransformed.map((z) => {
@@ -330,20 +353,7 @@ const SamplesComparisonModal = (props) => {
     }
 
     return (
-      <div
-        ref={umapParamsRef}
-        style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          marginTop: '8px',
-          background: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
-          padding: '12px 0px',
-          zIndex: 10,
-        }}
-      >
+      <div ref={umapParamsRef} style={{ ...popupStyle, ...{ width: '300px' } }}>
         <Container>
           {Object.keys(umapTooltipLookup).map((param) => (
             <Row key={param}>
@@ -372,6 +382,34 @@ const SamplesComparisonModal = (props) => {
             <Col style={{ marginTop: 10, textAlign: 'right' }}>
               <Button onClick={closeAndRun} size="sm" color="primary">
                 Run
+              </Button>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+    )
+  }
+
+  const renderDownloadOptions = (downloadOptionsRef) => {
+    const closeAndRun = () => {
+      setShowUmapParameters(false)
+      runComparison(umapParams, submissionId)
+    }
+
+    return (
+      <div ref={downloadOptionsRef} style={{ ...popupStyle, ...{ width: '200px' } }}>
+        <Container>
+          <Row>
+            <Col>
+              <Button onClick={downloadDistanceMatrices} size="sm" color="link">
+                Distance Matrices
+              </Button>
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+              <Button onClick={downloadCode} size="sm" color="link">
+                Code
               </Button>
             </Col>
           </Row>
@@ -498,7 +536,7 @@ const SamplesComparisonModal = (props) => {
         <Container>
           <Row>
             <Col xs="2">UMAP parameters:</Col>
-            <Col xs="3" style={{ paddingLeft: 0, paddingRight: 0 }}>
+            <Col xs="4" style={{ paddingLeft: 0, paddingRight: 0 }}>
               <div
                 style={{
                   position: 'relative',
@@ -517,7 +555,35 @@ const SamplesComparisonModal = (props) => {
                 {showUmapParameters && renderUmapControls(umapParamsRef)}
               </div>
             </Col>
-            <Col xs="6">&nbsp;</Col>
+            <Col xs="3">&nbsp;</Col>
+            {showDownloadControls ? (
+              <>
+                <Col xs="2" style={{ marginTop: 4, textAlign: 'right' }}>
+                  &nbsp;
+                </Col>
+                <Col xs="1" style={{ marginTop: 4, paddingLeft: 0, paddingRight: 0 }}>
+                  <div
+                    style={{
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <Button
+                      onClick={() => setShowDownloadOptions((prev) => !prev)}
+                      color="secondary"
+                      size="sm"
+                    >
+                      Download
+                    </Button>
+                    {showDownloadOptions && renderDownloadOptions(downloadOptionsRef)}
+                  </div>
+                </Col>
+              </>
+            ) : (
+              <Col xs="3">&nbsp;</Col>
+            )}
           </Row>
         </Container>
 
@@ -646,6 +712,8 @@ const mapDispatchToProps = (dispatch) => {
     {
       clearPlotData,
       closeSamplesComparisonModal,
+      downloadDistanceMatrices,
+      downloadCode,
       handleUmapParameters,
       resetUmapParameters,
       runComparison,

@@ -42,3 +42,4 @@ mixpanel==4.10.0
 biopython==1.80
 numba==0.60.0
 psutil
+matplotlib==3.8.3

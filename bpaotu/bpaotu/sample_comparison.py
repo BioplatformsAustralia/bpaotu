@@ -1,13 +1,16 @@
 import io
+import os
 import json
+import zipstream
 
 from django.conf import settings
 from django.db import connection
 from psycopg2.extensions import adapt
 
 from .base_task_wrapper import BaseTaskWrapper
+from .contextual import contextual_definitions
 from .params import param_to_filters, selected_contextual_filters
-from .query import SampleQuery
+from .query import OntologyInfo, SampleQuery
 from .submission import Submission
 from .task_utils import NumpyEncoder
 
@@ -149,7 +152,7 @@ class SampleComparisonWrapper(BaseTaskWrapper):
 
         pairs_braycurtis_umap, pairs_jaccard_umap = self._calc_umap_embeddings(rect_index, dist_matrix_braycurtis, dist_matrix_jaccard)
 
-        abundance_matrix = {
+        ordination = {
             'sample_ids': rect_index.tolist(),
             'points': {
                 'braycurtis': pairs_braycurtis_umap,
@@ -157,14 +160,14 @@ class SampleComparisonWrapper(BaseTaskWrapper):
             }
         }
 
-        abundance_path = self._in("abundance_matrix.json")
-        with open(abundance_path, "w") as f:
-            json.dump(abundance_matrix, f, cls=NumpyEncoder)
+        ordination_path = self._in("ordination.json")
+        with open(ordination_path, "w") as f:
+            json.dump(ordination, f, cls=NumpyEncoder)
 
         contextual_path = self._attach_contextual()
 
         submission.results_files = json.dumps({
-            "abundance_matrix_file": abundance_path,
+            "ordination_file": ordination_path,
             "contextual_file": contextual_path
         })
 
@@ -189,10 +192,10 @@ class SampleComparisonWrapper(BaseTaskWrapper):
         # load the distance matrix files back in from prior run
         self._status_update(submission, 'reload')
 
-        abundance_path = self._in("abundance_matrix.json")
+        ordination_path = self._in("ordination.json")
 
-        with open(abundance_path, "r") as f:
-            abundance_matrix = json.load(f)
+        with open(ordination_path, "r") as f:
+            ordination = json.load(f)
 
         with open(self._in("dist_matrix_braycurtis.json"), "r") as f:
             dist_matrix_braycurtis = json.load(f)
@@ -202,16 +205,16 @@ class SampleComparisonWrapper(BaseTaskWrapper):
 
         # calculate umap with new params
         # status updates are done within _calc_umap_embeddings
-        pairs_braycurtis_umap, pairs_jaccard_umap = self._calc_umap_embeddings(abundance_matrix["sample_ids"], dist_matrix_braycurtis, dist_matrix_jaccard)
+        pairs_braycurtis_umap, pairs_jaccard_umap = self._calc_umap_embeddings(ordination["sample_ids"], dist_matrix_braycurtis, dist_matrix_jaccard)
 
-        # update abundance matrix and save result (overwrite existing file)
-        abundance_matrix['points'] = {
+        # update ordination and save result (overwrite existing file)
+        ordination['points'] = {
             'braycurtis': pairs_braycurtis_umap,
             'jaccard': pairs_jaccard_umap,
         }
 
-        with open(abundance_path, "w") as f:
-            json.dump(abundance_matrix, f, cls=NumpyEncoder)
+        with open(ordination_path, "w") as f:
+            json.dump(ordination, f, cls=NumpyEncoder)
 
         self._status_update(submission, 'complete')
 
@@ -277,8 +280,7 @@ class SampleComparisonWrapper(BaseTaskWrapper):
 
         self._status_update(submission, 'contextual_start')
 
-        contextual_filtering = True
-        additional_headers = selected_contextual_filters(self._query, contextual_filtering=contextual_filtering)
+        additional_headers = selected_contextual_filters(self._query, contextual_filtering=True)
         all_headers = [
             'id', 'am_environment_id', 'vegetation_type_id', 'imos_site_code', 'env_broad_scale_id',
             'env_local_scale_id', 'ph', 'organic_carbon', 'nitrate_nitrogen', 'ammonium_nitrogen_wt',
@@ -287,19 +289,107 @@ class SampleComparisonWrapper(BaseTaskWrapper):
         ] + additional_headers
         all_headers_unique = list(set(all_headers))
 
+        definitions = contextual_definitions(columns_subset = all_headers_unique, include_sample_id = False)
+
         with SampleQuery(self._params) as query:
             results = query.matching_sample_graph_data(all_headers_unique)
 
-        sample_results = {}
+        samples = {}
         if results:
             ndata = np.array(results)
             for x in ndata:
                 sample_id = x[all_headers_unique.index('id')]
                 sample_data = dict(zip(all_headers_unique, x.tolist()))
-                sample_results[sample_id] = sample_data
+                samples[sample_id] = sample_data
+
+        contextual = {
+            "definitions": definitions,
+            "samples": samples,
+        }
 
         contextual_path = self._in("contextual.json")
         with open(contextual_path, "w") as f:
-            json.dump(sample_results, f, cls=NumpyEncoder)
+            json.dump(contextual, f, cls=NumpyEncoder)
 
         return contextual_path
+
+
+def comparison_zip_file_generator(submission_id):
+    assert submission_id != None
+    submission = Submission(submission_id)
+
+    params, _ = param_to_filters(submission.query)
+
+    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+    zf.writestr('info.txt', info_text(params))
+
+    export_files_to_include = [
+        'dist_matrix_braycurtis.json',
+        # 'dist_matrix_jaccard.json',
+        'ordination.json',
+        'contextual.json',
+    ]
+
+    for file in export_files_to_include:
+        file_path = os.path.join(submission.submission_directory, file)
+        if file_path and os.path.exists(file_path):
+            arcname = os.path.basename(file_path)
+            zf.write(file_path, arcname=arcname)
+
+    example_files_to_include = [
+        '/app/bpaotu/bpaotu/resources/examples/comparison_code_python_example.py',
+        '/app/bpaotu/bpaotu/resources/examples/comparison_code_R_example.R',
+    ]
+
+    for file_path in example_files_to_include:
+        if file_path and os.path.exists(file_path):
+            arcname = os.path.basename(file_path)
+            zf.write(file_path, arcname=arcname)
+
+    return zf
+
+def info_text(params):
+    return """\
+Australian Microbiome OTU Database - comparison export
+------------------------------------------------------
+
+Files included:
+---------------
+
+-  dist_matrix_braycurtis.json
+   
+   The Bray-Curtis distance matrix in JSON format.
+   Represented as an array of arrays that can be
+   reconstructed into a matrix.
+
+-  ordination.json
+
+   The calculated ordination for the distance matrices.
+   The JSON object contains two keys of the same length:
+   - "sample_ids" has the sample IDs from the search
+   - "points" has the respective umap embeddings for each sample
+
+-  contextual.json
+
+   The contextual data for each sample included in the ordination.
+   Each sample ID is a key in the JSON object.
+
+-  comparison_code_python_example.py
+-  comparison_code_R_example.R
+
+   Example Python and R scripts for importing and plotting
+   the json data included in the comparison export.
+
+
+Search parameters:
+------------------
+
+{}
+
+------------------------------------------------------
+How to cite Australian Microbiome data:
+https://www.australianmicrobiome.com/protocols/acknowledgements/
+
+Australian Microbiome data use policy:
+https://www.australianmicrobiome.com/protocols/data-policy/
+""".format(params.describe()).encode('utf8')
