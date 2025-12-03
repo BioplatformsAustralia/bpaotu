@@ -25,6 +25,8 @@ yarn-error.log
 bpaotu/bpaotu/frontend/dist
 bpaotu/bpaotu/resources/examples/.ipynb_checkpoints/*
 bpaotu/bpaotu/resources/examples/*.json
+bpaotu/bpaotu/resources/examples/*.csv
+bpaotu/bpaotu/resources/examples/*.txt
 bpaotu/bpaotu/static/bpaotu/js/*-bundle*.js
 
 _skip_warmcache

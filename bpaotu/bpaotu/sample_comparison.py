@@ -149,20 +149,32 @@ class SampleComparisonWrapper(BaseTaskWrapper):
         rect_index = rect_df.index
 
         dist_matrix_braycurtis, dist_matrix_jaccard = self._calc_distance_matrices(rect_df)
+        results_braycurtis_umap, results_jaccard_umap = self._calc_umap_embeddings(rect_index, dist_matrix_braycurtis, dist_matrix_jaccard)
 
-        pairs_braycurtis_umap, pairs_jaccard_umap = self._calc_umap_embeddings(rect_index, dist_matrix_braycurtis, dist_matrix_jaccard)
-
+        # json
         ordination = {
             'sample_ids': rect_index.tolist(),
             'points': {
-                'braycurtis': pairs_braycurtis_umap,
-                'jaccard': pairs_jaccard_umap
+                'braycurtis': results_braycurtis_umap.tolist(),
+                'jaccard': results_jaccard_umap.tolist(),
             }
         }
 
         ordination_path = self._in("ordination.json")
         with open(ordination_path, "w") as f:
             json.dump(ordination, f, cls=NumpyEncoder)
+
+        # csv
+        df = pd.DataFrame({
+            "sample_id": rect_index.tolist(),
+            "braycurtis_x": results_braycurtis_umap[:, 0],
+            "braycurtis_y": results_braycurtis_umap[:, 1],
+            # "jaccard_x": results_jaccard_umap.values[:, 0],
+            # "jaccard_y": results_jaccard_umap.values[:, 1],
+        })
+
+        ordination_path_csv = self._in("ordination.csv")
+        df.to_csv(ordination_path_csv, index=False, float_format="%.6g")
 
         contextual_path = self._attach_contextual()
 
@@ -203,6 +215,14 @@ class SampleComparisonWrapper(BaseTaskWrapper):
         with open(self._in("dist_matrix_jaccard.json"), "r") as f:
             dist_matrix_jaccard= json.load(f)
 
+        ordination_path_csv = self._in("ordination.csv")
+        ordination_df = pd.read_csv(ordination_path_csv)
+
+        # dist_matrix_braycurtis = np.loadtxt(self._in("dist_matrix_braycurtis.csv"), delimiter=",")
+        # dist_matrix_jaccard  = np.loadtxt(self._in("dist_matrix_jaccard.csv"), delimiter=",")
+        dist_matrix_braycurtis = pd.read_csv(self._in("dist_matrix_braycurtis.csv"), header=None).values
+        dist_matrix_jaccard  = pd.read_csv(self._in("dist_matrix_jaccard.csv"), header=None).values
+
         # calculate umap with new params
         # status updates are done within _calc_umap_embeddings
         pairs_braycurtis_umap, pairs_jaccard_umap = self._calc_umap_embeddings(ordination["sample_ids"], dist_matrix_braycurtis, dist_matrix_jaccard)
@@ -215,6 +235,17 @@ class SampleComparisonWrapper(BaseTaskWrapper):
 
         with open(ordination_path, "w") as f:
             json.dump(ordination, f, cls=NumpyEncoder)
+
+        df = pd.DataFrame({
+            "sample_id": ordination_df["sample_id"].tolist(),
+            "braycurtis_x": pairs_braycurtis_umap["dim1"],
+            "braycurtis_y": pairs_braycurtis_umap["dim2"],
+            # "jaccard_x": pairs_jaccard_umap.values[:, 0],
+            # "jaccard_y": pairs_jaccard_umap.values[:, 1],
+        })
+
+        ordination_path = self._in("ordination.csv")
+        df.to_csv(ordination_path, index=False, float_format="%.6g")
 
         self._status_update(submission, 'complete')
 
@@ -238,6 +269,38 @@ class SampleComparisonWrapper(BaseTaskWrapper):
         with open(self._in("dist_matrix_jaccard.json"), "w") as f:
             json.dump(dist_matrix_jaccard, f, cls=NumpyEncoder)
 
+        # np.savetxt(
+        #     self._in("dist_matrix_braycurtis.csv"),
+        #     dist_matrix_braycurtis,
+        #     delimiter=",",
+        #     fmt="%.6g",
+        # )
+        # np.savetxt(
+        #     self._in("dist_matrix_jaccard.csv"),
+        #     dist_matrix_jaccard,
+        #     delimiter=",",
+        #     fmt="%.6g",
+        # )
+
+        df_bc = pd.DataFrame(
+            dist_matrix_braycurtis,
+            index=rect_df.index,
+            columns=rect_df.index,
+        )
+        df_bc.to_csv(
+            self._in("dist_matrix_braycurtis.csv"),
+            float_format="%.6g"
+        )
+        df_jd = pd.DataFrame(
+            dist_matrix_jaccard,
+            index=rect_df.index,
+            columns=rect_df.index,
+        )
+        df_jd.to_csv(
+            self._in("dist_matrix_jaccard.csv"),
+            float_format="%.6g"
+        )
+
         return dist_matrix_braycurtis, dist_matrix_jaccard
 
 
@@ -246,33 +309,27 @@ class SampleComparisonWrapper(BaseTaskWrapper):
 
         submission = Submission(self._submission_id)
 
-        def calc_umap(method, dist_matrix):
-            dist_matrix_df = pd.DataFrame(dist_matrix, index=rect_index, columns=rect_index)
+        def calc_umap(dist_matrix):
+            reducer = umap.UMAP(
+                n_components=2,
+                n_neighbors=self._param_n_neighbors,
+                spread=self._param_spread,
+                min_dist=self._param_min_dist,
+                metric='precomputed'
+            )
 
-            n_neighbors = self._param_n_neighbors
-            spread = self._param_spread
-            min_dist = self._param_min_dist
+            embeddings = reducer.fit_transform(dist_matrix)
 
-            reducer = umap.UMAP(n_components=2,
-                                n_neighbors=n_neighbors,
-                                spread=spread,
-                                min_dist=min_dist,
-                                metric='precomputed')
-
-            embeddings = reducer.fit_transform(dist_matrix_df.values)
-
-            return method, pd.DataFrame(data=embeddings, columns=['dim1', 'dim2'], index=dist_matrix_df.index)
+            return embeddings
 
         self._status_update(submission, 'calc_umap_bc')
-        results_braycurtis_umap = calc_umap('braycurtis', dist_matrix_braycurtis)[1]
-        pairs_braycurtis_umap = list(zip(results_braycurtis_umap.dim1.values, results_braycurtis_umap.dim2.values))
+        results_braycurtis_umap = calc_umap(dist_matrix_braycurtis)
 
         # self._status_update(submission, 'calc_umap_j')
-        # results_jaccard_umap = calc_umap('jaccard', dist_matrix_jaccard)[1]
-        # pairs_jaccard_umap = list(zip(results_jaccard_umap.dim1.values, results_jaccard_umap.dim2.values))
-        pairs_jaccard_umap = []
+        # results_jaccard_umap = calc_umap(dist_matrix_jaccard)
+        results_jaccard_umap = np.zeros((len(rect_index), 2))
 
-        return pairs_braycurtis_umap, pairs_jaccard_umap
+        return results_braycurtis_umap, results_jaccard_umap
 
 
     def _attach_contextual(self):
@@ -307,9 +364,86 @@ class SampleComparisonWrapper(BaseTaskWrapper):
             "samples": samples,
         }
 
+        ## json
+
         contextual_path = self._in("contextual.json")
         with open(contextual_path, "w") as f:
             json.dump(contextual, f, cls=NumpyEncoder)
+
+        ## csv
+
+        # sample contextual data
+        # rename id to sample_id, put sample_id first, sort by sample_id
+        df_con = pd.DataFrame.from_dict(samples, orient='index')
+        df_con = df_con.rename(columns={"id": "sample_id"})
+        cols = ["sample_id"] + [c for c in df_con.columns if c != "sample_id"]
+        df_con = df_con[cols]
+        if "sample_id" in df_con.columns:
+            df_con.sort_values("sample_id", inplace=True)
+
+        # populate labels for ontologies
+        for d in definitions:
+            if d.get("type") == "ontology":
+                col = d["name"]
+                label_col = col.rstrip("_id") + "_label"
+
+                # build label mapping and create the label column (treat blank labels as N/A)
+                mapping = {}
+                for vid, label in d.get("values", []):
+                    if label is None or str(label).strip() == "":
+                        mapping[vid] = "N/A"
+                    else:
+                        mapping[vid] = label       
+
+                # create label column and move to the right of it's id column
+                df_con[label_col] = df_con[col].map(mapping).fillna("N/A")
+                cols = list(df_con.columns)
+                id_index = cols.index(col)
+                cols.insert(id_index + 1, cols.pop(cols.index(label_col)))
+                df_con = df_con[cols]
+
+        # save the definitions metadata
+        # (one file for type definitions and one file for defined values for ontologies)
+        flat_def = []
+        for d in definitions:
+            flat = {}
+            for key, value in d.items():
+                if key == "values":
+                    continue
+                if value in (None, []):
+                    flat[key] = ""
+                else:
+                    flat[key] = value
+            flat_def.append(flat)
+
+        df_def = pd.DataFrame(flat_def)
+                    
+        value_rows = []
+        for d in definitions:
+            if d.get("type") != "ontology":
+                continue
+
+            name = d["name"]
+            for vid, label in d.get("values", []):
+                row = {
+                    "name": name,
+                    "value_id": vid,
+                    "value_label": label or ""
+                }
+                value_rows.append(row)
+
+        df_def_values = pd.DataFrame(value_rows)
+
+        ## export
+
+        contextual_path_csv = self._in("contextual.csv")
+        df_con.to_csv(contextual_path_csv, index=False, float_format="%.6g")
+
+        definitions_path_csv = self._in("definitions.csv")
+        df_def.to_csv(definitions_path_csv, index=False, float_format="%.6g")
+
+        definitions_values_path_csv = self._in("definitions_values.csv")
+        df_def_values.to_csv(definitions_values_path_csv, index=False, float_format="%.6g")
 
         return contextual_path
 
@@ -324,10 +458,12 @@ def comparison_zip_file_generator(submission_id):
     zf.writestr('info.txt', info_text(params))
 
     export_files_to_include = [
-        'dist_matrix_braycurtis.json',
-        # 'dist_matrix_jaccard.json',
-        'ordination.json',
-        'contextual.json',
+        'dist_matrix_braycurtis.csv',
+        # 'dist_matrix_jaccard.csv',
+        'ordination.csv',
+        'contextual.csv',
+        'definitions.csv',
+        'definitions_values.csv',
     ]
 
     for file in export_files_to_include:
@@ -356,29 +492,27 @@ Australian Microbiome OTU Database - comparison export
 Files included:
 ---------------
 
--  dist_matrix_braycurtis.json
+-  dist_matrix_braycurtis.csv
    
-   The Bray-Curtis distance matrix in JSON format.
+   The Bray-Curtis distance matrix in CSV format.
    Represented as an array of arrays that can be
    reconstructed into a matrix.
 
--  ordination.json
+-  ordination.csv
 
-   The calculated ordination for the distance matrices.
-   The JSON object contains two keys of the same length:
-   - "sample_ids" has the sample IDs from the search
-   - "points" has the respective umap embeddings for each sample
+   The calculated ordination for the distance matricesin CSV format.
+   - "sample_id" has the sample IDs from the search
+   - "braycurtis_x" and "braycurtis_y" has the respective umap embeddings for each sample
 
--  contextual.json
+-  contextual.csv
 
    The contextual data for each sample included in the ordination.
-   Each sample ID is a key in the JSON object.
 
 -  comparison_code_python_example.py
 -  comparison_code_R_example.R
 
    Example Python and R scripts for importing and plotting
-   the json data included in the comparison export.
+   the CSV data included in the comparison export.
 
 
 Search parameters:
