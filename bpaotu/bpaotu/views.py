@@ -1069,6 +1069,7 @@ def comparison_submission(request):
                 'ordination': json.load(open(results_files['ordination_file'])),
                 'contextual': json.load(open(results_files['contextual_file'])),
             }
+
             response['submission']['results'] = results
         except Exception as e:
             logger.error(f"Could not load result files for submission {submission_id}: {e}")

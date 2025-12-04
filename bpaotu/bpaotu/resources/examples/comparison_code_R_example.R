@@ -1,109 +1,133 @@
-install.packages(c('purrr'))
+# install.packages(c('dplyr', 'readr', 'forcats', 'ggplot2'))
 
-# install.packages(c('jsonlite', 'dplyr', 'ggplot2', 'forcats'))
-library(jsonlite)
+library(readr)
 library(dplyr)
 library(ggplot2)
 library(forcats)
-library(purrr)
-
 
 # === CONFIG ===
-ordination_file <- "ordination.json"
-contextual_file <- "contextual.json"
-
-# === PARAMETERS ===
-dissimilarity_method <- "braycurtis"  # Only "braycurtis" supported at the moment
-contextual_variable <- "ph"
+ordination_file <- "ordination.csv"
+contextual_file <- "contextual.csv"
+definitions_file <- "definitions.csv"
+definitions_values_file <- "definitions_values.csv"
 
 # === LOAD DATA ===
-ordination_data <- fromJSON(ordination_file)
-contextual_data <- fromJSON(contextual_file)
+ordination <- read_csv(ordination_file, col_types = cols())
+ordination <- ordination %>%
+  mutate(sample_id = as.character(sample_id)) %>%
+  rename(
+    UMAP1 = braycurtis_x,
+    UMAP2 = braycurtis_y
+  )
 
-# Convert samples to data.frame
-contextual <- as.data.frame(do.call(rbind, contextual_data$samples))
-contextual$sample_id <- rownames(contextual)
+contextual <- read_csv(contextual_file, col_types = cols()) %>%
+  mutate(sample_id = as.character(sample_id))
 
-# Create a named list of definitions
-definitions <- contextual_data$definitions
+definitions <- read_csv(definitions_file, col_types = cols())
+definitions_values <- read_csv(definitions_values_file, col_types = cols())
 
-# === PREP ORDINATIONS AND MERGE CONTEXTUAL DATA ===
-ordination <- as.data.frame(ordination_data$points[[dissimilarity_method]])
-colnames(ordination) <- c("UMAP1", "UMAP2")
-ordination$sample_id <- ordination_data$sample_ids
+# === MERGE ORDINATION AND CONTEXTUAL DATA ===
+merged <- ordination %>% left_join(contextual, by = "sample_id")
 
-merged <- ordination %>%
-  left_join(contextual, by = "sample_id")
+# === PARAMETERS ===
+dissimilarity_method <- "braycurtis" # Only braycurtis supported
+contextual_variable <- "ph"
 
-
-
-# === DETERMINE VARIABLE TYPE & MAP IF ONTOLOGY ===
-if (!(contextual_variable %in% colnames(merged))) {
+# === CHECK ===
+if (!(contextual_variable %in% names(merged))) {
   stop(paste("Variable", contextual_variable, "not found in contextual data."))
 }
-
-definition <- definitions %>% filter(name == contextual_variable)
-colour_data <- merged[[contextual_variable]]
-
-print(definition)
-
-if (!is.null(definition) && definition$type == "ontology") {
-  colour_label <- paste0(contextual_variable, "_label")
-
-  # Map ontology values, replace empty string with "N/A"
-  value_matrix <- definition$values[[1]]
-
-  # flatten column
-  merged[[contextual_variable]] <- sapply(merged[[contextual_variable]], function(x) if(length(x) == 0) NA else x[1])
-  mapped_values <- sapply(merged[[contextual_variable]], function(id) {
-    idx <- which(value_matrix[,1] == as.character(id))
-    if(length(idx) == 0 || value_matrix[idx,2] == "") "N/A" else value_matrix[idx,2]
-  })
- 
-  # convert to factor
-  categories <- c(value_matrix[,2], "N/A") %>% unique()
-  mapped_values <- factor(mapped_values, levels = categories, ordered = TRUE)
-  merged[[colour_label]] <- mapped_values
-  
-  is_continuous <- FALSE
-} else {
-  colour_label <- contextual_variable
-  is_continuous <- TRUE #(merged[[colour_label]])
+if (!(contextual_variable %in% definitions$name)) {
+  stop(paste("Variable", contextual_variable, "not found in definitions data."))
 }
 
-is_continuous
+# === DETERMINE VARIABLE TYPE & MAP IF ONTOLOGY ===
+definition <- definitions %>% filter(name == contextual_variable) %>% slice(1)
 
-p <- ggplot(merged, aes(x = UMAP1, y = UMAP2)) +
-  theme_void() +
-  geom_point(aes(color = !!ensym(colour_label)), size = 2, alpha = 0.9)
+if (definition$type == "ontology") {
+  
+  # Subset values for this variable
+  subset_values <- definitions_values %>% filter(name == contextual_variable)
+  
+  # Build mapping, replacing empty or NA with "N/A"
+  value_map <- setNames(
+    ifelse(is.na(subset_values$value_label) | subset_values$value_label == "", 
+           "N/A", 
+           subset_values$value_label),
+    subset_values$value_id
+  )
+  
+  # Label column name
+  label_col <- gsub("_id$", "_label", contextual_variable)
+  
+  # Apply mapping and set as ordered factor
+  merged[[label_col]] <- factor(
+    value_map[as.character(merged[[contextual_variable]])],
+    levels = value_map[order(as.numeric(names(value_map)))],
+    ordered = TRUE
+  )
+  
+  colour_label <- label_col
+  is_continuous <- FALSE
+  
+} else if (definition$type == "float") {
+  colour_label <- contextual_variable
+  is_continuous <- TRUE
+  
+} else if (definition$type == "string") {
+  colour_label <- contextual_variable
+  is_continuous <- FALSE
+    
+} else if (definition$type == "date") {
+  colour_label <- contextual_variable
+  is_continuous <- FALSE
 
-p
+} else {
+  stop("Unknown variable type")
+}
 
 # === PLOT ===
-p <- ggplot(merged, aes(x = UMAP1, y = UMAP2)) + theme_void()
-
-print(is_continuous)
+p <- ggplot(merged, aes(x = UMAP1, y = UMAP2))
 
 if (is_continuous) {
-    print(definition)
+  # Separate NA points
   p <- p +
-    geom_point(aes(color = !!ensym(colour_label)), size = 2, alpha = 0.9) +
-    scale_color_viridis_c(name = if (!is.null(definition)) definition$display_name else contextual_variable)
+    geom_point(
+      data = merged %>% filter(!is.na(.data[[colour_label]])),
+      aes(color = .data[[colour_label]]),
+      size = 2
+    ) +
+    geom_point(
+      data = merged %>% filter(is.na(.data[[colour_label]])),
+      color = "black",
+      size = 0.1
+    ) +
+    scale_color_viridis_c(option = "viridis") +
+    labs(color = definition$display_name)
+  
 } else {
+  # Categorical
   p <- p +
-    geom_point(aes(color = !!ensym(colour_label)), size = 2, alpha = 0.9) +
+    geom_point(aes(color = .data[[colour_label]]), size = 2) +
     scale_color_manual(
       values = scales::hue_pal()(length(levels(merged[[colour_label]]))),
-      name = if (!is.null(definition)) definition$display_name else contextual_variable
-    )
+      na.value = "black"
+    ) +
+    labs(color = definition$display_name)
 }
 
-title_text <- paste("Ordination Coloured by", if (!is.null(definition)) definition$display_name else contextual_variable)
-p <- p + ggtitle(title_text)
+p <- p +
+  theme_void() +
+  theme(
+    legend.position = "right",
+    plot.title = element_text(hjust = 0.5)
+  ) +
+  ggtitle(paste("Ordination Coloured by", definition$display_name))
+
+# Optionally set axis limits to include all points even if some are NA
+p <- p +
+  xlim(min(merged$UMAP1, na.rm = TRUE), max(merged$UMAP1, na.rm = TRUE)) +
+  ylim(min(merged$UMAP2, na.rm = TRUE), max(merged$UMAP2, na.rm = TRUE))
 
 print(p)
 
-# Print definition if available
-if (!is.null(definition) && "definition" %in% names(definition)) {
-  cat("\nDefinition for '", contextual_variable, "':\n", definition$definition, "\n", sep = "")
-}
