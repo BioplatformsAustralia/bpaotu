@@ -109,7 +109,7 @@ class SampleComparisonWrapper(BaseTaskWrapper):
 
     def _run(self):
         submission = Submission(self._submission_id)
-        
+
         _params, _errors = param_to_filters(self._query)
 
         df = self._build_abundance_dataframe()
