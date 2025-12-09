@@ -32,7 +32,6 @@ import {
   clearPlotData,
   closeSamplesComparisonModal,
   downloadDistanceMatrices,
-  downloadCode,
   handleUmapParameters,
   resetUmapParameters,
   runComparison,
@@ -190,7 +189,6 @@ const SamplesComparisonModal = (props) => {
     clearComparison,
     closeSamplesComparisonModal,
     downloadDistanceMatrices,
-    downloadCode,
 
     selectedMethod,
     selectedFilter,
@@ -403,13 +401,6 @@ const SamplesComparisonModal = (props) => {
             <Col>
               <Button onClick={downloadDistanceMatrices} size="sm" color="link">
                 Distance Matrices
-              </Button>
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-              <Button onClick={downloadCode} size="sm" color="link">
-                Code
               </Button>
             </Col>
           </Row>
@@ -713,7 +704,6 @@ const mapDispatchToProps = (dispatch) => {
       clearPlotData,
       closeSamplesComparisonModal,
       downloadDistanceMatrices,
-      downloadCode,
       handleUmapParameters,
       resetUmapParameters,
       runComparison,
