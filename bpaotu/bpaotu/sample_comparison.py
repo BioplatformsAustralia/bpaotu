@@ -145,37 +145,50 @@ class SampleComparisonWrapper(BaseTaskWrapper):
         actual_mb = actual_bytes / (1024 ** 2)
         self._log('info', f"Actual pivot memory_usage: {actual_mb:.2f} MB")
 
-        # this is the sample_ids
-        rect_index = rect_df.index
+        sample_ids = rect_df.index.tolist()
 
         dist_matrix_braycurtis, dist_matrix_jaccard = self._calc_distance_matrices(rect_df)
-        results_braycurtis_umap, results_jaccard_umap = self._calc_umap_embeddings(rect_index, dist_matrix_braycurtis, dist_matrix_jaccard)
+        results_braycurtis_umap, results_jaccard_umap = self._calc_umap_embeddings(sample_ids, dist_matrix_braycurtis, dist_matrix_jaccard)
 
-        # json
-        ordination = {
-            'sample_ids': rect_index.tolist(),
-            'points': {
-                'braycurtis': results_braycurtis_umap.tolist(),
-                'jaccard': results_jaccard_umap.tolist(),
-            }
-        }
+        ordination_path = self._save_ordination_results(sample_ids, results_braycurtis_umap, results_jaccard_umap)
+        contextual_path = self._attach_contextual()
 
-        ordination_path = self._in("ordination.json")
-        with open(ordination_path, "w") as f:
-            json.dump(ordination, f, cls=NumpyEncoder)
-
-        # csv
-        df = pd.DataFrame({
-            "sample_id": rect_index.tolist(),
-            "braycurtis_x": results_braycurtis_umap[:, 0],
-            "braycurtis_y": results_braycurtis_umap[:, 1],
-            # "jaccard_x": results_jaccard_umap.values[:, 0],
-            # "jaccard_y": results_jaccard_umap.values[:, 1],
+        submission.results_files = json.dumps({
+            "ordination_file": ordination_path,
+            "contextual_file": contextual_path
         })
 
-        ordination_path_csv = self._in("ordination.csv")
-        df.to_csv(ordination_path_csv, index=False, float_format="%.6g")
+        # since cleapnup/cancel are defined in base_task_wrapper this uses the generically named flag defined in that
+        submission.skip_cleanup_on_cancel = 1
 
+        self._status_update(submission, 'complete')
+
+        return True
+
+    def _run_params_changed(self):
+        submission = Submission(self._submission_id)
+
+        # set status to init for duration calculation (setup is not called) then use defined reload status
+        self._status_update(submission, 'init')
+
+        # load the distance matrix files back in from prior run
+        self._status_update(submission, 'reload')
+
+        with open(self._in("ordination.json"), "r") as f:
+            ordination = json.load(f)
+
+        with open(self._in("dist_matrix_braycurtis.json"), "r") as f:
+            dist_matrix_braycurtis = json.load(f)
+
+        with open(self._in("dist_matrix_jaccard.json"), "r") as f:
+            dist_matrix_jaccard= json.load(f)
+
+        sample_ids = ordination["sample_ids"]
+
+        # calculate umap with new params
+        results_braycurtis_umap, results_jaccard_umap = self._calc_umap_embeddings(sample_ids, dist_matrix_braycurtis, dist_matrix_jaccard)
+
+        ordination_path = self._save_ordination_results(sample_ids, results_braycurtis_umap, results_jaccard_umap)
         contextual_path = self._attach_contextual()
 
         submission.results_files = json.dumps({
@@ -195,59 +208,35 @@ class SampleComparisonWrapper(BaseTaskWrapper):
 
         return True
 
-    def _run_params_changed(self):
+    def _save_ordination_results(self, sample_ids, results_braycurtis_umap, results_jaccard_umap):
         submission = Submission(self._submission_id)
 
-        # set status to init for duration calculation (setup is not called) then use defined reload status
-        self._status_update(submission, 'init')
-
-        # load the distance matrix files back in from prior run
-        self._status_update(submission, 'reload')
-
-        ordination_path = self._in("ordination.json")
-
-        with open(ordination_path, "r") as f:
-            ordination = json.load(f)
-
-        with open(self._in("dist_matrix_braycurtis.json"), "r") as f:
-            dist_matrix_braycurtis = json.load(f)
-
-        with open(self._in("dist_matrix_jaccard.json"), "r") as f:
-            dist_matrix_jaccard= json.load(f)
-
-        ordination_path_csv = self._in("ordination.csv")
-        ordination_df = pd.read_csv(ordination_path_csv)
-
-        # dist_matrix_braycurtis = np.loadtxt(self._in("dist_matrix_braycurtis.csv"), delimiter=",")
-        # dist_matrix_jaccard  = np.loadtxt(self._in("dist_matrix_jaccard.csv"), delimiter=",")
-        dist_matrix_braycurtis = pd.read_csv(self._in("dist_matrix_braycurtis.csv"), header=None).values
-        dist_matrix_jaccard  = pd.read_csv(self._in("dist_matrix_jaccard.csv"), header=None).values
-
-        # calculate umap with new params
-        # status updates are done within _calc_umap_embeddings
-        pairs_braycurtis_umap, pairs_jaccard_umap = self._calc_umap_embeddings(ordination["sample_ids"], dist_matrix_braycurtis, dist_matrix_jaccard)
-
-        # update ordination and save result (overwrite existing file)
-        ordination['points'] = {
-            'braycurtis': pairs_braycurtis_umap,
-            'jaccard': pairs_jaccard_umap,
+        # json
+        ordination = {
+            'sample_ids': sample_ids,
+            'points': {
+                'braycurtis': results_braycurtis_umap.tolist(),
+                'jaccard': results_jaccard_umap.tolist(),
+            }
         }
 
+        ordination_path = self._in("ordination.json")
         with open(ordination_path, "w") as f:
             json.dump(ordination, f, cls=NumpyEncoder)
 
+        # csv
         df = pd.DataFrame({
-            "sample_id": ordination_df["sample_id"].tolist(),
-            "braycurtis_x": pairs_braycurtis_umap["dim1"],
-            "braycurtis_y": pairs_braycurtis_umap["dim2"],
-            # "jaccard_x": pairs_jaccard_umap.values[:, 0],
-            # "jaccard_y": pairs_jaccard_umap.values[:, 1],
+            "sample_id": sample_ids,
+            "braycurtis_x": results_braycurtis_umap[:, 0],
+            "braycurtis_y": results_braycurtis_umap[:, 1],
+            # "jaccard_x": results_jaccard_umap.values[:, 0],
+            # "jaccard_y": results_jaccard_umap.values[:, 1],
         })
 
-        ordination_path = self._in("ordination.csv")
-        df.to_csv(ordination_path, index=False, float_format="%.6g")
+        ordination_path_csv = self._in("ordination.csv")
+        df.to_csv(ordination_path_csv, index=False, float_format="%.6g")
 
-        self._status_update(submission, 'complete')
+        return ordination_path
 
 
     def _calc_distance_matrices(self, rect_df):
@@ -268,19 +257,6 @@ class SampleComparisonWrapper(BaseTaskWrapper):
 
         with open(self._in("dist_matrix_jaccard.json"), "w") as f:
             json.dump(dist_matrix_jaccard, f, cls=NumpyEncoder)
-
-        # np.savetxt(
-        #     self._in("dist_matrix_braycurtis.csv"),
-        #     dist_matrix_braycurtis,
-        #     delimiter=",",
-        #     fmt="%.6g",
-        # )
-        # np.savetxt(
-        #     self._in("dist_matrix_jaccard.csv"),
-        #     dist_matrix_jaccard,
-        #     delimiter=",",
-        #     fmt="%.6g",
-        # )
 
         df_bc = pd.DataFrame(
             dist_matrix_braycurtis,
