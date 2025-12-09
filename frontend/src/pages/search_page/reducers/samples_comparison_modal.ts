@@ -192,29 +192,11 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
 export const downloadDistanceMatrices = () => (dispatch, getState) => {
   const state = getState()
 
-  console.log('downloadDistanceMatrices', 'state', state)
-
   const getLastSubmission: () => ComparisonSubmission = () =>
     last(state.searchPage.samplesComparisonModal.submissions)
   const lastSubmission = getLastSubmission()
-
-  console.log('lastSubmission', 'lastSubmission', lastSubmission)
 
   getComparisonDistanceMatrices(lastSubmission.submissionId, state.auth.ckanAuthToken)
-
-  return state
-}
-
-export const downloadCode = () => (dispatch, getState) => {
-  const state = getState()
-
-  console.log('downloadCode', 'state', state)
-
-  const getLastSubmission: () => ComparisonSubmission = () =>
-    last(state.searchPage.samplesComparisonModal.submissions)
-  const lastSubmission = getLastSubmission()
-
-  console.log('lastSubmission', 'state', state)
 
   return state
 }

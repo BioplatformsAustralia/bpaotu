@@ -216,30 +216,29 @@ def submit_sample_comparison(submission_id, query, umap_params_string):
 def submit_sample_comparison_params_changed(submission_id, query, umap_params_string):
     submission = Submission(submission_id)
 
-    # check if submission already has a query associated
-    # (there's a chance this could be run with a fresh query)
-    # if the new query is the same then just redo umap point
-    # if the new query is different then determine if it would change the result set
-    # - if not, then just rebuild the contextual and redo umap points
-    # - if so, then do a full new run
+    # check if submission already has a query associated (there's a chance this could be run with a fresh query)
+    # - if the new query is the same then just redo umap points
+    # - if the new query is different then determine if it would change the result set
+    #   - if not, then just rebuild the contextual and redo umap points
+    #   - if so, then do a full new run
     if submission.query:
-        # logger.debug('submission has query')
+        logger.debug('resubmission has query')
         if submission.query == query:
-            # logger.debug('submission query is same as new query')
+            logger.debug('resubmission query is same as new query')
             chain = run_sample_comparison_params_changed.s()
         else:
-            # logger.debug('submission query is different to new query')
+            logger.debug('resubmission query is different to new query')
             params1, errors1 = param_to_filters(submission.query)
             params2, errors2 = param_to_filters(query)
             ids1 = get_sorted_sample_ids(params1)
             ids2 = get_sorted_sample_ids(params2)
 
             if ids1 == ids2:
-                # logger.debug('different queries have the same samples')
+                logger.debug('different queries have the same samples')
                 # rebuild contextual data first then run comparison from umap stage
                 chain = run_sample_comparison_contextual.s() | run_sample_comparison_params_changed.s()
             else:
-                # logger.debug('different queries have different samples')
+                logger.debug('different queries have different samples')
                 # run full submit_sample_comparison instead
                 return submit_sample_comparison.delay(submission_id, query, umap_params_string)
 
@@ -252,8 +251,7 @@ def submit_sample_comparison_params_changed(submission_id, query, umap_params_st
 
         return submission_id
     else:
-        # logger.debug('submission has no query')
-        # submission has no query; run submit_sample_comparison from scratch instead
+        logger.debug('resubmission has no query; run submit_sample_comparison from scratch')
         return submit_sample_comparison.delay(submission_id, query, umap_params_string)
 
 @shared_task
