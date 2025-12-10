@@ -14,7 +14,7 @@ import uuid
 from functools import wraps
 from operator import itemgetter
 from io import BytesIO
-from xhtml2pdf import pisa
+import pdfkit
 
 from sqlalchemy import Float, Integer
 
@@ -1325,21 +1325,30 @@ def otu_log(request):
             'pdf': request.GET.get('pdf')
         }
         context.update(missing)
+
     html = template.render(context, request)
     if request.GET.get("pdf"):
-        result = BytesIO()
-        pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
-        if not pdf.err:
-            response = HttpResponse(result.getvalue(), content_type='application/pdf')
-            filename = "out_log_%s.pdf" %(str(import_meta.revision_date))
-            content = "inline; filename=%s" %(filename)
-            download = request.GET.get("download")
-            if download:
-                content = "attachment; filename=%s" %(filename)
-            response['Content-Disposition'] = content
-    else:
-        response = HttpResponse(html)
-    return response
+        config = getattr(settings, "PDFKIT_CONFIG", None)
+        pdf_bytes = pdfkit.from_string(
+            html,
+            False,
+            configuration=config,
+            # options={"enable-local-file-access": ""} # for static css if needed
+        )
+
+        filename = f"out_log_{import_meta.revision_date}.pdf"
+        disposition = (
+            f'attachment; filename="{filename}"'
+            if request.GET.get("download")
+            else f'inline; filename="{filename}"'
+        )
+
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = disposition
+        return response
+
+    # normal html resposne
+    return HttpResponse(html)
 
 @require_GET
 def otu_log_download(request):
