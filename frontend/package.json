@@ -9,12 +9,13 @@
   "dependencies": {
     "@analytics/mixpanel": "^0.4.0",
     "@aws-crypto/sha256-js": "^4.0.0",
+    "@reduxjs/toolkit": "^2.11.1",
     "@turf/turf": "6.3.0",
     "@types/axios": "0.14.0",
     "@types/jest": "24.0.18",
     "@types/leaflet": "^1.7.0",
     "@types/lodash": "4.14.137",
-    "@types/node": "12.7.2",
+    "@types/node": "13.9.2",
     "@types/react": "16.9.2",
     "@types/react-dom": "16.9.0",
     "@types/react-leaflet": "2.4.0",
@@ -67,7 +68,7 @@
     "redux-thunk": "2.3.0",
     "sanitize-html": "1.27.5",
     "styled-components": "^4.0.0",
-    "typescript": "3.5.3",
+    "typescript": "3.7.5",
     "use-analytics": "^0.0.5",
     "uuid": "^9.0.0",
     "yarn": "^1.22.22"

@@ -1,81 +1,30 @@
-import React, { useContext, useEffect } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import React, { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
 
-// import { Tutorial, AMBLink, stepsStyle } from 'components/tutorial'
-import { TourContext } from 'providers/tour_provider'
 import BlastSearchCard from './blast_search_card'
-
-import { closeBlastModal, fetchBlastModalSamples } from '../reducers/blast_search_modal'
-import './blast_search_modal.css'
-
 import SearchFilters from './search_filters'
 
-const BlastModal = (props) => {
-  const { isOpen, isLoading, rowsCount, closeBlastModal, fetchBlastModalSamples } = props
+import { closeBlastModal, fetchBlastModalSamples } from '../reducers/blastSearchModalSlice'
 
-  const codeStyle = {
+import './blast_search_modal.css'
+
+const BlastModal = () => {
+  const dispatch = useDispatch()
+
+  const { isOpen, isLoading, rowsCount } = useSelector(
+    (state: any) => state.searchPage.blastSearchModal
+  )
+
+  useEffect(() => {
+    if (isOpen) {
+      dispatch(fetchBlastModalSamples())
+    }
+  }, [isOpen, dispatch])
+
+  const codeStyle: React.CSSProperties = {
     fontFamily: 'monospace',
-  } as React.CSSProperties
-
-  const {
-    isMainTourOpen,
-    setIsMainTourOpen,
-    mainTourStep,
-    setMainTourStep,
-    isMapSubtourOpen,
-    setIsMapSubtourOpen,
-  } = useContext(TourContext)
-
-  useEffect(() => {
-    if (isOpen) {
-      if (isMainTourOpen) {
-        setIsMainTourOpen(false)
-        setIsMapSubtourOpen(true)
-      }
-    } else {
-      if (isMapSubtourOpen) {
-        setIsMainTourOpen(true)
-        setIsMapSubtourOpen(false)
-        setMainTourStep(mainTourStep + 1)
-      }
-    }
-  }, [
-    isOpen,
-    isMainTourOpen,
-    isMapSubtourOpen,
-    setIsMainTourOpen,
-    setIsMapSubtourOpen,
-    mainTourStep,
-    setMainTourStep,
-  ])
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchBlastModalSamples()
-    }
-  }, [isOpen])
-
-  // const steps = [
-  //   {
-  //     selector: '[data-tut="reactour__BlastModal"]',
-  //     style: stepsStyle,
-  //     content: () => {
-  //       return (
-  //         <div>
-  //           <h4>BLAST search</h4>
-  //           <p>TODO.</p>
-  //           <p>TODO.</p>
-  //           <p>
-  //             For more information on the map <AMBLink text="see this page" />
-  //           </p>
-  //         </div>
-  //       )
-  //     },
-  //     position: [60, 100],
-  //   },
-  // ]
+  }
 
   return (
     <Modal
@@ -85,7 +34,7 @@ const BlastModal = (props) => {
       contentClassName="modalContentStyle"
     >
       <ModalHeader
-        toggle={closeBlastModal}
+        toggle={() => dispatch(closeBlastModal())}
         data-tut="reactour__CloseBlastModal"
         id="CloseBlastModal"
       >
@@ -113,29 +62,10 @@ const BlastModal = (props) => {
         <BlastSearchCard isLoading={isLoading} rowsCount={rowsCount} />
       </ModalBody>
       <ModalFooter>
-        <SearchFilters handleSearchFilterClick={fetchBlastModalSamples} />
+        <SearchFilters handleSearchFilterClick={() => dispatch(fetchBlastModalSamples())} />
       </ModalFooter>
     </Modal>
   )
 }
 
-const mapStateToProps = (state) => {
-  const { isOpen, isLoading, rowsCount } = state.searchPage.blastSearchModal
-  return {
-    isOpen,
-    isLoading,
-    rowsCount,
-  }
-}
-
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(
-    {
-      closeBlastModal,
-      fetchBlastModalSamples,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(BlastModal)
+export default BlastModal
