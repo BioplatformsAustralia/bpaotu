@@ -1,300 +1,38 @@
-import React, { Component } from 'react'
+import React from 'react'
 import styled, { keyframes, css } from 'styled-components'
-
-export const loadingstyle = {
-  display: 'flex',
-  height: '100%',
-  justifyContent: 'center',
-  alignItems: 'center',
-}
 
 const size = 2
 const time = 2.1
 const timedelay = -0.89
-const ease_circ = 'cubic-bezier(0.42, 0, 0.58, 1)'
+const easeCirc = 'cubic-bezier(0.42, 0, 0.58, 1)'
+const defaultColor1 = 'rgb(4, 30, 72)'
+const defaultColor2 = 'rgb(23, 196, 150)'
+const defaultScale = 0.3
 
-const color1 = 'rgb(4, 30, 72)'
-const color2 = 'rgb(23, 196, 150)'
-const scale = 0.3
-
-function animationBefore(size, color) {
-  return keyframes`
-  0% {
-    top: ${size * -2}vh;
-    z-index: 1;
-  }
-  25% {
-    transform: scale(1.2) ;
-    z-index: 1;
-  }
-  50% {
-    top: ${size * 2}vh;
-    z-index: -1;
-  }
-  75% {
-    background-color: ${color};
-    transform: scale(0.8) ;
-    z-index: -1;
-  }
-  100% {
-    top: ${size * -2}vh;
-    z-index: -1;
-  }
+// Keyframe animations
+const animationBefore = (size: number, color: string) => keyframes`
+  0% { top: ${-2 * size}vh; z-index: 1; }
+  25% { transform: scale(1.2); z-index: 1; }
+  50% { top: ${2 * size}vh; z-index: -1; }
+  75% { background-color: ${color}; transform: scale(0.8); z-index: -1; }
+  100% { top: ${-2 * size}vh; z-index: -1; }
 `
-}
 
-function animationAfter(size, color) {
-  return keyframes`
-  0% {
-    top: ${size * 2}vh;
-    z-index: -1;
-  }
-  25% {
-    background-color: ${color};
-    transform: scale(0.8) ;
-    z-index: -1;
-  }
-  50% {
-    top: ${size * -2}vh;
-    z-index: 1;
-  }
-  75% {
-    transform: scale(1.2) ;
-    z-index: 1;
-  }
-  100% {
-    top: ${size * 2}vh;
-    z-index: 1;
-  }
+const animationAfter = (size: number, color: string) => keyframes`
+  0% { top: ${2 * size}vh; z-index: -1; }
+  25% { background-color: ${color}; transform: scale(0.8); z-index: -1; }
+  50% { top: ${-2 * size}vh; z-index: 1; }
+  75% { transform: scale(1.2); z-index: 1; }
+  100% { top: ${2 * size}vh; z-index: 1; }
 `
+
+// Styled components
+interface HelixProps {
+  color1?: string
+  color2?: string
 }
 
-function getAnimations(time, timedelay, ease_circ, size, color1, color2) {
-  return css`
-    &:nth-child(0) {
-      animation-delay: ${0 * (timedelay * time)}s;
-
-      &:before {
-        animation: ${css`
-          ${animationBefore(size, color1)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${0 * (timedelay * time)}s;
-        animation-delay: ${0 * (timedelay * time)}s;
-        background-color: ${color1};
-      }
-
-      &:after {
-        animation: ${css`
-          ${animationAfter(size, color2)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${0 * (timedelay * time)}s;
-        background-color: ${color2};
-      }
-    }
-
-    &:nth-child(1) {
-      animation-delay: ${1 * (timedelay * time)}s;
-
-      &:before {
-        animation: ${css`
-          ${animationBefore(size, color1)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${1 * (timedelay * time)}s;
-        background-color: ${color1};
-      }
-
-      &:after {
-        animation: ${css`
-          ${animationAfter(size, color2)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${1 * (timedelay * time)}s;
-        background-color: ${color2};
-      }
-    }
-
-    &:nth-child(2) {
-      animation-delay: ${2 * (timedelay * time)}s;
-
-      &:before {
-        animation: ${css`
-          ${animationBefore(size, color1)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${2 * (timedelay * time)}s;
-        background-color: ${color1};
-      }
-
-      &:after {
-        animation: ${css`
-          ${animationAfter(size, color2)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${2 * (timedelay * time)}s;
-        background-color: ${color2};
-      }
-    }
-
-    &:nth-child(3) {
-      animation-delay: ${3 * (timedelay * time)}s;
-
-      &:before {
-        animation: ${css`
-          ${animationBefore(size, color1)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${3 * (timedelay * time)}s;
-        background-color: ${color1};
-      }
-
-      &:after {
-        animation: ${css`
-          ${animationAfter(size, color2)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${3 * (timedelay * time)}s;
-        background-color: ${color2};
-      }
-    }
-
-    &:nth-child(4) {
-      animation-delay: ${4 * (timedelay * time)}s;
-
-      &:before {
-        animation: ${css`
-          ${animationBefore(size, color1)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${4 * (timedelay * time)}s;
-        background-color: ${color1};
-      }
-
-      &:after {
-        animation: ${css`
-          ${animationAfter(size, color2)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${4 * (timedelay * time)}s;
-        background-color: ${color2};
-      }
-    }
-
-    &:nth-child(5) {
-      animation-delay: ${5 * (timedelay * time)}s;
-
-      &:before {
-        animation: ${css`
-          ${animationBefore(size, color1)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${5 * (timedelay * time)}s;
-        background-color: ${color1};
-      }
-
-      &:after {
-        animation: ${css`
-          ${animationAfter(size, color2)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${5 * (timedelay * time)}s;
-        background-color: ${color2};
-      }
-    }
-
-    &:nth-child(6) {
-      animation-delay: ${6 * (timedelay * time)}s;
-
-      &:before {
-        animation: ${css`
-          ${animationBefore(size, color1)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${6 * (timedelay * time)}s;
-        background-color: ${color1};
-      }
-
-      &:after {
-        animation: ${css`
-          ${animationAfter(size, color2)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${6 * (timedelay * time)}s;
-        background-color: ${color2};
-      }
-    }
-
-    &:nth-child(7) {
-      animation-delay: ${7 * (timedelay * time)}s;
-
-      &:before {
-        animation: ${css`
-          ${animationBefore(size, color1)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${7 * (timedelay * time)}s;
-        background-color: ${color1};
-      }
-
-      &:after {
-        animation: ${css`
-          ${animationAfter(size, color2)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${7 * (timedelay * time)}s;
-        background-color: ${color2};
-      }
-    }
-
-    &:nth-child(8) {
-      animation-delay: ${8 * (timedelay * time)}s;
-
-      &:before {
-        animation: ${css`
-          ${animationBefore(size, color1)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${8 * (timedelay * time)}s;
-        background-color: ${color1};
-      }
-
-      &:after {
-        animation: ${css`
-          ${animationAfter(size, color2)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${8 * (timedelay * time)}s;
-        background-color: ${color2};
-      }
-    }
-
-    &:nth-child(9) {
-      animation-delay: ${9 * (timedelay * time)}s;
-
-      &:before {
-        animation: ${css`
-          ${animationBefore(size, color1)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${9 * (timedelay * time)}s;
-        background-color: ${color1};
-      }
-
-      &:after {
-        animation: ${css`
-          ${animationAfter(size, color2)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${9 * (timedelay * time)}s;
-        background-color: ${color2};
-      }
-    }
-
-    &:nth-child(10) {
-      animation-delay: ${10 * (timedelay * time)}s;
-
-      &:before {
-        animation: ${css`
-          ${animationBefore(size, color1)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${10 * (timedelay * time)}s;
-        background-color: ${color1};
-      }
-
-      &:after {
-        animation: ${css`
-          ${animationAfter(size, color2)} ${time}s ${ease_circ} infinite;
-        `};
-        animation-delay: ${10 * (timedelay * time)}s;
-        background-color: ${color2};
-      }
-    }
-  `
-}
-
-const Helix = styled.div`
+const Helix = styled.div<HelixProps>`
   display: inline-block;
   position: relative;
   vertical-align: middle;
@@ -312,44 +50,61 @@ const Helix = styled.div`
     border-radius: 50%;
     position: absolute;
   }
+
   ${(props) =>
-    getAnimations(
-      time,
-      timedelay,
-      ease_circ,
-      size,
-      props.color1 ? props.color1 : color1,
-      props.color2 ? props.color2 : color2
-    )}
+    Array.from({ length: 10 })
+      .map(
+        (_, i) => css`
+          &:nth-child(${i}) {
+            animation-delay: ${i * timedelay * time}s;
+
+            &:before {
+              animation: ${animationBefore(size, props.color1 ?? defaultColor1)}
+                ${time}s ${easeCirc} infinite;
+              animation-delay: ${i * timedelay * time}s;
+              background-color: ${props.color1 ?? defaultColor1};
+            }
+
+            &:after {
+              animation: ${animationAfter(size, props.color2 ?? defaultColor2)}
+                ${time}s ${easeCirc} infinite;
+              animation-delay: ${i * timedelay * time}s;
+              background-color: ${props.color2 ?? defaultColor2};
+            }
+          }
+        `
+      )
+      .reduce((acc, curr) => css`
+        ${acc};
+        ${curr};
+      `)}
 `
 
-const HelixContainer = styled.div`
+interface HelixContainerProps {
+  scale?: number
+}
+
+const HelixContainer = styled.div<HelixContainerProps>`
   display: inline-block;
   position: relative;
-  transform: scale(${(props) => (props.scale ? props.scale : scale)});
+  transform: scale(${(props) => props.scale ?? defaultScale});
 `
 
-type IProps = { scale: number; color1: string; color2: string }
+// Functional component
+interface AnimateHelixProps {
+  scale?: number
+  color1?: string
+  color2?: string
+}
 
-class AnimateHelix extends Component<any, IProps> {
-  render() {
-    return (
-      <>
-        <HelixContainer scale={this.props.scale}>
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-        </HelixContainer>
-      </>
-    )
-  }
+const AnimateHelix: React.FC<AnimateHelixProps> = ({ scale, color1, color2 }) => {
+  return (
+    <HelixContainer scale={scale}>
+      {Array.from({ length: 10 }).map((_, i) => (
+        <Helix key={i} color1={color1} color2={color2} />
+      ))}
+    </HelixContainer>
+  )
 }
 
 export default AnimateHelix

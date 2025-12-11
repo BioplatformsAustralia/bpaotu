@@ -1,8 +1,7 @@
 import React, { useEffect, useCallback } from 'react'
-import { connect } from 'react-redux'
-import { Link, withRouter } from 'react-router-dom'
-import { bindActionCreators } from 'redux'
-
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
+import type { AppDispatch, RootState } from 'reducers'
 import CookieConsent, { getCookieConsentValue } from 'react-cookie-consent'
 import { apiCookieConsentAccepted, apiCookieConsentDeclined } from 'api'
 import { pluginsList, triggerHashedIdentify } from 'app/analytics'
@@ -18,10 +17,15 @@ import LoginRequiredPage from 'pages/login_required_page'
 
 import { getCKANAuthInfo } from 'reducers/auth'
 
-const App = (props) => {
+const App: React.FC = () => {
   const { identify, page, plugins } = useAnalytics()
+  const dispatch = useDispatch<AppDispatch>()
+  const auth = useSelector((state: RootState) => state.auth)
 
-  const { auth, getCKANAuthInfo: getCKANAuthInfo_props } = props
+  // Router hooks (replace withRouter functionality)
+  const navigate = useNavigate()
+  const location = useLocation()
+  const params = useParams()
 
   const enableCookies = useCallback(() => {
     plugins.enable(pluginsList)
@@ -33,11 +37,11 @@ const App = (props) => {
       // (for which the email will have been retrieved)
       triggerHashedIdentify(identify, auth.email)
     }
-  }, [identify, plugins, auth])
+  }, [identify, plugins, auth.email])
 
   useEffect(() => {
-    getCKANAuthInfo_props()
-  }, [getCKANAuthInfo_props])
+    dispatch(getCKANAuthInfo())
+  }, [dispatch])
 
   useEffect(() => {
     // important to note that cookie stores a string value of true or false
@@ -80,7 +84,7 @@ const App = (props) => {
 
   return (
     <div>
-      <Header userEmailAddress={props.auth.email} />
+      <Header userEmailAddress={auth.email} />
       {renderContents()}
       <Footer />
 
@@ -91,20 +95,16 @@ const App = (props) => {
         buttonText="Accept"
         declineButtonText="Decline"
         enableDeclineButton
-        onAccept={() => {
-          cookieConsentAccepted()
-        }}
-        onDecline={() => {
-          cookieConsentDeclined()
-        }}
+        onAccept={cookieConsentAccepted}
+        onDecline={cookieConsentDeclined}
       >
         <div>
           This website uses cookies to enhance the user experience and provide us with analytics on
           the usage of the features we provide.
           <br />
           <span style={{ fontSize: '10px', marginLeft: '4px' }}>
-            We <strong>do not</strong> send any personally identifyable information to external
-            services. Please see our <Link to={'privacy-policy'}>privacy policy</Link> for more
+            We <strong>do not</strong> send any personally identifiable information to external
+            services. Please see our <Link to="/privacy-policy">privacy policy</Link> for more
             details.
           </span>
         </div>
@@ -113,19 +113,4 @@ const App = (props) => {
   )
 }
 
-function mapStateToProps(state) {
-  return {
-    auth: state.auth,
-  }
-}
-
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      getCKANAuthInfo,
-    },
-    dispatch
-  )
-}
-
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(App) as any)
+export default App

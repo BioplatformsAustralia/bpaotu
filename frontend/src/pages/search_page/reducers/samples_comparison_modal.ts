@@ -275,7 +275,7 @@ export default handleActions(
         const actionSubmission = action.payload.data.submission
         const actionSubmissionState = actionSubmission.state
         const lastSubmission = last(state.submissions)
-        const newLastSubmissionState = ((submission) => {
+        const newLastSubmissionState = ((submission: Record<string, any>) => {
           const { state: status, error } = action.payload.data.submission
           const newState = {
             ...submission,

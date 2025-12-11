@@ -169,7 +169,7 @@ export default handleActions(
     [galaxySubmissionUpdateEnded as any]: {
       next: (state, action: any) => {
         const lastSubmission = last(state.submissions)
-        const newLastSubmissionState = ((submission) => {
+        const newLastSubmissionState = ((submission: Record<string, any>) => {
           const { state: status, error, history_id } = action.payload.data.submission
           const newState = {
             ...submission,
