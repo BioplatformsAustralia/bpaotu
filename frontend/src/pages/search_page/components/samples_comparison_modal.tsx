@@ -434,7 +434,7 @@ const SamplesComparisonModal = (props) => {
             <Col xs="2">Dissimilarity method:</Col>
             <Col xs="4" style={{ paddingLeft: 0, paddingRight: 0 }}>
               <select
-                placeholder={'Select a method'}
+                // placeholder={'Select a method'}
                 value={selectedMethod}
                 onChange={(e) => {
                   setSelectedMethod(e.target.value)

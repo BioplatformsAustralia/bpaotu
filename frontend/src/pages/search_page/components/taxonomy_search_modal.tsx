@@ -36,7 +36,7 @@ const LowerRankList = ({ list }) => {
   }
 
   // list contains an array of the remaining taxonomy ranks
-  const uniqueList = [...Array.from(new Set(list.map((text) => text[0])).values())]
+  const uniqueList: string[] = Array.from(new Set(list.map((text) => text[0] as String)))
   const numUniqueItems = uniqueList.length
 
   // need to have ghost content to preserve the horizontal space taken up by the list
