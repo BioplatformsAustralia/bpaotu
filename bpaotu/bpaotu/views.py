@@ -1265,10 +1265,17 @@ def contextual_csv_download_endpoint(request):
 
 
 # --------------------------------------------------------------------------- #
+# MAGs tab ------------------------------------------------------------------ #
+# --------------------------------------------------------------------------- #
+
+# Not required yet
+
+
+# --------------------------------------------------------------------------- #
 # Map tab ------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #
 
-# also used for Interactive Map Search
+# also used for Interactive Map Search and MAGs Inspect
 @require_CKAN_auth
 @require_POST
 def otu_search_sample_sites(request):
@@ -1279,13 +1286,15 @@ def otu_search_sample_sites(request):
             'data': [],
             'sample_otus': []
         })
+
     data, sample_otus = spatial_query(params)
 
-    site_image_lookup_table = get_site_image_lookup_table()
-
-    for d in data:
-        key = (str(d['latitude']), str(d['longitude']))
-        d['site_images'] = site_image_lookup_table.get(key)
+    skip_site_images = request.POST.get('skip_site_images') == "1"
+    if skip_site_images:
+        site_image_lookup_table = get_site_image_lookup_table()
+        for d in data:
+            key = (str(d['latitude']), str(d['longitude']))
+            d['site_images'] = site_image_lookup_table.get(key)
 
     track(request, 'otu_interactive_map_search', search_params_track_args(params))
 

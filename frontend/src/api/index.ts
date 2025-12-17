@@ -130,9 +130,18 @@ export const executeContextualSearch = partial(
   window.otu_search_config.required_table_headers_endpoint
 )
 
-function executeOtuSearch(url, filters) {
+function executeOtuSearch(
+  url,
+  filters,
+  extraParams: Record<string, string | number | boolean> = {}
+) {
   const formData = new FormData()
   formData.append('otu_query', JSON.stringify(filters))
+
+  Object.entries(extraParams).forEach(([key, value]) => {
+    formData.append(key, String(value) as string)
+  })
+
   return axios({
     method: 'post',
     url: url,
@@ -152,6 +161,11 @@ export const executeSampleSitesSearch = partial(
   executeOtuSearch,
   window.otu_search_config.search_sample_sites_endpoint
 )
+
+export const executeMagsSitesMetadata = (filters) =>
+  executeOtuSearch(window.otu_search_config.search_sample_sites_endpoint, filters, {
+    skip_site_images: '1',
+  })
 
 export const executeMetagenomeSearch = partial(
   executeOtuSearch,
