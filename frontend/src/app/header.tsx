@@ -66,6 +66,13 @@ const Header = ({ userEmailAddress }) => {
           </NavItem>
 
           <NavItem>
+            <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/mags">
+              {/*<Octicon name="file" />*/}
+              MAGs
+            </NavLink>
+          </NavItem>
+
+          <NavItem>
             <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/map">
               {/*<Octicon name="globe" />*/}
               Map
