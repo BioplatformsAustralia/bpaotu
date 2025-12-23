@@ -38,6 +38,12 @@ const MagsTable = (props) => {
     if (results.pages > 0) fetchMagsRecords()
   }
 
+  const noDataText = results.isLoading
+    ? ''
+    : results.cleared
+      ? 'No search performed yet'
+      : 'No rows found'
+
   return (
     <ReactTable
       // We use key= to force ReactTable to respect the page= prop. Without
@@ -56,7 +62,7 @@ const MagsTable = (props) => {
       onSortedChange={onSortedChange}
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
-      noDataText={results.cleared ? 'No search performed yet' : 'No rows found'}
+      noDataText={noDataText}
       getTheadProps={(thead) => ({
         // fix the header not aligning with cells, including the column separators
         style: {

@@ -104,7 +104,7 @@ const initialState: MagsPageState = {
   selected: null,
   results: {
     cleared: true,
-    isLoading: false,
+    isLoading: true,
     errors: [],
     data: [],
     page: 0,
