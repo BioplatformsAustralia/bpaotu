@@ -1275,9 +1275,12 @@ def mags(request):
     """
     private API: return all MAGs from the database
     """
+    # TEMP: add the derived column until we have a unique bin_id column
+    MAG_HEADERS = ["unique_id"] + [c.name for c in MAG.__table__.columns]
+    
     start = _int_get_param(request, 'start')
     length = _int_get_param(request, 'length')
-    sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), [])
+    sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), MAG_HEADERS)
 
     with MagQuery() as query:
         results = query.records(sorting).all()
@@ -1289,8 +1292,6 @@ def mags(request):
 
     results = results[start:start + length]
 
-    # TEMP: add the derived column until we have a unique bin_id column
-    MAG_HEADERS = ["unique_id"] + [c.name for c in MAG.__table__.columns]
 
     def map_result(row):
         return dict(zip(MAG_HEADERS, row))

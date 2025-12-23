@@ -13,6 +13,8 @@ export const columns = [
     Header: 'Uniq ID',
     accessor: 'unique_id',
     minWidth: 250,
+    sortable: true,
+
     Cell: inspect_link,
   },
   {
@@ -68,44 +70,54 @@ export const columns = [
   {
     Header: 'Length',
     accessor: 'length',
+    sortable: true,
     minWidth: 150,
   },
   {
     Header: 'GC%',
+    sortable: true,
     accessor: 'gc_perc',
   },
   {
     Header: '# Contigs',
+    sortable: true,
     accessor: 'num_contigs',
   },
   {
     Header: 'Disparity',
+    sortable: true,
     accessor: 'disparity',
   },
   {
     Header: 'Completeness',
     accessor: 'completeness',
+    sortable: true,
     minWidth: 150,
   },
   {
     Header: 'Contamination',
+    sortable: true,
     accessor: 'contamination',
     minWidth: 150,
   },
   {
     Header: 'Strain Het',
+    sortable: true,
     accessor: 'strain_het',
   },
   {
     Header: 'Coverage',
+    sortable: true,
     accessor: 'coverage',
   },
   {
     Header: 'TPM',
+    sortable: true,
     accessor: 'tpm',
   },
   {
     Header: 'Quality',
+    sortable: true,
     accessor: 'quality',
   },
 ]

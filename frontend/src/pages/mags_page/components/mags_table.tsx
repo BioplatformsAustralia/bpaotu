@@ -52,6 +52,7 @@ const MagsTable = (props) => {
       pageSize={results.pageSize}
       pages={results.pages}
       className="-striped -highlight"
+      sorted={results.sorted}
       onSortedChange={onSortedChange}
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
