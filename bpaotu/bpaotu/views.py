@@ -37,13 +37,13 @@ from .contextual import contextual_definitions, get_contextual_schema_definition
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .krona import KronaPlot
 from .models import MetagenomeRequest
-from .otu import (OTUAmplicon, SampleContext, TaxonomySource, format_taxonomy_name)
+from .otu import (OTUAmplicon, SampleContext, TaxonomySource, MAG, format_taxonomy_name)
 from .params import clean_amplicon_filter, make_clean_taxonomy_filter, param_to_filters, selected_contextual_filters
 from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilterTermTime,
                     ContextualFilterTermFloat, ContextualFilterTermLongitude,
                     ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
-                    MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
+                    MagQuery, MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
                     TaxonomyFilter, TaxonomyOptions)
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
 from .sample_comparison import comparison_zip_file_generator
@@ -103,6 +103,7 @@ def api_config(request):
         'contextual_graph_endpoint': reverse('contextual_graph_fields'),
         'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),
         'taxonomy_search_endpoint': reverse('taxonomy_search'),
+        'mags_endpoint': reverse('mags'),
         'search_endpoint': reverse('otu_search'),
         'export_endpoint': reverse('otu_export'),
         'export_biom_endpoint': reverse('otu_biom_export'),
@@ -1268,7 +1269,36 @@ def contextual_csv_download_endpoint(request):
 # MAGs tab ------------------------------------------------------------------ #
 # --------------------------------------------------------------------------- #
 
-# Not required yet
+@require_CKAN_auth
+@require_GET
+def mags(request):
+    """
+    private API: return all MAGs from the database
+    """
+    start = _int_get_param(request, 'start')
+    length = _int_get_param(request, 'length')
+    sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), [])
+
+    with MagQuery() as query:
+        results = query.records(sorting).all()
+
+    result_count = len(results)
+
+    if start >= result_count:
+        start = (result_count // length) * length
+
+    results = results[start:start + length]
+
+    # TEMP: add the derived column until we have a unique bin_id column
+    MAG_HEADERS = ["unique_id"] + [c.name for c in MAG.__table__.columns]
+
+    def map_result(row):
+        return dict(zip(MAG_HEADERS, row))
+
+    return JsonResponse({
+        'data': [map_result(row) for row in results],
+        'rowsCount': result_count,
+    })
 
 
 # --------------------------------------------------------------------------- #
@@ -1563,3 +1593,18 @@ def _parse_table_sorting(sorting, headers):
         return [x for x in xs if x is not None]
 
     return reject_nones(parse_sorting(s) for s in sorting)
+
+def _int_post_param(request, param_name):
+    param = request.POST.get(param_name)
+    try:
+        return int(param) if param is not None else None
+    except ValueError:
+        return None
+
+def _int_get_param(request, param_name):
+    param = request.GET.get(param_name)
+    print('_int_get_param', 'param_name', param_name, 'param', param)
+    try:
+        return int(param) if param is not None else None
+    except ValueError:
+        return None

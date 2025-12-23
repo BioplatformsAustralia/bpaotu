@@ -1,0 +1,39 @@
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.info-table tbody tr:first-child {
+  border-top: 1px solid #edf0f3;
+}
+
+.info-table tbody tr:nth-child(even) {
+  background-color: #f6f7f9;
+}
+
+.info-table tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+.info-table tbody tr:hover {
+  background-color: #e9eef5;
+}
+
+.info-table td {
+  padding: 6px 8px;
+}
+
+.info-label {
+  font-size: 20px;
+  font-weight: bold;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.info-value {
+  text-align: right;
+}

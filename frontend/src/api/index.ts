@@ -162,6 +162,16 @@ export const executeSampleSitesSearch = partial(
   window.otu_search_config.search_sample_sites_endpoint
 )
 
+export const executeMagsQuery = (options) => {
+  return axios.get(window.otu_search_config.mags_endpoint, {
+    params: {
+      start: (options.page * options.pageSize).toString(),
+      length: options.pageSize,
+      sorting: JSON.stringify(_get(options, 'sorted', [])),
+    },
+  })
+}
+
 export const executeMagsSitesMetadata = (filters) =>
   executeOtuSearch(window.otu_search_config.search_sample_sites_endpoint, filters, {
     skip_site_images: '1',

@@ -15,7 +15,7 @@ export default (_) => (
       <Route path="/metagenome" component={MetagenomeSearchPage} />
       <Route path="/contextual" component={ContextualPage} />
       <Route path="/mags" component={MagsPage} exact={true} />
-      <Route path="/mags/:genome" component={MagsInspectPage} />
+      <Route path="/mags/:bin_id" component={MagsInspectPage} />
       <Route path="/map" component={MapPage} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
     </Switch>

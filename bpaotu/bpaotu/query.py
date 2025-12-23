@@ -5,10 +5,10 @@ import logging
 import inspect
 
 import sqlalchemy
-from sqlalchemy import func
+from sqlalchemy import func, cast, String
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.sql import operators
+from sqlalchemy.sql import literal, operators
 
 from django.core.cache import caches
 from hashlib import sha256
@@ -31,6 +31,7 @@ from .otu import (
     ImportedFile,
     ExcludedSamples,
     OntologyErrors,
+    MAG,
     Taxonomy,
     taxonomy_otu,
     taxonomy_otu_export,
@@ -305,6 +306,51 @@ class TaxonomyOptions:
             'clear': clear
         }
         return result
+
+
+class MagQuery:
+    def __init__(self):
+        self._session = Session()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exec_type, exc_value, traceback):
+        self._session.close()
+
+    def records(self, sorting=(), start=None, length=None):
+        # TEMP: derived column
+        # until we have a proper bin_id that is unique in the source data
+        # create a unique_id column that is a concatenation of sample_id and bin_id
+        unique_id_col = (
+            cast(MAG.sample_id, String)
+            + literal("_")
+            + MAG.bin_id
+        ).label("unique_id")
+
+        # columns only in table order
+        query_headers = [unique_id_col] + list(MAG.__table__.columns)
+
+        q = self._session.query(*query_headers)
+
+        # sorting (table-driven, column-index based)
+        for sort in sorting:
+            idx = int(sort["col_idx"])
+            if idx < 0 or idx >= len(query_headers):
+                continue
+
+            col = query_headers[idx]
+            q = q.order_by(col.desc() if sort.get("desc") else col)
+
+        # pagination at DB level
+        if start is not None:
+            q = q.offset(start)
+        if length is not None:
+            q = q.limit(length)
+
+        # log_query(q)
+
+        return q
 
 
 class MetadataInfo:
