@@ -31,7 +31,7 @@ from sqlalchemy_utils import refresh_materialized_view
 from Bio import SeqIO
 
 from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
-                  ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon,
+                  ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon, MAG,
                   taxonomy_keys, taxonomy_key_id_names, rank_labels_lookup,
                   TaxonomySource, taxonomy_ontology_classes, format_taxonomy_name,
                   SampleAustralianSoilClassification,
@@ -266,6 +266,7 @@ class DataImporter:
         self.ontology_init()
 
     def run(self):
+        self.load_mags_bintable()
         self.load_contextual_metadata()
         otu_lookup = self.load_taxonomies()
         self.load_otu_abundance(otu_lookup)
@@ -755,3 +756,113 @@ class DataImporter:
                         [getattr(Taxonomy, name) for name in taxonomy_key_id_names]
                     ).select_from(
                         Taxonomy.__table__.join(taxonomy_otu).join(OTU))))
+
+    def load_mags_bintable(self):
+        logger.info('Building mags bintable')
+
+        bintable_file = self.mags_bintable_file()
+
+        # add in batches
+        with self._engine.begin() as conn:
+            batch = []
+            for row in self.iter_mags_bintable_rows(bintable_file):
+                batch.append(row)
+
+                if len(batch) >= 1000:
+                    conn.execute(insert(MAG), batch)
+                    batch.clear()
+
+            if batch:
+                conn.execute(insert(MAG), batch)
+
+        logger.info("Done building mags bintable")
+    
+    def mags_bintable_file(self):
+        mag_dir = os.path.join(self._import_base, "MAG")
+
+        # logger.info(mag_dir)
+        # for fname in glob(mag_dir + '/*.bintable'):
+        #     logger.info('fname', fname)
+        #     # yield fname
+
+        return os.path.join(self._import_base, "MAG", "ALL_bins.bintable")
+
+    def iter_mags_bintable_rows(self, path):
+        with open(path, newline="") as fh:
+            reader = csv.DictReader(fh)
+
+            for r in reader:
+                self.validate_bintable_row(r)
+
+                tax_domain = None
+                tax_phylum = None
+                tax_class = None
+                tax_order = None
+                tax_family = None
+                tax_genus = None
+                tax_species = None
+
+                for part in r["Tax"].split(";"):
+                    if part.startswith("k_"):
+                        tax_domain = part
+                    elif part.startswith("p_"):
+                        tax_phylum = part
+                    elif part.startswith("c_"):
+                        tax_class = part
+                    elif part.startswith("o_"):
+                        tax_order = part
+                    elif part.startswith("f_"):
+                        tax_family = part
+                    elif part.startswith("g_"):
+                        tax_genus = part
+                    elif part.startswith("s_"):
+                        tax_species = part
+
+                yield {
+                    "sample_id": int(r["sample_id"]),
+                    "bin_id": r["Bin ID"],
+                    "method": r["Method"],
+                    "tax": r["Tax"],
+                    "tax_domain": tax_domain,
+                    "tax_phylum": tax_phylum,
+                    "tax_class": tax_class,
+                    "tax_order": tax_order,
+                    "tax_family": tax_family,
+                    "tax_genus": tax_genus,
+                    "tax_species": tax_species,
+                    "tax_16s": r["Tax 16S"] or None,
+                    "length": self.to_int(r, "Length"),
+                    "gc_perc": self.to_float(r, "GC perc"),
+                    "num_contigs": self.to_int(r, "Num contigs"),
+                    "disparity": self.to_float(r, "Disparity"),
+                    "completeness": self.to_float(r, "Completeness"),
+                    "contamination": self.to_float(r, "Contamination"),
+                    "strain_het": self.to_float(r, "Strain het"),
+                    "coverage": self.to_float(r, "Coverage"),
+                    "tpm": self.to_float(r, "TPM"),
+                    "quality": self.to_float(r, "quality"),
+                }
+
+    # placeholder for validation
+    def validate_bintable_row(self, row):
+        if False:
+            raise DataImportError(f"ERROR TEXT row={row}")
+
+    def to_int(self, r, key):
+        v = r[key]
+        if v in (None, "", "NA"):
+            sample_id = r["sample_id"]
+            bin_id = r["Bin ID"]
+            logger.warn(f"Missing value for {key} in row: 'sample_id'={sample_id} 'Bin ID'={bin_id}")
+            return None
+        return int(v)
+
+    def to_float(self, r, key):
+        v = r[key]
+        if v in (None, "", "NA"):
+            sample_id = r["sample_id"]
+            bin_id = r["Bin ID"]
+            logger.warn(f"Missing value for {key} in row: 'sample_id'={sample_id} 'Bin ID'={bin_id}")
+            return None
+        return float(v)
+

@@ -242,6 +242,98 @@ def create_partitions(connection, tablename, ids):
                 "CREATE INDEX ON otu.{1}_{0} ({2});".format(
                     i, tablename, col)))
 
+
+class MAG(SchemaMixin, Base):
+    """
+    Metagenome Assembled Genome
+    """
+    __tablename__ = "mag"
+
+    # TODO: what is the best PK?
+    # if sample_id + bin_id should be unique, we can switch to composite PK
+    # or reconstruct file path from bin_id and sample_id
+    # or get filepath included in the output
+    id = Column(Integer, primary_key=True)
+
+    sample_id = Column(Integer, nullable=False, index=True)
+    bin_id = Column(String, nullable=False, index=True)
+    method = Column(String, nullable=False)
+
+    tax = Column(String, nullable=False)
+    tax_domain = Column(String, nullable=True)
+    tax_phylum = Column(String, nullable=True)
+    tax_class = Column(String, nullable=True)
+    tax_order = Column(String, nullable=True)
+    tax_family = Column(String, nullable=True)
+    tax_genus = Column(String, nullable=True)
+    tax_species = Column(String, nullable=True)
+
+    tax_16s = Column(String, nullable=True)
+
+    length = Column(Integer, nullable=False)
+    gc_perc = Column(Float, nullable=False)
+    num_contigs = Column(Integer, nullable=False)
+    disparity = Column(Float, nullable=False)
+
+    completeness = Column(Float, nullable=True)
+    contamination = Column(Float, nullable=True)
+    strain_het = Column(Float, nullable=True)
+
+    coverage = Column(Float, nullable=False)
+    tpm = Column(Float, nullable=False)
+    quality = Column(Float, nullable=True)
+
+    def __repr__(self):
+        return (
+            f"<MAG(sample_id={self.sample_id} bin_id={self.bin_id} quality={self.quality} tax={self.tax})>"
+        )
+
+    def to_dict(self):
+        # parse the tax and tax_16s fields into parts
+        # - they are both ; separated strings
+        # - they can be different lengths
+        # - tax can have extra n_ rows
+        #   (these are handled in the importer)
+        #   - e.g. k_Bacteria;n_FCB group;n_Bacteroidetes/Chlorobi group;p_Bacteroidetes
+        # - tax_16s is not always present
+        # - tax_16s has the ranks as a prefix, separated by a :
+        #   - e.g. phylum:Rhodothermaeota
+        # - tax_16s can have |
+        #   - e.g. superkingdom:Bacteria|superkingdom:Bacteria
+        # - tax_16s can have repeated ranks
+        #   - e.g. clade:FCB group;clade:Bacteroidetes/Chlorobi group
+        #
+        # NOTE: disregard tax_16s for now
+
+        return {
+            "id": self.id,
+            "sample_id": self.sample_id,
+            "bin_id": self.bin_id,
+            "method": self.method,
+            # tax and parsed fields
+            "tax": self.tax,
+            "tax_domain": self.tax_domain,
+            "tax_phylum": self.tax_phylum,
+            "tax_class": self.tax_class,
+            "tax_order": self.tax_order,
+            "tax_family": self.tax_family,
+            "tax_genus": self.tax_genus,
+            "tax_species": self.tax_species,
+            # tax_16s and parsed fields
+            # "tax_16s": self.tax_16s,
+            "length": self.length,
+            "gc_perc": self.gc_perc,
+            "num_contigs": self.num_contigs,
+            "disparity": self.disparity,
+            "completeness": self.completeness,
+            "contamination": self.contamination,
+            "strain_het": self.strain_het,
+            "coverage": self.coverage,
+            "tpm": self.tpm,
+            "quality": self.quality,
+        }
+
+
 class OTU(SchemaMixin, Base):
     """
     Operational Taxonomic Unit. Identifies an organism.
