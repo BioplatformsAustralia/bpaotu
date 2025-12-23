@@ -4,8 +4,9 @@ import { bindActionCreators } from 'redux'
 
 import { NavLink as RRNavLink } from 'react-router-dom'
 import { NavLink } from 'reactstrap'
-
 import { Card, CardBody, CardHeader, Col, Container, Row } from 'reactstrap'
+
+import AnimateHelix from 'components/animate_helix'
 
 import { fetchMagsRecords, fetchMagsSamples } from '../mags_page/reducers/'
 
@@ -56,10 +57,19 @@ export const MagsInspectPage = (props) => {
 
   if (noResultsData || noSampleData) {
     return (
-      <Container fluid={true}>
-        <div>
-          <p>Loading sample data</p>
-          <p>(centre with animate_helix)</p>
+      <Container>
+        <div
+          style={{
+            height: '300px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            gap: 20,
+          }}
+        >
+          <p>Loading Sample data</p>
+          <AnimateHelix />
         </div>
       </Container>
     )
