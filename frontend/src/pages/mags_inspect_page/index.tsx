@@ -9,6 +9,7 @@ import { Card, CardBody, CardHeader, Col, Container, Row } from 'reactstrap'
 
 import { fetchMagsRecords, fetchMagsSamples } from '../mags_page/reducers/'
 
+import MagsMap from './components/mags_map'
 import { columns } from '../mags_page/definitions/columns'
 
 import './styles.css'
@@ -122,18 +123,6 @@ export const MagsInspectPage = (props) => {
     )
   }
 
-  const Map = () => {
-    return (
-      <Card>
-        <CardHeader>Map</CardHeader>
-        <CardBody>
-          <p>lat: {sampleRecord.lat}</p>
-          <p>lng: {sampleRecord.lng}</p>
-        </CardBody>
-      </Card>
-    )
-  }
-
   const DownloadTable = () => {
     // this would also come from the main object
     const files = [{ label: 'Genome', filename: 'MAG_0001.fa.gz', link: '' }]
@@ -174,7 +163,7 @@ export const MagsInspectPage = (props) => {
         </Col>
 
         <Col sm={5}>
-          <Map />
+          <MagsMap item={sampleRecord} />
         </Col>
       </Row>
 
