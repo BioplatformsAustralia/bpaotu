@@ -333,6 +333,13 @@ class MagQuery:
 
         q = self._session.query(*query_headers)
 
+        # # filtering (quality, completeness, contamination; can't be null)
+        # q = q.filter(
+        #     MAG.quality.isnot(None),
+        #     MAG.completeness.isnot(None),
+        #     MAG.contamination.isnot(None)
+        # )
+
         # sorting (table-driven, column-index based)
         for sort in sorting:
             idx = int(sort["col_idx"])
