@@ -249,6 +249,7 @@ class DataImporter:
         self._has_sql_context = has_sql_context
         self._force_fetch = force_fetch
 
+    def prep(self):
         # these are used exclusively for reporting back to CSIRO on the state of the ingest
         self.sample_metadata_incomplete = set()
         self.sample_non_integer = set()
