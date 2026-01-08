@@ -292,6 +292,32 @@ def otu_search(request, contextual_filtering=True):
 
     result_count = len(results)
 
+    filtering_raw = request.POST.get('filtering', '[]')
+    try:
+        filtering = json.loads(filtering_raw)
+    except json.JSONDecodeError:
+        filtering = []
+
+    header_index = {name: idx for idx, name in enumerate(all_headers)}
+
+    for f in filtering:
+        column = f['id']
+        value = f['value']
+
+        if not value:
+            continue
+
+        col_idx = header_index.get(column)
+        if col_idx is None:
+            continue
+
+        value_lower = value.lower()
+
+        results = [
+            row for row in results
+            if str(row[col_idx]).lower().startswith(value_lower)
+        ]
+
     if start >= result_count:
         start = (result_count // length) * length
     results = results[start:start + length]

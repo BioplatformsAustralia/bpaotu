@@ -188,6 +188,14 @@ export const SearchResultsTable = (props) => {
     if (results.pages > 0) search()
   }
 
+  const onFilteredChange = (filtered) => {
+    changeTableProperties({
+      ...results,
+      filtered,
+    })
+    if (results.pages > 0) search()
+  }
+
   return (
     <>
       <Alert color="secondary" className="text-center">
@@ -200,6 +208,9 @@ export const SearchResultsTable = (props) => {
         </h6>
       </Alert>
       <ReactTable
+        filterable
+        filtered={results.filtered}
+        onFilteredChange={onFilteredChange}
         // We use key= to force ReactTable to respect the page= prop. Without
         // this it won't reset to page 1 for new searches. This is a
         // workaround for what is probably a bug in react-table 6.10.0

@@ -83,6 +83,7 @@ function doSearch(url, filters, options) {
   const formData = new FormData()
   formData.append('start', (options.page * options.pageSize).toString())
   formData.append('length', options.pageSize)
+  formData.append('filtering', JSON.stringify(_get(options, 'filtered', [])))
   formData.append('sorting', JSON.stringify(_get(options, 'sorted', [])))
   formData.append('columns', JSON.stringify(_get(options, 'columns', [])))
   formData.append('otu_query', JSON.stringify(filters))
