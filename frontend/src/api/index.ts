@@ -163,11 +163,12 @@ export const executeSampleSitesSearch = partial(
   window.otu_search_config.search_sample_sites_endpoint
 )
 
-export const executeMagsQuery = (options) => {
+export const executeMagsSearch = (options) => {
   return axios.get(window.otu_search_config.mags_endpoint, {
     params: {
       start: (options.page * options.pageSize).toString(),
       length: options.pageSize,
+      filtering: JSON.stringify(_get(options, 'filtered', [])),
       sorting: JSON.stringify(_get(options, 'sorted', [])),
     },
   })

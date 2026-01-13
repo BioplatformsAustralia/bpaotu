@@ -318,7 +318,7 @@ class MagQuery:
     def __exit__(self, exec_type, exc_value, traceback):
         self._session.close()
 
-    def records(self, sorting=(), start=None, length=None):
+    def records(self, filtering=(), sorting=(), start=None, length=None):
         # TEMP: derived column
         # until we have a proper bin_id that is unique in the source data
         # create a unique_id column that is a concatenation of sample_id and bin_id
@@ -333,31 +333,51 @@ class MagQuery:
 
         q = self._session.query(*query_headers)
 
+        # filtering (table-driven, column-index based)
+        for filt in filtering:
+            idx = int(filt["col_idx"])
+            if idx < 0 or idx >= len(query_headers):
+                continue
+
+            val = filt.get("value")
+            if val in (None, ""):
+                continue
+
+            col = query_headers[idx]
+            if not isinstance(col.type, String):
+                col = cast(col, String)
+
+            q = q.filter(col.ilike(f"{val}%"))
+
+        # # sorting (table-driven, column-index based)
+        # for sort in sorting:
+        #     idx = int(sort["col_idx"])
+        #     if idx < 0 or idx >= len(query_headers):
+        #         continue
+
+        #     col = query_headers[idx]
+        #     q = q.order_by(col.desc() if sort.get("desc") else col)
+
+        # # pagination at DB level
+        # if start is not None:
+        #     q = q.offset(start)
+        # if length is not None:
+        #     q = q.limit(length)
+
+        # log_query(q)
+
+
+        # return self._q_all_cached('matching_sample_headers', q)
+        # _q_all_cached calls all() internally while caching the results
+
+        return q.all()
+
         # # filtering (quality, completeness, contamination; can't be null)
         # q = q.filter(
         #     MAG.quality.isnot(None),
         #     MAG.completeness.isnot(None),
         #     MAG.contamination.isnot(None)
         # )
-
-        # sorting (table-driven, column-index based)
-        for sort in sorting:
-            idx = int(sort["col_idx"])
-            if idx < 0 or idx >= len(query_headers):
-                continue
-
-            col = query_headers[idx]
-            q = q.order_by(col.desc() if sort.get("desc") else col)
-
-        # pagination at DB level
-        if start is not None:
-            q = q.offset(start)
-        if length is not None:
-            q = q.limit(length)
-
-        # log_query(q)
-
-        return q
 
 
 class MetadataInfo:

@@ -1306,12 +1306,49 @@ def mags(request):
     
     start = _int_get_param(request, 'start')
     length = _int_get_param(request, 'length')
+    filtering = _parse_table_filtering(json.loads(request.GET.get('filtering', '[]')), MAG_HEADERS)
     sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), MAG_HEADERS)
 
+    # with MagQuery() as query:
+    #     base = query.records(filtering, sorting)
+    #     result_count = base.order_by(None).count() # strip ordering before counting
+    #     results = (
+    #         base
+    #         .offset(start)
+    #         .limit(length)
+    #         .all()
+    #     )
+
     with MagQuery() as query:
-        results = query.records(sorting).all()
+        results = query.records(filtering, sorting)
 
     result_count = len(results)
+
+    filtering_raw = request.POST.get('filtering', '[]')
+    try:
+        filtering = json.loads(filtering_raw)
+    except json.JSONDecodeError:
+        filtering = []
+
+    header_index = {name: idx for idx, name in enumerate(MAG_HEADERS)}
+
+    for f in filtering:
+        column = f['id']
+        value = f['value']
+
+        if not value:
+            continue
+
+        col_idx = header_index.get(column)
+        if col_idx is None:
+            continue
+
+        value_lower = value.lower()
+
+        results = [
+            row for row in results
+            if str(row[col_idx]).lower().startswith(value_lower)
+        ]
 
     if start >= result_count:
         start = (result_count // length) * length
@@ -1605,6 +1642,22 @@ def normalise_blast_search_string(s):
         raise OTUError("BLAST search string contains invalid characters: {}".format(invalid))
     return cleaned
 
+def reject_nones(xs):
+    return [x for x in xs if x is not None]
+
+def _parse_table_filtering(filtering, headers):
+    def parse_filtering(filter):
+        if 'id' not in filter:
+            return None
+        col_name = filter.get('id')
+        try:
+            col_idx = headers.index(col_name)
+        except ValueError:
+            return None
+        return {'col_idx': col_idx, 'value': filter.get('value', False)}
+
+    return reject_nones(parse_filtering(f) for f in filtering)
+
 def _parse_table_sorting(sorting, headers):
     def parse_sorting(sort):
         if 'id' not in sort:
@@ -1615,9 +1668,6 @@ def _parse_table_sorting(sorting, headers):
         except ValueError:
             return None
         return {'col_idx': col_idx, 'desc': sort.get('desc', False)}
-
-    def reject_nones(xs):
-        return [x for x in xs if x is not None]
 
     return reject_nones(parse_sorting(s) for s in sorting)
 
@@ -1630,7 +1680,6 @@ def _int_post_param(request, param_name):
 
 def _int_get_param(request, param_name):
     param = request.GET.get(param_name)
-    print('_int_get_param', 'param_name', param_name, 'param', param)
     try:
         return int(param) if param is not None else None
     except ValueError:

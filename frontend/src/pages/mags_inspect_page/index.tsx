@@ -8,7 +8,7 @@ import { Card, CardBody, CardHeader, Col, Container, Row } from 'reactstrap'
 
 import AnimateHelix from 'components/animate_helix'
 
-import { fetchMagsRecords, fetchMagsSamples } from '../mags_page/reducers/'
+// import { fetchMagsRecords, fetchMagsSamples } from '../mags_page/reducers/'
 
 import MagsMap from './components/mags_map'
 import { columns } from '../mags_page/definitions/columns'
@@ -31,6 +31,13 @@ const InspectContainer = ({ children }) => {
   )
 }
 
+export const MagsInspectPage = (props) => {
+  return <p>hi</p>
+}
+
+export default MagsInspectPage
+
+/*
 export const MagsInspectPage = (props) => {
   const { data: resultsData } = props.results
   const { data: samplesData } = props.samples
@@ -203,3 +210,4 @@ function mapDispatchToProps(dispatch) {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(MagsInspectPage)
+*/

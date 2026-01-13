@@ -38,4 +38,4 @@ pyarrow==8
 requests==2.32.4
 # otu export
 biopython==1.80
-git+https://github.com/BioplatformsAustralia/bpa-ingest.git@6.11.6
+git+https://github.com/drollins/bpa-ingest.git@6.11.6-a

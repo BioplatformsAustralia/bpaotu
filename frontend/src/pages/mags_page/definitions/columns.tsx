@@ -14,7 +14,6 @@ export const columns = [
     accessor: 'unique_id',
     minWidth: 250,
     sortable: true,
-
     Cell: inspect_link,
   },
   {
