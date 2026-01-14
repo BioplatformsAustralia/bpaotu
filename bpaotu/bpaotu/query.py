@@ -318,7 +318,7 @@ class MagQuery:
     def __exit__(self, exec_type, exc_value, traceback):
         self._session.close()
 
-    def records(self, filtering=(), sorting=(), start=None, length=None):
+    def _base_query(self, filtering=()):
         # TEMP: derived column
         # until we have a proper bin_id that is unique in the source data
         # create a unique_id column that is a concatenation of sample_id and bin_id
@@ -330,17 +330,22 @@ class MagQuery:
 
         # columns only in table order
         query_headers = [unique_id_col] + list(MAG.__table__.columns)
-
         q = self._session.query(*query_headers)
+
+        # TODO: do we want to impose this filter condition for all searches?
+        # # filtering (quality, completeness, contamination; can't be null)
+        # q = q.filter(
+        #     MAG.quality.isnot(None),
+        #     MAG.completeness.isnot(None),
+        #     MAG.contamination.isnot(None)
+        # )
 
         # filtering (table-driven, column-index based)
         for filt in filtering:
             idx = int(filt["col_idx"])
-            if idx < 0 or idx >= len(query_headers):
-                continue
-
             val = filt.get("value")
-            if val in (None, ""):
+
+            if not val or idx < 0 or idx >= len(query_headers):
                 continue
 
             col = query_headers[idx]
@@ -349,36 +354,34 @@ class MagQuery:
 
             q = q.filter(col.ilike(f"{val}%"))
 
-        # # sorting (table-driven, column-index based)
-        # for sort in sorting:
-        #     idx = int(sort["col_idx"])
-        #     if idx < 0 or idx >= len(query_headers):
-        #         continue
+        return q, query_headers
 
-        #     col = query_headers[idx]
-        #     q = q.order_by(col.desc() if sort.get("desc") else col)
+    def count(self, filtering=()):
+        q, _ = self._base_query(filtering)
 
-        # # pagination at DB level
-        # if start is not None:
-        #     q = q.offset(start)
-        # if length is not None:
-        #     q = q.limit(length)
+        # remove ORDER BY for count performance
+        q = q.order_by(None)
+
+        return q.count()
+
+    def records(self, filtering=(), sorting=(), start=0, length=10):
+        q, query_headers = self._base_query(filtering)
+
+        # sorting (table-driven, column-index based)
+        for sort in sorting:
+            idx = int(sort["col_idx"])
+            if idx < 0 or idx >= len(query_headers):
+                continue
+
+            col = query_headers[idx]
+            q = q.order_by(col.desc() if sort.get("desc") else col)
+
+        # pagination at DB level
+        q = q.offset(start).limit(length)
 
         # log_query(q)
 
-
-        # return self._q_all_cached('matching_sample_headers', q)
-        # _q_all_cached calls all() internally while caching the results
-
         return q.all()
-
-        # # filtering (quality, completeness, contamination; can't be null)
-        # q = q.filter(
-        #     MAG.quality.isnot(None),
-        #     MAG.completeness.isnot(None),
-        #     MAG.contamination.isnot(None)
-        # )
-
 
 class MetadataInfo:
     def __init__(self):

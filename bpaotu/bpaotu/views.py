@@ -1301,6 +1301,7 @@ def mags(request):
     """
     private API: return all MAGs from the database
     """
+
     # TEMP: add the derived column until we have a unique bin_id column
     MAG_HEADERS = ["unique_id"] + [c.name for c in MAG.__table__.columns]
     
@@ -1309,59 +1310,16 @@ def mags(request):
     filtering = _parse_table_filtering(json.loads(request.GET.get('filtering', '[]')), MAG_HEADERS)
     sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), MAG_HEADERS)
 
-    # with MagQuery() as query:
-    #     base = query.records(filtering, sorting)
-    #     result_count = base.order_by(None).count() # strip ordering before counting
-    #     results = (
-    #         base
-    #         .offset(start)
-    #         .limit(length)
-    #         .all()
-    #     )
-
     with MagQuery() as query:
-        results = query.records(filtering, sorting)
-
-    result_count = len(results)
-
-    filtering_raw = request.POST.get('filtering', '[]')
-    try:
-        filtering = json.loads(filtering_raw)
-    except json.JSONDecodeError:
-        filtering = []
-
-    header_index = {name: idx for idx, name in enumerate(MAG_HEADERS)}
-
-    for f in filtering:
-        column = f['id']
-        value = f['value']
-
-        if not value:
-            continue
-
-        col_idx = header_index.get(column)
-        if col_idx is None:
-            continue
-
-        value_lower = value.lower()
-
-        results = [
-            row for row in results
-            if str(row[col_idx]).lower().startswith(value_lower)
-        ]
-
-    if start >= result_count:
-        start = (result_count // length) * length
-
-    results = results[start:start + length]
-
+        total_count = query.count(filtering)
+        results = query.records(filtering, sorting, start, length)
 
     def map_result(row):
         return dict(zip(MAG_HEADERS, row))
 
     return JsonResponse({
         'data': [map_result(row) for row in results],
-        'rowsCount': result_count,
+        'rowsCount': total_count,
     })
 
 
