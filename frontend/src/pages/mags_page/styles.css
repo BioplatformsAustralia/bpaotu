@@ -1,8 +1,21 @@
-.ReactTable .rt-thead {
+.ReactTable .rt-thead.-header {
   font-size: 15px;
   font-weight: 600;
 }
 
+.ReactTable .rt-thead.-filters {
+  /*background-color: blue;*/
+}
+
+.ReactTable .rt-thead.-filters .rt-tr .rt-th input {
+  font-size: 14px;
+}
+
+.ReactTable .rt-tr-group {
+  margin-left: 16px;
+}
+
 .ReactTable .rt-td {
   font-size: 14px;
+  padding-left: 13px;
 }

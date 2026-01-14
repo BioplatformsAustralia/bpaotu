@@ -1,19 +1,39 @@
 import React, { useEffect } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useDispatch, useSelector } from 'react-redux'
 
 import { NavLink as RRNavLink } from 'react-router-dom'
 import { NavLink } from 'reactstrap'
 import { Card, CardBody, CardHeader, Col, Container, Row } from 'reactstrap'
 
-import AnimateHelix from 'components/animate_helix'
+import { searchMags } from '../mags_page/reducers/mags'
+import { fetchMagsSamples } from '../mags_page/reducers/samples'
 
-// import { fetchMagsRecords, fetchMagsSamples } from '../mags_page/reducers/'
+import AnimateHelix from 'components/animate_helix'
 
 import MagsMap from './components/mags_map'
 import { columns } from '../mags_page/definitions/columns'
 
 import './styles.css'
+
+const GenomeInformation = ({ columns, resultRecord }) => {
+  return (
+    <Card>
+      <CardHeader>Genome Information</CardHeader>
+      <CardBody>
+        <table className="info-table">
+          <tbody>
+            {columns.map((f) => (
+              <tr key={f.accessor}>
+                <td className="info-label">{f.Header}</td>
+                <td className="info-value">{resultRecord[f.accessor]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </CardBody>
+    </Card>
+  )
+}
 
 const InspectContainer = ({ children }) => {
   return (
@@ -32,37 +52,37 @@ const InspectContainer = ({ children }) => {
 }
 
 export const MagsInspectPage = (props) => {
-  return <p>hi</p>
-}
+  // from router
+  const { bin_id: binId } = props.match.params
 
-export default MagsInspectPage
+  const dispatch = useDispatch()
 
-/*
-export const MagsInspectPage = (props) => {
-  const { data: resultsData } = props.results
-  const { data: samplesData } = props.samples
+  const { results, samples } = useSelector((state: any) => {
+    return {
+      results: state.magsPage.results,
+      samples: state.magsPage.samples,
+    }
+  })
 
-  const { fetchMagsRecords, fetchMagsSamples } = props
-
-  // if loading this page directly then sample metadata won't be present (it loads on /mags)
+  // if loading this page directly or for the first then sample metadata won't be present
+  // (we may get it to fetch sample data /mags)
   // so check it exist in the state and load if not
   // we want these to run on first mount, not when resultsData/samplesData change
   // (they will not change if fetchMagsRecords/fetchMagsSamples never run again)
 
   useEffect(() => {
-    if (!resultsData.length) fetchMagsRecords()
+    if (!results.data.length) dispatch(searchMags())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
-    if (!samplesData.length) fetchMagsSamples()
+    if (!samples.data.length) dispatch(fetchMagsSamples())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const noResultsData = !resultsData.length || props.results.isLoading
-  const noSampleData = !samplesData.length || props.samples.isLoading
-
-  if (noResultsData || noSampleData) {
+  const loading =
+    (results.isLoading && !results.hasLoaded) || (samples.isLoading && !samples.hasLoaded)
+  if (loading) {
     return (
       <Container>
         <div
@@ -82,11 +102,8 @@ export const MagsInspectPage = (props) => {
     )
   }
 
-  // from router
-  const { bin_id: binId } = props.match.params
-
   // TEMP: using unique_id for the actual matching, still keep the naming as bin_id
-  const resultRecord = resultsData.find((x) => x.unique_id === binId)
+  const resultRecord = results.data.find((x) => x.unique_id === binId)
 
   if (!resultRecord) {
     return (
@@ -99,7 +116,7 @@ export const MagsInspectPage = (props) => {
   }
 
   const sampleId = resultRecord.sample_id.toString()
-  const sampleRecord = samplesData.find((x) => Object.keys(x.bpadata).includes(sampleId))
+  const sampleRecord = samples.data.find((x) => Object.keys(x.bpadata).includes(sampleId))
 
   if (!sampleRecord) {
     return (
@@ -110,33 +127,6 @@ export const MagsInspectPage = (props) => {
           </p>
         </div>
       </InspectContainer>
-    )
-  }
-
-  // const { page } = useAnalytics()
-
-  // // track page visit only on first render
-  // useEffect(() => {
-  //   page()
-  // }, [page])
-
-  const GenomeInformation = () => {
-    return (
-      <Card>
-        <CardHeader>Genome Information</CardHeader>
-        <CardBody>
-          <table className="info-table">
-            <tbody>
-              {columns.map((f) => (
-                <tr key={f.accessor}>
-                  <td className="info-label">{f.Header}</td>
-                  <td className="info-value">{resultRecord[f.accessor]}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardBody>
-      </Card>
     )
   }
 
@@ -176,7 +166,7 @@ export const MagsInspectPage = (props) => {
     <InspectContainer>
       <Row>
         <Col sm={7}>
-          <GenomeInformation />
+          <GenomeInformation columns={columns} resultRecord={resultRecord} />
         </Col>
 
         <Col sm={5}>
@@ -193,21 +183,4 @@ export const MagsInspectPage = (props) => {
   )
 }
 
-function mapStateToProps(state) {
-  return {
-    ...state.magsPage,
-  }
-}
-
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      fetchMagsRecords,
-      fetchMagsSamples,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(MagsInspectPage)
-*/
+export default MagsInspectPage

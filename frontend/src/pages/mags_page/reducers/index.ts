@@ -1,11 +1,11 @@
 import { combineReducers } from 'redux'
 
 import magsResultsReducer from './mags'
-// samples
+import magsSamplesReducer from './samples'
 
 const pageReducer = combineReducers({
   results: magsResultsReducer,
-  // samples:
+  samples: magsSamplesReducer,
 })
 
 export default pageReducer

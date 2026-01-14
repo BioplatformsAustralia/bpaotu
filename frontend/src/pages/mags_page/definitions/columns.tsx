@@ -13,6 +13,7 @@ export const columns = [
     Header: 'Uniq ID',
     accessor: 'unique_id',
     minWidth: 250,
+    filterable: true,
     sortable: true,
     Cell: inspect_link,
   },

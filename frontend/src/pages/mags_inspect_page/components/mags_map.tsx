@@ -45,8 +45,6 @@ interface StateProps {
 type Props = OwnProps & StateProps
 
 const MarkerPopup = ({ marker }) => {
-  console.log('MarkerPopup', 'marker', marker)
-
   const sampleIds = Object.keys(marker.bpadata)
 
   return (
@@ -67,7 +65,6 @@ const MarkerPopup = ({ marker }) => {
 }
 
 const MagsMap: React.FC<Props> = ({ item, samples }) => {
-  console.log('MagsMap', 'samples', samples)
   const position: [number, number] = [item.lat, item.lng]
 
   const [zoom, setZoom] = useState(8)

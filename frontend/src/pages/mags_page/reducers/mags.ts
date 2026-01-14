@@ -5,18 +5,10 @@ import { handleSimpleAPIResponse } from 'reducers/utils'
 import { EmptyOTUQuery } from 'search'
 import { ErrorList } from 'pages/search_page/reducers/types'
 
-export const {
-  changeTablePropertiesMags,
-  searchMagsStarted,
-  searchMagsEnded,
-  magsFetchSamplesStarted,
-  magsFetchSamplesEnded,
-} = createActions(
+export const { changeTablePropertiesMags, searchMagsStarted, searchMagsEnded } = createActions(
   'CHANGE_TABLE_PROPERTIES_MAGS',
   'SEARCH_MAGS_STARTED',
-  'SEARCH_MAGS_ENDED',
-  'MAGS_FETCH_SAMPLES_STARTED',
-  'MAGS_FETCH_SAMPLES_ENDED'
+  'SEARCH_MAGS_ENDED'
 )
 
 interface MagsPageState {
@@ -82,6 +74,7 @@ interface MagRecord {
 const resultsInitialState = {
   cleared: false,
   isLoading: false,
+  hasLoaded: false,
   errors: [],
   data: [],
   page: 0,
@@ -111,21 +104,6 @@ export const searchMags = () => (dispatch, getState) => {
     })
 }
 
-export const fetchMagsSamples = () => (dispatch) => {
-  const fetchAllSamples = partial(
-    executeMagsSitesMetadata,
-    // NOTE: using EmptyOTUQuery.
-    // In order to see all sites, we don't filter on amplicon. This means we
-    // can't filter on taxonomy source either. This means richness and abundance
-    // will probably be meaningless.
-    // See https://github.com/BioplatformsAustralia/bpaotu/issues/214
-    EmptyOTUQuery
-  )
-
-  dispatch(magsFetchSamplesStarted())
-  handleSimpleAPIResponse(dispatch, fetchAllSamples, magsFetchSamplesEnded)
-}
-
 export default handleActions(
   {
     [changeTablePropertiesMags as any]: (state, action: any) => {
@@ -137,20 +115,6 @@ export default handleActions(
         sorted,
         filtered,
       }
-
-      // console.log('changeTablePropertiesMags', 'state', state)
-      // console.log('changeTablePropertiesMags', 'action.payload', action.payload)
-
-      // return {
-      //   ...state,
-      //   results: {
-      //     ...state.results,
-      //     ...(page !== undefined && { page }),
-      //     ...(pageSize !== undefined && { pageSize }),
-      //     ...(filtered !== undefined && { filtered }),
-      //     ...(sorted !== undefined && { sorted }),
-      //   },
-      // }
     },
     [searchMagsStarted as any]: (state, action) => {
       return {
@@ -167,6 +131,7 @@ export default handleActions(
         return {
           ...state,
           isLoading: false,
+          hasLoaded: true,
           data: action.payload.data.data,
           rowsCount,
           pages,
@@ -176,30 +141,10 @@ export default handleActions(
       throw: (state, action: any) => ({
         ...state,
         isLoading: false,
+        hasLoaded: true,
         errors: action.payload.msgs,
       }),
     },
-    [magsFetchSamplesStarted as any]: (state, action) => ({
-      ...state,
-      samples: {
-        isLoading: true,
-        data: [],
-        otus: [],
-      },
-    }),
-    [magsFetchSamplesEnded as any]: (state, action: any) => ({
-      ...state,
-      samples: {
-        isLoading: false,
-        data: map(action.payload.data.data, (sample) => ({
-          bpadata: sample.bpa_data,
-          abundance: sample.sample_otus_abundance,
-          lat: sample.latitude,
-          lng: sample.longitude,
-        })),
-        otus: action.payload.data.sample_otus,
-      },
-    }),
   },
   resultsInitialState
 )
