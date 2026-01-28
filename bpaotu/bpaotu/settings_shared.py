@@ -89,10 +89,15 @@ def redis_url(db_num=None):
     """Return redis:// URL with password if set."""
     if not db_num:
         db_num = int(REDIS_DB)
+
     if REDIS_PASSWORD:
-        return f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{db_num}"
+        result = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{db_num}"
     else:
-        return f"redis://{REDIS_HOST}:{REDIS_PORT}/{db_num}"
+        result = f"redis://{REDIS_HOST}:{REDIS_PORT}/{db_num}"
+
+    # NOTE: this is for debugging only, it puts the raw redis url into the logs
+    print('redis_url', result)
+    return result
 
 CACHES = {
     'default': {
@@ -117,6 +122,10 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_BROKER_URL = redis_url(2)
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 # CELERY_TASK_IGNORE_RESULT = True # working on killing tasks with out of memory error
+
+print('CACHE LOCATION', CACHES['default']['LOCATION'])
+print('CELERY_BROKER_URL', CELERY_BROKER_URL)
+print('CELERY_RESULT_BACKEND', CELERY_RESULT_BACKEND)
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
