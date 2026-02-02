@@ -85,12 +85,17 @@ REDIS_PORT = env.get('REDIS_PORT', '6379')
 REDIS_DB = env.get('REDIS_DB', '0')
 REDIS_PASSWORD = env.get('REDIS_PASSWORD', None)
 
-def redis_url(db_num=0):
+def redis_url(db_num=None):
     """Return redis:// URL with password if set."""
+    if not db_num:
+        db_num = int(REDIS_DB)
+
     if REDIS_PASSWORD:
-        return f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{db_num}"
+        result = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{db_num}"
     else:
-        return f"redis://{REDIS_HOST}:{REDIS_PORT}/{db_num}"
+        result = f"redis://{REDIS_HOST}:{REDIS_PORT}/{db_num}"
+
+    return result
 
 CACHES = {
     'default': {
