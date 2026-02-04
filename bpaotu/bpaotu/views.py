@@ -52,7 +52,7 @@ from .submission import Submission
 from .tabular import tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_time, parse_float, mem_usage_obj
 
-from .sample_run_id_dict import sample_run_id_dict
+from .lookups.sample_run_id_dict import sample_run_id_dict
 
 from mixpanel import Mixpanel
 import hashlib
