@@ -1,19 +1,19 @@
 import React from 'react'
 import { Card, CardBody, CardHeader } from 'reactstrap'
 
-import MagsSearchResultsTable from './mags_results_table'
+import { SearchResultsTable } from 'pages/mags_page/components'
 
-const MagsResultsCard = (props) => {
+const SearchResultsCard = (props) => {
   return (
     <div>
       <Card>
         <CardHeader>Metagenome Assembled Genomes</CardHeader>
         <CardBody>
-          <MagsSearchResultsTable />
+          <SearchResultsTable />
         </CardBody>
       </Card>
     </div>
   )
 }
 
-export default MagsResultsCard
+export default SearchResultsCard

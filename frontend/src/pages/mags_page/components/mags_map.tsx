@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useSelector, useDispatch } from 'react-redux'
 
 import {
   Map,
@@ -38,13 +37,24 @@ interface OwnProps {
   item: any
 }
 
-interface StateProps {
-  samples: any
+// import type { RootState } from 'app/store' // instead of `any` below:
+interface SamplesState {
+  data: any[]
+}
+interface RootStateLike {
+  magsPage: {
+    samples: SamplesState
+  }
 }
 
-type Props = OwnProps & StateProps
+type Props = OwnProps
 
-const MarkerPopup = ({ marker }) => {
+// interface StateProps {
+//   samples: any
+// }
+// type Props = OwnProps & StateProps
+
+const MarkerPopup: React.FC<{ marker: any }> = ({ marker }) => {
   const sampleIds = Object.keys(marker.bpadata)
 
   return (
@@ -64,9 +74,13 @@ const MarkerPopup = ({ marker }) => {
   )
 }
 
-const MagsMap: React.FC<Props> = ({ item, samples }) => {
-  const position: [number, number] = [item.lat, item.lng]
+const MagsMap: React.FC<Props> = ({ item }) => {
+  const samples = useSelector((state: RootStateLike) => state.magsPage.samples)
 
+  // const dispatch = useDispatch()
+  // const onSomething = () => dispatch(doSomething(payload))
+
+  const position: [number, number] = [item.lat, item.lng]
   const [zoom, setZoom] = useState(8)
 
   return (
@@ -123,17 +137,19 @@ const MagsMap: React.FC<Props> = ({ item, samples }) => {
   )
 }
 
-const mapStateToProps = (state: any): StateProps => ({
-  samples: state.magsPage.samples,
-})
+export default MagsMap
 
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(
-    {
-      //
-    },
-    dispatch
-  )
-}
+// const mapStateToProps = (state: any): StateProps => ({
+//   samples: state.magsPage.samples,
+// })
 
-export default connect<StateProps, {}, OwnProps>(mapStateToProps)(MagsMap)
+// const mapDispatchToProps = (dispatch) => {
+//   return bindActionCreators(
+//     {
+//       //
+//     },
+//     dispatch
+//   )
+// }
+
+// export default connect<StateProps, {}, OwnProps>(mapStateToProps)(MagsMap)

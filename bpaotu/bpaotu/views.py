@@ -53,6 +53,8 @@ from .tabular import tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_time, parse_float, mem_usage_obj
 
 from .lookups.sample_run_id_dict import sample_run_id_dict
+from .lookups.ncbi_am_id_dict import ncbi_am_id_dict
+from .lookups.omdb_dict import omdb_dict
 
 from mixpanel import Mixpanel
 import hashlib
@@ -1304,18 +1306,38 @@ def mags(request):
 
     # TEMP: add the derived column until we have a unique bin_id column
     MAG_HEADERS = ["unique_id"] + [c.name for c in MAG.__table__.columns]
-    
+
+    filtering_param = json.loads(request.GET.get('filtering', '[]'))
+    sorting_param = json.loads(request.GET.get('sorting', '[]'))
+
+    # # if sample_id param is provided then add that to base filter
+    # sample_id = request.GET.get("sampleId")
+    # if sample_id:
+    #     sample_id_param = { "id": "sample_id", "value": sample_id }
+    #     filtering_param.append(sample_id_param)
+
     start = _int_get_param(request, 'start')
     length = _int_get_param(request, 'length')
-    filtering = _parse_table_filtering(json.loads(request.GET.get('filtering', '[]')), MAG_HEADERS)
-    sorting = _parse_table_sorting(json.loads(request.GET.get('sorting', '[]')), MAG_HEADERS)
+    filtering = _parse_table_filtering(filtering_param, MAG_HEADERS)
+    sorting = _parse_table_sorting(sorting_param, MAG_HEADERS)
 
     with MagQuery() as query:
         total_count = query.count(filtering)
         results = query.records(filtering, sorting, start, length)
 
     def map_result(row):
-        return dict(zip(MAG_HEADERS, row))
+        d = dict(zip(MAG_HEADERS, row))
+        sample_id = d.get("sample_id")
+        ncbi_biosample = ncbi_am_id_dict.get(sample_id)
+
+        # add ncbi biosample
+        omdb_key = f"BPAM22-1_{ncbi_biosample}_METAG"
+        omdb_genomes = omdb_dict.get(omdb_key, [])
+
+        d["biosample"] = ncbi_biosample
+        d["omdb_count"] = len(omdb_genomes)
+
+        return d
 
     return JsonResponse({
         'data': [map_result(row) for row in results],

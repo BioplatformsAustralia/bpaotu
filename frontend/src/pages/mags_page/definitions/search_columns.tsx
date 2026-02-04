@@ -2,29 +2,41 @@ import React, { useMemo } from 'react'
 import { NavLink as RRNavLink } from 'react-router-dom'
 import { NavLink } from 'reactstrap'
 
-const inspect_link = (props) => (
-  <NavLink to={`/mags/${props.value}`} tag={RRNavLink}>
+const mag_inspect_link = (props) => (
+  <NavLink to={`/mags/mag/${props.value}`} tag={RRNavLink}>
     {props.value}
   </NavLink>
 )
 
-export const columns = [
+const sample_inspect_link = (props) => (
+  <NavLink to={`/mags/sample/${props.value}`} tag={RRNavLink}>
+    {props.value}
+  </NavLink>
+)
+
+export const searchColumns = [
   {
-    Header: 'Uniq ID',
+    Header: 'MAG ID',
     accessor: 'unique_id',
     minWidth: 250,
     filterable: true,
     sortable: true,
-    Cell: inspect_link,
+    Cell: mag_inspect_link,
   },
   {
     Header: 'Sample ID',
     accessor: 'sample_id',
     width: 150,
+    Cell: sample_inspect_link,
   },
   {
     Header: 'Bin ID',
     accessor: 'bin_id',
+    width: 150,
+  },
+  {
+    Header: 'NCBI',
+    accessor: 'biosample',
     width: 150,
   },
   {
@@ -121,98 +133,3 @@ export const columns = [
     accessor: 'quality',
   },
 ]
-
-// export const columns = [
-//   {
-//     Header: 'Genome',
-//     accessor: 'genome',
-//     width: 350,
-//     Cell: inspect_link,
-//   },
-//   {
-//     Header: 'Domain',
-//     accessor: 'domain',
-//     width: 150,
-//   },
-//   {
-//     Header: 'Phylum',
-//     accessor: 'phylum',
-//     width: 150,
-//   },
-//   {
-//     Header: 'Class',
-//     accessor: 'class',
-//     width: 150,
-//   },
-//   {
-//     Header: 'Order',
-//     accessor: 'order',
-//     width: 150,
-//   },
-//   {
-//     Header: 'Family',
-//     accessor: 'family',
-//     width: 150,
-//   },
-//   {
-//     Header: 'Genus',
-//     accessor: 'genus',
-//     width: 150,
-//   },
-//   {
-//     Header: 'Species',
-//     accessor: 'species',
-//     minWidth: 150,
-//   },
-//   {
-//     Header: 'mOTU4',
-//     accessor: 'motu4',
-//   },
-//   {
-//     Header: 'Sample',
-//     accessor: 'sample',
-//   },
-//   {
-//     Header: 'Study ',
-//     accessor: 'study ',
-//   },
-//   {
-//     Header: 'Q-Score',
-//     accessor: 'q-score',
-//   },
-//   {
-//     Header: 'Completeness',
-//     accessor: 'completeness',
-//     width: 150,
-//   },
-//   {
-//     Header: 'Contamination',
-//     accessor: 'contamination',
-//     width: 150,
-//   },
-//   {
-//     Header: 'N50',
-//     accessor: 'n50',
-//     width: 100,
-//   },
-//   {
-//     Header: '#Scaffolds',
-//     accessor: '#scaffolds',
-//     width: 100,
-//   },
-//   {
-//     Header: 'MAG',
-//     accessor: 'mag',
-//     width: 100,
-//   },
-//   {
-//     Header: 'IsRep',
-//     accessor: 'isrep',
-//     width: 100,
-//   },
-//   {
-//     Header: 'Representative',
-//     accessor: 'representative',
-//     width: 350,
-//   },
-// ]

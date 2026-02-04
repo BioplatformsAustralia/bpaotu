@@ -5,36 +5,44 @@ import { Alert, UncontrolledTooltip } from 'reactstrap'
 
 import ReactTable from 'react-table'
 import 'react-table/react-table.css'
-import '../styles.css'
+import './search_results_table.css'
 
-import { changeTablePropertiesMags, searchMags } from '../reducers/mags'
-import { columns as columnsDef } from '../definitions/columns'
+import { changeTablePropertiesMags, searchMags } from 'pages/mags_page/reducers/mags'
+import { searchColumns } from 'pages/mags_page/definitions/search_columns'
 
 const DEBOUNCE_DELAY = 400
 const SEARCH_CHAR_THRESHOLD = 3
 
-const MagsResultsTable = (props) => {
+//
+const SearchResultsTable = (props) => {
+  const { sampleId } = props
   const dispatch = useDispatch()
 
   const { results } = useSelector((state: any) => {
     return {
       results: state.magsPage.results,
-      // samples
     }
   })
 
-  // search once on initial mount
-  useEffect(() => {
-    dispatch(searchMags())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  console.log('SearchResultsTable', 'sampleId', sampleId)
+  console.log('SearchResultsTable', 'results', results)
 
   const columns = useMemo(
     () =>
-      columnsDef.map((col) => ({
-        ...col,
-      })),
-    [columnsDef]
+      searchColumns.map((col) => {
+        // if table is for a particular sample ID then freeze sample ID column
+        if (sampleId && col.accessor === 'sample_id') {
+          return {
+            ...col,
+            filterable: false,
+            sortable: false,
+            Cell: null,
+          }
+        } else {
+          return col
+        }
+      }),
+    [searchColumns]
   )
 
   const debouncedSearch = useMemo(
@@ -118,8 +126,8 @@ const MagsResultsTable = (props) => {
           {results.cleared
             ? 'Please use the search button to start your search'
             : results.isLoading
-              ? `Searching samples...`
-              : `Found ${results.rowsCount} samples`}
+              ? `Searching MAGs...`
+              : `Found ${results.rowsCount} MAGs`}
         </h6>
       </Alert>
       <ReactTable
@@ -154,4 +162,4 @@ const MagsResultsTable = (props) => {
   )
 }
 
-export default MagsResultsTable
+export default SearchResultsTable
