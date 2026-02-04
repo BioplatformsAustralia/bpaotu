@@ -1310,11 +1310,12 @@ def mags(request):
     filtering_param = json.loads(request.GET.get('filtering', '[]'))
     sorting_param = json.loads(request.GET.get('sorting', '[]'))
 
-    # # if sample_id param is provided then add that to base filter
-    # sample_id = request.GET.get("sampleId")
-    # if sample_id:
-    #     sample_id_param = { "id": "sample_id", "value": sample_id }
-    #     filtering_param.append(sample_id_param)
+    # if mag_id param is provided then add that to base filter
+    # (so that it comes up in a page refresh with url params)
+    mag_id = request.GET.get("magId")
+    if mag_id:
+        mag_id_param = { "id": "unique_id", "value": mag_id }
+        filtering_param.append(mag_id_param)
 
     start = _int_get_param(request, 'start')
     length = _int_get_param(request, 'length')

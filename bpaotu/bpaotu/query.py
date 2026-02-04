@@ -367,7 +367,7 @@ class MagQuery:
     def records(self, filtering=(), sorting=(), start=0, length=10):
         q, query_headers = self._base_query(filtering)
 
-        # sorting (table-driven, column-index based)
+        # 1. user sorting (table-driven, column-index based)
         for sort in sorting:
             idx = int(sort["col_idx"])
             if idx < 0 or idx >= len(query_headers):
@@ -376,7 +376,14 @@ class MagQuery:
             col = query_headers[idx]
             q = q.order_by(col.desc() if sort.get("desc") else col)
 
-        # pagination at DB level
+        # 2. always add a sort by unique mag id at the end (sample_id then bin_id)
+        # (default if no user sorting, and to always have deterministric results)
+        q = q.order_by(
+            MAG.sample_id.asc(),
+            MAG.bin_id.asc(),
+        )
+
+        # 3. pagination at DB level
         q = q.offset(start).limit(length)
 
         # log_query(q)

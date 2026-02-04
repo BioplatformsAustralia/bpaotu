@@ -27,7 +27,7 @@ export const MagsPage = (props) => {
     const args = {
       ...results,
       filtered: [],
-      // page: 0,
+      page: 0,
     }
 
     dispatch(changeTablePropertiesMags(args))

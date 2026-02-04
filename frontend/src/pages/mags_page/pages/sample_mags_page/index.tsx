@@ -41,6 +41,8 @@ export const SampleMagsPage = (props) => {
     }
   })
 
+  // this filter will also be applied if the page is refreshed / loaded with url params
+  // so there's no need to worry about results not being present as for refreshing inspect page
   useEffect(() => {
     // reset filter to just sample id and reset to page 0
     const filtered = [{ id: 'sample_id', value: sampleId }]
@@ -78,8 +80,6 @@ export const SampleMagsPage = (props) => {
   if (loading) {
     return <LoadingSpinner text="Loading Sample data" />
   }
-
-  console.log('results', results)
 
   const siteRecord = samples.data.find((x) => Object.keys(x.bpadata).includes(sampleId))
   if (!siteRecord) {

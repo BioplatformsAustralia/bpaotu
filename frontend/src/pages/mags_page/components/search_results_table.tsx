@@ -13,19 +13,17 @@ import { searchColumns } from 'pages/mags_page/definitions/search_columns'
 const DEBOUNCE_DELAY = 400
 const SEARCH_CHAR_THRESHOLD = 3
 
-//
 const SearchResultsTable = (props) => {
   const { sampleId } = props
   const dispatch = useDispatch()
 
+  // because this table can have data from different contexts
+  // it should also use the results in state that parent has determined
   const { results } = useSelector((state: any) => {
     return {
       results: state.magsPage.results,
     }
   })
-
-  console.log('SearchResultsTable', 'sampleId', sampleId)
-  console.log('SearchResultsTable', 'results', results)
 
   const columns = useMemo(
     () =>

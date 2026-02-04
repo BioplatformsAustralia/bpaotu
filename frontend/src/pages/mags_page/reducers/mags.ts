@@ -84,25 +84,27 @@ const resultsInitialState = {
   sorted: [],
 }
 
-export const searchMags = () => (dispatch, getState) => {
-  const state = getState()
+export const searchMags =
+  (magId = null) =>
+  (dispatch, getState) => {
+    const state = getState()
 
-  dispatch(searchMagsStarted())
+    dispatch(searchMagsStarted())
 
-  const options = state.magsPage.results
+    const options = state.magsPage.results
 
-  executeMagsSearch(options)
-    .then((data) => {
-      if (_get(data, 'data.errors', []).length > 0) {
-        dispatch(searchMagsEnded(new ErrorList(...data.data.errors)))
-        return
-      }
-      dispatch(searchMagsEnded(data))
-    })
-    .catch((error) => {
-      dispatch(searchMagsEnded(new ErrorList('Unhandled server-side error!')))
-    })
-}
+    executeMagsSearch(options, magId)
+      .then((data) => {
+        if (_get(data, 'data.errors', []).length > 0) {
+          dispatch(searchMagsEnded(new ErrorList(...data.data.errors)))
+          return
+        }
+        dispatch(searchMagsEnded(data))
+      })
+      .catch((error) => {
+        dispatch(searchMagsEnded(new ErrorList('Unhandled server-side error!')))
+      })
+  }
 
 export default handleActions(
   {

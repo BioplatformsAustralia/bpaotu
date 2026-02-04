@@ -42,14 +42,12 @@ export const InspectMagPage = (props) => {
     }
   })
 
-  // if loading this page directly or for the first then sample metadata won't be present
-  // (we may get it to fetch sample data /mags)
+  // if loading this page directly (i.e. refresh with url params) sample metadata won't be present
   // so check it exist in the state and load if not
   // we want these to run on first mount, not when resultsData/samplesData change
-  // (they will not change if fetchMagsRecords/fetchMagsSamples never run again)
 
   useEffect(() => {
-    if (!results.data.length) dispatch(searchMags())
+    if (!results.data.length) dispatch(searchMags(magId))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -67,14 +65,8 @@ export const InspectMagPage = (props) => {
     return <LoadingSpinner text="Loading Sample data" />
   }
 
-  console.log('InspectMagPage', 'magId', magId)
-  console.log('InspectMagPage', 'results', results)
-  console.log('InspectMagPage', 'samples', samples)
-
   // TEMP: using unique_id for the actual matching, still keep the naming as mag_id
-  // TODO: this has an issue because it only can search the first page of results
   const resultRecord = results.data.find((x) => x.unique_id === magId)
-  console.log('InspectMagPage', 'resultRecord', resultRecord)
 
   if (!resultRecord) {
     return (
@@ -88,8 +80,6 @@ export const InspectMagPage = (props) => {
 
   const sampleId = resultRecord.sample_id.toString()
   const sampleRecord = samples.data.find((x) => Object.keys(x.bpadata).includes(sampleId))
-  console.log('InspectMagPage', 'sampleId', sampleId)
-  console.log('InspectMagPage', 'sampleRecord', sampleRecord)
 
   if (!sampleRecord) {
     return (
