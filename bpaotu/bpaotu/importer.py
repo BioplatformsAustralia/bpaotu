@@ -763,6 +763,10 @@ class DataImporter:
 
         bintable_file = self.mags_bintable_file()
 
+        # truncate table (in case of only bintable import flag)
+        with self._engine.begin() as conn:
+            conn.execute(text("TRUNCATE TABLE otu.mag"))
+
         # add in batches
         with self._engine.begin() as conn:
             batch = []
@@ -786,7 +790,7 @@ class DataImporter:
         #     logger.info('fname', fname)
         #     # yield fname
 
-        return os.path.join(self._import_base, "MAG", "ALL_bins.bintable")
+        return os.path.join(self._import_base, "MAG", "quality_bins.bintable")
 
     def iter_mags_bintable_rows(self, path):
         with open(path, newline="") as fh:
