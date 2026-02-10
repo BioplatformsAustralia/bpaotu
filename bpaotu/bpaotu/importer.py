@@ -763,6 +763,10 @@ class DataImporter:
 
         bintable_file = self.mags_bintable_file()
 
+        if not os.path.exists(bintable_file):
+            logger.error(f'bintable file not found: {bintable_file}')
+            return
+
         # truncate table (in case of only bintable import flag)
         with self._engine.begin() as conn:
             conn.execute(text("TRUNCATE TABLE otu.mag"))
