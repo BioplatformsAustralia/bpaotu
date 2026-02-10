@@ -91,7 +91,7 @@ def is_metaxa_otu(code):
 
 class FastaRowsIterator:
     hash_re = re.compile(r'^[a-fA-F0-9]{32}$') # md5
-    code_re = re.compile(r'^[GATC]+$')
+    code_re = re.compile(r'^[GATCN]+$')
 
     def __init__(self, fasta_files):
         self.fasta_files = tuple(fasta_files)
