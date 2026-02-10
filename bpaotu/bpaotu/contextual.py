@@ -1,5 +1,6 @@
 from collections import defaultdict
 import pandas as pd
+import logging
 
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 from django.core.cache import caches
@@ -7,6 +8,9 @@ from django.core.cache import caches
 from .importer import DataImporter
 from .otu import Environment, SampleContext
 from .query import SampleSchemaDefinition, OntologyInfo, get_sample_ids, make_cache_key, CACHE_7DAYS
+
+logger = logging.getLogger("bpaotu")
+
 
 # columns_subset: nullable array
 # if None then returns all definitions, otherwise only includes the columns in the array
