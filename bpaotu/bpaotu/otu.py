@@ -245,7 +245,7 @@ def create_partitions(connection, tablename, ids):
 
 class MAG(SchemaMixin, Base):
     """
-    Metagenome Assembled Genome
+    Metagenome-Assembled Genome
     """
     __tablename__ = "mag"
 
