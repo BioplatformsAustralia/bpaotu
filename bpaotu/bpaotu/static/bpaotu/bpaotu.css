@@ -19,8 +19,8 @@ body {
 }
 
 .site-header-logo .logo {
-    height: auto;
-    width: 500px;
+    height: 200px;
+    width: 200px;
 }
 
 .site-header-user {

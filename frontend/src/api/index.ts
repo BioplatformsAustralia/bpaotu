@@ -21,8 +21,10 @@ export function ckanAuthInfo() {
   return axios.get(window.otu_search_config.ckan_check_permissions)
 }
 
-export function getReferenceData() {
-  return axios.get(window.otu_search_config.reference_data_endpoint)
+export function getReferenceData(context) {
+  return axios.get(window.otu_search_config.reference_data_endpoint, {
+    params: { context: context },
+  })
 }
 
 export function getTraits(selectedAmplicon) {

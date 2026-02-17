@@ -20,6 +20,7 @@ const AmpliconFilter = (props) => {
     if (defaultAmplicon || props.options.length === 0) {
       return
     }
+
     const ampliconFunction = props.metagenomeMode
       ? getDefaultMetagenomeAmplicon
       : getDefaultAmplicon
@@ -29,6 +30,12 @@ const AmpliconFilter = (props) => {
       props.selectValue(amplicon.id)
     }
   }
+
+  // reset calculateDefaultAmplicon when portalContext is changed
+  // lookupAmplicon will return first amplicon if default isn't available
+  useEffect(() => {
+    setDefaultAmplicon(null)
+  }, [props.portalContext])
 
   useEffect(() => {
     if (!props.keepExistingValue) {
@@ -55,6 +62,7 @@ const mapStateToProps = (state) => {
     isDisabled: _get(state, 'referenceData.amplicons.values', []).length === 0,
     optionsLoading: state.referenceData.amplicons.isLoading,
     selected: state.searchPage.filters.selectedAmplicon,
+    portalContext: state.context.portalContext,
   }
 }
 

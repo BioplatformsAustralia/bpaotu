@@ -1,4 +1,4 @@
-import { map, zipObject } from 'lodash'
+import { partial, map, zipObject } from 'lodash'
 import { createActions, handleAction, handleActions } from 'redux-actions'
 
 import { getReferenceData } from 'api'
@@ -11,8 +11,13 @@ export const { fetchReferenceDataEnded, selectTaxonomySource } = createActions(
 )
 
 export function fetchReferenceData() {
-  return (dispatch: any) => {
-    handleSimpleAPIResponse(dispatch, getReferenceData, fetchReferenceDataEnded)
+  return (dispatch: any, getState: any) => {
+    const { portalContext } = getState().context
+    handleSimpleAPIResponse(
+      dispatch,
+      partial(getReferenceData, portalContext),
+      fetchReferenceDataEnded
+    )
   }
 }
 

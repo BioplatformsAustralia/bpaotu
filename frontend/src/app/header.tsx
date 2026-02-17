@@ -1,8 +1,12 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { join } from 'lodash'
 import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap'
 import { NavLink as RRNavLink } from 'react-router-dom'
 import { useAnalytics } from 'use-analytics'
+
+import { useDispatch, useSelector } from 'react-redux'
+import { setPortalContext } from 'reducers/context'
+import { fetchReferenceData } from 'reducers/reference_data/reference_data'
 
 import Octicon from 'components/octicon'
 import MainTutorial from 'components/tutorials/main_tutorial'
@@ -10,24 +14,62 @@ import MainTutorial from 'components/tutorials/main_tutorial'
 const Header = ({ userEmailAddress }) => {
   const { track } = useAnalytics()
 
+  const dispatch = useDispatch()
+  const portalContext = useSelector((state: any) => state.context.portalContext)
+
+  const setAM = () => dispatch(setPortalContext('am'))
+  const setEDNA = () => dispatch(setPortalContext('edna'))
+
   // manage state of NavbarToggler for smaller screens
   const [isOpen, setIsOpen] = useState(false)
   const toggle = () => setIsOpen(!isOpen)
+
+  useEffect(() => {
+    dispatch(fetchReferenceData())
+  }, [portalContext, dispatch])
 
   const navLinkStyle = {
     paddingLeft: '16px',
     paddingRight: '16px',
   } as React.CSSProperties
 
-  const logoPNG =
+  const logoPNG_AM =
     window.otu_search_config.static_base_url +
-    join(['bpa-logos', 'BIO-RGB_Full-POS_Portal.png'], '/')
+    join(['bpa-logos', 'Australian-Microbiome-LOGO.png'], '/')
+
+  const logoPNG_eDNA =
+    window.otu_search_config.static_base_url + join(['bpa-logos', 'CSIRO_Solid_RGB.png'], '/')
+
+  const logoByContext: Record<string, string> = {
+    am: logoPNG_AM,
+    edna: logoPNG_eDNA,
+  }
+
+  const activeLogo = logoByContext[portalContext]
 
   return (
     <Navbar color="light" light={true} expand="lg">
       <NavbarBrand className="site-header-logo" href="/">
-        <img className="logo" src={logoPNG} alt="Bioplatform Australia" />
+        <img className="logo" src={activeLogo} alt="Context logo" />
       </NavbarBrand>
+      <div className="d-flex flex-column align-items-center mr-3">
+        <button
+          className={`btn btn-sm mb-1 ${
+            portalContext === 'am' ? 'btn-primary' : 'btn-outline-primary'
+          }`}
+          onClick={setAM}
+        >
+          AM
+        </button>
+        <button
+          className={`btn btn-sm mt-1 ${
+            portalContext === 'edna' ? 'btn-primary' : 'btn-outline-primary'
+          }`}
+          onClick={setEDNA}
+        >
+          eDNA
+        </button>
+      </div>
       <NavbarToggler onClick={toggle} />
       <Collapse isOpen={isOpen} navbar={true}>
         <Nav tabs className="navbar-nav">

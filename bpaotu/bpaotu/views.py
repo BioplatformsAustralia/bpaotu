@@ -155,9 +155,22 @@ def reference_data_options(request):
     """
     private API: return the available amplicons and taxonomic rank names
     """
+    portal_context = request.GET['context']
+
     with OntologyInfo() as options:
         amplicons = options.get_values(OTUAmplicon)
         taxonomy_labels = options.get_taxonomy_labels()
+
+    # NOTE: this would be done differently of course, probably setting flag on OTUAmplicon during ingest
+    if portal_context == 'edna':
+        def is_edna_amplicon(amplicon):
+            return amplicon[1].upper().startswith('COI')
+
+        return JsonResponse({
+            'amplicons': [a for a in amplicons if is_edna_amplicon(a)],
+            'ranks': taxonomy_labels
+        })
+
     return JsonResponse({
         'amplicons': amplicons,
         'ranks': taxonomy_labels
