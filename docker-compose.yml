@@ -36,6 +36,7 @@ services:
     volumes:
       - .:/app
       - ./data/dev:/data
+      - /data/MAGS:/data/MAGS
     ports:
       - "8000:8000"
       - "8888:8888" # Jupyter port

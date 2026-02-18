@@ -29,6 +29,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
 from celery import current_app
+from pathlib import Path, PurePosixPath
 
 from . import tasks
 from .biom import biom_zip_file_generator
@@ -1344,6 +1345,58 @@ def mags(request):
         'data': [map_result(row) for row in results],
         'rowsCount': total_count,
     })
+
+
+MAGS_BASE_DIR = Path("/data/MAGS")
+MAG_FILE_TYPE_EXTENSION_MAP = {
+    "antismash": ".antismash.zip",
+    "cog": ".cog.gz",
+    "fa": ".fa.gz",
+    "gff": ".gff.gz",
+    "kegg": ".kegg.gz",
+    "orf_faa": ".orf.faa.gz",
+    "orf_fa": ".orf.fa.gz",
+    "orftable": ".orftable.gz",
+    "pfam": ".pfam.gz",
+}
+
+@require_GET
+def download_mag(request):
+    mag_id = request.GET.get('magId')
+    file_type = request.GET.get('fileType')
+
+    if not mag_id or not file_type:
+        raise Http404()
+
+    # Special case
+    # TODO: how to determine the different method (ar53 vs ???)? Maybe rename files
+    if file_type == "gtdbtk":
+        mag_filename = f"{mag_id}_gtdbtk.ar53.summary.tsv.gz"
+    else:
+        ext = MAG_FILE_TYPE_EXTENSION_MAP.get(file_type)
+        if not ext:
+            raise Http404()
+        mag_filename = f"{mag_id}{ext}"
+
+    # Check the real filepath exists
+    # This is dependent on MAGS_BASE_DIR being mounted as a volume for docker to see
+    file_path = MAGS_BASE_DIR / mag_id / mag_filename
+    if not file_path.exists():
+        raise Http404()
+
+    # Sanitize filename to prevent ../ attacks or other tricks
+    safe_filename = PurePosixPath(mag_filename).name
+
+    # Return response with internal nginx location, e.g.
+    # location /protected/ {
+    #     internal;
+    #     alias {{ MAGS_BASE_DIR with trailing / }};
+    # }
+    response = HttpResponse()
+    response["Content-Disposition"] = f'attachment; filename="{safe_filename}"'
+    response["X-Accel-Redirect"] = f"/protected/{mag_id}/{safe_filename}"
+
+    return response
 
 
 # --------------------------------------------------------------------------- #

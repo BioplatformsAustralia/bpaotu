@@ -73,6 +73,11 @@ urlpatterns = [
         r'^private/metagenome-search$',
         views.metagenome_search,
         name="metagenome_search"),
-
+    url(
+        # this can't start with mags otherwise react router will catch it
+        r'^ext/mags/download$',
+        views.download_mag,
+        name='download_mag'
+    ),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

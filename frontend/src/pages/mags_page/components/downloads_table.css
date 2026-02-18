@@ -1,0 +1,15 @@
+th.downloads-type {
+  min-width: 100px;
+}
+
+/* this is so the download button is centred beneath the header */
+.downloads-download {
+  min-width: 100px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* this is to give a bit of a buffer between download and description columns */
+.downloads-description {
+  padding-left: 10px;
+}
