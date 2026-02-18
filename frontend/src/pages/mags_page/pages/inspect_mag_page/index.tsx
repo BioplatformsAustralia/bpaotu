@@ -22,7 +22,7 @@ import './styles.css'
 const GenomeInformation = ({ record }) => {
   return (
     <Card>
-      <CardHeader>Genome Information</CardHeader>
+      <CardHeader tag="h5">Genome Information</CardHeader>
       <CardBody>
         <InfoTable columns={searchColumns} record={record} />
       </CardBody>
@@ -106,8 +106,8 @@ export const InspectMagPage = (props) => {
       </Row>
 
       <Row style={{ marginTop: '20px' }}>
-        <Col>
-          <DownloadsTable />
+        <Col sm={7}>
+          <DownloadsTable magId={magId} />
         </Col>
       </Row>
     </MagsPageContainer>

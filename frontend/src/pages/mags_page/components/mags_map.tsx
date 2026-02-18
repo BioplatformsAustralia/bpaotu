@@ -85,7 +85,7 @@ const MagsMap: React.FC<Props> = ({ item }) => {
 
   return (
     <Card>
-      <CardHeader>Map</CardHeader>
+      <CardHeader tag="h5">Map</CardHeader>
       <CardBody>
         <div style={{ height: '600px' }}>
           <Map
