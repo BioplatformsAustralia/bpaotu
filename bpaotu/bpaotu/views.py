@@ -1349,13 +1349,13 @@ def mags(request):
 
 MAGS_BASE_DIR = Path("/data/MAGS")
 MAG_FILE_TYPE_EXTENSION_MAP = {
-    "antismash": ".antismash.zip",
+    "antismash": "-antismash.zip",
     "cog": ".cog.gz",
     "fa": ".fa.gz",
     "gff": ".gff.gz",
     "kegg": ".kegg.gz",
-    "orf_faa": ".orf.faa.gz",
-    "orf_fa": ".orf.fa.gz",
+    "orf.faa": ".orf.faa.gz",
+    "orf.fa": ".orf.fa.gz",
     "orftable": ".orftable.gz",
     "pfam": ".pfam.gz",
 }
@@ -1371,18 +1371,19 @@ def download_mag(request):
     # Special case
     # TODO: how to determine the different method (ar53 vs ???)? Maybe rename files
     if file_type == "gtdbtk":
-        mag_filename = f"{mag_id}_gtdbtk.ar53.summary.tsv.gz"
+        sample_id = mag_id.split("_")[0]
+        mag_filename = f"{sample_id}_gtdbtk.ar53.summary.tsv.gz"
     else:
         ext = MAG_FILE_TYPE_EXTENSION_MAP.get(file_type)
         if not ext:
-            raise Http404()
+            raise Http404(f"Unexpected file type: {file_type}")
         mag_filename = f"{mag_id}{ext}"
 
     # Check the real filepath exists
     # This is dependent on MAGS_BASE_DIR being mounted as a volume for docker to see
     file_path = MAGS_BASE_DIR / mag_id / mag_filename
     if not file_path.exists():
-        raise Http404()
+        raise Http404(f"No file {file_path}")
 
     # Sanitize filename to prevent ../ attacks or other tricks
     safe_filename = PurePosixPath(mag_filename).name
