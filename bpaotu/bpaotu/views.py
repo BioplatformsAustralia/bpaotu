@@ -1391,6 +1391,9 @@ def download_mag(request):
             f"/mags/download_error?magId={mag_id}&fileType={file_type}"
         )
 
+    # Sanitize filename to prevent ../ attacks or other tricks
+    safe_filename = PurePosixPath(mag_filename).name
+
     response = HttpResponse()
     response["Content-Disposition"] = f'attachment; filename="{safe_filename}"'
     response["X-Accel-Redirect"] = f"/protected/{mag_id}/{safe_filename}"
