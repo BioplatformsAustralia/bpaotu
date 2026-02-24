@@ -1435,7 +1435,7 @@ def otu_search_sample_sites(request):
     data, sample_otus = spatial_query(params)
 
     skip_site_images = request.POST.get('skip_site_images') == "1"
-    if skip_site_images:
+    if not skip_site_images:
         site_image_lookup_table = get_site_image_lookup_table()
         for d in data:
             key = (str(d['latitude']), str(d['longitude']))
