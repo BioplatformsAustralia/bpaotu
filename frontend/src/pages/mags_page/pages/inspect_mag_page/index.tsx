@@ -106,7 +106,7 @@ export const InspectMagPage = (props) => {
       </Row>
 
       <Row style={{ marginTop: '20px' }}>
-        <Col sm={7}>
+        <Col>
           <DownloadsTable magId={magId} />
         </Col>
       </Row>

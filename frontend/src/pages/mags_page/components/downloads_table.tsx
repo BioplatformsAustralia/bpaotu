@@ -29,6 +29,12 @@ const magFileTypes = [
 ]
 
 const DownloadsTable = ({ magId }) => {
+  const openDownloadInNewTab = (fileType: string) => {
+    // open the download URL in a new tab via script - browsers will then allow window.close() from that tab
+    const url = `/ext/mags/download?magId=${encodeURIComponent(magId)}&fileType=${encodeURIComponent(fileType)}`
+    window.open(url, '_blank', 'noopener')
+  }
+
   return (
     <Card>
       <CardHeader tag="h5">Downloads</CardHeader>
@@ -44,23 +50,20 @@ const DownloadsTable = ({ magId }) => {
 
           <tbody>
             {magFileTypes.map(({ type: fileType, description }) => {
-              const href = `/ext/mags/download?magId=${magId}&fileType=${fileType}`
-
               return (
                 <tr key={fileType}>
                   <td className="downloads-type">{fileType}</td>
                   <td className="downloads-download">
-                    <a href={href}>
-                      <Button
-                        size="sm"
-                        style={{ border: 'none' }}
-                        outline={true}
-                        color="primary"
-                        aria-label="Download"
-                      >
-                        <Octicon name="desktop-download" />
-                      </Button>
-                    </a>
+                    <Button
+                      size="sm"
+                      style={{ border: 'none' }}
+                      outline={true}
+                      color="primary"
+                      aria-label="Download"
+                      onClick={() => openDownloadInNewTab(fileType)}
+                    >
+                      <Octicon name="desktop-download" />
+                    </Button>
                   </td>
                   <td className="downloads-description">{description}</td>
                 </tr>

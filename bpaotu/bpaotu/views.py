@@ -22,6 +22,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.http import (Http404, HttpResponse, JsonResponse, HttpResponseServerError,
                          StreamingHttpResponse)
+from django.shortcuts import redirect
 from django.template import loader
 from django.urls import reverse
 from django.views.decorators.cache import cache_page
@@ -1383,16 +1384,12 @@ def download_mag(request):
     # This is dependent on MAGS_BASE_DIR being mounted as a volume for docker to see
     file_path = MAGS_BASE_DIR / mag_id / mag_filename
     if not file_path.exists():
-        raise Http404(f"No file {file_path}")
+        # This will open a new window with an error page
+        # (so that redux state on frontend is not lost)
+        return redirect(
+            f"/mags/download_error?magId={mag_id}&fileType={file_type}"
+        )
 
-    # Sanitize filename to prevent ../ attacks or other tricks
-    safe_filename = PurePosixPath(mag_filename).name
-
-    # Return response with internal nginx location, e.g.
-    # location /protected/ {
-    #     internal;
-    #     alias {{ MAGS_BASE_DIR with trailing / }};
-    # }
     response = HttpResponse()
     response["Content-Disposition"] = f'attachment; filename="{safe_filename}"'
     response["X-Accel-Redirect"] = f"/protected/{mag_id}/{safe_filename}"
