@@ -41,11 +41,21 @@ export const SampleMagsPage = (props) => {
     }
   })
 
-  // this filter will also be applied if the page is refreshed / loaded with url params
+  // this sample_id filter will also be applied if the page is refreshed / loaded with url params
   // so there's no need to worry about results not being present as for refreshing inspect page
+  // (other filters will be lost though)
   useEffect(() => {
-    // reset filter to just sample id and reset to page 0
-    const filtered = [{ id: 'sample_id', value: sampleId }]
+    const existingFiltered = results.filtered || []
+    const hasSampleIdFilter = existingFiltered.some((f) => f.id === 'sample_id')
+
+    // if sample_id filter already present, do nothing
+    // TODO: or maybe not... what if there was a partial sample_id filter?!?
+    if (hasSampleIdFilter) return
+
+    // add sample_id filter
+    const sampleIdFilter = { id: 'sample_id', value: sampleId }
+    const filtered = [...existingFiltered, sampleIdFilter]
+
     const args = {
       ...results,
       filtered,
@@ -54,6 +64,19 @@ export const SampleMagsPage = (props) => {
 
     dispatch(changeTablePropertiesMags(args))
     dispatch(searchMags())
+
+    // cleanup:
+    // remove only the sample_id filter we added
+    return () => {
+      const updatedFiltered = (results.filtered || []).filter((f) => f.id !== 'sample_id')
+
+      dispatch(
+        changeTablePropertiesMags({
+          ...results,
+          filtered: updatedFiltered,
+        })
+      )
+    }
   }, [sampleId])
 
   // if loading this page directly or for the first then sample metadata won't be present
