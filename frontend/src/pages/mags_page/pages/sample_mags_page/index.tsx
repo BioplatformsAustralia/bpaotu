@@ -6,7 +6,7 @@ import { NavLink } from 'reactstrap'
 import { Card, CardBody, CardHeader, Col, Container, Row } from 'reactstrap'
 
 import { changeTablePropertiesMags, searchMags } from 'pages/mags_page/reducers/mags'
-import { fetchMagsSamples } from 'pages/mags_page/reducers/samples'
+import { fetchMagsSamples, fetchSampleMagsCount } from 'pages/mags_page/reducers/samples'
 
 import {
   InfoTable,
@@ -24,6 +24,42 @@ const SampleInformation = ({ record }) => {
       <CardHeader>Sample Information</CardHeader>
       <CardBody>
         <InfoTable columns={sampleColumns} record={record} />
+      </CardBody>
+    </Card>
+  )
+}
+
+const SampleMagsInformation = ({ sampleId }) => {
+  const dispatch = useDispatch()
+  const { isLoading, hasLoaded, sample_id, sample_mags_count } = useSelector(
+    (state: any) => state.magsPage.samples.sampleMagsCount
+  )
+
+  useEffect(() => {
+    dispatch(fetchSampleMagsCount(sampleId))
+  }, [sampleId])
+
+  const SampleMagsCount = () => {
+    if (isLoading) return <em>Loading</em>
+    if (hasLoaded) return <>{sample_mags_count}</>
+
+    return null
+  }
+
+  return (
+    <Card style={{ marginTop: 14 }}>
+      <CardHeader>MAGs Information</CardHeader>
+      <CardBody>
+        <table className="info-table">
+          <tbody>
+            <tr>
+              <td className="info-label">Total</td>
+              <td className="info-value">
+                <SampleMagsCount />
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </CardBody>
     </Card>
   )
@@ -133,6 +169,7 @@ export const SampleMagsPage = (props) => {
       <Row>
         <Col sm={7}>
           <SampleInformation record={sampleRecord} />
+          <SampleMagsInformation sampleId={sampleId} />
         </Col>
 
         <Col sm={5}>

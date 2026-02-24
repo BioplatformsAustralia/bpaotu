@@ -1,13 +1,20 @@
 import { map, get as _get, partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import { executeMagsSearch, executeMagsSitesMetadata } from 'api'
+import { executeMagsSearch, executeMagsSitesMetadata, executeSampleMagsCount } from 'api'
 import { handleSimpleAPIResponse } from 'reducers/utils'
 import { EmptyOTUQuery } from 'search'
 import { ErrorList } from 'pages/search_page/reducers/types'
 
-export const { magsFetchSamplesStarted, magsFetchSamplesEnded } = createActions(
+export const {
+  magsFetchSamplesStarted,
+  magsFetchSamplesEnded,
+  magsFetchSampleMagsCountStarted,
+  magsFetchSampleMagsCountEnded,
+} = createActions(
   'MAGS_FETCH_SAMPLES_STARTED',
-  'MAGS_FETCH_SAMPLES_ENDED'
+  'MAGS_FETCH_SAMPLES_ENDED',
+  'MAGS_FETCH_SAMPLE_MAGS_COUNT_STARTED',
+  'MAGS_FETCH_SAMPLE_MAGS_COUNT_ENDED'
 )
 
 const resultsInitialState = {
@@ -15,6 +22,10 @@ const resultsInitialState = {
   hasLoaded: false,
   data: [],
   otus: [],
+  sampleMagsCount: {
+    isLoading: false,
+    hasLoaded: false,
+  },
 }
 
 export const fetchMagsSamples = () => (dispatch) => {
@@ -30,6 +41,15 @@ export const fetchMagsSamples = () => (dispatch) => {
 
   dispatch(magsFetchSamplesStarted())
   handleSimpleAPIResponse(dispatch, fetchAllSamples, magsFetchSamplesEnded)
+}
+
+export const fetchSampleMagsCount = (sampleId) => (dispatch) => {
+  dispatch(magsFetchSampleMagsCountStarted())
+  handleSimpleAPIResponse(
+    dispatch,
+    partial(executeSampleMagsCount, sampleId),
+    magsFetchSampleMagsCountEnded
+  )
 }
 
 export default handleActions(
@@ -51,6 +71,19 @@ export default handleActions(
         lng: sample.longitude,
       })),
       otus: action.payload.data.sample_otus,
+    }),
+    [magsFetchSampleMagsCountStarted as any]: (state, action) => ({
+      ...state,
+      sampleMagsCount: { isLoading: true },
+    }),
+    [magsFetchSampleMagsCountEnded as any]: (state, action) => ({
+      ...state,
+      sampleMagsCount: {
+        isLoading: false,
+        hasLoaded: true,
+        sample_id: action.payload.data.sample_id,
+        sample_mags_count: action.payload.data.sample_mags_count,
+      },
     }),
   },
   resultsInitialState

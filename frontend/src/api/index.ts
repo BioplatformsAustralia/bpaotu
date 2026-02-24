@@ -180,6 +180,14 @@ export const executeMagsSitesMetadata = (filters) =>
     skip_site_images: '1',
   })
 
+export const executeSampleMagsCount = (sampleId) => {
+  return axios.get(window.otu_search_config.mags_sample_count_endpoint, {
+    params: {
+      sample_id: sampleId,
+    },
+  })
+}
+
 export const executeMetagenomeSearch = partial(
   executeOtuSearch,
   join([window.otu_search_config.base_url, 'private/metagenome-search'], '/')

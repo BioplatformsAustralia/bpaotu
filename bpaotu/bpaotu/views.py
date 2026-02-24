@@ -108,6 +108,7 @@ def api_config(request):
         'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),
         'taxonomy_search_endpoint': reverse('taxonomy_search'),
         'mags_endpoint': reverse('mags'),
+        'mags_sample_count_endpoint': reverse('mags_sample_count'),
         'search_endpoint': reverse('otu_search'),
         'export_endpoint': reverse('otu_export'),
         'export_biom_endpoint': reverse('otu_biom_export'),
@@ -1395,6 +1396,24 @@ def download_mag(request):
     response["X-Accel-Redirect"] = f"/protected/{mag_id}/{safe_filename}"
 
     return response
+
+@require_CKAN_auth
+@require_GET
+def mags_sample_count(request):
+    sample_id = request.GET.get('sample_id')
+
+    if not sample_id:
+        raise Http404()
+
+    sample_id_param = { "id": "sample_id", "value": sample_id }
+    filtering_param = [sample_id_param]
+
+    filtering = _parse_table_filtering(filtering_param, ["sample_id"])
+
+    with MagQuery() as query:
+        total_count = query.count(filtering)
+
+    return JsonResponse({ 'sample_id': sample_id, 'sample_mags_count': total_count })
 
 
 # --------------------------------------------------------------------------- #
