@@ -1,13 +1,11 @@
 import React from 'react'
-import { join } from 'lodash'
 import { Link } from 'react-router-dom'
 import { useAnalytics } from 'use-analytics'
 
+import { logoPNG } from 'app/helpers'
+
 const Footer = () => {
   const { track } = useAnalytics()
-
-  const logoPNG = (name) =>
-    join([window.otu_search_config.static_base_url.replace(/\/$/, ''), 'bpa-logos', name], '/')
 
   return (
     <footer className="site-footer space-above">
@@ -35,7 +33,11 @@ const Footer = () => {
       </div>
       <div className="site-footer-logo container-fluid">
         <span>
-          <a href="https://www.bioplatforms.com">
+          <a
+            href={
+              window.otu_search_config.ckan_base_url + 'organization/about/australian-microbiome'
+            }
+          >
             <img
               className="footer-logos"
               src={logoPNG('BIO-RGB_Large-NEGTRANS.png')}

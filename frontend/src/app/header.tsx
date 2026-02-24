@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import { join } from 'lodash'
 import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap'
 import { NavLink as RRNavLink } from 'react-router-dom'
 import { useAnalytics } from 'use-analytics'
 
 import Octicon from 'components/octicon'
 import MainTutorial from 'components/tutorials/main_tutorial'
+
+import { logoPNG } from 'app/helpers'
 
 const Header = ({ userEmailAddress }) => {
   const { track } = useAnalytics()
@@ -19,14 +20,26 @@ const Header = ({ userEmailAddress }) => {
     paddingRight: '16px',
   } as React.CSSProperties
 
-  const logoPNG =
-    window.otu_search_config.static_base_url +
-    join(['bpa-logos', 'BIO-RGB_Full-POS_Portal.png'], '/')
+  const navRightStyle = {
+    alignItems: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    marginRight: '14px',
+  } as React.CSSProperties
+
+  const navAMLogoStyle = {
+    maxWidth: '100px',
+    textAlign: 'center',
+    fontSize: '0.8em',
+  } as React.CSSProperties
+
+  const logoBP = logoPNG('BIO-RGB_Full-POS_Portal.png')
 
   return (
     <Navbar color="light" light={true} expand="lg">
       <NavbarBrand className="site-header-logo" href="/">
-        <img className="logo" src={logoPNG} alt="Bioplatform Australia" />
+        <img className="logo" src={logoBP} alt="Bioplatform Australia" />
       </NavbarBrand>
       <NavbarToggler onClick={toggle} />
       <Collapse isOpen={isOpen} navbar={true}>
@@ -79,39 +92,40 @@ const Header = ({ userEmailAddress }) => {
             </NavLink>
           </NavItem>
         </Nav>
-        <Nav className="ml-auto" navbar={true}>
-          <NavItem>
-            <NavLink>
-              <MainTutorial />
-            </NavLink>
-          </NavItem>
+        <Nav className="ml-auto" style={{ alignItems: 'center' }} navbar={true}>
+          <div style={navRightStyle}>
+            <NavItem>
+              {userEmailAddress ? (
+                <div className="navbar-text">
+                  <Octicon name="person" />
+                  <span className="site-header-username">{userEmailAddress}</span>
+                </div>
+              ) : (
+                ''
+              )}
+            </NavItem>
+
+            <NavItem>
+              <NavLink>
+                <MainTutorial />
+              </NavLink>
+            </NavItem>
+          </div>
 
           <NavItem>
-            <NavLink href="mailto:help@bioplatforms.com?subject=Australian%20Microbiome%20Help">
-              Help
-            </NavLink>
-          </NavItem>
-
-          <NavItem>
-            <NavLink
-              target="_am"
-              href={
-                window.otu_search_config.ckan_base_url + 'organization/about/australian-microbiome'
-              }
-            >
-              Australian Microbiome Home
-            </NavLink>
-          </NavItem>
-
-          <NavItem>
-            {userEmailAddress ? (
-              <div className="navbar-text">
-                <Octicon name="person" />
-                <span className="site-header-username">{userEmailAddress}</span>
+            <NavLink target="_am" href="https://www.australianmicrobiome.com/">
+              <div style={navAMLogoStyle}>
+                <span>
+                  <img
+                    src={logoPNG('Australian-Microbiome-LOGO.png')}
+                    alt="Australian Microbiome"
+                    height="85"
+                    width="85"
+                  />
+                </span>
+                <p>Australian Microbiome Home</p>
               </div>
-            ) : (
-              ''
-            )}
+            </NavLink>
           </NavItem>
         </Nav>
       </Collapse>
