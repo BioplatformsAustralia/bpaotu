@@ -14,12 +14,18 @@ const sample_inspect_link = (props) => (
   </NavLink>
 )
 
-const InputSearch = ({ width = 150, cellInfo }) => {
+const InputSearch = ({ filter, onChange, width = 150 }) => {
+  // Safe string value for controlled input: empty string if no filter yet.
+  const value = filter && typeof filter.value === 'string' ? filter.value : ''
+
   return (
     <input
       type="search"
+      value={value}
       onChange={(event) => {
-        cellInfo.onChange(event.currentTarget.value)
+        // For text filters in react-table v6, `undefined` removes the filter
+        const next = event.currentTarget.value
+        onChange(next.trim() === '' ? undefined : next)
       }}
       style={{ width: width - 20 }}
     />
@@ -85,74 +91,98 @@ export const searchColumns = [
     filterable: true,
     sortable: true,
     minWidth: 250,
-    Filter: (cellInfo) => <InputSearch width={250} cellInfo={cellInfo} />,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={250} />
+    ),
   },
   {
     Header: 'Sample ID',
     accessor: 'sample_id',
     Cell: sample_inspect_link,
     width: 150,
-    Filter: (cellInfo) => <InputSearch width={150} cellInfo={cellInfo} />,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
   },
   {
     Header: 'Bin ID',
     accessor: 'bin_id',
     width: 150,
-    Filter: (cellInfo) => <InputSearch width={150} cellInfo={cellInfo} />,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
   },
   {
     Header: 'NCBI',
     accessor: 'biosample',
     width: 150,
-    Filter: (cellInfo) => <InputSearch width={150} cellInfo={cellInfo} />,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
   },
   {
     Header: 'Method',
     accessor: 'method',
     minWidth: 150,
-    Filter: (cellInfo) => <InputSearch width={150} cellInfo={cellInfo} />,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
   },
   {
     Header: 'Domain',
     accessor: 'tax_domain',
     width: 150,
-    Filter: (cellInfo) => <InputSearch width={150} cellInfo={cellInfo} />,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
   },
   {
     Header: 'Phylum',
     accessor: 'tax_phylum',
     width: 150,
-    Filter: (cellInfo) => <InputSearch width={150} cellInfo={cellInfo} />,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
   },
   {
     Header: 'Class',
     accessor: 'tax_class',
     width: 150,
-    Filter: (cellInfo) => <InputSearch width={150} cellInfo={cellInfo} />,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
   },
   {
     Header: 'Order',
     accessor: 'tax_order',
     width: 150,
-    Filter: (cellInfo) => <InputSearch width={150} cellInfo={cellInfo} />,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
   },
   {
     Header: 'Family',
     accessor: 'tax_family',
     width: 150,
-    Filter: (cellInfo) => <InputSearch width={150} cellInfo={cellInfo} />,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
   },
   {
     Header: 'Genus',
     accessor: 'tax_genus',
     width: 150,
-    Filter: (cellInfo) => <InputSearch width={150} cellInfo={cellInfo} />,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
   },
   {
     Header: 'Species',
     accessor: 'tax_species',
     minWidth: 150,
-    Filter: (cellInfo) => <InputSearch width={150} cellInfo={cellInfo} />,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
   },
   {
     Header: 'Quality',
