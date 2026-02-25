@@ -131,11 +131,8 @@ export const SampleMagsPage = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const loadingResults = Boolean(results.isLoading || !results.hasLoaded)
   const loadingSamples = Boolean(samples.isLoading || !samples.hasLoaded)
-  const loading = loadingResults || loadingSamples
-
-  if (loading) {
+  if (loadingSamples) {
     return <LoadingSpinner text="Loading Sample data" />
   }
 
