@@ -56,18 +56,13 @@ export const InspectMagPage = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const loading =
-    (results.isLoading && !results.hasLoaded) ||
-    (samples.isLoading && !samples.hasLoaded) ||
-    (!results.isLoading && !results.hasLoaded && !samples.isLoading && !samples.hasLoaded)
-
+  const loading = Boolean(results.isLoading || !results.hasLoaded)
   if (loading) {
-    return <LoadingSpinner text="Loading Sample data" />
+    return <LoadingSpinner text="Loading MAG data" />
   }
 
   // TEMP: using unique_id for the actual matching, still keep the naming as mag_id
   const resultRecord = results.data.find((x) => x.unique_id === magId)
-
   if (!resultRecord) {
     return (
       <MagsPageContainer>
@@ -79,19 +74,6 @@ export const InspectMagPage = (props) => {
   }
 
   const sampleId = resultRecord.sample_id.toString()
-  const sampleRecord = samples.data.find((x) => Object.keys(x.bpadata).includes(sampleId))
-
-  if (!sampleRecord) {
-    return (
-      <MagsPageContainer>
-        <div>
-          <p>
-            Could not find result sample for mag_id: {magId} and sample_id: {sampleId}
-          </p>
-        </div>
-      </MagsPageContainer>
-    )
-  }
 
   return (
     <MagsPageContainer>
@@ -101,7 +83,7 @@ export const InspectMagPage = (props) => {
         </Col>
 
         <Col sm={5}>
-          <MagsMap item={sampleRecord} />
+          <MagsMap sampleId={sampleId} />
         </Col>
       </Row>
 

@@ -162,7 +162,7 @@ const BPASamples = (props) => {
   )
 }
 
-const MarkerPopup = (props) => {
+export const MarkerPopup = (props) => {
   const [activeTab, setActiveTab] = useState('1')
 
   if (!props.marker.site_images || props.marker.site_images.length === 0) {

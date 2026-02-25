@@ -131,10 +131,9 @@ export const SampleMagsPage = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const loading =
-    (results.isLoading && !results.hasLoaded) ||
-    (samples.isLoading && !samples.hasLoaded) ||
-    (!results.isLoading && !results.hasLoaded && !samples.isLoading && !samples.hasLoaded)
+  const loadingResults = Boolean(results.isLoading || !results.hasLoaded)
+  const loadingSamples = Boolean(samples.isLoading || !samples.hasLoaded)
+  const loading = loadingResults || loadingSamples
 
   if (loading) {
     return <LoadingSpinner text="Loading Sample data" />
@@ -173,7 +172,7 @@ export const SampleMagsPage = (props) => {
         </Col>
 
         <Col sm={5}>
-          <MagsMap item={siteRecord} />
+          <MagsMap sampleId={sampleId} />
         </Col>
       </Row>
 
