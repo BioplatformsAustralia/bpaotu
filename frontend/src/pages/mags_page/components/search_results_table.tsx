@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import debounce from 'lodash/debounce'
 import { Alert, UncontrolledTooltip } from 'reactstrap'
@@ -12,6 +12,36 @@ import { searchColumns } from 'pages/mags_page/definitions/search_columns'
 
 const DEBOUNCE_DELAY = 400
 const SEARCH_CHAR_THRESHOLD = 3
+
+// General helpers
+const isEmptyString = (v: any) => typeof v === 'string' && v.trim() === ''
+const isNil = (v: any) => v == null
+const isRange = (v: any) => v && typeof v === 'object' && ('min' in v || 'max' in v)
+const rangeHasValue = (v: { min?: string; max?: string }) =>
+  (!isNil(v.min) && !isEmptyString(v.min)) || (!isNil(v.max) && !isEmptyString(v.max))
+
+// Remove filters that have no meaningful value
+const sanitiseFiltered = (filtered: any[]) => {
+  if (!Array.isArray(filtered)) return []
+  return filtered.filter((f) => {
+    const v = f && f.value
+    if (isNil(v)) return false
+    if (isRange(v)) return rangeHasValue(v)
+    if (isEmptyString(v)) return false
+    return true
+  })
+}
+
+// Note: filtered passed in here should already be sanitised
+const shouldSearch = (filtered: any[]) => {
+  if (!filtered || filtered.length === 0) return true
+  return filtered.every((f) => {
+    const v = f.value
+    if (isRange(v)) return rangeHasValue(v)
+    if (isEmptyString(v)) return false
+    return String(v).length >= SEARCH_CHAR_THRESHOLD
+  })
+}
 
 const SearchResultsTable = (props) => {
   const { sampleId } = props
@@ -40,25 +70,24 @@ const SearchResultsTable = (props) => {
           return col
         }
       }),
-    [searchColumns]
+    [sampleId]
   )
 
   const debouncedSearch = useMemo(
     () =>
-      debounce(() => {
-        dispatch(searchMags())
-      }, DEBOUNCE_DELAY),
+      debounce(
+        () => {
+          dispatch(searchMags())
+        },
+        DEBOUNCE_DELAY,
+        {
+          leading: false,
+          trailing: true,
+          maxWait: 2000, //  so fast typing still triggers a search eventually
+        }
+      ),
     [dispatch]
   )
-
-  const shouldSearch = (filtered) => {
-    if (!filtered || filtered.length === 0) return true
-
-    return filtered.every((f) => {
-      if (f.value == null) return false
-      return String(f.value).length >= SEARCH_CHAR_THRESHOLD
-    })
-  }
 
   useEffect(() => {
     return () => {
@@ -70,6 +99,12 @@ const SearchResultsTable = (props) => {
   // contextual had this as `results.pages > 0`
   // but if filter returns no results, then table can get stuck on 0 pages
   const canSearch = true
+
+  // Track the last 'effective' filtered set (after sanitization)
+  const prevEffectiveFilteredRef = useRef<any[]>(sanitiseFiltered(results.filtered))
+  useEffect(() => {
+    prevEffectiveFilteredRef.current = sanitiseFiltered(results.filtered)
+  }, [results.filtered])
 
   const onPageChange = (pageIndex) => {
     const args = {
@@ -101,20 +136,34 @@ const SearchResultsTable = (props) => {
     if (canSearch) dispatch(searchMags())
   }
 
-  const onFilteredChange = (filtered) => {
+  const onFilteredChange = (incomingFiltered) => {
+    // Sanitise what ReactTable gives us
+    const effectiveFiltered = sanitiseFiltered(incomingFiltered)
+
+    // Persist sanitised filters and reset page
     const args = {
       ...results,
-      filtered,
-      page: 0, // reset to page 0 on a new filter
+      filtered: effectiveFiltered,
+      page: 0,
     }
-
     dispatch(changeTablePropertiesMags(args))
 
-    if (shouldSearch(filtered)) {
+    // Determine search behaviour:
+    const prevEffective = prevEffectiveFilteredRef.current
+    const cleared = Array.isArray(prevEffective) && prevEffective.length > effectiveFiltered.length
+
+    if (cleared) {
+      // If num filters decreased (a filter was cleared), fire immediately
+      debouncedSearch.cancel()
+      dispatch(searchMags())
+    } else if (shouldSearch(effectiveFiltered)) {
       debouncedSearch()
     } else {
       debouncedSearch.cancel()
     }
+
+    // Update the ref to the latest effective set
+    prevEffectiveFilteredRef.current = effectiveFiltered
   }
 
   return (

@@ -5,7 +5,7 @@ import logging
 import inspect
 
 import sqlalchemy
-from sqlalchemy import func, cast, String
+from sqlalchemy import func, cast, and_, String, Integer, Float, Numeric
 from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql import literal, operators
@@ -332,27 +332,56 @@ class MagQuery:
         query_headers = [unique_id_col] + list(MAG.__table__.columns)
         q = self._session.query(*query_headers)
 
-        # TODO: do we want to impose this filter condition for all searches?
-        # # filtering (quality, completeness, contamination; can't be null)
-        # q = q.filter(
-        #     MAG.quality.isnot(None),
-        #     MAG.completeness.isnot(None),
-        #     MAG.contamination.isnot(None)
-        # )
-
         # filtering (table-driven, column-index based)
-        for filt in filtering:
-            idx = int(filt["col_idx"])
-            val = filt.get("value")
-
-            if not val or idx < 0 or idx >= len(query_headers):
+        for filt in (filtering or []):
+            idx = int(filt.get("col_idx", -1))
+            if idx < 0 or idx >= len(query_headers):
                 continue
 
             col = query_headers[idx]
-            if not isinstance(col.type, String):
-                col = cast(col, String)
+            val = filt.get("value")
 
-            q = q.filter(col.ilike(f"{val}%"))
+            # number (range) filter: value is a dict { min?, max? }
+            if isinstance(val, dict):
+                min_s = val.get("min")
+                max_s = val.get("max")
+
+                # if neither provided, skip
+                if (min_s is None or str(min_s).strip() == "") and \
+                   (max_s is None or str(max_s).strip() == ""):
+                    continue
+
+                # Determine numeric expression for the column
+                col_expr = col
+                # If the column is NOT numeric, cast it to Float for numeric compare,
+                # or if this column is known to be text but numeric in meaning.
+                if not _is_numeric_type(getattr(col, "type", None)):
+                    col_expr = cast(col, Float)
+
+                min_n = _to_number_or_none(min_s)
+                max_n = _to_number_or_none(max_s)
+
+                conds = []
+                if min_n is not None:
+                    conds.append(col_expr >= min_n)
+                if max_n is not None:
+                    conds.append(col_expr <= max_n)
+
+                if conds:
+                    q = q.filter(and_(*conds))
+
+            # text filter
+            else:
+                s = (val or "").strip()
+                if not s:
+                    continue
+
+                # If column already string then ILIKE; else cast to string then ILIKE
+                if _is_numeric_type(getattr(col, "type", None)):
+                    q = q.filter(cast(col, String).ilike(f"%{s}%"))
+                else:
+                    # unique_id_col is a label with string semantics
+                    q = q.filter(col.ilike(f"%{s}%"))
 
         return q, query_headers
 
@@ -368,13 +397,20 @@ class MagQuery:
         q, query_headers = self._base_query(filtering)
 
         # 1. user sorting (table-driven, column-index based)
-        for sort in sorting:
-            idx = int(sort["col_idx"])
+        for sort in (sorting or []):
+            idx = int(sort.get("col_idx", -1))
             if idx < 0 or idx >= len(query_headers):
                 continue
 
             col = query_headers[idx]
-            q = q.order_by(col.desc() if sort.get("desc") else col)
+            order_desc = bool(sort.get("desc"))
+
+            # If text but numeric in meaning, cast to Float for sorting
+            if not _is_numeric_type(getattr(col, "type", None)):
+                col = cast(col, Float)
+
+            q = q.order_by(col.desc() if order_desc else col)
+
 
         # 2. always add a sort by unique mag id at the end (sample_id then bin_id)
         # (default if no user sorting, and to always have deterministric results)
@@ -1183,6 +1219,24 @@ def apply_taxonomy_filter(taxonomy_attr, q, op_and_val):
 apply_environment_filter = partial(apply_op_and_val_filter, SampleContext.am_environment_id)
 apply_amplicon_filter = partial(apply_op_and_val_filter, Taxonomy.amplicon_id)
 apply_trait_filter = partial(apply_op_and_array_filter, Taxonomy.traits)
+
+def _to_number_or_none(s):
+    """Return int/float if possible, else None."""
+    if s is None:
+        return None
+    s = str(s).strip()
+    if not s:
+        return None
+    try:
+        return int(s)
+    except ValueError:
+        try:
+            return float(s)
+        except ValueError:
+            return None
+
+def _is_numeric_type(sqltype):
+    return isinstance(sqltype, (Integer, Float, Numeric))
 
 
 def log_query(q):
