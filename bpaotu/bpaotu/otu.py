@@ -270,6 +270,8 @@ class MAG(SchemaMixin, Base):
 
     tax_16s = Column(String, nullable=True)
 
+    tax_gtdb = Column(String, nullable=True)
+
     length = Column(Integer, nullable=False)
     gc_perc = Column(Float, nullable=False)
     num_contigs = Column(Integer, nullable=False)
@@ -304,6 +306,7 @@ class MAG(SchemaMixin, Base):
         #   - e.g. clade:FCB group;clade:Bacteroidetes/Chlorobi group
         #
         # NOTE: disregard tax_16s for now
+        # NOTE: disregard tax_gtdb for now
 
         return {
             "id": self.id,
@@ -321,6 +324,8 @@ class MAG(SchemaMixin, Base):
             "tax_species": self.tax_species,
             # tax_16s and parsed fields
             # "tax_16s": self.tax_16s,
+            # tax_gtdb and parsed fields
+            # "tax_gtdb": self.tax_gtdb,
             "length": self.length,
             "gc_perc": self.gc_perc,
             "num_contigs": self.num_contigs,

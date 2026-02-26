@@ -761,44 +761,51 @@ class DataImporter:
     def load_mags_bintable(self):
         logger.info('Building mags bintable')
 
-        bintable_file = self.mags_bintable_file()
+        bintable_files = self.mags_bintable_files()
+        bintable_files_count = len(bintable_files)
 
-        if not os.path.exists(bintable_file):
-            logger.error(f'bintable file not found: {bintable_file}')
+        logger.info(f"Found {bintable_files_count} .bintable files")
+
+        if bintable_files_count == 0:
+            logger.error(f'No bintable files found')
             return
 
-        # truncate table (in case of only bintable import flag)
-        with self._engine.begin() as conn:
-            conn.execute(text("TRUNCATE TABLE otu.mag"))
+        # Drop + recreate table to handle schema changes
+        MAG.__table__.drop(self._engine, checkfirst=True)
+        MAG.__table__.create(self._engine)
 
-        # add in batches
+        # Process each bintable file in batches
         with self._engine.begin() as conn:
             batch = []
-            for row in self.iter_mags_bintable_rows(bintable_file):
-                batch.append(row)
 
-                if len(batch) >= 1000:
-                    conn.execute(insert(MAG), batch)
-                    batch.clear()
+            for bintable_file in bintable_files:
+                logger.debug(f"Processing {bintable_file}")
+
+                for row in self.iter_mags_bintable_rows(bintable_file):
+                    batch.append(row)
+
+                    if len(batch) >= 1000:
+                        conn.execute(insert(MAG), batch)
+                        batch.clear()
 
             if batch:
                 conn.execute(insert(MAG), batch)
 
         logger.info("Done building mags bintable")
     
-    def mags_bintable_file(self):
+    def mags_bintable_files(self):
         mag_dir = os.path.join(self._import_base, "MAG")
-
-        # logger.info(mag_dir)
-        # for fname in glob(mag_dir + '/*.bintable'):
-        #     logger.info('fname', fname)
-        #     # yield fname
-
-        return os.path.join(self._import_base, "MAG", "quality_bins.bintable")
+        logger.info(f"Searching for .bintable files in {mag_dir}")
+        return glob(os.path.join(mag_dir, "*.bintable"))
 
     def iter_mags_bintable_rows(self, path):
+        # sample_id is inferred from the filename (one sample per file)
+        filename = os.path.basename(path)
+        sample_id = int(filename.split("_", 1)[0])
+
         with open(path, newline="") as fh:
-            reader = csv.DictReader(fh)
+            delimiter = "\t"
+            reader = csv.DictReader(fh, delimiter=delimiter)
 
             for r in reader:
                 self.validate_bintable_row(r)
@@ -827,8 +834,10 @@ class DataImporter:
                     elif part.startswith("s_"):
                         tax_species = part
 
+                # note that some fields have the sample_id in them
+                # and that this may be cleaned up in the future
                 yield {
-                    "sample_id": int(r["sample_id"]),
+                    "sample_id": sample_id,
                     "bin_id": r["Bin ID"],
                     "method": r["Method"],
                     "tax": r["Tax"],
@@ -840,6 +849,7 @@ class DataImporter:
                     "tax_genus": tax_genus,
                     "tax_species": tax_species,
                     "tax_16s": r["Tax 16S"] or None,
+                    "tax_gtdb": r["GTDB Tax"] or None,
                     "length": self.to_int(r, "Length"),
                     "gc_perc": self.to_float(r, "GC perc"),
                     "num_contigs": self.to_int(r, "Num contigs"),
@@ -847,8 +857,8 @@ class DataImporter:
                     "completeness": self.to_float(r, "Completeness"),
                     "contamination": self.to_float(r, "Contamination"),
                     "strain_het": self.to_float(r, "Strain het"),
-                    "coverage": self.to_float(r, "Coverage"),
-                    "tpm": self.to_float(r, "TPM"),
+                    "coverage": self.to_float(r, f"Coverage {sample_id}"),
+                    "tpm": self.to_float(r, f"TPM {sample_id}"),
                     "quality": self.to_float(r, "quality"),
                 }
 

@@ -39,6 +39,7 @@ interface MagRecord {
   method: string
   tax: string
   tax_16s: string
+  tax_gtdb: string
   length: number
   gc_perc: number
   num_contigs: number
