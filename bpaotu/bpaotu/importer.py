@@ -799,10 +799,6 @@ class DataImporter:
         return glob(os.path.join(mag_dir, "*.bintable"))
 
     def iter_mags_bintable_rows(self, path):
-        # sample_id is inferred from the filename (one sample per file)
-        filename = os.path.basename(path)
-        sample_id = int(filename.split("_", 1)[0])
-
         with open(path, newline="") as fh:
             delimiter = "\t"
             reader = csv.DictReader(fh, delimiter=delimiter)
@@ -837,7 +833,7 @@ class DataImporter:
                 # note that some fields have the sample_id in them
                 # and that this may be cleaned up in the future
                 yield {
-                    "sample_id": sample_id,
+                    "sample_id": r["sample_id"],
                     "bin_id": r["Bin ID"],
                     "method": r["Method"],
                     "tax": r["Tax"],
