@@ -142,8 +142,33 @@ export const searchColumnsLookup = {
     units: '',
     infoText: 'NCBI BioSample',
   },
-
-  gtdb_tax: {
+  tax_domain: {
+    label: 'Domain',
+  },
+  tax_phylum: {
+    label: 'Phylum',
+  },
+  tax_class: {
+    label: 'Class',
+  },
+  tax_order: {
+    label: 'Order',
+  },
+  tax_family: {
+    label: 'Family',
+  },
+  tax_genus: {
+    label: 'Genus',
+  },
+  tax_species: {
+    label: 'Species',
+  },
+  tax_16s: {
+    label: 'Tax 16S',
+    units: 'string',
+    infoText: '16S taxonomy assignment of the MAG',
+  },
+  tax_gtdb: {
     label: 'GTDB Tax',
     units: 'string',
     infoText: 'GTDB-Tk taxonomy assignment of the MAG',
@@ -225,9 +250,9 @@ export const searchColumns = [
     Cell: mag_inspect_link,
     filterable: true,
     sortable: true,
-    minWidth: 250,
+    minWidth: 210,
     Filter: ({ filter, onChange }) => (
-      <InputSearch filter={filter} onChange={onChange} width={250} />
+      <InputSearch filter={filter} onChange={onChange} width={210} />
     ),
   },
   {
@@ -247,123 +272,123 @@ export const searchColumns = [
       <InputSearch filter={filter} onChange={onChange} width={150} />
     ),
   },
-  // {
-  //   accessor: 'tax_domain',
-  //   Header: <HeaderInfo label="Domain" />,
-  //   width: 150,
-  //   Filter: ({ filter, onChange }) => (
-  //     <InputSearch filter={filter} onChange={onChange} width={150} />
-  //   ),
-  // },
-  // {
-  //   accessor: 'tax_phylum',
-  //   Header: <HeaderInfo label="Phylum" />,
-  //   width: 150,
-  //   Filter: ({ filter, onChange }) => (
-  //     <InputSearch filter={filter} onChange={onChange} width={150} />
-  //   ),
-  // },
-  // {
-  //   Header: <HeaderInfo label="Class" />,
-  //   accessor: 'tax_class',
-  //   width: 150,
-  //   Filter: ({ filter, onChange }) => (
-  //     <InputSearch filter={filter} onChange={onChange} width={150} />
-  //   ),
-  // },
-  // {
-  //   Header: <HeaderInfo label="Order" />,
-  //   accessor: 'tax_order',
-  //   width: 150,
-  //   Filter: ({ filter, onChange }) => (
-  //     <InputSearch filter={filter} onChange={onChange} width={150} />
-  //   ),
-  // },
-  // {
-  //   Header: <HeaderInfo label="Family" />,
-  //   accessor: 'tax_family',
-  //   width: 150,
-  //   Filter: ({ filter, onChange }) => (
-  //     <InputSearch filter={filter} onChange={onChange} width={150} />
-  //   ),
-  // },
-  // {
-  //   Header: <HeaderInfo label="Genus" />,
-  //   accessor: 'tax_genus',
-  //   width: 150,
-  //   Filter: ({ filter, onChange }) => (
-  //     <InputSearch filter={filter} onChange={onChange} width={150} />
-  //   ),
-  // },
-  // {
-  //   accessor: 'tax_species',
-  //   Header: <HeaderInfo label="Species" />,
-  //   minWidth: 150,
-  //   Filter: ({ filter, onChange }) => (
-  //     <InputSearch filter={filter} onChange={onChange} width={150} />
-  //   ),
-  // },
+  {
+    accessor: 'tax_domain',
+    Header: <HeaderInfo accessor="tax_domain" />,
+    width: 150,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
+  },
+  {
+    accessor: 'tax_phylum',
+    Header: <HeaderInfo accessor="tax_phylum" />,
+    width: 150,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
+  },
+  {
+    accessor: 'tax_class',
+    Header: <HeaderInfo accessor="tax_class" />,
+    width: 150,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
+  },
+  {
+    accessor: 'tax_order',
+    Header: <HeaderInfo accessor="tax_order" />,
+    width: 150,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
+  },
+  {
+    accessor: 'tax_family',
+    Header: <HeaderInfo accessor="tax_family" />,
+    width: 150,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
+  },
+  {
+    accessor: 'tax_genus',
+    Header: <HeaderInfo accessor="tax_genus" />,
+    width: 150,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
+  },
+  {
+    accessor: 'tax_species',
+    Header: <HeaderInfo accessor="tax_species" />,
+    minWidth: 150,
+    Filter: ({ filter, onChange }) => (
+      <InputSearch filter={filter} onChange={onChange} width={150} />
+    ),
+  },
   {
     accessor: 'quality',
     Header: <HeaderInfo accessor="quality" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
     accessor: 'completeness',
     Header: <HeaderInfo accessor="completeness" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 180,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={180} />
     ),
   },
   {
     accessor: 'contamination',
     Header: <HeaderInfo accessor="contamination" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 180,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={180} />
     ),
   },
   {
     accessor: 'length',
     Header: <HeaderInfo accessor="length" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 130,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={130} />
     ),
   },
   {
     accessor: 'gc_perc',
     Header: <HeaderInfo accessor="gc_perc" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 130,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={130} />
     ),
   },
   {
     accessor: 'num_contigs',
     Header: <HeaderInfo accessor="num_contigs" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
     accessor: 'disparity',
     Header: <HeaderInfo accessor="disparity" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
@@ -388,45 +413,45 @@ export const searchColumns = [
     accessor: 'tpm',
     Header: <HeaderInfo accessor="tpm" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 130,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={130} />
     ),
   },
   {
     accessor: 'completeness_checkM2',
     Header: <HeaderInfo accessor="completeness_checkM2" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 250,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={250} />
     ),
   },
   {
     Header: <HeaderInfo accessor="contamination_checkM2" />,
     sortable: true,
     accessor: 'contamination_checkM2',
-    minWidth: 150,
+    minWidth: 250,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={250} />
     ),
   },
   {
     accessor: 'contig_n50_checkM2',
     Header: <HeaderInfo accessor="contig_n50_checkM2" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 240,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={240} />
     ),
   },
   {
-    accessor: 'gtdb_tax',
-    Header: <HeaderInfo accessor="gtdb_tax" />,
+    accessor: 'tax_gtdb',
+    Header: <HeaderInfo accessor="tax_gtdb" />,
     sortable: true,
-    minWidth: 160,
+    minWidth: 900,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputSearch filter={filter} onChange={onChange} width={900} />
     ),
   },
   // NOTE: last column needs a bit more minWidth than the width of the Input
