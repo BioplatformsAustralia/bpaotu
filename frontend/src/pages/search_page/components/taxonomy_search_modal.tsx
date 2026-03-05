@@ -219,7 +219,9 @@ const TaxonomySearchModal = (props) => {
 
   let resultsAdjusted
   if (results.length) {
-    const groups = groupByRank(results, searchString)
+    const normalisedSearch = (searchString || '').trim()
+    const groups = groupByRank(results, normalisedSearch)
+
     resultsAdjusted = Object.values(groups).map((group: any) => {
       return {
         taxonomy: group.uniqueRanks,
@@ -287,7 +289,7 @@ const TaxonomySearchModal = (props) => {
       }
     }
     if (taxonomy.r8) {
-      if (currentTaxonomy.r7.selected.value !== taxonomy.r7.id) {
+      if (currentTaxonomy.r8.selected.value !== taxonomy.r8.id) {
         props.selectTaxonomyValue('r8', taxonomy.r8.id)
       }
     }
@@ -304,7 +306,8 @@ const TaxonomySearchModal = (props) => {
       return
     }
 
-    if (searchStringInput) {
+    const trimmed = (searchStringInput || '').trim()
+    if (trimmed) {
       props.runTaxonomySearch()
     }
   }

@@ -26,7 +26,7 @@ export const runTaxonomySearch = () => (dispatch, getState) => {
   dispatch(runTaxonomySearchStarted())
 
   const selectedAmplicon = state.searchPage.filters.selectedAmplicon.value
-  const searchString = state.searchPage.taxonomySearchModal.searchStringInput
+  const searchString = state.searchPage.taxonomySearchModal.searchStringInput.trim()
 
   executeTaxonomySearch(selectedAmplicon, searchString)
     .then((data) => {
@@ -66,10 +66,12 @@ export default handleActions(
     }),
     [runTaxonomySearchEnded as any]: {
       next: (state, action: any) => {
+        const trimmed = (state.searchStringInput || '').trim()
+
         return {
           ...state,
           isLoading: false,
-          searchString: state.searchStringInput,
+          searchString: trimmed,
           results: action.payload.data.results,
           error: action.payload.data.error,
         }
