@@ -319,17 +319,8 @@ class MagQuery:
         self._session.close()
 
     def _base_query(self, filtering=()):
-        # TEMP: derived column
-        # until we have a proper bin_id that is unique in the source data
-        # create a unique_id column that is a concatenation of sample_id and bin_id
-        unique_id_col = (
-            cast(MAG.sample_id, String)
-            + literal("_")
-            + MAG.bin_id
-        ).label("unique_id")
-
         # columns only in table order
-        query_headers = [unique_id_col] + list(MAG.__table__.columns)
+        query_headers = list(MAG.__table__.columns)
         q = self._session.query(*query_headers)
 
         # filtering (table-driven, column-index based)
@@ -380,7 +371,6 @@ class MagQuery:
                 if _is_numeric_type(getattr(col, "type", None)):
                     q = q.filter(cast(col, String).ilike(f"%{s}%"))
                 else:
-                    # unique_id_col is a label with string semantics
                     q = q.filter(col.ilike(f"%{s}%"))
 
         return q, query_headers
@@ -412,11 +402,11 @@ class MagQuery:
             q = q.order_by(col.desc() if order_desc else col)
 
 
-        # 2. always add a sort by unique mag id at the end (sample_id then bin_id)
+        # 2. always add a sort by unique mag_id at the end (sample_id then mag_id)
         # (default if no user sorting, and to always have deterministric results)
         q = q.order_by(
             MAG.sample_id.asc(),
-            MAG.bin_id.asc(),
+            MAG.mag_id.asc(),
         )
 
         # 3. pagination at DB level

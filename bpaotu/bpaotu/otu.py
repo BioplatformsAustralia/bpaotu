@@ -255,8 +255,8 @@ class MAG(SchemaMixin, Base):
     # or get filepath included in the output
     id = Column(Integer, primary_key=True)
 
+    mag_id = Column(String, nullable=False, index=True)
     sample_id = Column(Integer, nullable=False, index=True)
-    bin_id = Column(String, nullable=False, index=True)
     method = Column(String, nullable=False)
 
     tax = Column(String, nullable=False)
@@ -284,6 +284,10 @@ class MAG(SchemaMixin, Base):
     coverage = Column(Float, nullable=False)
     tpm = Column(Float, nullable=False)
     quality = Column(Float, nullable=True)
+
+    completeness_checkM2 = Column(Float, nullable=True)
+    contamination_checkM2 = Column(Float, nullable=True)
+    contig_n50_checkM2 = Column(Integer, nullable=True)
 
     def __repr__(self):
         return (

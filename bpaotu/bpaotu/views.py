@@ -1308,7 +1308,7 @@ def mags(request):
     """
 
     # TEMP: add the derived column until we have a unique bin_id column
-    MAG_HEADERS = ["unique_id"] + [c.name for c in MAG.__table__.columns]
+    MAG_HEADERS = [c.name for c in MAG.__table__.columns]
 
     filtering_param = json.loads(request.GET.get('filtering', '[]'))
     sorting_param = json.loads(request.GET.get('sorting', '[]'))
@@ -1317,7 +1317,7 @@ def mags(request):
     # (so that it comes up in a page refresh with url params)
     mag_id = request.GET.get("magId")
     if mag_id:
-        mag_id_param = { "id": "unique_id", "value": mag_id }
+        mag_id_param = { "id": "mag_id", "value": mag_id }
         filtering_param.append(mag_id_param)
 
     start = _int_get_param(request, 'start')

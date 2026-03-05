@@ -4,28 +4,53 @@ import Octicon from 'components/octicon'
 
 import './downloads_table.css'
 
-const magFileTypes = [
+const magFileTypesLookup = [
   {
     type: 'antismash',
-    description: 'antismash TODO description',
+    fileType: 'zip',
+    description: 'Antismash analysis of the MAG',
   },
   {
     type: 'cog',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore ' +
-      'et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut ' +
-      'aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum ' +
-      'dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui ' +
-      'officia deserunt mollit anim id est laborum.',
+    fileType: 'tsv',
+    description: 'COG functional assignment for each ORF in the MAG',
   },
-  { type: 'fa', description: 'fa TODO description' },
-  { type: 'gff', description: 'gff TODO description' },
-  { type: 'kegg', description: 'kegg TODO description' },
-  { type: 'orf.faa', description: 'orf.faa TODO description' },
-  { type: 'orf.fa', description: 'orf.fa TODO description' },
-  { type: 'orftable', description: 'orftable TODO description' },
-  { type: 'pfam', description: 'pfam TODO description' },
-  { type: 'gtdbtk', description: 'gtdbtk TODO description' },
+  { type: 'fa', fileType: 'FASTA', description: 'Fasta file containing the contigs from the MAG' },
+  {
+    type: 'gff',
+    fileType: 'genome feature format version3',
+    description: 'Features and position in contigs for each of the predicted genes in the MAG',
+  },
+  {
+    type: 'kegg',
+    fileType: 'tsv',
+    description: 'KEGG functional assignment for each ORF in the MAG',
+  },
+  {
+    type: 'orf.faa',
+    fileType: 'FASTA',
+    description: 'Amino acid sequences for predicted ORFs in the MAG',
+  },
+  {
+    type: 'orf.fa',
+    fileType: 'FASTA',
+    description: 'Nucleotide sequences for predicted ORF in the MAG',
+  },
+  {
+    type: 'orftable',
+    fileType: 'tsv',
+    description: 'Several measures regarding ORF characteristics of the MAG',
+  },
+  {
+    type: 'pfam',
+    fileType: 'tsv',
+    description: 'PFAM functional assignment for each ORF in the MAG',
+  },
+  {
+    type: 'gtdbtk',
+    fileType: 'tsv',
+    description: 'GTDB-Tk taxonomy assignment of the MAG',
+  },
 ]
 
 const DownloadsTable = ({ magId }) => {
@@ -42,17 +67,18 @@ const DownloadsTable = ({ magId }) => {
         <table>
           <thead>
             <tr>
-              <th className="downloads-type">Type</th>
+              <th className="downloads-type"></th>
               <th className="downloads-download">Download</th>
+              <th className="downloads-filetype">File Type</th>
               <th className="downloads-description">Description</th>
             </tr>
           </thead>
 
           <tbody>
-            {magFileTypes.map(({ type: fileType, description }) => {
+            {magFileTypesLookup.map(({ type, fileType, description }) => {
               return (
-                <tr key={fileType}>
-                  <td className="downloads-type">{fileType}</td>
+                <tr key={type}>
+                  <td className="downloads-type">{type}</td>
                   <td className="downloads-download">
                     <Button
                       size="sm"
@@ -65,6 +91,7 @@ const DownloadsTable = ({ magId }) => {
                       <Octicon name="desktop-download" />
                     </Button>
                   </td>
+                  <td className="downloads-filetype">{fileType}</td>
                   <td className="downloads-description">{description}</td>
                 </tr>
               )

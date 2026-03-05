@@ -24,7 +24,7 @@ const GenomeInformation = ({ record }) => {
     <Card>
       <CardHeader tag="h5">Genome Information</CardHeader>
       <CardBody>
-        <InfoTable columns={searchColumns} record={record} />
+        <InfoTable columns={searchColumns} record={record} mag />
       </CardBody>
     </Card>
   )
@@ -61,8 +61,7 @@ export const InspectMagPage = (props) => {
     return <LoadingSpinner text="Loading MAG data" />
   }
 
-  // TEMP: using unique_id for the actual matching, still keep the naming as mag_id
-  const resultRecord = results.data.find((x) => x.unique_id === magId)
+  const resultRecord = results.data.find((x) => x.mag_id === magId)
   if (!resultRecord) {
     return (
       <MagsPageContainer>

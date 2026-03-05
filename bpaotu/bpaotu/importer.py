@@ -833,8 +833,8 @@ class DataImporter:
                 # note that some fields have the sample_id in them
                 # and that this may be cleaned up in the future
                 yield {
-                    "sample_id": r["sample_id"],
-                    "bin_id": r["Bin ID"],
+                    "mag_id": r["MAG ID"],
+                    "sample_id": r["Sample ID"],
                     "method": r["Method"],
                     "tax": r["Tax"],
                     "tax_domain": tax_domain,
@@ -853,9 +853,12 @@ class DataImporter:
                     "completeness": self.to_float(r, "Completeness"),
                     "contamination": self.to_float(r, "Contamination"),
                     "strain_het": self.to_float(r, "Strain het"),
-                    "coverage": self.to_float(r, f"Coverage {sample_id}"),
-                    "tpm": self.to_float(r, f"TPM {sample_id}"),
+                    "coverage": self.to_float(r, f"Coverage"),
+                    "tpm": self.to_float(r, f"TPM"),
                     "quality": self.to_float(r, "quality"),
+                    "completeness_checkM2": self.to_float(r, "checkM2 Completeness"),
+                    "contamination_checkM2": self.to_float(r, "checkM2 Contamination"),
+                    "contig_n50_checkM2": self.to_float(r, "checkM2 Contig_N50"),
                 }
 
     # placeholder for validation
@@ -866,18 +869,18 @@ class DataImporter:
     def to_int(self, r, key):
         v = r[key]
         if v in (None, "", "NA"):
-            sample_id = r["sample_id"]
-            bin_id = r["Bin ID"]
-            logger.warn(f"Missing value for {key} in row: 'sample_id'={sample_id} 'Bin ID'={bin_id}")
+            sample_id = r["Sample ID"]
+            mag_id = r["MAG ID"]
+            logger.warn(f"Missing value in row: 'sample_id'={sample_id} 'MAG ID'={mag_id} for {key}")
             return None
         return int(v)
 
     def to_float(self, r, key):
         v = r[key]
         if v in (None, "", "NA"):
-            sample_id = r["sample_id"]
-            bin_id = r["Bin ID"]
-            logger.warn(f"Missing value for {key} in row: 'sample_id'={sample_id} 'Bin ID'={bin_id}")
+            sample_id = r["Sample ID"]
+            mag_id = r["MAG ID"]
+            logger.warn(f"Missing value in row: 'sample_id'={sample_id} 'MAG ID'={mag_id} for {key}")
             return None
         return float(v)
 
