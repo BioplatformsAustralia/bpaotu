@@ -13,6 +13,7 @@ import {
   LoadingSpinner,
   MagsPageContainer,
   MagsMap,
+  OMDBCount,
   OMDBLink,
   SampleMagsTable,
 } from 'pages/mags_page/components'
@@ -29,7 +30,7 @@ const SampleInformation = ({ record }) => {
   )
 }
 
-const SampleMagsInformation = ({ sampleId }) => {
+const SampleMagsInformation = ({ sampleId, omdbResult }) => {
   const dispatch = useDispatch()
   const { isLoading, hasLoaded, sample_id, sample_mags_count } = useSelector(
     (state: any) => state.magsPage.samples.sampleMagsCount
@@ -48,14 +49,23 @@ const SampleMagsInformation = ({ sampleId }) => {
 
   return (
     <Card style={{ marginTop: 14 }}>
-      <CardHeader>MAGs Information</CardHeader>
+      <CardHeader>Total MAGs Identified</CardHeader>
       <CardBody>
         <table className="info-table">
           <tbody>
             <tr>
-              <td className="info-label">Total</td>
+              <td className="info-label">Australian Microbiome</td>
               <td className="info-value">
                 <SampleMagsCount />
+              </td>
+            </tr>
+            <tr>
+              <td className="info-label">
+                OMDB
+                <OMDBLink result={omdbResult} />
+              </td>
+              <td className="info-value">
+                <OMDBCount result={omdbResult} />
               </td>
             </tr>
           </tbody>
@@ -165,7 +175,7 @@ export const SampleMagsPage = (props) => {
       <Row>
         <Col sm={7}>
           <SampleInformation record={sampleRecord} />
-          <SampleMagsInformation sampleId={sampleId} />
+          <SampleMagsInformation sampleId={sampleId} omdbResult={firstResult} />
         </Col>
 
         <Col sm={5}>
@@ -176,11 +186,6 @@ export const SampleMagsPage = (props) => {
       <Row style={{ marginTop: '20px' }}>
         <Col>
           <SampleMagsTable sampleId={sampleId} />
-        </Col>
-      </Row>
-      <Row style={{ marginTop: '20px' }}>
-        <Col>
-          <OMDBLink result={firstResult} />
         </Col>
       </Row>
     </MagsPageContainer>

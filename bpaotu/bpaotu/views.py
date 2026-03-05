@@ -1408,13 +1408,13 @@ def mags_sample_count(request):
     if not sample_id:
         raise Http404()
 
-    sample_id_param = { "id": "sample_id", "value": sample_id }
-    filtering_param = [sample_id_param]
-
-    filtering = _parse_table_filtering(filtering_param, ["sample_id"])
-
     with MagQuery() as query:
-        total_count = query.count(filtering)
+        total_count = (
+            query._session
+            .query(MAG)
+            .filter(MAG.sample_id == sample_id)
+            .count()
+        )
 
     return JsonResponse({ 'sample_id': sample_id, 'sample_mags_count': total_count })
 
