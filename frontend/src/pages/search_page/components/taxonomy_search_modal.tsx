@@ -239,6 +239,10 @@ const TaxonomySearchModal = (props) => {
     const currentAmplicon = props.amplicon
     const currentTaxonomy = props.taxonomy
 
+    // track whether we changed source and the first rank we changed
+    let sourceChanged = false
+    let firstChangedRank = null
+
     // check to see if any ranks are present in the selected taxonomy before calling selectTaxonomyValue
     if (taxonomy.amplicon) {
       // if amplicon value is already the same, using selectAmplicon again messes with dropdowns
@@ -251,47 +255,74 @@ const TaxonomySearchModal = (props) => {
         // need to use updateTaxonomyDropDown if taxonomy source has changed
         props.selectTaxonomyValue('taxonomy_source', taxonomy.taxonomy_source.id)
         props.updateTaxonomyDropDown('taxonomy_source')
+        sourceChanged = true
       }
     }
-    if (taxonomy.r1) {
-      if (currentTaxonomy.r1.selected.value !== taxonomy.r1.id) {
-        props.selectTaxonomyValue('r1', taxonomy.r1.id)
+
+    const maybeSelect = (rank) => {
+      if (!taxonomy[rank]) return
+      const currentVal =
+        currentTaxonomy[rank] &&
+        currentTaxonomy[rank].selected &&
+        currentTaxonomy[rank].selected.value
+      const nextVal = taxonomy[rank] && taxonomy[rank].id
+
+      if (currentVal !== nextVal) {
+        props.selectTaxonomyValue(rank, nextVal)
+        if (!firstChangedRank) firstChangedRank = rank
       }
     }
+
+    // select ranks top-down
+    maybeSelect('r1')
+
     if (taxonomy.r2) {
       if (currentTaxonomy.r2.selected.value !== taxonomy.r2.id) {
         props.selectTaxonomyValue('r2', taxonomy.r2.id)
+        if (!firstChangedRank) firstChangedRank = 'r2'
       }
     }
     if (taxonomy.r3) {
       if (currentTaxonomy.r3.selected.value !== taxonomy.r3.id) {
         props.selectTaxonomyValue('r3', taxonomy.r3.id)
+        if (!firstChangedRank) firstChangedRank = 'r3'
       }
     }
     if (taxonomy.r4) {
       if (currentTaxonomy.r4.selected.value !== taxonomy.r4.id) {
         props.selectTaxonomyValue('r4', taxonomy.r4.id)
+        if (!firstChangedRank) firstChangedRank = 'r4'
       }
     }
     if (taxonomy.r5) {
       if (currentTaxonomy.r5.selected.value !== taxonomy.r5.id) {
         props.selectTaxonomyValue('r5', taxonomy.r5.id)
+        if (!firstChangedRank) firstChangedRank = 'r5'
       }
     }
     if (taxonomy.r6) {
       if (currentTaxonomy.r6.selected.value !== taxonomy.r6.id) {
         props.selectTaxonomyValue('r6', taxonomy.r6.id)
+        if (!firstChangedRank) firstChangedRank = 'r6'
       }
     }
     if (taxonomy.r7) {
       if (currentTaxonomy.r7.selected.value !== taxonomy.r7.id) {
         props.selectTaxonomyValue('r7', taxonomy.r7.id)
+        if (!firstChangedRank) firstChangedRank = 'r7'
       }
     }
     if (taxonomy.r8) {
       if (currentTaxonomy.r8.selected.value !== taxonomy.r8.id) {
         props.selectTaxonomyValue('r8', taxonomy.r8.id)
+        if (!firstChangedRank) firstChangedRank = 'r8'
       }
+    }
+
+    // if source did NOT change, we still need to kick the cascade from
+    // the first rank that changed so lower ranks fetch their options.
+    if (!sourceChanged && firstChangedRank) {
+      props.updateTaxonomyDropDown(firstChangedRank)
     }
 
     // just short delay before closing
