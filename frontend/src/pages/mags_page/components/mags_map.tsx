@@ -74,15 +74,7 @@ const MagsMap: React.FC<Props> = ({ sampleId }) => {
     }
 
     return (
-      <Map
-        minZoom={2}
-        maxBounds={[
-          [90, 180],
-          [-90, -180],
-        ]}
-        center={position}
-        zoom={zoom}
-      >
+      <Map minZoom={2} center={position} zoom={zoom}>
         <FullscreenControl position="topright" />
         <LayersControl>
           <LayersControl.BaseLayer name="Base">
