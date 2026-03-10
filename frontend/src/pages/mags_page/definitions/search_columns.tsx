@@ -142,35 +142,47 @@ export const searchColumnsLookup = {
     units: '',
     infoText: 'NCBI BioSample',
   },
-  tax_domain: {
+  tax_gtdb_domain: {
     label: 'Domain',
+    infoText: 'Domain from GTDB Taxonomy',
   },
-  tax_phylum: {
+  tax_gtdb_phylum: {
     label: 'Phylum',
+    infoText: 'Phylum from GTDB Taxonomy',
   },
-  tax_class: {
+  tax_gtdb_class: {
     label: 'Class',
+    infoText: 'Class from GTDB Taxonomy',
   },
-  tax_order: {
+  tax_gtdb_order: {
     label: 'Order',
+    infoText: 'Order from GTDB Taxonomy',
   },
-  tax_family: {
+  tax_gtdb_family: {
     label: 'Family',
+    infoText: 'Family from GTDB Taxonomy',
   },
-  tax_genus: {
+  tax_gtdb_genus: {
     label: 'Genus',
+    infoText: 'Genus from GTDB Taxonomy',
   },
-  tax_species: {
+  tax_gtdb_species: {
     label: 'Species',
+    infoText: 'Species from GTDB Taxonomy',
   },
-  tax_16s: {
-    label: 'Tax 16S',
-    units: 'string',
-    infoText: '16S taxonomy assignment of the MAG',
-  },
+  // tax: {
+  //   label: 'Taxonomy',
+  //   // units: 'string',
+  //   infoText: 'Taxonomy assignment of the MAG',
+  // },
+  // tax_16s: {
+  //   label: '16S Taxonomy',
+  //   // units: 'string',
+  //   infoText: '16S taxonomy assignment of the MAG',
+  // },
   tax_gtdb: {
-    label: 'GTDB Tax',
-    units: 'string',
+    label: 'GTDB Taxonomy',
+    // units: 'string',
     infoText: 'GTDB-Tk taxonomy assignment of the MAG',
   },
   quality: {
@@ -243,7 +255,7 @@ export const searchColumnsLookup = {
   },
 }
 
-export const searchColumns = [
+const searchColumnsBase = [
   {
     accessor: 'mag_id',
     Header: <HeaderInfo accessor="mag_id" />,
@@ -273,56 +285,56 @@ export const searchColumns = [
     ),
   },
   {
-    accessor: 'tax_domain',
-    Header: <HeaderInfo accessor="tax_domain" />,
+    accessor: 'tax_gtdb_domain',
+    Header: <HeaderInfo accessor="tax_gtdb_domain" />,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
     ),
   },
   {
-    accessor: 'tax_phylum',
-    Header: <HeaderInfo accessor="tax_phylum" />,
+    accessor: 'tax_gtdb_phylum',
+    Header: <HeaderInfo accessor="tax_gtdb_phylum" />,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
     ),
   },
   {
-    accessor: 'tax_class',
-    Header: <HeaderInfo accessor="tax_class" />,
+    accessor: 'tax_gtdb_class',
+    Header: <HeaderInfo accessor="tax_gtdb_class" />,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
     ),
   },
   {
-    accessor: 'tax_order',
-    Header: <HeaderInfo accessor="tax_order" />,
+    accessor: 'tax_gtdb_order',
+    Header: <HeaderInfo accessor="tax_gtdb_order" />,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
     ),
   },
   {
-    accessor: 'tax_family',
-    Header: <HeaderInfo accessor="tax_family" />,
+    accessor: 'tax_gtdb_family',
+    Header: <HeaderInfo accessor="tax_gtdb_family" />,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
     ),
   },
   {
-    accessor: 'tax_genus',
-    Header: <HeaderInfo accessor="tax_genus" />,
+    accessor: 'tax_gtdb_genus',
+    Header: <HeaderInfo accessor="tax_gtdb_genus" />,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
     ),
   },
   {
-    accessor: 'tax_species',
-    Header: <HeaderInfo accessor="tax_species" />,
+    accessor: 'tax_gtdb_species',
+    Header: <HeaderInfo accessor="tax_gtdb_species" />,
     minWidth: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -445,14 +457,46 @@ export const searchColumns = [
       <InputNumberRange filter={filter} onChange={onChange} width={240} />
     ),
   },
-  {
-    accessor: 'tax_gtdb',
-    Header: <HeaderInfo accessor="tax_gtdb" />,
-    sortable: true,
-    minWidth: 900,
-    Filter: ({ filter, onChange }) => (
-      <InputSearch filter={filter} onChange={onChange} width={900} />
-    ),
-  },
   // NOTE: last column needs a bit more minWidth than the width of the Input
 ]
+
+const columnTax = {
+  accessor: 'tax',
+  Header: <HeaderInfo accessor="tax" />,
+  sortable: true,
+  minWidth: 900,
+  Filter: ({ filter, onChange }) => <InputSearch filter={filter} onChange={onChange} width={900} />,
+}
+
+const columnTax16S = {
+  accessor: 'tax_16s',
+  Header: <HeaderInfo accessor="tax_16s" />,
+  sortable: true,
+  minWidth: 900,
+  Filter: ({ filter, onChange }) => <InputSearch filter={filter} onChange={onChange} width={900} />,
+}
+
+const columnTaxGTDB = {
+  accessor: 'tax_gtdb',
+  Header: <HeaderInfo accessor="tax_gtdb" />,
+  sortable: true,
+  minWidth: 900,
+  Filter: ({ filter, onChange }) => <InputSearch filter={filter} onChange={onChange} width={900} />,
+}
+
+export const searchColumns = searchColumnsBase //.push(columnTaxGTDB)
+
+// don't show the split ranks on the MAG inspect page
+const excludeForMags = [
+  'tax_gtdb_domain',
+  'tax_gtdb_phylum',
+  'tax_gtdb_class',
+  'tax_gtdb_order',
+  'tax_gtdb_family',
+  'tax_gtdb_genus',
+  'tax_gtdb_species',
+]
+
+export const magColumns = searchColumns
+  .filter((x) => !excludeForMags.includes(x.accessor))
+  .concat([columnTaxGTDB])

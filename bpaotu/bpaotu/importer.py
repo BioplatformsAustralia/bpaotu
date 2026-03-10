@@ -806,29 +806,29 @@ class DataImporter:
             for r in reader:
                 self.validate_bintable_row(r)
 
-                tax_domain = None
-                tax_phylum = None
-                tax_class = None
-                tax_order = None
-                tax_family = None
-                tax_genus = None
-                tax_species = None
+                tax_gtdb_domain = None
+                tax_gtdb_phylum = None
+                tax_gtdb_class = None
+                tax_gtdb_order = None
+                tax_gtdb_family = None
+                tax_gtdb_genus = None
+                tax_gtdb_species = None
 
-                for part in r["Tax"].split(";"):
-                    if part.startswith("k_"):
-                        tax_domain = part
-                    elif part.startswith("p_"):
-                        tax_phylum = part
-                    elif part.startswith("c_"):
-                        tax_class = part
-                    elif part.startswith("o_"):
-                        tax_order = part
-                    elif part.startswith("f_"):
-                        tax_family = part
-                    elif part.startswith("g_"):
-                        tax_genus = part
-                    elif part.startswith("s_"):
-                        tax_species = part
+                for part in r["GTDB Tax"].split(";"):
+                    if part.startswith("d__"):
+                        tax_gtdb_domain = part
+                    elif part.startswith("p__"):
+                        tax_gtdb_phylum = part
+                    elif part.startswith("c__"):
+                        tax_gtdb_class = part
+                    elif part.startswith("o__"):
+                        tax_gtdb_order = part
+                    elif part.startswith("f__"):
+                        tax_gtdb_family = part
+                    elif part.startswith("g__"):
+                        tax_gtdb_genus = part
+                    elif part.startswith("s__"):
+                        tax_gtdb_species = part
 
                 # note that some fields have the sample_id in them
                 # and that this may be cleaned up in the future
@@ -836,16 +836,16 @@ class DataImporter:
                     "mag_id": r["MAG ID"],
                     "sample_id": r["Sample ID"],
                     "method": r["Method"],
-                    "tax": r["Tax"],
-                    "tax_domain": tax_domain,
-                    "tax_phylum": tax_phylum,
-                    "tax_class": tax_class,
-                    "tax_order": tax_order,
-                    "tax_family": tax_family,
-                    "tax_genus": tax_genus,
-                    "tax_species": tax_species,
+                    "tax": r["Tax"] or None,
                     "tax_16s": r["Tax 16S"] or None,
                     "tax_gtdb": r["GTDB Tax"] or None,
+                    "tax_gtdb_domain": tax_gtdb_domain,
+                    "tax_gtdb_phylum": tax_gtdb_phylum,
+                    "tax_gtdb_class": tax_gtdb_class,
+                    "tax_gtdb_order": tax_gtdb_order,
+                    "tax_gtdb_family": tax_gtdb_family,
+                    "tax_gtdb_genus": tax_gtdb_genus,
+                    "tax_gtdb_species": tax_gtdb_species,
                     "length": self.to_int(r, "Length"),
                     "gc_perc": self.to_float(r, "GC perc"),
                     "num_contigs": self.to_int(r, "Num contigs"),

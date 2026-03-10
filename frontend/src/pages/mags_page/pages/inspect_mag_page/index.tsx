@@ -15,7 +15,7 @@ import {
   MagsMap,
   MagsPageContainer,
 } from 'pages/mags_page/components'
-import { searchColumns } from 'pages/mags_page/definitions/search_columns'
+import { magColumns } from 'pages/mags_page/definitions/search_columns'
 
 import './styles.css'
 
@@ -24,7 +24,7 @@ const GenomeInformation = ({ record }) => {
     <Card>
       <CardHeader tag="h5">Genome Information</CardHeader>
       <CardBody>
-        <InfoTable columns={searchColumns} record={record} mag />
+        <InfoTable columns={magColumns} record={record} mag />
       </CardBody>
     </Card>
   )

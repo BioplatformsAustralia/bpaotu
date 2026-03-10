@@ -259,18 +259,17 @@ class MAG(SchemaMixin, Base):
     sample_id = Column(Integer, nullable=False, index=True)
     method = Column(String, nullable=False)
 
-    tax = Column(String, nullable=False)
-    tax_domain = Column(String, nullable=True)
-    tax_phylum = Column(String, nullable=True)
-    tax_class = Column(String, nullable=True)
-    tax_order = Column(String, nullable=True)
-    tax_family = Column(String, nullable=True)
-    tax_genus = Column(String, nullable=True)
-    tax_species = Column(String, nullable=True)
-
+    tax = Column(String, nullable=True)
     tax_16s = Column(String, nullable=True)
-
     tax_gtdb = Column(String, nullable=True)
+
+    tax_gtdb_domain = Column(String, nullable=True)
+    tax_gtdb_phylum = Column(String, nullable=True)
+    tax_gtdb_class = Column(String, nullable=True)
+    tax_gtdb_order = Column(String, nullable=True)
+    tax_gtdb_family = Column(String, nullable=True)
+    tax_gtdb_genus = Column(String, nullable=True)
+    tax_gtdb_species = Column(String, nullable=True)
 
     length = Column(Integer, nullable=False)
     gc_perc = Column(Float, nullable=False)
@@ -295,8 +294,8 @@ class MAG(SchemaMixin, Base):
         )
 
     def to_dict(self):
-        # parse the tax and tax_16s fields into parts
-        # - they are both ; separated strings
+        # parsing the tax fields into parts
+        # - they are all ; separated strings
         # - they can be different lengths
         # - tax can have extra n_ rows
         #   (these are handled in the importer)
@@ -308,28 +307,26 @@ class MAG(SchemaMixin, Base):
         #   - e.g. superkingdom:Bacteria|superkingdom:Bacteria
         # - tax_16s can have repeated ranks
         #   - e.g. clade:FCB group;clade:Bacteroidetes/Chlorobi group
-        #
-        # NOTE: disregard tax_16s for now
-        # NOTE: disregard tax_gtdb for now
+        # - tax_gtdb is preferred field
 
         return {
             "id": self.id,
             "sample_id": self.sample_id,
             "bin_id": self.bin_id,
             "method": self.method,
-            # tax and parsed fields
+            # tax fields
             "tax": self.tax,
-            "tax_domain": self.tax_domain,
-            "tax_phylum": self.tax_phylum,
-            "tax_class": self.tax_class,
-            "tax_order": self.tax_order,
-            "tax_family": self.tax_family,
-            "tax_genus": self.tax_genus,
-            "tax_species": self.tax_species,
-            # tax_16s and parsed fields
-            # "tax_16s": self.tax_16s,
-            # tax_gtdb and parsed fields
-            # "tax_gtdb": self.tax_gtdb,
+            "tax_16s": self.tax_16s,
+            "tax_gtdb": self.tax_gtdb,
+            # parsed tax fields
+            "tax_gtdb_domain": self.tax_domain,
+            "tax_gtdb_phylum": self.tax_phylum,
+            "tax_gtdb_class": self.tax_class,
+            "tax_gtdb_order": self.tax_order,
+            "tax_gtdb_family": self.tax_family,
+            "tax_gtdb_genus": self.tax_genus,
+            "tax_gtdb_species": self.tax_species,
+            # remainder
             "length": self.length,
             "gc_perc": self.gc_perc,
             "num_contigs": self.num_contigs,
