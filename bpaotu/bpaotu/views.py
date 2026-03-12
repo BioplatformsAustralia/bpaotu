@@ -1365,20 +1365,20 @@ MAG_FILE_TYPE_EXTENSION_MAP = {
 @require_GET
 def download_mag(request):
     mag_id = request.GET.get('magId')
-    file_type = request.GET.get('fileType')
+    download_type = request.GET.get('downloadType')
 
-    if not mag_id or not file_type:
+    if not mag_id or not download_type:
         raise Http404()
 
     # Special case
     # TODO: how to determine the different method (ar53 vs ???)? Maybe rename files
-    if file_type == "gtdbtk":
+    if download_type == "gtdbtk":
         sample_id = mag_id.split("_")[0]
         mag_filename = f"{sample_id}_gtdbtk.ar53.summary.tsv.gz"
     else:
-        ext = MAG_FILE_TYPE_EXTENSION_MAP.get(file_type)
+        ext = MAG_FILE_TYPE_EXTENSION_MAP.get(download_type)
         if not ext:
-            raise Http404(f"Unexpected file type: {file_type}")
+            raise Http404(f"Unexpected file type: {download_type}")
         mag_filename = f"{mag_id}{ext}"
 
     # Check the real filepath exists
@@ -1388,7 +1388,7 @@ def download_mag(request):
         # This will open a new window with an error page
         # (so that redux state on frontend is not lost)
         return redirect(
-            f"/mags/download_error?magId={mag_id}&fileType={file_type}"
+            f"/mags/download_error?magId={mag_id}&downloadType={download_type}"
         )
 
     # Sanitize filename to prevent ../ attacks or other tricks

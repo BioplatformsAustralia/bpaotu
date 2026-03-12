@@ -6,8 +6,8 @@ import { Card, CardHeader, CardBody, Container, Row, Col, NavLink } from 'reacts
 
 const leftColumnStyle = {
   display: 'inline-block',
-  width: 100,
-  minWidth: 100,
+  width: 150,
+  minWidth: 150,
   fontWeight: 'bold',
 } as React.CSSProperties
 
@@ -15,7 +15,7 @@ export const MagDownloadErrorPage = (props) => {
   const { search } = useLocation()
   const params = new URLSearchParams(search)
   const magId = params.get('magId')
-  const fileType = params.get('fileType')
+  const downloadType = params.get('downloadType')
 
   return (
     <Container fluid={true}>
@@ -30,8 +30,8 @@ export const MagDownloadErrorPage = (props) => {
                 <span>{magId}</span>
               </p>
               <p>
-                <span style={leftColumnStyle}>File type:</span>
-                <span>{fileType}</span>
+                <span style={leftColumnStyle}>Download type:</span>
+                <span>{downloadType}</span>
               </p>
               <p>Please contact us to request more information.</p>
               <p>

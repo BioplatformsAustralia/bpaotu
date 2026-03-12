@@ -6,57 +6,61 @@ import './downloads_table.css'
 
 const magFileTypesLookup = [
   {
-    type: 'antismash',
+    downloadType: 'antismash',
     fileType: 'zip',
     description: 'Antismash analysis of the MAG',
   },
   {
-    type: 'cog',
+    downloadType: 'cog',
     fileType: 'tsv',
     description: 'COG functional assignment for each ORF in the MAG',
   },
-  { type: 'fa', fileType: 'FASTA', description: 'Fasta file containing the contigs from the MAG' },
   {
-    type: 'gff',
+    downloadType: 'fa',
+    fileType: 'FASTA',
+    description: 'Fasta file containing the contigs from the MAG',
+  },
+  {
+    downloadType: 'gff',
     fileType: 'genome feature format version3',
     description: 'Features and position in contigs for each of the predicted genes in the MAG',
   },
   {
-    type: 'kegg',
+    downloadType: 'kegg',
     fileType: 'tsv',
     description: 'KEGG functional assignment for each ORF in the MAG',
   },
   {
-    type: 'orf.faa',
+    downloadType: 'orf.faa',
     fileType: 'FASTA',
     description: 'Amino acid sequences for predicted ORFs in the MAG',
   },
   {
-    type: 'orf.fa',
+    downloadType: 'orf.fa',
     fileType: 'FASTA',
     description: 'Nucleotide sequences for predicted ORF in the MAG',
   },
   {
-    type: 'orftable',
+    downloadType: 'orftable',
     fileType: 'tsv',
     description: 'Several measures regarding ORF characteristics of the MAG',
   },
   {
-    type: 'pfam',
+    downloadType: 'pfam',
     fileType: 'tsv',
     description: 'PFAM functional assignment for each ORF in the MAG',
   },
   {
-    type: 'gtdbtk',
+    downloadType: 'gtdbtk',
     fileType: 'tsv',
     description: 'GTDB-Tk taxonomy assignment of the MAG',
   },
 ]
 
 const DownloadsTable = ({ magId }) => {
-  const openDownloadInNewTab = (fileType: string) => {
+  const openDownloadInNewTab = (downloadType: string) => {
     // open the download URL in a new tab via script - browsers will then allow window.close() from that tab
-    const url = `/ext/mags/download?magId=${encodeURIComponent(magId)}&fileType=${encodeURIComponent(fileType)}`
+    const url = `/ext/mags/download?magId=${encodeURIComponent(magId)}&downloadType=${encodeURIComponent(downloadType)}`
     window.open(url, '_blank', 'noopener')
   }
 
@@ -75,10 +79,10 @@ const DownloadsTable = ({ magId }) => {
           </thead>
 
           <tbody>
-            {magFileTypesLookup.map(({ type, fileType, description }) => {
+            {magFileTypesLookup.map(({ downloadType, fileType, description }) => {
               return (
-                <tr key={type}>
-                  <td className="downloads-type">{type}</td>
+                <tr key={downloadType}>
+                  <td className="downloads-type">{downloadType}</td>
                   <td className="downloads-download">
                     <Button
                       size="sm"
@@ -86,7 +90,7 @@ const DownloadsTable = ({ magId }) => {
                       outline={true}
                       color="primary"
                       aria-label="Download"
-                      onClick={() => openDownloadInNewTab(fileType)}
+                      onClick={() => openDownloadInNewTab(downloadType)}
                     >
                       <Octicon name="desktop-download" />
                     </Button>
