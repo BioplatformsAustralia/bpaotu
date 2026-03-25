@@ -1349,7 +1349,7 @@ def mags(request):
     })
 
 
-MAGS_BASE_DIR = Path("/data/MAGS")
+MAGS_BASE_DIR = Path(settings.MAGS_BASE_DIR)
 MAG_FILE_TYPE_EXTENSION_MAP = {
     "antismash": "-antismash.zip",
     "cog": ".cog.gz",
