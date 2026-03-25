@@ -1355,6 +1355,7 @@ MAG_FILE_TYPE_EXTENSION_MAP = {
     "cog": ".cog.gz",
     "fa": ".fa.gz",
     "gff": ".gff.gz",
+    "gtdbtk": "_gtdbtk.summary.tsv.gz",
     "kegg": ".kegg.gz",
     "orf.faa": ".orf.faa.gz",
     "orf.fa": ".orf.fa.gz",
@@ -1370,16 +1371,10 @@ def download_mag(request):
     if not mag_id or not download_type:
         raise Http404()
 
-    # Special case
-    # TODO: how to determine the different method (ar53 vs ???)? Maybe rename files
-    if download_type == "gtdbtk":
-        sample_id = mag_id.split("_")[0]
-        mag_filename = f"{sample_id}_gtdbtk.ar53.summary.tsv.gz"
-    else:
-        ext = MAG_FILE_TYPE_EXTENSION_MAP.get(download_type)
-        if not ext:
-            raise Http404(f"Unexpected file type: {download_type}")
-        mag_filename = f"{mag_id}{ext}"
+    ext = MAG_FILE_TYPE_EXTENSION_MAP.get(download_type)
+    if not ext:
+        raise Http404(f"Unexpected file type: {download_type}")
+    mag_filename = f"{mag_id}{ext}"
 
     # Check the real filepath exists
     # This is dependent on MAGS_BASE_DIR being mounted as a volume for docker to see
