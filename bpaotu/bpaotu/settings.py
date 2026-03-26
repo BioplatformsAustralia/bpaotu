@@ -251,6 +251,6 @@ DEFAULT_TAXONOMIES = [
     ['silva138', 'SKlearn'],
     ['unite8', 'wang']]
 
-MAGS_BASE_DIR = env.get("MAGS_BASE_DIR", "/data/MAGS")
+MAGS_BASE_DIR = "/data"
 
 MIXPANEL_TOKEN = env.get("MIXPANEL_TOKEN", "")
