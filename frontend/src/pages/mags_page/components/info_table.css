@@ -39,10 +39,14 @@
 
 .info-label {
   width: 30%;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.info-label-text {
   font-size: 20px;
   font-weight: bold;
   text-align: left;
-  white-space: nowrap;
 }
 
 .info-units {
@@ -53,8 +57,34 @@
 }
 
 .info-value {
-  width: 70%;
+  width: 50%;
   text-align: right;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.tax-gtdb-controls {
+  display: inline-flex;
+  margin-left: 9px;
+  vertical-align: text-top;
+}
+
+.tax-gtdb-button {
+  font-size: 13px;
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  position: relative;
+  top: -1px;
+}
+
+.tax-gtdb-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  list-style: none;
+}
+
+.tax-gtdb-list li {
+  line-height: 1.3;
 }
