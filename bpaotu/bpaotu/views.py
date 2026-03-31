@@ -1381,7 +1381,7 @@ def download_mag(request):
     file_path = MAGS_BASE_DIR / mag_id / mag_filename
     if not file_path.exists():
         # This will open a new window with an error page (so that redux state on frontend is not lost)
-        logger.warning(f"MAG file does not exist: {filepath}")
+        logger.warning(f"MAG file does not exist: {file_path}")
         return redirect(
             f"/mags/download_error?magId={mag_id}&downloadType={download_type}"
         )
