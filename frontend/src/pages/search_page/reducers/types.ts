@@ -116,6 +116,7 @@ export interface PageState {
       n_neighbors: number
       spread: number
     }
+    umapParamsErrors: string[]
     results: {
       ordination: any
       contextual: any
@@ -256,6 +257,7 @@ export const searchPageInitialState: PageState = {
       n_neighbors: 15,
       spread: 1.0,
     },
+    umapParamsErrors: [],
     alerts: [],
     errors: [],
     submissions: [],

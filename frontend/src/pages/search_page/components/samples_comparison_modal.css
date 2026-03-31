@@ -1,0 +1,62 @@
+.overlay {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 99999;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: white;
+  border-radius: 8px;
+  padding-top: 20px;
+  padding-bottom: 8px;
+}
+
+.loading-text {
+  text-align: center;
+  margin-top: 22px;
+}
+
+.popup-menu {
+  pointer-events: auto;
+  position: absolute;
+  background-color: rgb(244, 244, 244);
+  top: 0;
+  left: 0;
+  margin-top: 32px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  padding: 12px 0px;
+  z-index: 10;
+}
+
+.popup-menu-umap {
+  width: 350px;
+}
+
+.popup-menu-download {
+  width: 150px;
+}
+
+.popup-menu-error-container {
+  margin-top: 10px;
+}
+
+.popup-menu-error {
+  color: #dc3545;
+  font-size: 0.85em;
+}
+
+.popup-menu-control {
+  margin-top: 10px;
+  text-align: right;
+}
