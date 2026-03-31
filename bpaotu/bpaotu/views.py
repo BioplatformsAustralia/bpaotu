@@ -1380,13 +1380,13 @@ def download_mag(request):
     # This is dependent on MAGS_BASE_DIR being mounted as a volume for docker to see
     file_path = MAGS_BASE_DIR / mag_id / mag_filename
     if not file_path.exists():
-        # This will open a new window with an error page
-        # (so that redux state on frontend is not lost)
+        # This will open a new window with an error page (so that redux state on frontend is not lost)
+        logger.warning(f"MAG file does not exist: {filepath}")
         return redirect(
             f"/mags/download_error?magId={mag_id}&downloadType={download_type}"
         )
 
-    # Sanitize filename to prevent ../ attacks or other tricks
+    # Sanitise filename to prevent ../ attacks or other tricks
     safe_filename = PurePosixPath(mag_filename).name
 
     response = HttpResponse()
