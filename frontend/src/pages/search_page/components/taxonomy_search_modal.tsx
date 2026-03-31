@@ -21,6 +21,7 @@ import { selectAmplicon } from '../reducers/amplicon'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import {
   handleTaxonomySearchString,
+  handleClear,
   handleSetSelectIndex,
   runTaxonomySearch,
   closeTaxonomySearchModal,
@@ -104,6 +105,9 @@ const TaxonomySearchModal = (props) => {
     isLoading,
     searchStringInput,
     searchString,
+    isSearchValid,
+    searchValidationError,
+    hasAttemptedSearch,
     selectIndex,
     results,
     error,
@@ -332,12 +336,11 @@ const TaxonomySearchModal = (props) => {
     }, 300)
   }
 
-  const onSubmit = () => {
-    if (isLoading) {
-      return
-    }
+  const trimmed = (searchStringInput || '').trim()
 
-    const trimmed = (searchStringInput || '').trim()
+  const onSubmit = () => {
+    if (isLoading) return
+
     if (trimmed) {
       props.runTaxonomySearch()
     }
@@ -399,6 +402,7 @@ const TaxonomySearchModal = (props) => {
             Supergroup. The rank label associated with a given taxonomy can be also seen by hovering
             over the value.
           </p>
+          <p>Note that this tool only searches on one taxonomic rank at a time.</p>
           <p>
             When viewing the search results, click the "Select" button to set the taxonomy search
             filters for that taxonomy.
@@ -440,6 +444,11 @@ const TaxonomySearchModal = (props) => {
             <Button color="warning" disabled={isLoading} onClick={onSubmit}>
               Taxonomy Search
             </Button>
+            {results.length > 1 && (
+              <Button color="link" onClick={props.handleClear}>
+                Clear
+              </Button>
+            )}
           </Col>
         </Row>
         <Col style={{ marginTop: 10, marginBottom: 10 }}>
@@ -447,6 +456,9 @@ const TaxonomySearchModal = (props) => {
             <div style={loadingStyle}>
               <AnimateHelix />
             </div>
+          )}
+          {hasAttemptedSearch && searchValidationError && (
+            <div className="text-danger">{searchValidationError}</div>
           )}
           {searchString && (
             <div style={{ margin: 1 }}>
@@ -611,13 +623,7 @@ function mapStateToProps(state) {
   const ampliconName = ampliconLookup && ampliconLookup.value
 
   return {
-    isOpen,
-    isLoading,
-    searchStringInput,
-    searchString,
-    selectIndex,
-    results,
-    error,
+    ...state.searchPage.taxonomySearchModal,
     amplicon: { ...selectedAmplicon, ...{ text: ampliconName } },
     taxonomy: state.searchPage.filters.taxonomy,
     rankLabelsLookup: state.referenceData.ranks.rankLabelsLookup,
@@ -629,6 +635,7 @@ function mapDispatchToProps(dispatch) {
     {
       handleTaxonomySearchString,
       handleSetSelectIndex,
+      handleClear,
       runTaxonomySearch,
       closeTaxonomySearchModal,
       selectAmplicon,
