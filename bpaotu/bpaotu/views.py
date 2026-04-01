@@ -107,6 +107,7 @@ def api_config(request):
         'contextual_graph_endpoint': reverse('contextual_graph_fields'),
         'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),
         'taxonomy_search_endpoint': reverse('taxonomy_search'),
+        'mags_available': mags_available(),
         'mags_endpoint': reverse('mags'),
         'mags_sample_count_endpoint': reverse('mags_sample_count'),
         'search_endpoint': reverse('otu_search'),
@@ -1410,6 +1411,17 @@ def mags_sample_count(request):
         )
 
     return JsonResponse({ 'sample_id': sample_id, 'sample_mags_count': total_count })
+
+
+def mags_available():
+    """Boot-time check if there are any MAGs in the database"""
+
+    try:
+        with MagQuery() as query:
+            return query.exists()
+    except Exception as e:
+        logger.error(f"Error running mags_available", exc_info=True)
+        return False
 
 
 # --------------------------------------------------------------------------- #

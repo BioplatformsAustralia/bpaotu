@@ -375,6 +375,11 @@ class MagQuery:
 
         return q, query_headers
 
+    def exists(self, filtering=()):
+        """Return True if at least one MAG row exists matching the filters."""
+        q, _ = self._base_query(filtering)
+        return q.first() is not None
+
     def count(self, filtering=()):
         q, _ = self._base_query(filtering)
 

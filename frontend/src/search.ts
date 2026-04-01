@@ -20,6 +20,7 @@ export interface SearchConfig {
   contextual_graph_endpoint: string
   taxonomy_graph_endpoint: string
   taxonomy_search_endpoint: string
+  mags_available: boolean
   mags_endpoint: string
   mags_sample_count_endpoint: string
   taxonomy_set_endpoint: string

@@ -14,6 +14,8 @@ const Header = ({ userEmailAddress }) => {
   const [isOpen, setIsOpen] = useState(false)
   const toggle = () => setIsOpen(!isOpen)
 
+  const magsAvailable = window.otu_search_config.mags_available
+
   const navLinkStyle = {
     paddingLeft: '16px',
     paddingRight: '16px',
@@ -65,12 +67,14 @@ const Header = ({ userEmailAddress }) => {
             </NavLink>
           </NavItem>
 
-          <NavItem>
-            <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/mags">
-              {/*<Octicon name="file" />*/}
-              MAGs
-            </NavLink>
-          </NavItem>
+          {magsAvailable && (
+            <NavItem>
+              <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/mags">
+                {/*<Octicon name="file" />*/}
+                MAGs
+              </NavLink>
+            </NavItem>
+          )}
 
           <NavItem>
             <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/map">
