@@ -352,6 +352,59 @@ AAAAGAAGTAAGTAGTCTAACCGTTTACGGAGGGCGCTTACCACTTTGTGATTCATGACTGGGG  21653 14
 AAAAGAAGTAGATAGCTTAACCTTCGGGAGGGCGTTTACCACTTTGTGATTCATGACTGGGG  21644 70  2
 ```
 
+### MAGs
+
+#### Table
+
+The .bintable files should be placed in a MAG directory under the ingest directory, i.e. the same base directory for the abundance and taxonomy files. They will then be ingested and displayed on the MAGs page.
+
+The expected format is tsv and the expected columns are:
+
+- mag_id (String, must be unique)
+- sample_id (Integer)
+- method (String)
+- tax (String, can be blank)
+- tax_16s (String, can be blank)
+- tax_gtdb (String, can be blank)
+- length (Integer)
+- gc_perc (Float)
+- num_contigs (Integer)
+- disparity (Float)
+- completeness (Float, can be blank)
+- contamination (Float, can be blank)
+- strain_het (Float, can be blank)
+- coverage (Float)
+- tpm (Float)
+- quality (Float, can be blank)
+- completeness_checkM2 (Float, can be blank)
+- contamination_checkM2 (Float, can be blank)
+- contig_n50_checkM2 (Integer, can be blank)
+
+The MAG part of the ingest can be run by itself by using the --only-mags-bintable flag, e.g.
+
+`/app/docker-entrypoint.sh django-admin otu_ingest ingest/AM_data_db_submit_202601151230/ 2026-03-05 --only-mags-bintable`
+
+#### Download files
+
+Configure the `MAGS_BASE_DIR` environment variable to the location of the MAG files.
+
+Files for each MAG should be organised under a subdirectory for the unique MAG ID and adhere to the following naming convention (for the part after the MAG ID):
+
+```
+- "antismash": "-antismash.zip",
+- "cog": ".cog.gz",
+- "fa": ".fa.gz",
+- "gff": ".gff.gz",
+- "gtdbtk": "_gtdbtk.summary.tsv.gz",
+- "kegg": ".kegg.gz",
+- "orf.faa": ".orf.faa.gz",
+- "orf.fa": ".orf.fa.gz",
+- "orftable": ".orftable.gz",
+- "pfam": ".pfam.gz",
+```
+
+e.g. for a MAG ID of "35988_maxbin.020" and the "gtdbtk" file type the file should be under a directory called "35988_maxbin.020" and named "35988_maxbin.020_gtdbtk.ar53.summary.tsv.gz"
+
 ## Database
 
 ### Database visualisation
