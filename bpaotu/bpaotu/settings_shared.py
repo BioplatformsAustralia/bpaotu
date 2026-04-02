@@ -192,6 +192,9 @@ LOGGING = {
         'verbose-alt': {
             'format': '[%(levelname)s:%(asctime)s] %(message)s'
         },
+        'importer': {
+            'format': '[%(levelname)s:%(asctime)s] %(message)s'
+        },
         'db': {
             'format': '[%(duration)s:%(sql)s:%(params)s %(filename)s %(lineno)s %(funcName)s] %(message)s'
         },
@@ -227,6 +230,11 @@ LOGGING = {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
+        },
+        'console_importer': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'importer'
         },
         'shell': {
             'level': 'DEBUG',
@@ -286,6 +294,11 @@ LOGGING = {
         },
         'bpaotu-alt': {
             'handlers': ['console-alt', 'file'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'importer': {
+            'handlers': ['console_importer', 'file'],
             'level': LOG_LEVEL,
             'propagate': False,
         },

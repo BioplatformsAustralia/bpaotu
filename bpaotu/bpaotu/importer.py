@@ -48,7 +48,7 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   make_engine)
 from .sample_meta import update_from_ckan
 
-logger = logging.getLogger("bpaotu")
+logger = logging.getLogger("importer")
 
 
 class DataImportError(Exception):
