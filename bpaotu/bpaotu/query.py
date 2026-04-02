@@ -685,7 +685,15 @@ class SampleQuery:
 
     def matching_sample_otus_blast(self, otu_ids):
         q = self._session\
-                .query(OTU.id, OTU.code, Sequence.seq, SampleOTU.count, SampleContext.id, SampleContext.latitude, SampleContext.longitude)\
+                .query(
+                    OTU.id.label("OTU_id"),
+                    OTU.code.label("OTU_code"),
+                    Sequence.seq.label("Sequence_seq"),
+                    SampleOTU.count.label("SampleOTU_count"),
+                    SampleContext.id.label("SampleContext_id"),
+                    SampleContext.latitude.label("SampleContext_latitude"),
+                    SampleContext.longitude.label("SampleContext_longitude")
+                )\
                 .join(Taxonomy.otus)\
                 .join(SampleOTU, SampleOTU.otu_id == OTU.id)\
                 .join(SampleContext, SampleContext.id == SampleOTU.sample_id)\
