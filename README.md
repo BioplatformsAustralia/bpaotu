@@ -379,6 +379,9 @@ The expected format is tsv and the expected columns are:
 - completeness_checkM2 (Float, can be blank)
 - contamination_checkM2 (Float, can be blank)
 - contig_n50_checkM2 (Integer, can be blank)
+- quality_checkM2 (Float, can be blank)
+
+Note that for "Completeness", "Contamination" and "Quality" one of the checkM and checkM2 values must be present. The unqualified titles are checkM values.
 
 The MAG part of the ingest can be run by itself by using the --only-mags-bintable flag, e.g.
 

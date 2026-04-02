@@ -275,17 +275,18 @@ class MAG(SchemaMixin, Base):
     gc_perc = Column(Float, nullable=False)
     num_contigs = Column(Integer, nullable=False)
     disparity = Column(Float, nullable=False)
-
-    completeness = Column(Float, nullable=True)
-    contamination = Column(Float, nullable=True)
     strain_het = Column(Float, nullable=True)
 
     coverage = Column(Float, nullable=False)
     tpm = Column(Float, nullable=False)
-    quality = Column(Float, nullable=True)
 
-    completeness_checkM2 = Column(Float, nullable=True)
-    contamination_checkM2 = Column(Float, nullable=True)
+    quality_checkm  = Column(Float, nullable=True)
+    quality_checkm2 = Column(Float, nullable=True)
+    completeness_checkm  = Column(Float, nullable=True)
+    completeness_checkm2 = Column(Float, nullable=True)
+    contamination_checkm  = Column(Float, nullable=True)
+    contamination_checkm2 = Column(Float, nullable=True)
+
     contig_n50_checkM2 = Column(Integer, nullable=True)
 
     def __repr__(self):

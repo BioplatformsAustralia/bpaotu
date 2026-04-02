@@ -850,21 +850,36 @@ class DataImporter:
                     "gc_perc": self.to_float(r, "GC perc"),
                     "num_contigs": self.to_int(r, "Num contigs"),
                     "disparity": self.to_float(r, "Disparity"),
-                    "completeness": self.to_float(r, "Completeness"),
-                    "contamination": self.to_float(r, "Contamination"),
                     "strain_het": self.to_float(r, "Strain het"),
                     "coverage": self.to_float(r, f"Coverage"),
                     "tpm": self.to_float(r, f"TPM"),
-                    "quality": self.to_float(r, "quality"),
-                    "completeness_checkM2": self.to_float(r, "checkM2 Completeness"),
-                    "contamination_checkM2": self.to_float(r, "checkM2 Contamination"),
-                    "contig_n50_checkM2": self.to_float(r, "checkM2 Contig_N50"),
+                    "quality_checkm": self.to_float(r, "CheckM Quality"),
+                    "quality_checkm2": self.to_float(r, "CheckM2 Quality"),
+                    "completeness_checkm": self.to_float(r, "CheckM Completeness"),
+                    "completeness_checkm2": self.to_float(r, "CheckM2 Completeness"),
+                    "contamination_checkm": self.to_float(r, "CheckM Contamination"),
+                    "contamination_checkm2": self.to_float(r, "CheckM2 Contamination"),
+                    "contig_n50_checkm2": self.to_float(r, "CheckM2 Contig_N50"),
                 }
 
     # placeholder for validation
     def validate_bintable_row(self, row):
+        # self.warn_if_both_missing(row, "quality (CheckM & CheckM2)", ("quality", "CheckM2 Quality"))
+        self.warn_if_both_missing(row, "completeness (CheckM & CheckM2)", ("Completeness", "CheckM2 Completeness"))
+        self.warn_if_both_missing(row, "contamination (CheckM & CheckM2)", ("Contamination", "CheckM2 Contamination"))
+
         if False:
             raise DataImportError(f"ERROR TEXT row={row}")
+
+    def warn_if_both_missing(self, row, label, ks):
+        v1 = row[ks[0]]
+        v2 = row[ks[1]]
+
+        if v1 is None and v2 is None:
+            logger.warn(
+                f"Missing {label} in row: "
+                f"'sample_id'={row['Sample ID']} 'MAG ID'={row['MAG ID']}"
+            )
 
     def to_int(self, r, key):
         v = r[key]
@@ -880,7 +895,5 @@ class DataImporter:
         if v in (None, "", "NA"):
             sample_id = r["Sample ID"]
             mag_id = r["MAG ID"]
-            logger.warn(f"Missing value in row: 'sample_id'={sample_id} 'MAG ID'={mag_id} for {key}")
             return None
         return float(v)
-
