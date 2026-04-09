@@ -864,9 +864,9 @@ class DataImporter:
 
     # placeholder for validation
     def validate_bintable_row(self, row):
-        # self.warn_if_both_missing(row, "quality (CheckM & CheckM2)", ("quality", "CheckM2 Quality"))
-        self.warn_if_both_missing(row, "completeness (CheckM & CheckM2)", ("Completeness", "CheckM2 Completeness"))
-        self.warn_if_both_missing(row, "contamination (CheckM & CheckM2)", ("Contamination", "CheckM2 Contamination"))
+        self.warn_if_both_missing(row, "quality (CheckM & CheckM2)", ("CheckM Quality", "CheckM2 Quality"))
+        self.warn_if_both_missing(row, "completeness (CheckM & CheckM2)", ("CheckM Completeness", "CheckM2 Completeness"))
+        self.warn_if_both_missing(row, "contamination (CheckM & CheckM2)", ("CheckM Contamination", "CheckM2 Contamination"))
 
         if False:
             raise DataImportError(f"ERROR TEXT row={row}")

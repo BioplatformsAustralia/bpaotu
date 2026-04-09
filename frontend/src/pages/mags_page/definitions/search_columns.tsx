@@ -185,20 +185,40 @@ export const searchColumnsLookup = {
     // units: 'string',
     infoText: 'GTDB-Tk taxonomy assignment of the MAG',
   },
-  quality: {
-    label: 'Quality',
+  quality_checkm: {
+    label: 'CheckM Quality',
     units: '%',
     infoText: "Quality score ('Completeness' - (5 * 'Contamination'))",
   },
-  completeness: {
-    label: 'Completeness',
+  completeness_checkm: {
+    label: 'CheckM Completeness',
     units: '%',
-    infoText: 'Completeness of the MAG (checkM)',
+    infoText: 'Completeness of the MAG (CheckM)',
   },
-  contamination: {
-    label: 'Contamination',
+  contamination_checkm: {
+    label: 'CheckM Contamination',
     units: '%',
-    infoText: 'Contamination of the MAG (checkM)',
+    infoText: 'Contamination of the MAG (CheckM)',
+  },
+  quality_checkm2: {
+    label: 'CheckM2 Quality',
+    units: '%',
+    infoText: "Quality score ('Completeness' - (5 * 'Contamination'))",
+  },
+  completeness_checkm2: {
+    label: 'CheckM2 Completeness',
+    units: '%',
+    infoText: 'Completeness of the MAG (CheckM2)',
+  },
+  contamination_checkm2: {
+    label: 'CheckM2 Contamination',
+    units: '%',
+    infoText: 'Contamination of the MAG (CheckM2)',
+  },
+  contig_n50_checkm2: {
+    label: 'CheckM2 Contig_N50',
+    units: 'num',
+    infoText: 'N50 value',
   },
   length: {
     label: 'Length',
@@ -237,21 +257,6 @@ export const searchColumnsLookup = {
     units: 'num',
     infoText:
       'Transcripts Per Million reads for the MAG in the corresponding sample (Sum of reads from the corresponding sample mapping to contigs in the MAG x 10^6 / Sum of length of contigs in the MAG x Total number of reads)',
-  },
-  completeness_checkM2: {
-    label: 'checkM2 Completeness',
-    units: '%',
-    infoText: 'Completeness of the MAG (checkM2)',
-  },
-  contamination_checkM2: {
-    label: 'checkM2 Contamination',
-    units: '%',
-    infoText: 'Contamination of the MAG (checkM2)',
-  },
-  contig_n50_checkM2: {
-    label: 'checkM2 Contig_N50',
-    units: 'num',
-    infoText: 'N50 value',
   },
 }
 
@@ -341,8 +346,8 @@ const searchColumnsBase = [
     ),
   },
   {
-    accessor: 'quality',
-    Header: <HeaderInfo accessor="quality" />,
+    accessor: 'quality_checkm',
+    Header: <HeaderInfo accessor="quality_checkm" />,
     sortable: true,
     minWidth: 140,
     Filter: ({ filter, onChange }) => (
@@ -350,8 +355,8 @@ const searchColumnsBase = [
     ),
   },
   {
-    accessor: 'completeness',
-    Header: <HeaderInfo accessor="completeness" />,
+    accessor: 'completeness_checkm',
+    Header: <HeaderInfo accessor="completeness_checkm" />,
     sortable: true,
     minWidth: 180,
     Filter: ({ filter, onChange }) => (
@@ -359,12 +364,48 @@ const searchColumnsBase = [
     ),
   },
   {
-    accessor: 'contamination',
-    Header: <HeaderInfo accessor="contamination" />,
+    accessor: 'contamination_checkm',
+    Header: <HeaderInfo accessor="contamination_checkm" />,
     sortable: true,
     minWidth: 180,
     Filter: ({ filter, onChange }) => (
       <InputNumberRange filter={filter} onChange={onChange} width={180} />
+    ),
+  },
+  {
+    accessor: 'quality_checkm2',
+    Header: <HeaderInfo accessor="quality_checkm2" />,
+    sortable: true,
+    minWidth: 140,
+    Filter: ({ filter, onChange }) => (
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
+    ),
+  },
+  {
+    accessor: 'completeness_checkm2',
+    Header: <HeaderInfo accessor="completeness_checkm2" />,
+    sortable: true,
+    minWidth: 250,
+    Filter: ({ filter, onChange }) => (
+      <InputNumberRange filter={filter} onChange={onChange} width={250} />
+    ),
+  },
+  {
+    Header: <HeaderInfo accessor="contamination_checkm2" />,
+    sortable: true,
+    accessor: 'contamination_checkm2',
+    minWidth: 250,
+    Filter: ({ filter, onChange }) => (
+      <InputNumberRange filter={filter} onChange={onChange} width={250} />
+    ),
+  },
+  {
+    accessor: 'contig_n50_checkm2',
+    Header: <HeaderInfo accessor="contig_n50_checkm2" />,
+    sortable: true,
+    minWidth: 240,
+    Filter: ({ filter, onChange }) => (
+      <InputNumberRange filter={filter} onChange={onChange} width={240} />
     ),
   },
   {
@@ -425,36 +466,9 @@ const searchColumnsBase = [
     accessor: 'tpm',
     Header: <HeaderInfo accessor="tpm" />,
     sortable: true,
-    minWidth: 130,
+    minWidth: 150,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={130} />
-    ),
-  },
-  {
-    accessor: 'completeness_checkM2',
-    Header: <HeaderInfo accessor="completeness_checkM2" />,
-    sortable: true,
-    minWidth: 250,
-    Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={250} />
-    ),
-  },
-  {
-    Header: <HeaderInfo accessor="contamination_checkM2" />,
-    sortable: true,
-    accessor: 'contamination_checkM2',
-    minWidth: 250,
-    Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={250} />
-    ),
-  },
-  {
-    accessor: 'contig_n50_checkM2',
-    Header: <HeaderInfo accessor="contig_n50_checkM2" />,
-    sortable: true,
-    minWidth: 240,
-    Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={240} />
+      <InputNumberRange filter={filter} onChange={onChange} width={150} />
     ),
   },
   // NOTE: last column needs a bit more minWidth than the width of the Input
