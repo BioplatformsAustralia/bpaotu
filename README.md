@@ -78,7 +78,7 @@ developed to access data from the Australian Microbiome.
 
   `docker compose -f docker-compose-build.yml build base dev`
 
-- Start all of the containers
+- Start all of the containers. Check comments in the `docker-compose.yml` file for ways to facilatate easier development.
 
   `docker compose up`
 

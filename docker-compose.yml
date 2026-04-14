@@ -18,7 +18,6 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - .:/app
       - ./data/dev:/data
       - dbdata:/var/lib/postgresql/data/
 
@@ -34,11 +33,14 @@ services:
       - WAIT_FOR_DB=1
       - WAIT_FOR_CACHE=1
     volumes:
-      - .:/app
+      ## Uncomment to bind-mount local source code into the container,
+      ## avoiding the need to rebuild on each code change (development only)
+      # - .:/app
       - ./data/dev:/data
     ports:
-      - "8000:8000"
-      - "8888:8888" # Jupyter port
+      - "8000:8000" # Development mode port (runserver)
+      # - "8888:8888" # Jupyter Notebook port (for development/debugging)
+      # - "9000:9000" # Production mode port (uwsgi)
     depends_on:
       - db
       - cache
@@ -57,9 +59,8 @@ services:
       - PYTHONPATH=/app/bpaotu
       - DJANGO_SETTINGS_MODULE=bpaotu.settings_celery
     volumes:
-      ## this would prevent needing to rebuild worker container after each code change
-      ## but is causing issues:
-      ## Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: exec: "/app/docker-worker-entrypoint.sh": permission denied: unknown
+      ## Uncomment to bind-mount local source code into the container,
+      ## avoiding the need to rebuild on each code change (development only)
       # - .:/app
       - ./data/dev:/data
     depends_on:
