@@ -65,7 +65,7 @@ developed to access data from the Australian Microbiome.
   The only purpose of `./.env_local.template` is to document the available keys
   for manual generation of `./.env_local`.
 
-  Ensure that other keys have a value set so the page will work (dummy values are fine). In particaular, CKAN_DEVEL_USER_EMAIL and BPAOTU_AUTH_SECRET_KEY need values, and possibly others.
+  Ensure that other keys have a value set so the page will work (dummy values are fine). Worth mentioning is the SKIP_WARMCACHE key. If this is set to `yes` then the cache warming steps will be skipped when the server is started, which is very helpful for development.
 
 - Generate `./.env`. This should contain `KEY=value` lines. See `./.env.template` for keys.
   This must have valid `POSTGRES_USER`, `POSTGRES_PASSWORD` and `REDIS_PASSWORD` values.
@@ -78,7 +78,7 @@ developed to access data from the Australian Microbiome.
 
   `docker compose -f docker-compose-build.yml build base dev`
 
-- Start all of the containers. Check comments in the `docker-compose.yml` file for ways to facilatate easier development.
+- Start all of the containers. Check comments in the `docker-compose.yml` file for ways to facilitate easier development. Worth mentioning is the `.:/app` bind-mount for the runserver service so that the server restarts automatically with changed code during development.
 
   `docker compose up`
 

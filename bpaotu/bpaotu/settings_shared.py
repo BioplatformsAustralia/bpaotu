@@ -156,12 +156,13 @@ CELERY_BEAT_SCHEDULE = {
 
 DATABASES = {
     'default': {
+        # 'ENGINE': env.get_db_engine("dbtype", "pgsql"),
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': env.get("dbname", "webapp"),
         'USER': env.get("dbuser", "webapp"),
         'PASSWORD': env.get("dbpass", "webapp"),
-        'HOST': env.get("dbserver", ""),
-        'PORT': env.get("dbport", ""),
+        'HOST': env.get("dbserver", "db"),
+        'PORT': env.get("dbport", "5432"),
         'OPTIONS': {
             'connect_timeout': 60,  # Connect timeout (not query execution timeout)
             'keepalives': 1,        # Enable TCP keepalives
