@@ -272,8 +272,8 @@ class DataImporter:
         self.load_taxonomy_otu()
         logger.info('Refreshing OTUSampleOTU')
         refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
-        update_from_ckan()
         self.complete()
+        update_from_ckan()
 
     def ontology_init(self):
         # set blank as an option for all ontologies, bar Environment

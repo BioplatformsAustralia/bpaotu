@@ -156,8 +156,7 @@ CELERY_BEAT_SCHEDULE = {
 
 DATABASES = {
     'default': {
-        # 'ENGINE': env.get_db_engine("dbtype", "pgsql"),
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': env.get("dbname", "webapp"),
         'USER': env.get("dbuser", "webapp"),
         'PASSWORD': env.get("dbpass", "webapp"),

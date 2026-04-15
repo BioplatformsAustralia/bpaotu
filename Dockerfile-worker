@@ -4,12 +4,9 @@ FROM python:3.9-slim-bullseye
 # System packages
 # git; required for pip packages on github
 # ncbi-blast+; required for BLAST search
-# gdal-bin, libgeos-3.9.0; required by django.contrib.gis.db.backends.postgis database engine
 RUN apt-get update && apt-get install -y --no-install-recommends \
   git \
   ncbi-blast+ \
-  gdal-bin \
-  libgeos-3.9.0 \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*;
 
 # uid and gid must match runserver Dockerfile
