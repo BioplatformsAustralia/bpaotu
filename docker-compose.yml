@@ -22,7 +22,7 @@ services:
       - dbdata:/var/lib/postgresql/data/
 
   cache:
-    image: redis:3-alpine
+    image: redis:8-alpine
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
 
   runserver:
