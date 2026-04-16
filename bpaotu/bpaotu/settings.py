@@ -172,7 +172,6 @@ INSTALLED_APPS = ('django.contrib.auth',
                   'django.contrib.sites',
                   'django.contrib.messages',
                   'django.contrib.staticfiles',
-                  'django.contrib.gis', # FIXME used?
                   'django_extensions',
                   'django.contrib.admin',
                   'django.contrib.admindocs',
