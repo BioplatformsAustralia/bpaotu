@@ -19,7 +19,6 @@ from xhtml2pdf import pisa
 from sqlalchemy import Float, Integer
 
 from django.conf import settings
-from django.core.mail import send_mail
 from django.http import (Http404, HttpResponse, JsonResponse, HttpResponseServerError,
                          StreamingHttpResponse)
 from django.template import loader
@@ -36,6 +35,7 @@ from .ckan_auth import require_CKAN_auth
 from .contextual import contextual_definitions, get_contextual_schema_definition, make_environment_lookup
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .krona import KronaPlot
+from .mail import send_email
 from .models import MetagenomeRequest
 from .otu import (OTUAmplicon, SampleContext, TaxonomySource, format_taxonomy_name)
 from .params import clean_amplicon_filter, make_clean_taxonomy_filter, param_to_filters, selected_contextual_filters
@@ -1159,12 +1159,15 @@ def metagenome_search(request):
 @require_CKAN_auth
 @require_POST
 def metagenome_request(request):
-    """Submits a request for the specified file types for the given list of Sample IDS"""
+    """
+    Submits a request for the specified file types for the given list of Sample IDS
+    Sends an email to the user confirming the request, and an email to the team with the details of the request
+    """
     try:
         sample_ids = json.loads(request.POST['sample_ids'])
-        file_types=json.loads(request.POST['selected_files'])
+        file_types = json.loads(request.POST['selected_files'])
+        user_email = request.ckan_data.get('email')
         to_email = settings.METAGENOME_REQUEST_EMAIL
-        user_email=request.ckan_data.get('email')
 
         mg_request = MetagenomeRequest.objects.create(
             sample_ids='\n'.join(sample_ids),
@@ -1181,26 +1184,24 @@ def metagenome_request(request):
 
         track(request, 'otu_request_metagenome_files')
 
-        am_email ="Australian Microbiome Data Requests <{}>".format(to_email)
-
         template = loader.get_template('mg-ack-email.txt')
         body = template.render(template_vars, request)
-        send_mail(
+        send_email(
             "[MG#{}] Australian Microbiome: Metagenome data request received".format(request_id),
-             body,
-            am_email, [user_email])
+            body,
+            user_email)
 
         template = loader.get_template('mg-request-email.txt')
         body = template.render(template_vars, request)
-        send_mail(
+        send_email(
             "[MG#{}] Australian Microbiome: Metagenome data request".format(request_id),
             body,
-            am_email, [to_email])
+            to_email)
 
         return JsonResponse({
             'request_id': request_id,
-             'timestamp': mg_request.created,
-             'contact': to_email
+            'timestamp': mg_request.created,
+            'contact': to_email
             })
 
     except Exception as e:

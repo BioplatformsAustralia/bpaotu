@@ -42,21 +42,10 @@ BASE_URL = SCRIPT_NAME
 
 ## email
 
-DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'Bioplaforms Data Portal <help@bioplatforms.com>')
-EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU] ')
-EMAIL_BACKEND = env.get('BPAOTU_EMAIL_BACKEND', "anymail.backends.amazon_ses.EmailBackend")
-DEFAULT_FROM_EMAIL = 'noreply@yourdomain.com'
-EMAIL_HOST = env.get('BPAOTU_EMAIL_HOST', 'localhost')
-
-ANYMAIL = {
-    "AMAZON_SES_MESSAGE_TAG_NAME": "Type",
-    "AMAZON_SES_CLIENT_PARAMS": {
-        # example: override normal Boto credentials specifically for Anymail
-        "aws_access_key_id": env.get("AWS_ACCESS_KEY_FOR_ANYMAIL_SES"),
-        "aws_secret_access_key": env.get("AWS_SECRET_KEY_FOR_ANYMAIL_SES"),
-        "region_name": env.get("AWS_REGION_FOR_ANYMAIL_SES"),
-    },
-}
+EMAIL_SUBJECT_PREFIX = env.get("EMAIL_SUBJECT_PREFIX", '[Australian Microbiome]')
+MAIL_SERVER_HOST = env.get("MAIL_SERVER_HOST", "localhost")
+MAIL_SERVER_PORT = int(env.get("MAIL_SERVER_PORT", 25))
+MAIL_FROM = env.get("MAIL_FROM", "noreply@noreply.csiro.au")
 
 
 ## task specific config
