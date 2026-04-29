@@ -18,10 +18,10 @@ export const getCKANAuthInfo = () => (dispatch, getState) => {
 }
 
 const initialState: any = {
-  ckanAuthToken: null,
   isLoginInProgress: false,
   isLoggedIn: false,
   email: null,
+  organisations: [],
 }
 
 export default handleActions(
@@ -34,16 +34,24 @@ export default handleActions(
     },
     [ckanAuthInfoEnded as any]: {
       next: (state: any, action: any) => {
-        const ckanAuthToken = action.payload.data
-        const [, data] = ckanAuthToken.split('||')
-        const { email, organisations } = JSON.parse(data)
-        axios.defaults.headers = {
-          'X-BPAOTU-CKAN-Token': ckanAuthToken,
+        const authData = action.payload.data
+
+        // Check if user is authenticated via OAuth
+        if (!authData.authenticated) {
+          return initialState
         }
+
+        const email = authData.email
+        const organisations = authData.organisations || []
+
+        // Set default headers for authenticated requests
+        axios.defaults.headers = {
+          'X-BPAOTU-Auth': 'oauth',
+        }
+
         return {
-          isLoginInProgess: false,
+          isLoginInProgress: false,
           isLoggedIn: true,
-          ckanAuthToken,
           email,
           organisations,
         }

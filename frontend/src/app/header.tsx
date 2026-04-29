@@ -4,8 +4,8 @@ import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } f
 import { NavLink as RRNavLink } from 'react-router-dom'
 import { useAnalytics } from 'use-analytics'
 
-import Octicon from 'components/octicon'
 import MainTutorial from 'components/tutorials/main_tutorial'
+import UserProfile from 'components/UserProfile'
 
 const Header = ({ userEmailAddress }) => {
   const { track } = useAnalytics()
@@ -97,14 +97,7 @@ const Header = ({ userEmailAddress }) => {
           </NavItem>
 
           <NavItem>
-            {userEmailAddress ? (
-              <div className="navbar-text">
-                <Octicon name="person" />
-                <span className="site-header-username">{userEmailAddress}</span>
-              </div>
-            ) : (
-              ''
-            )}
+            <UserProfile header={true} />
           </NavItem>
         </Nav>
       </Collapse>

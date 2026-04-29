@@ -7,8 +7,6 @@ from ccg_django_utils.conf import EnvConfig
 from .settings_shared import *
 
 
-
-
 # a directory that will be writable by the webserver, for storing various files...
 WRITABLE_DIRECTORY = env.get("writable_directory", "/tmp") # FIXME used?
 BPAOTU_TMP_DIR = '/var/tmp' # For large temporary files
@@ -177,7 +175,19 @@ INSTALLED_APPS = ('django.contrib.auth',
                   'django.contrib.admindocs',
                   'suit',
                   'bpaotu',
+                  'bpaotu.auth_app',
                   )
+
+
+## Auth0 OIDC Configuration
+OAUTH_DOMAIN = env.get("oauth_domain", "")
+OAUTH_CLIENT_ID = env.get("oauth_client_id", "")
+OAUTH_CLIENT_SECRET = env.get("oauth_client_secret", "")
+OAUTH_REDIRECT_URI = env.get("oauth_redirect_uri", "")
+OAUTH_LOGOUT_REDIRECT_URI = env.get("oauth_logout_redirect_uri", "")
+OAUTH_FRONTEND_URL = env.get("oauth_frontend_url", "")
+OAUTH_AM_ORGANISATION = env.get("oauth_am_organisation", "australian-microbiome")
+
 
 if env.get("DEBUG_TOOLBAR", False):
     INSTALLED_APPS += ('debug_toolbar', )
@@ -207,15 +217,14 @@ DOWNLOADS_CHECKER_USER = env.get('downloads_checker_user', 'downloads_checker') 
 DOWNLOADS_CHECKER_PASS = env.get('downloads_checker_pass', 'ch3ck3r')
 DOWNLOADS_CHECKER_SLEEP = env.get('downloads_checker_sleep', 0.0)
 
-# enable integration with CKAN authentication (specific to the Bioplatforms data portal)
-CKAN_ENABLE_AUTH = env.get('ckan_enable_auth', True)
+# Enable integration with BioCommons Access authentication (specific to the Bioplatforms data portal)
+ENABLE_AUTH = env.get('enable_auth', True)
 
-CKAN_CHECK_PERMISSIONS_URL = env.get('ckan_check_permissions_url', '/user/private/api/bpa/check_permissions')
+OAUTH_CHECK_PERMISSIONS_URL = env.get('OAUTH_CHECK_PERMISSIONS_URL', '/oidc/check-auth')
 
 # email to use in development when CKAN auth integration is enabled
 CKAN_DEVELOPMENT_USER_EMAIL = env.get('ckan_devel_user_email', 'dev@bioplatforms.com')
 
-CKAN_AUTH_TOKEN_HEADER_NAME = env.get('ckan_auth_token_header_name', 'HTTP_X_BPAOTU_CKAN_TOKEN')
 
 GALAXY_BASE_URL = env.get('galaxy_base_url', 'https://galaxy-aust-dev.genome.edu.au')
 # This will fail late, only when the user is trying to submit workflows to galaxy

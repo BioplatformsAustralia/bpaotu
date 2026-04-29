@@ -1,22 +1,27 @@
+import UserProfile from 'components/UserProfile'
 import * as React from 'react'
 import { Alert, Container } from 'reactstrap'
 
 export default (props) => {
-  // ckanURL changed to host location so that ckan and bpaotu are pointed to the same server address
-  const ckanURL = (path) => `${window.location.origin}/${path}`
-
   return (
     <Container fluid={true}>
       <Alert color="danger" className="text-center">
         <h4 className="alert-heading">Login required</h4>
         <p>
-          Please log into the <a href={ckanURL('user/login')}>Bioplatforms Data Portal</a>, or{' '}
-          <a href={ckanURL('user/register')}>request access</a>.
+          Please log into the <strong>Bioplatforms Data Portal</strong> with your{' '}
+          <strong>BioCommons Access</strong> account.
+        </p>
+        <div className="d-inline-flex align-items-center mb-5">
+          <UserProfile />
+        </div>
+        <p>
+          If you do not have a <strong>BioCommons Access</strong> account, please register for one
+          at the <a href="https://biocommons.org.au/access/">BioCommons Access</a> website.
         </p>
         <p>
-          If you still cannot access the data after logging in, please request membership via the{' '}
-          <a href={ckanURL('member-request/new')}>memberships</a> page on the Bioplatforms Australia
-          Data Portal.
+          If you still cannot access the data after logging in, please request membership to the{' '}
+          <strong>Australian Microbiome bundle</strong> in your{' '}
+          <strong>My BioCommons Access</strong> page.
         </p>
         <p>
           Alternatively, please contact{' '}

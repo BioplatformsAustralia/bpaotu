@@ -18,7 +18,7 @@ axios.interceptors.response.use(null, (err) => {
 })
 
 export function ckanAuthInfo() {
-  return axios.get(window.otu_search_config.ckan_check_permissions)
+  return axios.get(window.otu_search_config.oauth_check_permissions)
 }
 
 export function getReferenceData() {
@@ -298,12 +298,13 @@ export function getComparisonSubmission(submissionId) {
   })
 }
 
-export function getComparisonDistanceMatrices(submissionId, ckanAuthToken) {
+export function getComparisonDistanceMatrices(submissionId) {
   const params = new URLSearchParams()
-  params.set('token', ckanAuthToken)
   params.set('submission_id', submissionId)
 
-  const url = `${window.otu_search_config.comparison_download_distance_matrices_endpoint}?${params.toString()}`
+  const url = `${
+    window.otu_search_config.comparison_download_distance_matrices_endpoint
+  }?${params.toString()}`
   window.open(url)
 }
 

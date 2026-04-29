@@ -29,6 +29,8 @@ from django.views.decorators.http import require_GET, require_POST
 
 from celery import current_app
 
+# from bpaotu.auth import require_login
+
 from . import tasks
 from .biom import biom_zip_file_generator
 from .ckan_auth import require_CKAN_auth
@@ -132,9 +134,7 @@ def api_config(request):
         'static_base_url': settings.STATIC_URL,
         'galaxy_base_url': settings.GALAXY_BASE_URL,
         'ckan_base_url': settings.CKAN_SERVER['base_url'],
-        'ckan_check_permissions': (
-            settings.CKAN_CHECK_PERMISSIONS_URL if settings.PRODUCTION
-            else reverse('dev_only_ckan_check_permissions')),
+        'oauth_check_permissions': settings.OAUTH_CHECK_PERMISSIONS_URL,
         'galaxy_integration': settings.GALAXY_INTEGRATION,
         'default_amplicon': settings.DEFAULT_AMPLICON,
         'default_taxonomies': [format_taxonomy_name(db, method)
@@ -1382,7 +1382,7 @@ def otu_log_download(request):
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     return response
  
-def dev_only_ckan_check_permissions(request):
+def dev_only_oauth_check_permissions(request):
     if settings.PRODUCTION:
         raise Http404('View does not exist in production')
 
@@ -1395,7 +1395,7 @@ def dev_only_ckan_check_permissions(request):
     #     'bioplatforms-australia', 'bpa-base', 'bpa-great-barrier-reef', 'incoming-data', 'bpa-marine-microbes',
     #     'bpa-melanoma', 'bpa-omg', 'bpa-stemcells', 'bpa-wheat-cultivars', 'bpa-wheat-pathogens-genomes',
     #     'bpa-wheat-pathogens-transcript']
-    organisations = ['australian-microbiome']
+    organisations = [settings.OAUTH_AM_ORGANISATION]
 
     data = json.dumps({
         'email': settings.CKAN_DEVELOPMENT_USER_EMAIL,

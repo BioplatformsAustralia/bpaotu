@@ -1,67 +1,48 @@
-from functools import wraps
-import hmac
-import json
 import logging
-import os
-import time
 
+from functools import wraps
 from django.http import HttpResponseForbidden
 from django.conf import settings
 
-
 logger = logging.getLogger("bpaotu")
 
+FORBIDDEN_RESPONSE_MSG = 'Please log into BioCommons Access and ensure you are authorised to access the Australian Microbiome data.'
 
-FORBIDDEN_RESPONSE_MSG = 'Please log into CKAN and ensure you are authorised to access the Australian Microbiome data.'
-SECS_IN_DAY = 60 * 60 * 24
-
-
-class OTUVerificationError(Exception):
-    pass
-
-
-def require_CKAN_auth(func):  # noqa N802
+def require_CKAN_auth(func):
     @wraps(func)
     def inner(request, *args, **kwargs):
-        if settings.CKAN_ENABLE_AUTH:
-            token = request.META.get(settings.CKAN_AUTH_TOKEN_HEADER_NAME)
-            if token is None:
-                token = request.POST.get('token') if request.method == 'POST' else request.GET.get('token')
-            if token is None:
+        if settings.ENABLE_AUTH:
+            # Check if user is authenticated via OAuth
+            if not request.user.is_authenticated:
                 return HttpResponseForbidden(FORBIDDEN_RESPONSE_MSG)
+            
             try:
-                ckan_data = _otu_endpoint_verification(token)
-                request.ckan_data = ckan_data
-            except OTUVerificationError:
-                logger.exception('OTU Verification Failed')
+                # Get user info from session (set during OAuth callback)
+                user_info = request.session.get('oauth_user_info')
+                if not user_info:
+                    logger.warning('User authenticated but oauth_user_info not found in session')
+                    return HttpResponseForbidden(FORBIDDEN_RESPONSE_MSG)
+                
+                # Check if user has access to AM data
+                # organisations = user_info.get('organisations', [])
+
+                # For now, hardcode this since we don't have orgs in oauth 
+                organisations = [settings.OAUTH_AM_ORGANISATION]
+
+                if settings.OAUTH_AM_ORGANISATION not in organisations:
+                    logger.warning(
+                        "User %s attempted access but does not have '%s' organisation",
+                        request.user.username,
+                        settings.OAUTH_AM_ORGANISATION
+                    )
+                    return HttpResponseForbidden(FORBIDDEN_RESPONSE_MSG)
+                
+                # Store user data in request for downstream use
+                request.ckan_data = user_info
+            except Exception as e:
+                logger.exception('OAuth Authentication verification failed: %s', str(e))
                 return HttpResponseForbidden(FORBIDDEN_RESPONSE_MSG)
 
         return func(request, *args, **kwargs)
 
     return inner
-
-
-def _otu_endpoint_verification(data):
-    hash_portion, data_portion = data.split('||', 1)
-
-    secret_key = bytes(os.environ.get('BPAOTU_AUTH_SECRET_KEY'), encoding='utf-8')
-
-    digest_maker = hmac.new(secret_key, digestmod='md5')
-    digest_maker.update(data_portion.encode('utf8'))
-    digest = digest_maker.hexdigest()
-
-    if digest != hash_portion:
-        raise OTUVerificationError('Secret key does not match.')
-
-    json_data = json.loads(data_portion)
-
-    timestamp = json_data['timestamp']
-    organisations = json_data['organisations']
-
-    if time.time() - timestamp >= SECS_IN_DAY:
-        raise OTUVerificationError('The timestamp is too old.')
-
-    if 'australian-microbiome' not in organisations:
-        raise OTUVerificationError('You do not have access to the Ausmicro data.')
-
-    return json_data
