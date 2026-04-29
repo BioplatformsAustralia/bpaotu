@@ -73,7 +73,7 @@ function defaults {
     : "${UWSGIPORT:=9000}"
     : "${UWSGI_OPTS:=/app/uwsgi/docker.ini}"
     : "${RUNSERVER:=runserver}"
-    : "${RUNSERVERPORT:=8000}"
+    : "${RUNSERVERPORT:=8080}"
     : "${RUNSERVER_CMD:=runserver}"
     : "${CACHESERVER:=cache}"
     : "${CACHEPORT:=6379}"
@@ -82,7 +82,7 @@ function defaults {
     # variables to control where tests will look for the app (aloe via selenium hub)
     : "${TEST_APP_SCHEME:=http}"
     : "${TEST_APP_HOST:=runservertest}"
-    : "${TEST_APP_PORT:=8000}"
+    : "${TEST_APP_PORT:=8080}"
     : "${TEST_APP_PATH:=/}"
     : "${TEST_APP_URL:=${TEST_APP_SCHEME}://${TEST_APP_HOST}:${TEST_APP_PORT}${TEST_APP_PATH}}"
     #: "${TEST_BROWSER:=chrome}"

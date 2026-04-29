@@ -49,7 +49,7 @@ RUN pip install --upgrade -r bpaotu/biom-requirements.txt
 COPY . /app
 RUN pip ${PIP_OPTS} install --upgrade -e bpaotu
 
-EXPOSE 8000 9000 9001 9100 9101
+EXPOSE 8000 8080 9000 9001 9100 9101
 VOLUME ["/app", "/data"]
 
 ENV HOME=/data
