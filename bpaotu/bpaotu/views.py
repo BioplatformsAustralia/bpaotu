@@ -26,14 +26,12 @@ from django.urls import reverse
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
+from bpaotu.auth_app.decorators import require_oauth
 
 from celery import current_app
 
-# from bpaotu.auth import require_login
-
 from . import tasks
 from .biom import biom_zip_file_generator
-from .ckan_auth import require_CKAN_auth
 from .contextual import contextual_definitions, get_contextual_schema_definition, make_environment_lookup
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .krona import KronaPlot
@@ -143,7 +141,7 @@ def api_config(request):
     }
     return JsonResponse(config)
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def reference_data_options(request):
     """
@@ -157,7 +155,7 @@ def reference_data_options(request):
         'ranks': taxonomy_labels
     })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def trait_options(request):
     """
@@ -173,7 +171,7 @@ def trait_options(request):
         'possibilities': vals
     })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def taxonomy_options(request):
     """
@@ -234,7 +232,7 @@ def taxonomy_options(request):
         'initial': initial,
     })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def contextual_fields(request):
     """
@@ -258,7 +256,7 @@ def contextual_fields(request):
 # technically we should be using GET, but the specification
 # of the query (plus the datatables params) is large: so we
 # avoid the issues of long URLs by simply POSTing the query
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def otu_search(request, contextual_filtering=True):
     def _int_get_param(param_name):
@@ -322,7 +320,7 @@ def otu_search(request, contextual_filtering=True):
         'rowsCount': result_count,
     })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def otu_export(request):
     """
@@ -355,7 +353,7 @@ def otu_export(request):
 
     return response
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def otu_biom_export(request):
     timestamp = make_timestamp()
@@ -370,7 +368,7 @@ def otu_biom_export(request):
 
     return response
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def krona_request(request):
     params, errors = param_to_filters(request.POST['query'])
@@ -389,7 +387,7 @@ def krona_request(request):
 
 ## Taxonomy search ##
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def taxonomy_search(request):
     """
@@ -423,7 +421,7 @@ def serialise_taxa_search_result(result):
 
 ## Graphs ##
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def contextual_graph_fields(request, contextual_filtering=True):
     additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
@@ -470,7 +468,7 @@ def contextual_graph_fields(request, contextual_filtering=True):
         'sampledata': sample_results,
     })
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def taxonomy_graph_fields(request, contextual_filtering=True):
     # Exclude environment field of contextual_filters
@@ -635,7 +633,7 @@ def do_on_galaxy(galaxy_action):
     return galaxy_wrapper_view
 
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 @do_on_galaxy
 def submit_to_galaxy(request, email):
@@ -648,7 +646,7 @@ def submit_to_galaxy(request, email):
     return submission_id, user_created
 
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 @do_on_galaxy
 def execute_workflow_on_galaxy(request, email):
@@ -661,7 +659,7 @@ def execute_workflow_on_galaxy(request, email):
     return submission_id, user_created
 
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def galaxy_submission(request):
     submission_id = request.GET['submission_id']
@@ -685,7 +683,7 @@ def galaxy_submission(request):
 
 ## Control endpoints for background tasks ##
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def submit_otuexport(request):
     try:
@@ -716,7 +714,7 @@ def submit_otuexport(request):
             'errors': [str(t) for t in exc.errors],
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def cancel_otuexport(request):
     try:
@@ -747,7 +745,7 @@ def cancel_otuexport(request):
             'errors': exc.errors,
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def otuexport_submission(request):
     submission_id = request.GET['submission_id']
@@ -807,7 +805,7 @@ def otuexport_submission(request):
     return JsonResponse(response)
 
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def submit_blast(request):
     try:
@@ -836,7 +834,7 @@ def submit_blast(request):
             'errors': exc.errors,
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def cancel_blast(request):
     try:
@@ -867,7 +865,7 @@ def cancel_blast(request):
             'errors': exc.errors,
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def blast_submission(request):
     submission_id = request.GET['submission_id']
@@ -912,7 +910,7 @@ def blast_submission(request):
     return JsonResponse(response)
 
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def submit_comparison(request):
     try:
@@ -965,7 +963,7 @@ def submit_comparison(request):
             'errors': [str(t) for t in exc.errors],
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def cancel_comparison(request):
     try:
@@ -996,7 +994,7 @@ def cancel_comparison(request):
             'errors': exc.errors,
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def clear_comparison(request):
     try:
@@ -1027,7 +1025,7 @@ def clear_comparison(request):
             'errors': exc.errors,
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def comparison_submission(request):
     submission_id = request.GET['submission_id']
@@ -1102,7 +1100,7 @@ def comparison_submission(request):
 
 ## Misc endpoints for background tasks ##
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def otu_search_blast_otus(request):
     params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=True)
@@ -1121,7 +1119,7 @@ def otu_search_blast_otus(request):
         'rowsCount': result_count,
     })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def comparison_download_distance_matrices(request):
     submission_id = request.GET['submission_id']
@@ -1140,7 +1138,7 @@ def comparison_download_distance_matrices(request):
 # Metagenome tab ------------------------------------------------------------ #
 # --------------------------------------------------------------------------- #
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def metagenome_search(request):
     """Returns list of Sample IDs for search params when opening Metagenome data request modal"""
@@ -1156,7 +1154,7 @@ def metagenome_search(request):
         logger.critical("Error in metagenome_search", exc_info=True)
         return HttpResponseServerError(str(e), content_type="text/plain")
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def metagenome_request(request):
     """
@@ -1221,7 +1219,7 @@ def required_table_headers(request):
     """
     return otu_search(request, contextual_filtering=False)
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def contextual_csv_download_endpoint(request):
     data = request.GET.get('otu_query')
@@ -1270,7 +1268,7 @@ def contextual_csv_download_endpoint(request):
 # --------------------------------------------------------------------------- #
 
 # also used for Interactive Map Search
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def otu_search_sample_sites(request):
     params, errors = param_to_filters(request.POST['otu_query'])
@@ -1412,7 +1410,7 @@ def dev_only_oauth_check_permissions(request):
 
     return HttpResponse(response)
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def cookie_consent_declined(request):
     if settings.MIXPANEL_TOKEN:
@@ -1423,7 +1421,7 @@ def cookie_consent_declined(request):
 
     return HttpResponseNoContent()
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def cookie_consent_accepted(request):
     if settings.MIXPANEL_TOKEN:
