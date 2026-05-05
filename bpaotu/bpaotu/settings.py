@@ -9,15 +9,6 @@ from .settings_shared import *
 
 # a directory that will be writable by the webserver, for storing various files...
 WRITABLE_DIRECTORY = env.get("writable_directory", "/tmp") # FIXME used?
-BPAOTU_TMP_DIR = '/var/tmp' # For large temporary files
-
-BPAOTU_MISSING_VALUE_SENTINEL = -9999  # Missing values in sample contextual data.
-# See "Confirmed missing value" in
-# https://github.com/AusMicrobiome/contextualdb_doc/blob/main/db_schema_definitions/db_schema_definitions.xlsx
-
-BPAOTU_SCIENTIFIC_MANUAL_URL = "https://research.csiro.au/ambsm/"
-
-BPAOTU_MAP_CENTRE_LONGITUDE = 133.775
 
 
 # django-secure
@@ -33,12 +24,6 @@ ADMINS = [("alert", env.get("alert_email", "root@localhost"))]
 MANAGERS = ADMINS
 
 ALLOWED_HOSTS = env.getlist("allowed_hosts", ["*"])
-
-CKAN_SERVER = {
-    'name': env.get('ckan_name', 'bpa-aws1'),
-    'base_url': env.get('ckan_base_url', 'https://data.bioplatforms.com/'),
-    'api_key': env.get('ckan_api_key', ''),
-}
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
@@ -113,6 +98,8 @@ STATICFILES_DIRS = [
     OTU_EXPORT_PATH,
 ]
 
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -121,7 +108,8 @@ MIDDLEWARE = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.locale.LocaleMiddleware')
+    'django.middleware.locale.LocaleMiddleware',
+)
 
 TEMPLATES = [
     {
@@ -157,27 +145,39 @@ TEMPLATES = [
             "lstrip_blocks": True
         }
      }
-
 ]
-
 
 ROOT_URLCONF = 'bpaotu.urls'
 
-INSTALLED_APPS = ('django.contrib.auth',
-                  'django.contrib.contenttypes',
-                  'django.contrib.humanize',
-                  'django.contrib.sessions',
-                  'django.contrib.sites',
-                  'django.contrib.messages',
-                  'django.contrib.staticfiles',
-                  'django_extensions',
-                  'django.contrib.admin',
-                  'django.contrib.admindocs',
-                  'suit',
-                  'bpaotu',
-                  'bpaotu.auth_app',
-                  )
+INSTALLED_APPS = (
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.humanize',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'django_extensions',
+    'django.contrib.admin',
+    'django.contrib.admindocs',
+    'suit',
+    'bpaotu',
+    'bpaotu.auth_app',
+)
 
+# This honours the X-Forwarded-Host header set by our nginx frontend when
+# constructing redirect URLS.
+USE_X_FORWARDED_HOST = env.get("use_x_forwarded_host", True)
+
+# This is here to placate the new system check framework, its also set in testsettings, where it belongs
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+###
+###
+###
+
+# Enable integration with BioCommons Access authentication (specific to the Bioplatforms data portal)
+ENABLE_AUTH = env.get('enable_auth', True)
 
 ## Auth0 OIDC Configuration
 OAUTH_DOMAIN = env.get("oauth_domain", "")
@@ -189,38 +189,25 @@ OAUTH_FRONTEND_URL = env.get("oauth_frontend_url", "")
 OAUTH_AM_ORGANISATION = env.get("oauth_am_organisation", "australian-microbiome")
 OAUTH_CHECK_AUTH_URL = env.get('oauth_check_auth_url', '/oidc/check-auth')
 OAUTH_USER_INFO_URL = env.get('oauth_user_info_url', '/oidc/user-info')
-if env.get("DEBUG_TOOLBAR", False):
-    INSTALLED_APPS += ('debug_toolbar', )
-    MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
-    INTERNAL_IPS = ('127.0.0.1',
-                    '172.16.2.189', )  # explicitly set this for your environment
 
 # downloads URL
 DEFAULT_PAGINATION = 50
-
-# This honours the X-Forwarded-Host header set by our nginx frontend when
-# constructing redirect URLS.
-USE_X_FORWARDED_HOST = env.get("use_x_forwarded_host", True)
-
-
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-
-CHMOD_USER = env.get("repo_user", "apache")
-CHMOD_GROUP = env.get("repo_group", "apache")
-
-# this is here to placate the new system check framework, its also set in testsettings,
-# where it belongs
-TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # ingest all
 DOWNLOADS_CHECKER_USER = env.get('downloads_checker_user', 'downloads_checker') # FIXME used?
 DOWNLOADS_CHECKER_PASS = env.get('downloads_checker_pass', 'ch3ck3r')
 DOWNLOADS_CHECKER_SLEEP = env.get('downloads_checker_sleep', 0.0)
 
-# Enable integration with BioCommons Access authentication (specific to the Bioplatforms data portal)
-ENABLE_AUTH = env.get('enable_auth', True)
+# Ingest
+BPAOTU_TMP_DIR = '/var/tmp' # For large temporary files
 
-OAUTH_CHECK_PERMISSIONS_URL = env.get('OAUTH_CHECK_PERMISSIONS_URL', '/oidc/check-auth')
+BPAOTU_MISSING_VALUE_SENTINEL = -9999  # Missing values in sample contextual data.
+# See "Confirmed missing value" in
+# https://github.com/AusMicrobiome/contextualdb_doc/blob/main/db_schema_definitions/db_schema_definitions.xlsx
+
+BPAOTU_SCIENTIFIC_MANUAL_URL = "https://research.csiro.au/ambsm/"
+
+BPAOTU_MAP_CENTRE_LONGITUDE = 133.775
 
 # email to use in development when CKAN auth integration is enabled
 CKAN_DEVELOPMENT_USER_EMAIL = env.get('ckan_devel_user_email', 'dev@bioplatforms.com')
@@ -234,6 +221,7 @@ GALAXY_INTEGRATION = GALAXY_ADMIN_USER_API_KEY != ''
 GALAXY_KRONA_WORKFLOW_ID = env.get('galaxy_krona_workflow_id', 'bf002aa8f96f4e7b')
 METAGENOME_REQUEST_EMAIL = env.get('metagenome_request_email', 'am-data-requests@bioplatforms.com')
 
+# UI
 DEFAULT_AMPLICON = env.get('DEFAULT_AMPLICON', '27f519r_bacteria')
 DEFAULT_TAXONOMIES = [
     # In priority order. Uses first available match as default for taxonomy selector.

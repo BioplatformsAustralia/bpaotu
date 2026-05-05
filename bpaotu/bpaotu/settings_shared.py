@@ -10,7 +10,7 @@ from ._version import __version__
 env = EnvConfig()
 
 
-# BASIC CONFIG
+## BASIC CONFIG
 
 # Default SSL on and forced, turn off if necessary
 PRODUCTION = env.get("production", False)
@@ -40,7 +40,7 @@ STATIC_SERVER_PATH = STATIC_ROOT
 BASE_URL = SCRIPT_NAME
 
 
-## email
+## EMAIL CONFIG
 
 EMAIL_SUBJECT_PREFIX = env.get("EMAIL_SUBJECT_PREFIX", '[Australian Microbiome]')
 MAIL_SERVER_HOST = env.get("MAIL_SERVER_HOST", "localhost")
@@ -48,7 +48,7 @@ MAIL_SERVER_PORT = int(env.get("MAIL_SERVER_PORT", 25))
 MAIL_FROM = env.get("MAIL_FROM", "noreply@noreply.csiro.au")
 
 
-## task specific config
+## TASK SPECIFIC CONFIG
 
 BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
 BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
@@ -58,7 +58,7 @@ OTU_EXPORT_URL = env.get('otu_export_url', STATIC_URL)
 OTU_EXPORT_EMAIL = env.get('metagenome_request_email', 'root-noreply@amotu.it.csiro.au') # 'am-data-requests@bioplatforms.com'
 
 
-## ckan config
+## CKAN CONFIG
 
 CKAN_SERVER = {
     'name': env.get('ckan_name', 'bpa-aws1'),
@@ -67,7 +67,7 @@ CKAN_SERVER = {
 }
 
 
-## redis config
+## REDIS CONFIG
 
 REDIS_HOST = env.get('REDIS_HOST', 'cache')
 REDIS_PORT = env.get('REDIS_PORT', '6379')
@@ -103,7 +103,7 @@ CACHES['image_results'] = CACHES['default']
 CACHES['contextual_schema_definition_results'] = CACHES['default']
 
 
-## celery config
+## CELERY WORKER CONFIG
 
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BROKER_URL = redis_url(2)
@@ -115,7 +115,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
 
-## celery beat config
+## CELERY BEAT CONFIG
 
 PERIODIC_CKAN_UPDATE_INTERVAL = 3600 # Seconds between CKAN queries for new resources
 PERIODIC_DOWNLOAD_RESULTS_CLEANUP_EXPIRY_HOURS = env.get('periodic_download_results_cleanup_expiry_hours', 72)
@@ -141,7 +141,7 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 
-## database config
+## DATABASE CONFIG
 
 DATABASES = {
     'default': {
@@ -162,7 +162,7 @@ DATABASES = {
 }
 
 
-## logging
+## LOGGING CONFIG
 
 LOG_LEVEL = env.get('log_level', "INFO")
 LOG_DIRECTORY = env.get('log_directory', os.path.join(WEBAPP_ROOT, "log"))
