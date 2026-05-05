@@ -16,12 +16,12 @@ import AustralianMicrobiomeAccessRequiredPage from 'pages/australian_microbiome_
 import LoginInProgressPage from 'pages/login_in_progress_page'
 import LoginRequiredPage from 'pages/login_required_page'
 
-import { getCKANAuthInfo } from 'reducers/auth'
+import { doOauthCheckAuth } from 'reducers/auth'
 
 const App = (props) => {
   const { identify, page, plugins } = useAnalytics()
 
-  const { auth, getCKANAuthInfo: getCKANAuthInfo_props } = props
+  const { auth, doOauthCheckAuth: doOauthCheckAuth_props } = props
 
   const enableCookies = useCallback(() => {
     plugins.enable(pluginsList)
@@ -36,8 +36,8 @@ const App = (props) => {
   }, [identify, plugins, auth])
 
   useEffect(() => {
-    getCKANAuthInfo_props()
-  }, [getCKANAuthInfo_props])
+    doOauthCheckAuth_props()
+  }, [doOauthCheckAuth_props])
 
   useEffect(() => {
     // important to note that cookie stores a string value of true or false
@@ -122,7 +122,7 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     {
-      getCKANAuthInfo,
+      doOauthCheckAuth,
     },
     dispatch
   )

@@ -4,13 +4,15 @@
 
 import axios from 'axios'
 
-interface UserInfo {
+export type UserInfo = {
   id: number
   username: string
   email: string
   name: string
   picture?: string
   organisations?: string[]
+
+  auth_mode: 'oauth' | 'local'
 }
 
 interface AuthStatus {
@@ -38,7 +40,7 @@ class AuthService {
    */
   async getUserInfo(): Promise<UserInfo | null> {
     try {
-      const response = await axios.get('/oidc/user-info/', {
+      const response = await axios.get(window.otu_search_config.oauth_user_info, {
         headers: {
           Accept: 'application/json',
         },
@@ -55,7 +57,7 @@ class AuthService {
    */
   async checkAuth(): Promise<AuthStatus> {
     try {
-      const response = await axios.get('/oidc/check-auth/', {
+      const response = await axios.get(window.otu_search_config.oauth_check_auth, {
         headers: {
           Accept: 'application/json',
         },

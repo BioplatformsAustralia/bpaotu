@@ -8,7 +8,8 @@ export interface SearchConfig {
 
   galaxy_integration: boolean
   ckan_base_url: string
-  oauth_check_permissions: string
+  oauth_check_auth: string
+  oauth_user_info: string
   default_amplicon: string
   metaxa_amplicon: string
   default_taxonomies: string[]

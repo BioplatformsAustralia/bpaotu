@@ -3,7 +3,7 @@ import { get as _get, map, partial, join } from 'lodash'
 
 import { store } from 'index'
 import 'interfaces'
-import { ckanAuthInfoEnded } from 'reducers/auth'
+import { oauthCheckAuthEnded } from 'reducers/auth'
 import { taxonomy_keys } from 'app/constants'
 
 axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN'
@@ -11,14 +11,18 @@ axios.defaults.xsrfCookieName = 'csrftoken'
 
 axios.interceptors.response.use(null, (err) => {
   if (err.status === 403) {
-    store.dispatch(ckanAuthInfoEnded(new Error(err)))
+    store.dispatch(oauthCheckAuthEnded(new Error(err)))
     return
   }
   return Promise.reject(err)
 })
 
-export function ckanAuthInfo() {
-  return axios.get(window.otu_search_config.oauth_check_permissions)
+export function oauthCheckAuth() {
+  return axios.get(window.otu_search_config.oauth_check_auth)
+}
+
+export function oauthUserInfo() {
+  return axios.get(window.otu_search_config.oauth_user_info)
 }
 
 export function getReferenceData() {

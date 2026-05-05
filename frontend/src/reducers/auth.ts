@@ -1,20 +1,20 @@
 import axios from 'axios'
 import { createActions, handleActions } from 'redux-actions'
 
-import { ckanAuthInfo } from 'api'
+import { oauthCheckAuth } from 'api'
 
 import { handleSimpleAPIResponse } from 'reducers/utils'
 
-const { ckanAuthInfoStarted, ckanAuthInfoEnded } = createActions(
-  'CKAN_AUTH_INFO_STARTED',
-  'CKAN_AUTH_INFO_ENDED'
+const { oauthCheckAuthStarted, oauthCheckAuthEnded } = createActions(
+  'OAUTH_CHECK_AUTH_STARTED',
+  'OAUTH_CHECK_AUTH_ENDED'
 )
 
-export { ckanAuthInfoStarted, ckanAuthInfoEnded }
+export { oauthCheckAuthStarted, oauthCheckAuthEnded }
 
-export const getCKANAuthInfo = () => (dispatch, getState) => {
-  dispatch(ckanAuthInfoStarted())
-  handleSimpleAPIResponse(dispatch, ckanAuthInfo, ckanAuthInfoEnded)
+export const doOauthCheckAuth = () => (dispatch, getState) => {
+  dispatch(oauthCheckAuthStarted())
+  handleSimpleAPIResponse(dispatch, oauthCheckAuth, oauthCheckAuthEnded)
 }
 
 const initialState: any = {
@@ -26,13 +26,13 @@ const initialState: any = {
 
 export default handleActions(
   {
-    [ckanAuthInfoStarted as any]: (state: any, action: any) => {
+    [oauthCheckAuthStarted as any]: (state: any, action: any) => {
       return {
         ...state,
         isLoginInProgress: true,
       }
     },
-    [ckanAuthInfoEnded as any]: {
+    [oauthCheckAuthEnded as any]: {
       next: (state: any, action: any) => {
         const authData = action.payload.data
 

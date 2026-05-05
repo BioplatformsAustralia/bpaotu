@@ -4,16 +4,16 @@ OAuth/OIDC views for Auth0 authentication
 """
 
 from django.conf import settings
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
-from django.http import JsonResponse, HttpResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from authlib.integrations.requests_client import OAuth2Session
+
 from urllib.parse import urlencode
-import json
 import requests
 
 
@@ -169,6 +169,7 @@ def user_info_view(request):
         # User is logged in but no token - return basic info
         return JsonResponse({
             'id': request.user.id,
+            "auth_mode": "oauth",
             'username': request.user.username,
             'email': request.user.email,
             'name': request.user.get_full_name() or request.user.username,
@@ -186,6 +187,7 @@ def user_info_view(request):
         
         return JsonResponse({
             'id': request.user.id,
+            "auth_mode": "oauth",
             'username': request.user.username,
             'email': user_info.get('email'),
             'name': user_info.get('name'),
@@ -229,3 +231,39 @@ def check_auth_view(request):
             {'error': 'Failed to retrieve auth info', 'detail': str(e)},
             status=500
         )
+
+@require_http_methods(["GET"])
+def dev_only_oauth_check_auth(request):
+    if settings.PRODUCTION:
+        raise Http404('View does not exist in production')
+
+    # Uncomment to simulate user not logged in to CKAN
+    # from django.http import HttpResponseForbidden
+    # return HttpResponseForbidden()
+
+    organisations = [settings.OAUTH_AM_ORGANISATION]
+
+    response = {
+        "authenticated": True,
+        "email": settings.CKAN_DEVELOPMENT_USER_EMAIL,
+        "organisations": organisations,
+    }
+
+    return JsonResponse(response)
+
+@require_http_methods(["GET"])
+def dev_only_oauth_user_info(request):
+    if settings.PRODUCTION:
+        raise Http404('View does not exist in production')
+
+    response = {
+        "id": 1,
+        "auth_mode": "local",
+        "username": settings.CKAN_DEVELOPMENT_USER_EMAIL,
+        "email": settings.CKAN_DEVELOPMENT_USER_EMAIL,
+        "name": "Development User",
+        "picture": "https://cdn.auth0.com/avatars/du.png",
+        "sub": "auth0|dev", # Auth0 unique ID
+    }
+
+    return JsonResponse(response)

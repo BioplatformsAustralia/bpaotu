@@ -4,6 +4,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from . import views
 
+from bpaotu.auth_app.views import dev_only_oauth_check_auth, dev_only_oauth_user_info
+
 admin.autodiscover()
 
 urlpatterns = [
@@ -44,7 +46,8 @@ urlpatterns = [
     url(r'^private/api/v1/otuexport_submission$', views.otuexport_submission, name="otuexport_submission"),
     url(r'^private/api/v1/export$', views.otu_export, name="otu_export"),
     url(r'^private/api/v1/export_biom$', views.otu_biom_export, name="otu_biom_export"),
-    url(r'^private/api/v1/user/check_permissions$', views.dev_only_oauth_check_permissions, name="dev_only_oauth_check_permissions"),
+    url(r'^private/api/v1/user/check_auth$', dev_only_oauth_check_auth, name="dev_only_oauth_check_auth"),
+    url(r'^private/api/v1/user/user_info$', dev_only_oauth_user_info, name="dev_only_oauth_user_info"),
     url(
         r'^ingest/$',
         views.otu_log,

@@ -1,15 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
-import authService from '../services/authService'
+import authService, { UserInfo } from '../services/authService'
 import LoginButton from './LoginButton'
 import LogoutButton from './LogoutButton'
-
-interface UserInfo {
-  id: number
-  username: string
-  email: string
-  name: string
-  picture?: string
-}
 
 interface UserProfileProps {
   header?: boolean
@@ -118,12 +110,20 @@ const UserProfile: React.FC<UserProfileProps> = ({ header = false }) => {
         >
           <div className="font-weight-bold">{user.name}</div>
           <div className="small text-muted mb-2">{user.email}</div>
-          <div className="small text-muted mb-2">
-            Logged in with BioCommons Access single sign-on
-          </div>
-          <div className="text-center">
-            <LogoutButton className="btn btn-sm btn-outline-danger">Logout</LogoutButton>
-          </div>
+          {user.auth_mode === 'local' ? (
+            <div className="small text-muted">
+              Authentication disabled in local development mode.
+            </div>
+          ) : (
+            <>
+              <div className="small text-muted mb-2">
+                Logged in with BioCommons Access single sign-on
+              </div>
+              <div className="text-center">
+                <LogoutButton className="btn btn-sm btn-outline-danger">Logout</LogoutButton>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

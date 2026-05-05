@@ -19,8 +19,7 @@ from xhtml2pdf import pisa
 from sqlalchemy import Float, Integer
 
 from django.conf import settings
-from django.http import (Http404, HttpResponse, JsonResponse, HttpResponseServerError,
-                         StreamingHttpResponse)
+from django.http import (HttpResponse, JsonResponse, HttpResponseServerError, StreamingHttpResponse)
 from django.template import loader
 from django.urls import reverse
 from django.views.decorators.cache import cache_page
@@ -132,7 +131,12 @@ def api_config(request):
         'static_base_url': settings.STATIC_URL,
         'galaxy_base_url': settings.GALAXY_BASE_URL,
         'ckan_base_url': settings.CKAN_SERVER['base_url'],
-        'oauth_check_permissions': settings.OAUTH_CHECK_PERMISSIONS_URL,
+        'oauth_check_auth':
+            settings.OAUTH_CHECK_AUTH_URL if settings.ENABLE_AUTH
+            else reverse('dev_only_oauth_check_auth'),
+        'oauth_user_info':
+            settings.OAUTH_USER_INFO_URL if settings.ENABLE_AUTH
+            else reverse('dev_only_oauth_user_info'),
         'galaxy_integration': settings.GALAXY_INTEGRATION,
         'default_amplicon': settings.DEFAULT_AMPLICON,
         'default_taxonomies': [format_taxonomy_name(db, method)
@@ -1379,36 +1383,6 @@ def otu_log_download(request):
     filename = f"{metadata.revision_date}-csv.json"
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     return response
- 
-def dev_only_oauth_check_permissions(request):
-    if settings.PRODUCTION:
-        raise Http404('View does not exist in production')
-
-    # Uncomment to simulate user not logged in to CKAN
-    # from django.http import HttpResponseForbidden
-    # return HttpResponseForbidden()
-
-    # organisations = [
-    #     'anu-abc-upload', 'bpa-sepsis', 'australian-microbiome', 'bpa-project-documentation', 'bpa-barcode',
-    #     'bioplatforms-australia', 'bpa-base', 'bpa-great-barrier-reef', 'incoming-data', 'bpa-marine-microbes',
-    #     'bpa-melanoma', 'bpa-omg', 'bpa-stemcells', 'bpa-wheat-cultivars', 'bpa-wheat-pathogens-genomes',
-    #     'bpa-wheat-pathogens-transcript']
-    organisations = [settings.OAUTH_AM_ORGANISATION]
-
-    data = json.dumps({
-        'email': settings.CKAN_DEVELOPMENT_USER_EMAIL,
-        'timestamp': time.time(),
-        'organisations': organisations,
-    })
-
-    secret_key = os.environ.get('BPAOTU_AUTH_SECRET_KEY').encode('utf8')
-    digest_maker = hmac.new(secret_key, digestmod='md5')
-    digest_maker.update(data.encode('utf8'))
-    digest = digest_maker.hexdigest()
-
-    response = '||'.join([digest, data])
-
-    return HttpResponse(response)
 
 @require_oauth
 @require_GET

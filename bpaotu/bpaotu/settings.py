@@ -187,8 +187,8 @@ OAUTH_REDIRECT_URI = env.get("oauth_redirect_uri", "")
 OAUTH_LOGOUT_REDIRECT_URI = env.get("oauth_logout_redirect_uri", "")
 OAUTH_FRONTEND_URL = env.get("oauth_frontend_url", "")
 OAUTH_AM_ORGANISATION = env.get("oauth_am_organisation", "australian-microbiome")
-
-
+OAUTH_CHECK_AUTH_URL = env.get('oauth_check_auth_url', '/oidc/check-auth')
+OAUTH_USER_INFO_URL = env.get('oauth_user_info_url', '/oidc/user-info')
 if env.get("DEBUG_TOOLBAR", False):
     INSTALLED_APPS += ('debug_toolbar', )
     MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
