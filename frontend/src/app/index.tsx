@@ -21,7 +21,7 @@ import { doOauthCheckAuth } from 'reducers/auth'
 const App = (props) => {
   const { identify, page, plugins } = useAnalytics()
 
-  const { auth, doOauthCheckAuth: doOauthCheckAuth_props } = props
+  const { auth, doOauthCheckAuth } = props
 
   const enableCookies = useCallback(() => {
     plugins.enable(pluginsList)
@@ -36,8 +36,8 @@ const App = (props) => {
   }, [identify, plugins, auth])
 
   useEffect(() => {
-    doOauthCheckAuth_props()
-  }, [doOauthCheckAuth_props])
+    doOauthCheckAuth()
+  }, [doOauthCheckAuth])
 
   useEffect(() => {
     // important to note that cookie stores a string value of true or false
@@ -65,10 +65,11 @@ const App = (props) => {
   }
 
   const renderContents = () => {
+    console.log('App renderContents', 'auth', auth)
     if (auth.isLoginInProgress) {
       return <LoginInProgressPage />
     }
-    if (!auth.isLoggedIn) {
+    if (!auth.isAuthenticated) {
       return <LoginRequiredPage />
     }
     if (!auth.organisations.includes('australian-microbiome')) {

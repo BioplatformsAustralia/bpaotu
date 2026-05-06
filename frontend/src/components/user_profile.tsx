@@ -1,21 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react'
-import authService, { UserInfo } from '../services/authService'
-import LoginButton from './LoginButton'
-import LogoutButton from './LogoutButton'
 
-interface UserProfileProps {
+import authService from 'services/auth/authService'
+import { UserInfo } from 'services/auth/types'
+import { AuthenticationState } from 'reducers/auth'
+
+import LoginButton from './login_button'
+import LogoutButton from './logout_button'
+
+type UserProfileProps = {
+  auth: AuthenticationState
   header?: boolean
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({ header = false }) => {
+const UserProfile = ({ auth, header = false }: UserProfileProps) => {
   const ref = useRef<HTMLDivElement | null>(null)
 
-  const [user, setUser] = useState<UserInfo | null>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const { isAuthenticated, isLoginInProgress } = auth
 
-  // Close when clicked outside
+  const [user, setUser] = useState<UserInfo | null>(null)
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [isLoadingUserInfo, setIsLoadingUserInfo] = useState(true)
+
+  // Close when clicked outside details box
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -27,41 +33,37 @@ const UserProfile: React.FC<UserProfileProps> = ({ header = false }) => {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Check auth status on mount
+  // Get user-info if authenticated
   useEffect(() => {
+    if (!isAuthenticated || isLoginInProgress) return
+
     let isMounted = true
 
-    const checkAuthStatus = async () => {
+    const getUserInfo = async () => {
       try {
-        const authStatus = await authService.checkAuth()
+        const userInfo = await authService.getUserInfo()
 
         if (!isMounted) return
-        setIsAuthenticated(authStatus.authenticated)
-
-        if (authStatus.authenticated) {
-          const userInfo = await authService.getUserInfo()
-          if (!isMounted) return
-          setUser(userInfo)
-        }
+        setUser(userInfo)
       } catch (error) {
         if (isMounted) {
           console.error('Failed to check authentication status:', error)
         }
       } finally {
         if (isMounted) {
-          setIsLoading(false)
+          setIsLoadingUserInfo(false)
         }
       }
     }
 
-    checkAuthStatus()
+    getUserInfo()
 
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [isAuthenticated, isLoginInProgress])
 
-  if (isLoading) {
+  if (isAuthenticated && isLoadingUserInfo) {
     return (
       <div className="spinner-border" role="status" style={{ minWidth: '32px', minHeight: '32px' }}>
         <span className="sr-only">Loading...</span>
@@ -120,7 +122,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ header = false }) => {
                 Logged in with BioCommons Access single sign-on
               </div>
               <div className="text-center">
-                <LogoutButton className="btn btn-sm btn-outline-danger">Logout</LogoutButton>
+                <LogoutButton className="btn btn-sm btn-outline-danger" />
               </div>
             </>
           )}

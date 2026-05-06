@@ -1,14 +1,20 @@
 import React, { useState } from 'react'
 import { join } from 'lodash'
+
+import { useDispatch, useSelector } from 'react-redux'
 import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap'
 import { NavLink as RRNavLink } from 'react-router-dom'
 import { useAnalytics } from 'use-analytics'
 
 import MainTutorial from 'components/tutorials/main_tutorial'
-import UserProfile from 'components/UserProfile'
+import UserProfile from 'components/user_profile'
 
 const Header = ({ userEmailAddress }) => {
   const { track } = useAnalytics()
+
+  const { auth } = useSelector((state: any) => ({
+    auth: state.auth,
+  }))
 
   // manage state of NavbarToggler for smaller screens
   const [isOpen, setIsOpen] = useState(false)
@@ -97,7 +103,7 @@ const Header = ({ userEmailAddress }) => {
           </NavItem>
 
           <NavItem>
-            <UserProfile header={true} />
+            <UserProfile auth={auth} header={true} />
           </NavItem>
         </Nav>
       </Collapse>

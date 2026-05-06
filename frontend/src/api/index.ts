@@ -11,7 +11,8 @@ axios.defaults.xsrfCookieName = 'csrftoken'
 
 axios.interceptors.response.use(null, (err) => {
   if (err.status === 403) {
-    store.dispatch(oauthCheckAuthEnded(new Error(err)))
+    // should this hit a refresh token endpoint?
+    // store.dispatch(oauthCheckAuthEnded(new Error(err)))
     return
   }
   return Promise.reject(err)

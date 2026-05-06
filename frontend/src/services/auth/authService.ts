@@ -3,59 +3,21 @@
  */
 
 import axios from 'axios'
-
-export type UserInfo = {
-  id: number
-  username: string
-  email: string
-  name: string
-  picture?: string
-  organisations?: string[]
-
-  auth_mode: 'oauth' | 'local'
-}
-
-interface AuthStatus {
-  authenticated: boolean
-  username?: string
-}
+import { CheckAuthResult, UserInfo } from './types'
 
 class AuthService {
-  /**
-   * Redirect to Auth0 login
-   */
+  // Redirect to Auth0 login
   login() {
     window.location.href = '/oidc/login/'
   }
 
-  /**
-   * Redirect to logout
-   */
+  // Redirect to logout
   logout() {
     window.location.href = '/oidc/logout/'
   }
 
-  /**
-   * Get current user info
-   */
-  async getUserInfo(): Promise<UserInfo | null> {
-    try {
-      const response = await axios.get(window.otu_search_config.oauth_user_info, {
-        headers: {
-          Accept: 'application/json',
-        },
-      })
-      return response.data
-    } catch (error) {
-      console.error('Failed to get user info:', error)
-      return null
-    }
-  }
-
-  /**
-   * Check if user is authenticated
-   */
-  async checkAuth(): Promise<AuthStatus> {
+  // Check if user is authenticated
+  async checkAuth(): Promise<CheckAuthResult> {
     try {
       const response = await axios.get(window.otu_search_config.oauth_check_auth, {
         headers: {
@@ -69,10 +31,23 @@ class AuthService {
     }
   }
 
-  /**
-   * Handle OAuth callback
-   * Usually called automatically, but can be used for manual redirect handling
-   */
+  // Get current user info
+  async getUserInfo(): Promise<UserInfo> {
+    try {
+      const response = await axios.get(window.otu_search_config.oauth_user_info, {
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+      return response.data
+    } catch (error) {
+      console.error('Failed to get user info:', error)
+      return null
+    }
+  }
+
+  // Handle OAuth callback
+  // Usually called automatically, but can be used for manual redirect handling
   handleCallback() {
     // The backend handles the callback and redirects
     // This is mostly here for reference

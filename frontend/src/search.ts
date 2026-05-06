@@ -10,6 +10,8 @@ export interface SearchConfig {
   ckan_base_url: string
   oauth_check_auth: string
   oauth_user_info: string
+  register_access_url: string
+
   default_amplicon: string
   metaxa_amplicon: string
   default_taxonomies: string[]

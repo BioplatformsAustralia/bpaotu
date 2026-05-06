@@ -214,7 +214,11 @@ def check_auth_view(request):
     
     try:
         user_info = request.session.get('oauth_user_info', {})
-        print('check_auth_view user_info:', user_info)  # Debugging log
+        # keys:
+        # 'sub', 'given_name', 'family_name', 'nickname', 'name', 'picture',
+        # 'updated_at', 'email', 'email_verified',
+        # 'https://biocommons.org.au/username', 'https://biocommons.org.au/show_migration_welcome'
+
         email = user_info.get('email') or request.user.email
         
         # For now, hardcode this since we don't have orgs in oauth
@@ -225,6 +229,7 @@ def check_auth_view(request):
             'authenticated': True,
             'email': email,
             'organisations': organisations,
+            'auth_mode': 'oauth',
         })
     except Exception as e:
         return JsonResponse(
@@ -247,6 +252,7 @@ def dev_only_oauth_check_auth(request):
         "authenticated": True,
         "email": settings.CKAN_DEVELOPMENT_USER_EMAIL,
         "organisations": organisations,
+        'auth_mode': 'local',
     }
 
     return JsonResponse(response)

@@ -137,6 +137,7 @@ def api_config(request):
         'oauth_user_info':
             settings.OAUTH_USER_INFO_URL if settings.ENABLE_AUTH
             else reverse('dev_only_oauth_user_info'),
+        'register_access_url': settings.OAUTH_REGISTER_ACCESS_URL,
         'galaxy_integration': settings.GALAXY_INTEGRATION,
         'default_amplicon': settings.DEFAULT_AMPLICON,
         'default_taxonomies': [format_taxonomy_name(db, method)

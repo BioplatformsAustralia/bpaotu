@@ -17,14 +17,21 @@ export const doOauthCheckAuth = () => (dispatch, getState) => {
   handleSimpleAPIResponse(dispatch, oauthCheckAuth, oauthCheckAuthEnded)
 }
 
-const initialState: any = {
-  isLoginInProgress: false,
-  isLoggedIn: false,
-  email: null,
-  organisations: [],
+export type AuthenticationState = {
+  isAuthenticated: boolean
+  isLoginInProgress: boolean
+  email: string | null
+  organisations: string[] | null
 }
 
-export default handleActions(
+const initialState: AuthenticationState = {
+  isAuthenticated: false,
+  isLoginInProgress: true,
+  email: null,
+  organisations: null, // even if authenticated, need to check if user has access to this data product
+}
+
+export default handleActions<AuthenticationState>(
   {
     [oauthCheckAuthStarted as any]: (state: any, action: any) => {
       return {
@@ -38,11 +45,11 @@ export default handleActions(
 
         // Check if user is authenticated via OAuth
         if (!authData.authenticated) {
-          return initialState
+          return {
+            ...initialState,
+            isLoginInProgress: false,
+          }
         }
-
-        const email = authData.email
-        const organisations = authData.organisations || []
 
         // Set default headers for authenticated requests
         axios.defaults.headers = {
@@ -50,14 +57,17 @@ export default handleActions(
         }
 
         return {
+          isAuthenticated: true,
           isLoginInProgress: false,
-          isLoggedIn: true,
-          email,
-          organisations,
+          email: authData.email,
+          organisations: authData.organisations || [],
         }
       },
-      throw: (state, action) => {
-        return initialState
+      throw: () => {
+        return {
+          ...initialState,
+          isLoginInProgress: false,
+        }
       },
     },
   },

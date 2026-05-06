@@ -189,6 +189,7 @@ OAUTH_FRONTEND_URL = env.get("oauth_frontend_url", "")
 OAUTH_AM_ORGANISATION = env.get("oauth_am_organisation", "australian-microbiome")
 OAUTH_CHECK_AUTH_URL = env.get('oauth_check_auth_url', '/oidc/check-auth')
 OAUTH_USER_INFO_URL = env.get('oauth_user_info_url', '/oidc/user-info')
+OAUTH_REGISTER_ACCESS_URL = env.get('oauth_register_access_url', "https://portal.access.services.biocommons.org.au/register",)
 
 # downloads URL
 DEFAULT_PAGINATION = 50
