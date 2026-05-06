@@ -65,7 +65,6 @@ const App = (props) => {
   }
 
   const renderContents = () => {
-    console.log('App renderContents', 'auth', auth)
     if (auth.isLoginInProgress) {
       return <LoginInProgressPage />
     }
