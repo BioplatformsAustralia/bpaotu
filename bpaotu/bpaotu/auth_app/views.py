@@ -59,18 +59,19 @@ def callback_view(request):
     state = request.GET.get('state')
     session_state = request.session.get('oauth_state')
 
-    print('state', state)
-    print('session_state', session_state)
-    logger.info('state')
-    logger.info(state)
-    logger.info('session_state')
-    logger.info(session_state)
+    logger.info(f'Session data: {dict(request.session)}')
+    logger.info(f'        state: {state}')
+    logger.info(f'session_state: {session_state}')
+
+    logger.info(f'code:  {request.GET.get("code")}')
+    logger.info(f'error: {request.GET.get("error")}')
     
-    if not state or state != session_state:
-        return JsonResponse(
-            {"error": "Invalid state parameter"},
-            status=403
-        )
+    if not settings.SKIP_SESSION_STATE_CHECK:
+        if not state or state != session_state:
+            return JsonResponse(
+                {"error": "Invalid state parameter"},
+                status=403
+            )
     
     code = request.GET.get('code')
     error = request.GET.get('error')
