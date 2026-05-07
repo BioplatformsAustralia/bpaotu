@@ -8,13 +8,16 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect
-from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from authlib.integrations.requests_client import OAuth2Session
 
 from urllib.parse import urlencode
+
+import logging
 import requests
+
+logger = logging.getLogger('bpaotu')
 
 
 def get_oauth_session():
@@ -51,9 +54,17 @@ def callback_view(request):
     Handle OAuth callback from Auth0
     Validates the authorization code and creates/updates user
     """
+
     # Validate state parameter for CSRF protection
     state = request.GET.get('state')
     session_state = request.session.get('oauth_state')
+
+    print('state', state)
+    print('session_state', session_state)
+    logger.info('state')
+    logger.info(state)
+    logger.info('session_state')
+    logger.info(session_state)
     
     if not state or state != session_state:
         return JsonResponse(
