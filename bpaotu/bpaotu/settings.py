@@ -6,6 +6,10 @@ from ccg_django_utils.conf import EnvConfig
 
 from .settings_shared import *
 
+def env_bool(value, default=False):
+    if value is None:
+        return default
+    return str(value).lower() in ("1", "true", "yes", "on")
 
 # a directory that will be writable by the webserver, for storing various files...
 WRITABLE_DIRECTORY = env.get("writable_directory", "/tmp") # FIXME used?
@@ -39,10 +43,27 @@ SESSION_COOKIE_AGE = env.get("session_cookie_age", 60 * 60)
 SESSION_COOKIE_PATH = '{0}/'.format(SCRIPT_NAME)
 SESSION_SAVE_EVERY_REQUEST = env.get("session_save_every_request", True)
 SESSION_COOKIE_HTTPONLY = SESSION_COOKIE_HTTPONLY = env.get("session_cookie_httponly", True)
-SESSION_COOKIE_SECURE = env.get("session_cookie_secure", PRODUCTION)
+
+# SESSION_COOKIE_SECURE = env.get("session_cookie_secure", PRODUCTION)
+SESSION_COOKIE_SECURE = env_bool(
+    env.get("SESSION_COOKIE_SECURE", PRODUCTION),
+    default=PRODUCTION,
+)
+
 SESSION_COOKIE_NAME = env.get("session_cookie_name", "ccg_{0}".format(SCRIPT_NAME.replace("/", "")))
 SESSION_COOKIE_DOMAIN = env.get("session_cookie_domain", "") or None
 CSRF_USE_SESIONS = True
+
+SESSION_COOKIE_SAMESITE = env.get("session_cookie_samesite", 'Lax')
+CSRF_COOKIE_SAMESITE = env.get("csrf_cookie_samesite", 'Lax')
+
+print("SESSION_COOKIE_HTTPONLY", SESSION_COOKIE_HTTPONLY)
+print("SESSION_COOKIE_SECURE", SESSION_COOKIE_SECURE)
+print("SESSION_COOKIE_NAME", SESSION_COOKIE_NAME)
+print("SESSION_COOKIE_DOMAIN", SESSION_COOKIE_DOMAIN)
+print("SESSION_COOKIE_SAMESITE", SESSION_COOKIE_SAMESITE)
+print("CSRF_COOKIE_SAMESITE", CSRF_COOKIE_SAMESITE)
+
 
 LANGUAGE_CODE = env.get("language_code", 'en-us')
 USE_I18N = env.get("use_i18n", True)
