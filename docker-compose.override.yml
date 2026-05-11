@@ -1,0 +1,15 @@
+# Local development overrides
+# This file automatically merges with docker-compose.yml when running `docker compose up`
+
+services:
+  frontend:
+    build:
+      target: dev
+    ports:
+      - "3000:3000"
+    read_only: false # allow write access for development (e.g. hot-reloading)
+    volumes:
+      - ./frontend/src:/frontend/src
+      - ./frontend/public:/frontend/public
+    tmpfs:
+      - /node_modules

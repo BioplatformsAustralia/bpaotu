@@ -34,3 +34,8 @@ services:
       context: ./
       dockerfile: Dockerfile-worker
     image: bioplatformsaustralia/bpaotu-worker
+
+  frontend:
+    build:
+      context: ./frontend
+    image: bioplatformsaustralia/bpaotu-frontend
