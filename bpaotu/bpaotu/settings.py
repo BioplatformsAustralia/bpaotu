@@ -16,16 +16,20 @@ WRITABLE_DIRECTORY = env.get("writable_directory", "/tmp") # FIXME used?
 
 
 # django-secure
+SECURE_SSL_HOST = env.get("secure_ssl_host", False)
 SECURE_SSL_REDIRECT = env.get("secure_ssl_redirect", PRODUCTION)
 SECURE_CONTENT_TYPE_NOSNIFF = env.get("secure_content_type_nosniff", PRODUCTION)
 SECURE_BROWSER_XSS_FILTER = env.get("secure_browser_xss_filter", PRODUCTION)
 SECURE_HSTS_SECONDS = env.get("secure_hsts_seconds", 10)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.get("secure_hsts_include_subdomains", PRODUCTION)
-SECURE_SSL_HOST = env.get("secure_ssl_host", False)
 SECURE_REDIRECT_EXEMPT = env.getlist("secure_redirect_exempt", [])
 X_FRAME_OPTIONS = env.get("x_frame_options", 'DENY')
 ADMINS = [("alert", env.get("alert_email", "root@localhost"))]
 MANAGERS = ADMINS
+
+# This honours the X-Forwarded-Host header set by our nginx frontend when
+# constructing redirect URLS.
+USE_X_FORWARDED_HOST = env.get("use_x_forwarded_host", True)
 
 ALLOWED_HOSTS = env.getlist("allowed_hosts", ["*"])
 
@@ -185,10 +189,6 @@ INSTALLED_APPS = (
     'bpaotu',
     'bpaotu.auth_app',
 )
-
-# This honours the X-Forwarded-Host header set by our nginx frontend when
-# constructing redirect URLS.
-USE_X_FORWARDED_HOST = env.get("use_x_forwarded_host", True)
 
 # This is here to placate the new system check framework, its also set in testsettings, where it belongs
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
