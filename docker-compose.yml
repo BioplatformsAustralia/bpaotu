@@ -37,7 +37,10 @@ services:
       - runserver
     read_only: true
     tmpfs:
+      - /var/run
+      - /run
       - /tmp
+      - /etc/nginx/conf.d
 
   runserver:
     image: bioplatformsaustralia/bpaotu
@@ -47,21 +50,12 @@ services:
       - WAIT_FOR_DB=1
       - WAIT_FOR_CACHE=1
     volumes:
-      ## Uncomment to bind-mount local source code into the container,
-      ## avoiding the need to rebuild on each code change (development only)
-      - .:/app
-      - ./data/dev:/data
-    ports:
-      - "8080:8080" # Development mode port (runserver)
-      # - "8888:8888" # Jupyter Notebook port (for development/debugging)
-      # - "9000:9000" # Production mode port (uwsgi)
+      - ./data/prod:/data
+    expose:
+      - "9000"
     depends_on:
       - db
       - cache
-    networks:
-      default:
-        aliases:
-          - web
 
   celeryworker:
     image: bioplatformsaustralia/bpaotu-worker
@@ -81,10 +75,6 @@ services:
       - db
       - cache
       - runserver
-    networks:
-      default:
-        aliases:
-          - web
 
 volumes:
   dbdata:

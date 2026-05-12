@@ -1,5 +1,6 @@
 # Local development overrides
 # This file automatically merges with docker-compose.yml when running `docker compose up`
+# Run with: docker compose up
 
 services:
   frontend:
@@ -7,9 +8,17 @@ services:
       target: dev
     ports:
       - "3000:3000"
-    read_only: false # allow write access for development (e.g. hot-reloading)
+    read_only: false
     volumes:
       - ./frontend/src:/frontend/src
       - ./frontend/public:/frontend/public
     tmpfs:
       - /node_modules
+
+  runserver:
+    ports:
+      - "8080:8080" # Development mode port (runserver)
+      - "8888:8888" # Jupyter Notebook port (for development/debugging)
+    volumes:
+      - .:/app
+      - ./data/dev:/data
