@@ -31,8 +31,6 @@ services:
     build:
       context: ./frontend
       target: prod
-    ports:
-      - "3000:8080"
     depends_on:
       - runserver
     read_only: true
