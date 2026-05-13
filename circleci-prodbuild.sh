@@ -29,11 +29,11 @@ docker push bioplatformsaustralia/${PROJECT_NAME}-worker:${BUILD_VERSION}
 docker-compose -f docker-compose-build.yml build frontend
 
 # tag the prod image with latest, prod, and the build version; only push prod derived images
-docker tag bioplatformsaustralia/${PROJECT_NAME}-frontend:prod \
-           bioplatformsaustralia/${PROJECT_NAME}-frontend:latest
+docker tag bioplatformsaustralia/${PROJECT_NAME}:frontend \
+           bioplatformsaustralia/${PROJECT_NAME}:frontend-latest
 
-docker tag bioplatformsaustralia/${PROJECT_NAME}-frontend:prod \
-           bioplatformsaustralia/${PROJECT_NAME}-frontend:${BUILD_VERSION}
+docker tag bioplatformsaustralia/${PROJECT_NAME}:frontend \
+           bioplatformsaustralia/${PROJECT_NAME}:frontend-${BUILD_VERSION}
 
-docker push bioplatformsaustralia/${PROJECT_NAME}-frontend
-docker push bioplatformsaustralia/${PROJECT_NAME}-frontend:${BUILD_VERSION}
+docker push bioplatformsaustralia/${PROJECT_NAME}:frontend
+docker push bioplatformsaustralia/${PROJECT_NAME}:frontend-${BUILD_VERSION}

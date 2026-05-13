@@ -23,10 +23,10 @@ services:
     build:
       context: ./frontend
       target: prod
-    image: bioplatformsaustralia/bpaotu-frontend:prod
+    image: bioplatformsaustralia/bpaotu:frontend
 
   frontend-dev:
     build:
       context: ./frontend
       target: dev
-    image: bioplatformsaustralia/bpaotu-frontend:dev
+    image: bioplatformsaustralia/bpaotu:frontend-dev
