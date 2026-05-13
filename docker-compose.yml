@@ -27,52 +27,5 @@ services:
     image: redis:8-alpine
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
 
-  frontend:
-    build:
-      context: ./frontend
-      target: prod
-    depends_on:
-      - runserver
-    read_only: true
-    tmpfs:
-      - /var/run
-      - /run
-      - /tmp
-      - /etc/nginx/conf.d
-
-  runserver:
-    image: bioplatformsaustralia/bpaotu
-    env_file:
-      - .env_local
-    environment:
-      - WAIT_FOR_DB=1
-      - WAIT_FOR_CACHE=1
-    volumes:
-      - ./data/prod:/data
-    expose:
-      - "9000"
-    depends_on:
-      - db
-      - cache
-
-  celeryworker:
-    image: bioplatformsaustralia/bpaotu-worker
-    env_file:
-      - .env_local
-    environment:
-      - WAIT_FOR_DB=1
-      - WAIT_FOR_CACHE=1
-      - PYTHONPATH=/app/bpaotu
-      - DJANGO_SETTINGS_MODULE=bpaotu.settings_celery
-    volumes:
-      ## Uncomment to bind-mount local source code into the container,
-      ## avoiding the need to rebuild on each code change (development only)
-      # - .:/app
-      - ./data/dev:/data
-    depends_on:
-      - db
-      - cache
-      - runserver
-
 volumes:
   dbdata:

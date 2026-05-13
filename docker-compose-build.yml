@@ -1,41 +1,32 @@
 services:
-  base:
-    build:
-      context: ./
-      dockerfile: Dockerfile-base
-    image: bioplatformsaustralia/bpaotu
-
-  builder:
-    build:
-      context: ./
-      dockerfile: Dockerfile-builder
-      args:
-        BUILD_VERSION:
-        GIT_BRANCH:
-    image: bioplatformsaustralia/bpaotu-builder
-    network_mode: host
-
   prod:
     build:
-      context: ./
-      dockerfile: Dockerfile-prod
+      context: .
+      target: prod
       args:
-        BUILD_VERSION:
-    image: bioplatformsaustralia/bpaotu
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: bioplatformsaustralia/bpaotu:prod
 
   dev:
     build:
-      context: ./
-      dockerfile: Dockerfile-dev
-    image: bioplatformsaustralia/bpaotu
+      context: .
+      target: dev
+    image: bioplatformsaustralia/bpaotu:dev
 
   worker:
     build:
-      context: ./
-      dockerfile: Dockerfile-worker
+      context: .
+      target: worker
     image: bioplatformsaustralia/bpaotu-worker
 
   frontend:
     build:
       context: ./frontend
-    image: bioplatformsaustralia/bpaotu-frontend
+      target: prod
+    image: bioplatformsaustralia/bpaotu-frontend:prod
+
+  frontend-dev:
+    build:
+      context: ./frontend
+      target: dev
+    image: bioplatformsaustralia/bpaotu-frontend:dev

@@ -27,8 +27,17 @@ X_FRAME_OPTIONS = env.get("x_frame_options", 'DENY')
 ADMINS = [("alert", env.get("alert_email", "root@localhost"))]
 MANAGERS = ADMINS
 
-# This honours the X-Forwarded-Host header set by our nginx frontend when
-# constructing redirect URLS.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost",
+    "http://127.0.0.1",
+    "http://localhost:4000",
+    "http://127.0.0.1:4000",
+]
+
+
+# This honours the X-Forwarded-Host header set by our nginx frontend when constructing redirect URLS
 USE_X_FORWARDED_HOST = env.get("use_x_forwarded_host", True)
 
 ALLOWED_HOSTS = env.getlist("allowed_hosts", ["*"])

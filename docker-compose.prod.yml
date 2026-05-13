@@ -1,0 +1,46 @@
+# note that on server we use the specific version tags
+# but for local testing we can use the :prod tag which is built from the prod target in the Dockerfile
+# (worker is the same for both prod and dev)
+
+services:
+  frontend:
+    image: bioplatformsaustralia/bpaotu-frontend:prod
+    ports:
+      - "4000:12345" # map nginx port to host for production
+    depends_on:
+      - runserver
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  runserver:
+    image: bioplatformsaustralia/bpaotu:prod
+    env_file:
+      - .env_local # for local HTTP-only testing
+    environment:
+      - WAIT_FOR_DB=1
+      - WAIT_FOR_CACHE=1
+    volumes:
+      - ./data/prod:/data
+    depends_on:
+      - db
+      - cache
+
+  celeryworker:
+    image: bioplatformsaustralia/bpaotu-worker
+    env_file:
+      - .env_local # for local HTTP-only testing
+    environment:
+      - WAIT_FOR_DB=1
+      - WAIT_FOR_CACHE=1
+      - PYTHONPATH=/app/bpaotu
+      - DJANGO_SETTINGS_MODULE=bpaotu.settings_celery
+    volumes:
+      - ./data/prod:/data
+    depends_on:
+      - db
+      - cache
+      - runserver
+
+volumes:
+  dbdata:
