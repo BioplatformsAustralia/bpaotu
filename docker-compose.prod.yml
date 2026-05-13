@@ -4,11 +4,16 @@
 
 services:
   frontend:
-    image: bioplatformsaustralia/bpaotu-frontend:prod
+    image: bioplatformsaustralia/bpaotu:frontend
     ports:
-      - "4000:12345" # map nginx port to host for production
+      # For local testing, 4000 is used as the HTTP port and 4443 is used as the HTTPS port with self-signed certs
+      # (Note: the container nginx config redirect from 4000 will be to 443, not 4443, so while redirecting will happen, need to specify 4443 manually in browser)
+      - "4000:80"
+      - "4443:443"
     depends_on:
       - runserver
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
     read_only: true
     tmpfs:
       - /tmp

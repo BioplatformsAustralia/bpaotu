@@ -42,3 +42,4 @@ backup_*/
 dbdata_*/
 krona/
 celerybeat-schedule.*
+certs/

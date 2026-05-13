@@ -1,9 +1,18 @@
 # ===========================
-# Base image
+# Base images
 # ===========================
 
 FROM python:3.9-slim-bullseye AS base
 LABEL maintainer=https://github.com/BioplatformsAustralia/bpaotu
+
+# Create user + dirs
+RUN addgroup --gid 1000 bioplatforms \
+  && adduser --disabled-password --home /data --no-create-home --system -q --uid 1000 --ingroup bioplatforms bioplatforms \
+  && mkdir /data /app \
+  && chown bioplatforms:bioplatforms /data
+
+
+FROM base AS runtime-deps
 
 ENV \
   VIRTUAL_ENV=/env \
@@ -20,12 +29,6 @@ ENV \
   MONGO_DB_PREFIX=prod_ \
   DJANGO_SETTINGS_MODULE=bpaotu.settings \
   PYTHONUNBUFFERED=1
-
-# Create user + dirs
-RUN addgroup --gid 1000 bioplatforms \
-  && adduser --disabled-password --home /data --no-create-home --system -q --uid 1000 --ingroup bioplatforms bioplatforms \
-  && mkdir /data /app \
-  && chown bioplatforms:bioplatforms /data
 
 # Runtime deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -49,7 +52,7 @@ WORKDIR /app
 # Build dependencies (shared)
 # ===========================
 
-FROM base AS build-deps
+FROM runtime-deps AS build-deps
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
   build-essential \
@@ -167,7 +170,7 @@ CMD ["uwsgi"]
 # =========================
 # Worker image
 # =========================
-FROM python:3.9-slim-bullseye AS worker
+FROM base AS worker
 
 # System packages
 # git; required for pip packages on github
@@ -176,12 +179,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   git \
   ncbi-blast+ \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*;
-
-# uid and gid must match runserver Dockerfile
-RUN addgroup --gid 1000 bioplatforms \
-  && adduser --disabled-password --home /data --no-create-home --system -q --uid 1000 --ingroup bioplatforms bioplatforms \
-  && mkdir /data /app \
-  && chown bioplatforms:bioplatforms /data
 
 WORKDIR /app
 
