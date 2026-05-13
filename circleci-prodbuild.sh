@@ -35,5 +35,5 @@ docker tag bioplatformsaustralia/${PROJECT_NAME}-frontend:prod \
 docker tag bioplatformsaustralia/${PROJECT_NAME}-frontend:prod \
            bioplatformsaustralia/${PROJECT_NAME}-frontend:${BUILD_VERSION}
 
-docker push bioplatformsaustralia/${PROJECT_NAME}-frontend:latest
+docker push bioplatformsaustralia/${PROJECT_NAME}-frontend
 docker push bioplatformsaustralia/${PROJECT_NAME}-frontend:${BUILD_VERSION}
