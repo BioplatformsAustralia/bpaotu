@@ -1,6 +1,8 @@
 # settings shared between runserver and celeryworker
 
 import os
+import posixpath
+
 from ccg_django_utils.conf import EnvConfig
 from celery.schedules import crontab
 from contextlib import suppress
@@ -27,17 +29,21 @@ BPA_VERSION = VERSION
 SECRET_KEY = env.get("secret_key", "change-it")
 
 SCRIPT_NAME = env.get("script_name", os.environ.get("HTTP_SCRIPT_NAME", ""))
-FORCE_SCRIPT_NAME = env.get("force_script_name", "") or SCRIPT_NAME or None
+BASE_URL = SCRIPT_NAME
 
 WEBAPP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print(f"WEBAPP_ROOT: {WEBAPP_ROOT}")
 
+# ensure STATIC_URL always has a single slash between script name and static, and doesn't end with double slash if script name is "/"
 STATIC_ROOT = env.get('static_root', os.path.join(WEBAPP_ROOT, 'static'))
-STATIC_URL = '{0}/static/'.format(SCRIPT_NAME)
-STATIC_SERVER_PATH = STATIC_ROOT
+STATIC_URL = posixpath.join("/", SCRIPT_NAME.strip("/"), "static") + "/"
 
-# This should be the path under the webapp is installed on the server ex. /bpa/otu on staging
-# TODO I think this is alwasy SCRIPT_NAME if not get separately from enviroment
-BASE_URL = SCRIPT_NAME
+
+# URL that handles the media served from MEDIA_ROOT. Make sure to use a
+# trailing slash.
+MEDIA_ROOT = env.get('media_root', os.path.join(WEBAPP_ROOT, 'static', 'media'))
+MEDIA_URL = ''
+
 
 
 ## EMAIL CONFIG

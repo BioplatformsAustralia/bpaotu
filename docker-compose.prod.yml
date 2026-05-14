@@ -8,6 +8,7 @@ services:
     ports:
       # For local testing, 4000 is used as the HTTP port and 4443 is used as the HTTPS port with self-signed certs
       # (Note: the container nginx config redirect from 4000 will be to 443, not 4443, so while redirecting will happen, need to specify 4443 manually in browser)
+      # In production, the HTTP port will be 80 and the HTTPS port will be 443
       - "4000:80"
       - "4443:443"
     depends_on:

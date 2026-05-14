@@ -110,20 +110,7 @@ SITE_ID = 1
 # If you set this to False, Django will not use timezone-aware datetimes.
 USE_TZ = True
 
-# URL that handles the media served from MEDIA_ROOT. Make sure to use a
-# trailing slash.
-MEDIA_ROOT = env.get('media_root', os.path.join(WEBAPP_ROOT, 'static', 'media'))
-MEDIA_URL = ''
 
-# These may be overridden, but it would be nice to stick to this convention
-STATIC_ROOT = env.get('static_root', os.path.join(WEBAPP_ROOT, 'static'))
-STATIC_URL = '{0}/static/'.format(SCRIPT_NAME)
-STATIC_SERVER_PATH = STATIC_ROOT
-
-BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
-BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
-OTU_EXPORT_PATH = env.get('otu_export_path', '/data/otu-export/')
-OTU_EXPORT_URL = env.get('otu_export_url', STATIC_URL)
 
 STATICFILES_DIRS = [
     # FIXME. This is almost certainly wrong, and should be handled by MEDIA_ROOT
