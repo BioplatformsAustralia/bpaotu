@@ -21,11 +21,13 @@ logger = logging.getLogger('bpaotu')
 
 
 def get_oauth_session():
-    """Create a new OAuth2Session instance"""
+    """
+    Create a new OAuth2Session instance
+    """
     return OAuth2Session(
         client_id=settings.OAUTH_CLIENT_ID,
         client_secret=settings.OAUTH_CLIENT_SECRET,
-        redirect_uri=settings.OAUTH_REDIRECT_URI,
+        redirect_uri=settings.OAUTH_CALLBACK_REDIRECT_URI,
     )
 
 
@@ -132,7 +134,7 @@ def callback_view(request):
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         login(request, user)
         
-        # Redirect to frontend (you'll need to configure this)
+        # Redirect to frontend
         return redirect(f"{settings.OAUTH_FRONTEND_URL or '/'}")
         
     except Exception as e:
