@@ -7,6 +7,7 @@ import re
 import tempfile
 import traceback
 import uuid
+import time
 from collections import OrderedDict, defaultdict
 from glob import glob
 from hashlib import md5
@@ -266,14 +267,59 @@ class DataImporter:
         self.ontology_init()
 
     def run(self):
+        # Start total timer
+        logger.info("=" * 80)
+        logger.info("Starting data ingest")
+        logger.info("=" * 80)
+        start_time = time.time()
+
+        # Load contextual metadata
+        load_start = time.time()
+        logger.info("Loading contextual metadata...")
         self.load_contextual_metadata()
+        logger.info(f"Loading contextual metadata completed in {time.time() - load_start:.2f} seconds")
+
+        # Load Taxonomies
+        load_start = time.time()
+        logger.info("Loading taxonomies...")
         otu_lookup = self.load_taxonomies()
+        logger.info(f"Loading taxonomies completed in {time.time() - load_start:.2f} seconds")
+
+        # Load OTU Abundance
+        load_start = time.time()
+        logger.info("Loading OTU abundance...")
         self.load_otu_abundance(otu_lookup)
+        logger.info(f"Loading OTU abundance completed in {time.time() - load_start:.2f} seconds")
+
+        # Load Taxonomy OTU
+        load_start = time.time()
+        logger.info("Loading taxonomy-OTU...")
         self.load_taxonomy_otu()
-        logger.info('Refreshing OTUSampleOTU')
+        logger.info(f"Loading taxonomy-OTU completed in {time.time() - load_start:.2f} seconds")
+
+        # Refresh Materialized View
+        load_start = time.time()
+        logger.info("Refreshing materialized view...")
         refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
+        logger.info(f"Refreshing materialized view completed in {time.time() - load_start:.2f} seconds")
+
+        # CKAN Update
+        load_start = time.time()
+        logger.info("Updating from CKAN...")
         update_from_ckan()
+        logger.info(f"Updating from CKAN completed in {time.time() - load_start:.2f} seconds")
+        
+        # Finalization
+        load_start = time.time()
+        logger.info("Finalizing...")
         self.complete()
+        logger.info(f"Finalizing completed in {time.time() - load_start:.2f} seconds")
+
+        # End total timer
+        total_time = time.time() - start_time
+        logger.info("=" * 80)
+        logger.info(f"Data ingest completed in {total_time:.2f} seconds ({total_time/60:.2f} minutes)")
+        logger.info("=" * 80)
 
     def ontology_init(self):
         # set blank as an option for all ontologies, bar Environment
