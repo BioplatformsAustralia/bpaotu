@@ -214,37 +214,33 @@ These should be committed to the repository so that they are available for downl
 
 This mode builds development images and is intended for local development. Development mode allows features such as hot-reloading for both Django and React.
 
+Everything, including the frontend (accessible on localhost:3000), is run in a docker container.
+
 ```
 docker compose -f docker-compose-build.yml build dev worker frontend-dev
 docker compose up
 ```
 
-### Production (local nginx config)
+### Production
 
-This mode builds production images and is intended for testing production behaviour locally, with SSL provided by self-signed certs.
+In production deployments the TLS termination is performed by an external reverse proxy, so the production container listens on HTTP only.
 
-Build a local "prod" backend and a local "prod" frontend that uses the local nginx config:
+For testing a production build, use a reverse-proxy running on the host. An example reverse-proxy nginx config can be found at `frontend/nginx/reverse-proxy.conf`
+To test HTTPS, use `mkcert` to generate self-signed certs for testing the production deployment, placing them in the location expected by the reverse proxy config.
+
+The build is handled by the `circleci-prodbuild.sh` script, but can be summarised as:
 
 ```
-docker compose -f docker-compose-build.yml build prod worker
-docker compose -f docker-compose-build.yml build --build-arg FRONTEND_NGINX=local frontend
+docker compose -f docker-compose-build.yml build prod worker frontend
 ```
 
-To test HTTPS locally (for the local nginx config) create certs (e.g. with `mkcert`) and mount them into the container using the relevant volume in `docker-compose.prod.yml`.
-
-Run using the prod compose file alone:
+When construction a docker-compose.yml for use in production / use the prod compose file alone:
 
 ```
 docker compose -f docker-compose.prod.yml up
 ```
 
 > Do not include `docker-compose.yml` here, because that file mounts the local repo into `/app` for hot-reloading in development mode. In prod mode that mount will overwrite the image contents (e.g. will cause `Permission denied` on `/app/docker-entrypoint.sh`).
-
-### Production (real nginx config)
-
-In production deployments the TLS termination is performed by an external reverse proxy, so the production container listens on HTTP only.
-
-Note: this is handled by the `circleci-prodbuild.sh` script.
 
 ### Frontend
 
