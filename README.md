@@ -49,7 +49,7 @@ developed to access data from the Australian Microbiome.
 
 ### Backend (Django)
 
-- [Install Docker and the Docker Compose plugin](https://docs.docker.com/compose/install/)
+- [Install Docker Engine and the Docker Compose plugin](https://docs.docker.com/compose/install/)
 
 - Generate `./.env_local`. This should contain `KEY=value` lines. See `./.env_local.template`
   for keys. This must have a valid `CKAN_API_KEY` so that site images and sample
@@ -146,6 +146,42 @@ These steps are performed in a separate terminal, i.e. not in the container, and
 
   - Run `yarn start`
   - The page will be accessible on port 3000 by default
+
+### Updated Dockerfile configuration (more details to be added)
+
+Dev
+
+docker compose -f docker-compose-build.yml build dev worker frontend-dev
+
+docker compose up
+
+
+Prod (testing)
+
+This is for testing the webapp in production mode (for permissions and SSL etc)
+
+Create SSL certs with mkcert
+
+Add to volume location
+
+docker compose -f docker-compose-build.yml build prod worker frontend
+
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+Note that in production mode, everything is behind a reverse proxy which terminates the TLS, so the production container only listens to http
+
+
+Volume backup
+
+So that a full ingest can be saved while testing ingest code. This saves the data uncompressed, so it is quite large, but compressing it takes a very long time
+
+docker compose -f docker-compose.yml -f docker-compose.backup.yml run --rm backup
+
+docker compose -f docker-compose.yml -f docker-compose.backup.yml run --rm restore
+
+
+
+
 
 ### KronaTools
 

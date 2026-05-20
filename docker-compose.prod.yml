@@ -3,21 +3,32 @@
 # (worker is the same for both prod and dev)
 
 services:
-  frontend:
-    image: bioplatformsaustralia/bpaotu:frontend
+  db:
+    # NOTE:
+    # in production the db is hosted on a separate server and not in a container
+    # but keep this here for local testing of production mode
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-webapp}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-webapp}
+      - POSTGRES_DB=${POSTGRES_DB:-webapp}
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=minimal"
+      - "-c"
+      - "max_wal_size=10GB"
+      - "-c"
+      - "max_wal_senders=0"
+    shm_size: 1gb
     ports:
-      # For local testing, 4000 is used as the HTTP port and 4443 is used as the HTTPS port with self-signed certs
-      # (Note: the container nginx config redirect from 4000 will be to 443, not 4443, so while redirecting will happen, need to specify 4443 manually in browser)
-      # In production, the HTTP port will be 80 and the HTTPS port will be 443
-      - "4000:80"
-      - "4443:443"
-    depends_on:
-      - runserver
+      - "5432:5432"
     volumes:
-      - ./certs:/etc/nginx/certs:ro
-    read_only: true
-    tmpfs:
-      - /tmp
+      - dbdata:/var/lib/postgresql/data/
+
+  cache:
+    image: redis:8-alpine
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
 
   runserver:
     image: bioplatformsaustralia/bpaotu:prod
@@ -47,6 +58,22 @@ services:
       - db
       - cache
       - runserver
+
+  frontend:
+    image: bioplatformsaustralia/bpaotu:frontend
+    ports:
+      # For local testing, 4000 is used as the HTTP port and 4443 is used as the HTTPS port with self-signed certs
+      # (Note: the container nginx config redirect from 4000 will be to 443, not 4443, so while redirecting will happen, need to specify 4443 manually in browser)
+      # In production, the HTTP port will be 80 and the HTTPS port will be 443
+      - "4000:80"
+      - "4443:443"
+    depends_on:
+      - runserver
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
+    read_only: true
+    tmpfs:
+      - /tmp
 
 volumes:
   dbdata:
