@@ -94,11 +94,22 @@ RUN mkdir -p /var/cache/nginx/client_temp \
 # Copy build output
 COPY --from=build /frontend/build /usr/share/nginx/html
 
-# Copy nginx configs
+# Allow choosing Nginx config at build time: "real" (default) or "local"
+ARG FRONTEND_NGINX=real
+
+# Copy nginx configs (both variants) and select one based on build arg
 RUN mkdir -p /etc/nginx/snippets /etc/nginx/conf.d
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/amotu.conf /etc/nginx/conf.d/amotu.conf
+COPY nginx/amotu-prod-real.conf /tmp/amotu-prod-real.conf
+COPY nginx/amotu-prod-local.conf /tmp/amotu-prod-local.conf
 COPY nginx/amotu.locations.conf /etc/nginx/snippets/amotu.locations.conf
+
+# Choose the appropriate amotu.conf based on `FRONTEND_NGINX` argument
+RUN if [ "$FRONTEND_NGINX" = "local" ]; then \
+            cp /tmp/amotu-prod-local.conf /etc/nginx/conf.d/amotu.conf; \
+        else \
+            cp /tmp/amotu-prod-real.conf /etc/nginx/conf.d/amotu.conf; \
+        fi && rm -f /tmp/amotu-prod-*.conf
 
 # Use non-root user
 USER nginx

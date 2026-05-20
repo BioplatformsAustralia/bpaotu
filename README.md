@@ -67,6 +67,8 @@ developed to access data from the Australian Microbiome.
 
   Ensure that other keys have a value set so the page will work (dummy values are fine). Worth mentioning is the SKIP_WARMCACHE key. If this is set to `yes` then the cache warming steps will be skipped when the server is started, which is very helpful for development.
 
+- If testing OAuth then the relevant keys must be provided. Otherwise set ENABLE_AUTH=0 to bypass this locally and be logged in as a fake user.
+
 - Generate `./.env`. This should contain `KEY=value` lines. See `./.env.template` for keys.
   This must have valid `POSTGRES_USER`, `POSTGRES_PASSWORD` and `REDIS_PASSWORD` values.
 
@@ -147,42 +149,6 @@ These steps are performed in a separate terminal, i.e. not in the container, and
   - Run `yarn start`
   - The page will be accessible on port 3000 by default
 
-### Updated Dockerfile configuration (more details to be added)
-
-Dev
-
-docker compose -f docker-compose-build.yml build dev worker frontend-dev
-
-docker compose up
-
-
-Prod (testing)
-
-This is for testing the webapp in production mode (for permissions and SSL etc)
-
-Create SSL certs with mkcert
-
-Add to volume location
-
-docker compose -f docker-compose-build.yml build prod worker frontend
-
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up
-
-Note that in production mode, everything is behind a reverse proxy which terminates the TLS, so the production container only listens to http
-
-
-Volume backup
-
-So that a full ingest can be saved while testing ingest code. This saves the data uncompressed, so it is quite large, but compressing it takes a very long time
-
-docker compose -f docker-compose.yml -f docker-compose.backup.yml run --rm backup
-
-docker compose -f docker-compose.yml -f docker-compose.backup.yml run --rm restore
-
-
-
-
-
 ### KronaTools
 
 KronaTools is used for some visualisations. In production, KronaTools is installed to the /app directory in the container during the production build. This doesn't work in development mode as /app is mounted to the code directory. To get around this, install KronaTools directly in the code directory to ./krona (this path is included in the .gitignore file, so it's not committed to the repository).
@@ -234,6 +200,70 @@ To convert the notebooks to updated example code files:
 `python /app/bpaotu/manage.py export_comparison_examples`
 
 These should be committed to the repository so that they are available for download in production.
+
+
+## Dockerfile descriptions
+
+- docker-compose.yml as is runs in development mode
+
+- docker-compose.yml with the docker-compose.prod.yml overlay runs in production mode locally
+
+- The docker-compose.yml for the real production server is managed externally
+
+### Development
+
+This mode builds development images and is intended for local development. Development mode allows features such as hot-reloading for both Django and React.
+
+```
+docker compose -f docker-compose-build.yml build dev worker frontend-dev
+docker compose up
+```
+
+### Production (local nginx config)
+
+This mode builds production images and is intended for testing production behaviour locally, with SSL provided by self-signed certs.
+
+Build a local "prod" backend and a local "prod" frontend that uses the local nginx config:
+
+```
+docker compose -f docker-compose-build.yml build prod worker
+docker compose -f docker-compose-build.yml build --build-arg FRONTEND_NGINX=local frontend
+```
+
+To test HTTPS locally (for the local nginx config) create certs (e.g. with `mkcert`) and mount them into the container using the relevant volume in `docker-compose.prod.yml`.
+
+Run using the prod compose file alone:
+
+```
+docker compose -f docker-compose.prod.yml up
+```
+
+> Do not include `docker-compose.yml` here, because that file mounts the local repo into `/app` for hot-reloading in development mode. In prod mode that mount will overwrite the image contents (e.g. will cause `Permission denied` on `/app/docker-entrypoint.sh`).
+
+### Production (real nginx config)
+
+In production deployments the TLS termination is performed by an external reverse proxy, so the production container listens on HTTP only.
+
+Note: this is handled by the `circleci-prodbuild.sh` script.
+
+### Frontend
+
+The frontend `Dockerfile` supports selecting which production nginx configuration is installed at build time. This keeps the CircleCI/prod build behaviour unchanged while making it easy to build a "local prod" image for development.
+
+- **Build arg:** `FRONTEND_NGINX` — accepted values: `real` (default) or `local`.
+- **Default behaviour:** If no build-arg is supplied (e.g. CircleCI builds), the `real` nginx config is used.
+
+
+### DB Volume backup
+
+Running an ingest drops and recreates the schema every time - meaning that existing data is lost. Since a full ingest can take many (~5) hours, this is a bit annoying when testing the ingest code and wanting to go back to having all the data available locally.
+
+The following docker commands allow the dbdata volume to be backed up and restored easily, so that a full ingest can be saved while testing ingest code. These commands save the data uncompressed since de/compressing it takes a very long time. As a result the back file is quite large (50GB), but it only takes a few minutes to backup/restore.
+
+```
+docker compose -f docker-compose.yml -f docker-compose.backup.yml run --rm backup
+docker compose -f docker-compose.yml -f docker-compose.backup.yml run --rm restore
+```
 
 ## Input data description
 

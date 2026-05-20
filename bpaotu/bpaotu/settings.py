@@ -69,16 +69,6 @@ CSRF_COOKIE_SECURE = env_bool(
 )
 
 
-print("SESSION_COOKIE_HTTPONLY", SESSION_COOKIE_HTTPONLY)
-print("SESSION_COOKIE_SECURE", SESSION_COOKIE_SECURE)
-print("SESSION_COOKIE_NAME", SESSION_COOKIE_NAME)
-print("SESSION_COOKIE_DOMAIN", SESSION_COOKIE_DOMAIN)
-print("SESSION_COOKIE_SAMESITE", SESSION_COOKIE_SAMESITE)
-print("CSRF_COOKIE_SAMESITE", CSRF_COOKIE_SAMESITE)
-
-
-
-
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.

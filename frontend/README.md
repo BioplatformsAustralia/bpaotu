@@ -42,3 +42,28 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+## Production Docker build (nginx config selection)
+
+The frontend `Dockerfile` supports a build argument `FRONTEND_NGINX` to choose which nginx configuration is installed into the production image:
+
+- `real` (default): use `amotu-prod-real.conf` — intended for the live production build (used by CircleCI).
+- `local`: use `amotu-prod-local.conf` — intended for local testing with self-signed certs or different TLS handling.
+
+Examples
+
+Build the production image using the `local` nginx config:
+
+```
+docker build -f Dockerfile --target prod \
+	--build-arg FRONTEND_NGINX=local \
+	-t bioplatformsaustralia/bpaotu:frontend-local .
+```
+
+Or via the repository top-level compose file:
+
+```
+docker compose -f ../docker-compose-build.yml build --build-arg FRONTEND_NGINX=local frontend
+```
+
+CircleCI and the default `docker-compose-build.yml` do not set this arg, so the `real` config is used unless you explicitly override it.
