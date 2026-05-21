@@ -20,7 +20,7 @@ server {
   # Send OAuth endpoints to Django backend
   # (this location block must be before SPA catch-all)
   location /oidc/ {
-    proxy_pass http://runserver:9000;
+    proxy_pass ${UPSTREAM_URL};
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -36,7 +36,7 @@ server {
   }
 
   location ^~ /ingest/ {
-    proxy_pass http://runserver:9000;
+    proxy_pass ${UPSTREAM_URL};
 
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-Host $host;
@@ -54,7 +54,7 @@ server {
 
 
   # All app locations (single source of truth)
-  include /etc/nginx/snippets/amotu.locations.conf;
+  include /etc/nginx/conf.d/amotu.locations.snippet;
 
   # SPA catch-all
   location / {

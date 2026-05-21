@@ -10,7 +10,7 @@ location /private {
     }
 
     # Docker: Use runserver service name for internal networking on development port
-    proxy_pass http://runserver:9000;
+    proxy_pass ${UPSTREAM_URL};
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -88,7 +88,7 @@ location /ext/ {
         return 503;
     }
 
-    proxy_pass http://runserver:9000;
+    proxy_pass ${UPSTREAM_URL};
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
 }

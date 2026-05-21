@@ -78,8 +78,8 @@ RUN rm -f /etc/nginx/conf.d/default.conf
 
 # Create /tmp where nginx pid and cache can be stored with correct permissions for non-root user
 # Set permissions for non-root user (nginx) to write to necesary directories
-RUN mkdir -p /tmp /var/cache/nginx \
-    && chown -R nginx:nginx /tmp /var/cache/nginx /usr/share/nginx/html /var/run \
+RUN mkdir -p /tmp /var/cache/nginx /etc/nginx/conf.d /etc/nginx/templates /etc/nginx/snippets \
+    && chown -R nginx:nginx /tmp /var/cache/nginx /usr/share/nginx/html /var/run /etc/nginx/conf.d /etc/nginx/templates \
     && chmod -R 700 /var/cache/nginx
 
 # Pre-create nginx cache directories with proper permissions
@@ -95,12 +95,11 @@ RUN mkdir -p /var/cache/nginx/client_temp \
 COPY --from=build /frontend/build /usr/share/nginx/html
 
 # Copy nginx config
-RUN mkdir -p /etc/nginx/snippets /etc/nginx/conf.d
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/amotu.conf /etc/nginx/conf.d/amotu.conf
-COPY nginx/amotu.locations.conf /etc/nginx/snippets/amotu.locations.conf
+COPY nginx/amotu.conf.template /etc/nginx/templates/amotu.conf.template
+COPY nginx/amotu.locations.snippet.template /etc/nginx/templates/amotu.locations.snippet.template
 
 # Use non-root user
 USER nginx
-EXPOSE 8080
+EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

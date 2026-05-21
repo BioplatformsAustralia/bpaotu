@@ -32,7 +32,6 @@ SCRIPT_NAME = env.get("script_name", os.environ.get("HTTP_SCRIPT_NAME", ""))
 BASE_URL = SCRIPT_NAME
 
 WEBAPP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-print(f"WEBAPP_ROOT: {WEBAPP_ROOT}")
 
 # ensure STATIC_URL always has a single slash between script name and static, and doesn't end with double slash if script name is "/"
 STATIC_ROOT = env.get('static_root', os.path.join(WEBAPP_ROOT, 'static'))
