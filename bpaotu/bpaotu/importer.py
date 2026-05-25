@@ -15,6 +15,7 @@ from itertools import zip_longest
 from ._version import __version__
 
 from django.conf import settings
+from django.core.mail import send_mail
 
 import sqlalchemy
 from bpaingest.metadata import DownloadMetadata
@@ -239,7 +240,7 @@ class DataImporter:
         ('store_cond', SampleStorageMethod),
     ])
 
-    def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True):
+    def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True, notify_email=None):
         self._engine = make_engine()
         self._create_extensions() # does this need to be after sessionmaker?
         self._session = sessionmaker(bind=self._engine)()
@@ -249,6 +250,7 @@ class DataImporter:
         self._revision_date = revision_date
         self._has_sql_context = has_sql_context
         self._force_fetch = force_fetch
+        self._notify_email = notify_email or getattr(settings, 'INGEST_NOTIFY_EMAIL', None)
 
         # these are used exclusively for reporting back to CSIRO on the state of the ingest
         self.sample_metadata_incomplete = set()
@@ -266,60 +268,132 @@ class DataImporter:
         Base.metadata.create_all(self._engine)
         self.ontology_init()
 
+    def _send_notification(self, success, total_time=None, error_message=None, phase_timings=None):
+        """Sends email notification about ingest completion or failure"""
+        if not self._notify_email:
+            return
+
+        try:
+            if success:
+                subject = f"[BPA-OTU] Data Ingest Completed Successfully - {total_time/60:.1f} minutes"
+                message = f"""
+Data ingest completed successfully
+
+Total time: {total_time:.2f} seconds ({total_time/60:.2f} minutes)
+
+Phase timings:
+{phase_timings if phase_timings else 'N/A'}
+
+Import directory: {self._import_base}
+Revision date: {self._revision_date}
+                """
+            else:
+                subject = "[BPA-OTU] Data Ingest Failed"
+                message = f"""
+Data ingest FAILED!
+
+Error: {error_message}
+
+Import directory: {self._import_base}
+Revision date: {self._revision_date}
+
+Check the logs for more details.
+                """
+
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@csiro.au'),
+                recipient_list=[self._notify_email],
+                fail_silently=True 
+            )
+            logger.info(f"Notification email sent to {self._notify_email}")
+        except Exception as e:
+            logger.warning(f"Failed to send notification email: {e}")
+
     def run(self):
         # Start total timer
         logger.info("=" * 80)
         logger.info("Starting data ingest")
         logger.info("=" * 80)
         start_time = time.time()
+        phase_timings = []
 
-        # Load contextual metadata
-        load_start = time.time()
-        logger.info("Loading contextual metadata...")
-        self.load_contextual_metadata()
-        logger.info(f"Loading contextual metadata completed in {time.time() - load_start:.2f} seconds")
+        try:
+            # Load contextual metadata
+            load_start = time.time()
+            logger.info("Loading contextual metadata...")
+            self.load_contextual_metadata()
+            elapsed = time.time() - load_start
+            phase_timings.append(f"Contextual metadata: {elapsed:.2f}s")
+            logger.info(f"Loading contextual metadata completed in {time.time() - load_start:.2f} seconds")
 
-        # Load Taxonomies
-        load_start = time.time()
-        logger.info("Loading taxonomies...")
-        otu_lookup = self.load_taxonomies()
-        logger.info(f"Loading taxonomies completed in {time.time() - load_start:.2f} seconds")
+            # Load Taxonomies
+            load_start = time.time()
+            logger.info("Loading taxonomies...")
+            otu_lookup = self.load_taxonomies()
+            elapsed = time.time() - load_start
+            phase_timings.append(f"Taxonomies: {elapsed:.2f}s")
+            logger.info(f"Loading taxonomies completed in {time.time() - load_start:.2f} seconds")
 
-        # Load OTU Abundance
-        load_start = time.time()
-        logger.info("Loading OTU abundance...")
-        self.load_otu_abundance(otu_lookup)
-        logger.info(f"Loading OTU abundance completed in {time.time() - load_start:.2f} seconds")
+            # Load OTU Abundance
+            load_start = time.time()
+            logger.info("Loading OTU abundance...")
+            self.load_otu_abundance(otu_lookup)
+            elapsed = time.time() - load_start
+            phase_timings.append(f"OTU abundance: {elapsed:.2f}s")
+            logger.info(f"Loading OTU abundance completed in {time.time() - load_start:.2f} seconds")
 
-        # Load Taxonomy OTU
-        load_start = time.time()
-        logger.info("Loading taxonomy-OTU...")
-        self.load_taxonomy_otu()
-        logger.info(f"Loading taxonomy-OTU completed in {time.time() - load_start:.2f} seconds")
+            # Load Taxonomy OTU
+            load_start = time.time()
+            logger.info("Loading taxonomy-OTU...")
+            self.load_taxonomy_otu()
+            elapsed = time.time() - load_start
+            phase_timings.append(f"Taxonomy-OTU: {elapsed:.2f}s")
+            logger.info(f"Loading taxonomy-OTU completed in {time.time() - load_start:.2f} seconds")
 
-        # Refresh Materialized View
-        load_start = time.time()
-        logger.info("Refreshing materialized view...")
-        refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
-        logger.info(f"Refreshing materialized view completed in {time.time() - load_start:.2f} seconds")
+            # Refresh Materialized View
+            load_start = time.time()
+            logger.info("Refreshing materialized view...")
+            refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
+            elapsed = time.time() - load_start
+            phase_timings.append(f"Materialized view: {elapsed:.2f}s")
+            logger.info(f"Refreshing materialized view completed in {time.time() - load_start:.2f} seconds")
 
-        # CKAN Update
-        load_start = time.time()
-        logger.info("Updating from CKAN...")
-        update_from_ckan()
-        logger.info(f"Updating from CKAN completed in {time.time() - load_start:.2f} seconds")
+            # CKAN Update
+            load_start = time.time()
+            logger.info("Updating from CKAN...")
+            update_from_ckan()
+            elapsed = time.time() - load_start
+            phase_timings.append(f"CKAN update: {elapsed:.2f}s")
+            logger.info(f"Updating from CKAN completed in {time.time() - load_start:.2f} seconds")
+            
+            # Finalization
+            load_start = time.time()
+            logger.info("Finalizing...")
+            self.complete()
+            elapsed = time.time() - load_start
+            phase_timings.append(f"Finalization: {elapsed:.2f}s")
+            logger.info(f"Finalizing completed in {time.time() - load_start:.2f} seconds")
+
+            # End total timer
+            total_time = time.time() - start_time
+            logger.info("=" * 80)
+            logger.info(f"Data ingest completed in {total_time:.2f} seconds ({total_time/60:.2f} minutes)")
+            logger.info("=" * 80)
+
+            # Send success notification
+            self._send_notification(success=True, total_time=total_time, phase_timings="\n".join(phase_timings))
         
-        # Finalization
-        load_start = time.time()
-        logger.info("Finalizing...")
-        self.complete()
-        logger.info(f"Finalizing completed in {time.time() - load_start:.2f} seconds")
+        except Exception as e:
+            # Log error 
+            logger.error(f"Data ingest failed: {e}", exc_info=True)
 
-        # End total timer
-        total_time = time.time() - start_time
-        logger.info("=" * 80)
-        logger.info(f"Data ingest completed in {total_time:.2f} seconds ({total_time/60:.2f} minutes)")
-        logger.info("=" * 80)
+            # Send failure notification
+            error_details = f"{type(e).__name__}: {str(e)}\n\n{traceback.format_exc()}"
+            self._send_notification(success=False, error_message=error_details)
+
+            raise
 
     def ontology_init(self):
         # set blank as an option for all ontologies, bar Environment
