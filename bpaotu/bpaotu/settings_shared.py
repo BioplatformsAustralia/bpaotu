@@ -42,10 +42,10 @@ BASE_URL = SCRIPT_NAME
 
 ## email
 
-DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'Bioplaforms Data Portal <help@bioplatforms.com>')
+#DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'Bioplaforms Data Portal <help@bioplatforms.com>')
+DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'no-reply@csiro.au')
 EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU] ')
 EMAIL_BACKEND = env.get('BPAOTU_EMAIL_BACKEND', "anymail.backends.amazon_ses.EmailBackend")
-DEFAULT_FROM_EMAIL = 'noreply@yourdomain.com'
 EMAIL_HOST = env.get('BPAOTU_EMAIL_HOST', 'localhost')
 
 ANYMAIL = {
