@@ -249,20 +249,35 @@ class DataImporter:
         self._has_sql_context = has_sql_context
         self._force_fetch = force_fetch
 
-        # these are used exclusively for reporting back to CSIRO on the state of the ingest
+        # These are used exclusively for reporting back to CSIRO on the state of the ingest
         self.sample_metadata_incomplete = set()
         self.sample_non_integer = set()
         self.sample_not_in_metadata = set()
 
         self.otu_invalid = set()
 
+        # We drop the whole schema and recreate it each time
+        # This is much simpler than trying to do an update / diff on the new ingest vs the old one
+        # and is not a problem because we are not trying to preserve any existing ingest data
+        #
+        # Note that things like metagenome requests and non-denoised data requests are stored in the public schema, so are not affected by this
         try:
             self._session.execute(DropSchema(SCHEMA, cascade=True))
         except sqlalchemy.exc.ProgrammingError:
             self._session.invalidate()
+
         self._session.execute(CreateSchema(SCHEMA))
         self._session.commit()
-        Base.metadata.create_all(self._engine)
+
+        # Partitioned tables cannot specify default tablespace in PostgreSQL.
+        # We temporarily clear the session's default_tablespace during table creation.
+        with self._engine.connect() as conn:
+            conn.execute("SET default_tablespace = ''")
+            try:
+                Base.metadata.create_all(conn)
+            finally:
+                conn.execute("RESET default_tablespace")
+
         self.ontology_init()
 
     def run(self):
