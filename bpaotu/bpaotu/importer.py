@@ -777,6 +777,7 @@ class DataImporter:
                 w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
                 log_amplicon("loading OTU abundance data into database")
                 with self._engine.begin() as conn:
+                    conn.execute(text("DROP TABLE IF EXISTS tmp_sample_otu_load"))
                     tmp_metadata = MetaData()
                     temp_table = Table(
                         "tmp_sample_otu_load", tmp_metadata,
