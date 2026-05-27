@@ -253,9 +253,6 @@ def check_auth_view(request):
 
 @require_http_methods(["GET"])
 def dev_only_oauth_check_auth(request):
-    if settings.PRODUCTION:
-        raise Http404('View does not exist in production')
-
     # Uncomment to simulate user not logged in to CKAN
     # from django.http import HttpResponseForbidden
     # return HttpResponseForbidden()
@@ -273,9 +270,6 @@ def dev_only_oauth_check_auth(request):
 
 @require_http_methods(["GET"])
 def dev_only_oauth_user_info(request):
-    if settings.PRODUCTION:
-        raise Http404('View does not exist in production')
-
     response = {
         "id": 1,
         "auth_mode": "local",
