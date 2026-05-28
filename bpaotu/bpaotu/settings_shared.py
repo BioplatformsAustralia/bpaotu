@@ -157,10 +157,10 @@ DATABASES = {
         'HOST': env.get("dbserver", "db"),
         'PORT': env.get("dbport", "5432"),
         'OPTIONS': {
-            'connect_timeout': 60,  # Connect timeout (not query execution timeout)
-            'keepalives': 1,        # Enable TCP keepalives
-            'keepalives_idle': 600,  # Send keepalive after
-            'keepalives_interval': 60, # Retry every
+            'connect_timeout': 60,      # Connect timeout (not query execution timeout)
+            'keepalives': 1,            # Enable TCP keepalives
+            'keepalives_idle': 600,     # Send keepalive after
+            'keepalives_interval': 60,  # Retry every
             'keepalives_count': 100,    # Retry times before closing
         }
     }
