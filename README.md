@@ -181,15 +181,36 @@ Once the BE is operational it's possible to do a data ingest. This is described 
 
 ### Frontend (React)
 
-The frontend is already managed in a Docker container, so there is no need to install yarn (development) or nginx (production*). To see the output of the yarn server and view the logs (e.g. to see eslint warnings):
+The frontend is already managed in a Docker container, so there is no need to install yarn (development) or nginx (production*) to run the server. *Although see the note about a reverse proxy for testing TLS above
+
+In development, to see the output of the yarn server and view the logs (e.g. to see eslint warnings):
 
 `docker compose logs frontend -f`
 
 To update existing packages or install new packages, the ./frontend/package.json and ./frontend/yarn.lock files both must be updated.
 
-*although see the note about a reverse proxy for testing TLS above
 
-> **TODO**
+To avoid installing `yarn` or `npm` on the host, you can run `yarn` inside a Node container. A small helper script is included at `frontend/container-yarn.sh`, which can be executed manually, or by using the npm scripts in `frontend/package.json` to call it. These run Yarn in a container, update `package.json` and `yarn.lock`, and fix file ownership so the files are writable by your user.
+
+From the repository root or the `frontend/` directory, regenerate the lockfile after editing `package.json`:
+
+```bash
+cd frontend
+./container-yarn.sh install
+# or
+npm run container:install
+```
+
+Add a package (this updates both `package.json` and `yarn.lock`):
+
+```bash
+cd frontend
+./container-yarn.sh add <package>@<version-or-tag>
+# or
+npm run container:add -- <package>@<version-or-tag>
+```
+
+Commit both `frontend/package.json` and `frontend/yarn.lock` after running these commands.
 
 ### KronaTools
 
