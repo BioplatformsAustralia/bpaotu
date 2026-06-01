@@ -39,6 +39,7 @@ rds/
 temp/
 .nvmrc
 
+backup/
 backup_*/
 dbdata_*/
 krona/
