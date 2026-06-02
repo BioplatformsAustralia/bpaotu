@@ -274,6 +274,31 @@ python /app/bpaotu/manage.py export_comparison_examples
 
 These should be committed to the repository so that they are available for download in production.
 
+### Email Server
+
+To test email functionality, either run and configure a local postfix server, or just run [mailpit](https://github.com/axllent/mailpit) in a Docker container and connect it to the shared Docker network:
+```
+docker run -d \
+  --restart unless-stopped \
+  --name=mailpit \
+  -p 8025:8025 \
+  -p 1025:1025 \
+  axllent/mailpit
+
+docker network connect bpaotu_default mailpit
+```
+
+Then set the relevant environment variables:
+```
+MAIL_SERVER_HOST=mailpit
+MAIL_SERVER_PORT=1025
+```
+
+The emails sent by the app will now be captured and viewable here:
+```
+http://localhost:8025/
+```
+
 ## Input data description
 
 BPA-OTU loads input data to generate a PostgreSQL schema named `otu`. The importer functionality completely erases all previously loaded data, so there is no need for it to manage updating existing data.

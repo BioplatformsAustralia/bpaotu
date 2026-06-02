@@ -62,13 +62,15 @@ MEDIA_ROOT = env.get('media_root', os.path.join(WEBAPP_ROOT, 'static', 'media'))
 MEDIA_URL = ''
 
 
-
 ## EMAIL CONFIG
 
 EMAIL_SUBJECT_PREFIX = env.get("EMAIL_SUBJECT_PREFIX", '[Australian Microbiome]')
 MAIL_SERVER_HOST = env.get("MAIL_SERVER_HOST", "localhost")
 MAIL_SERVER_PORT = int(env.get("MAIL_SERVER_PORT", 25))
 MAIL_FROM = env.get("MAIL_FROM", "noreply@noreply.csiro.au")
+
+INGEST_NOTIFY_EMAIL = env.get('ingest_notify_email', None)
+METAGENOME_REQUEST_EMAIL = env.get('metagenome_request_email', 'am-data-requests@bioplatforms.com')
 
 
 ## TASK SPECIFIC CONFIG
@@ -78,7 +80,6 @@ BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
 
 OTU_EXPORT_PATH = env.get('otu_export_path', '/data/otu-export/')
 OTU_EXPORT_URL = env.get('otu_export_url', STATIC_URL)
-OTU_EXPORT_EMAIL = env.get('metagenome_request_email', 'root-noreply@amotu.it.csiro.au') # 'am-data-requests@bioplatforms.com'
 
 
 ## CKAN CONFIG

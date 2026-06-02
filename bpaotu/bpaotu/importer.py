@@ -32,6 +32,7 @@ from sqlalchemy_utils import refresh_materialized_view
 
 from Bio import SeqIO
 
+from .mail import send_email
 from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon,
                   taxonomy_keys, taxonomy_key_id_names, rank_labels_lookup,
@@ -283,56 +284,8 @@ class DataImporter:
 
         self.ontology_init()
 
-    def _send_notification(self, success, total_time=None, error_message=None, phase_timings=None):
-        """Sends email notification about ingest completion or failure"""
-        if not self._notify_email:
-            return
-
-        try:
-            if success:
-                subject = f"[BPA-OTU] Data Ingest Completed Successfully - {total_time/60:.1f} minutes"
-                message = f"""
-Data ingest completed successfully
-
-Total time: {total_time:.2f} seconds ({total_time/60:.2f} minutes)
-
-Phase timings:
-{phase_timings if phase_timings else 'N/A'}
-
-Import directory: {self._import_base}
-Revision date: {self._revision_date}
-                """
-            else:
-                subject = "[BPA-OTU] Data Ingest Failed"
-                message = f"""
-Data ingest FAILED!
-
-Error: {error_message}
-
-Import directory: {self._import_base}
-Revision date: {self._revision_date}
-
-Check the logs for more details.
-                """
-
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@csiro.au'),
-                recipient_list=[self._notify_email],
-                fail_silently=True 
-            )
-            logger.info(f"Notification email sent to {self._notify_email}")
-        except Exception as e:
-            logger.warning(f"Failed to send notification email: {e}")
-
     def run(self):
-        # Start total timer
-        logger.info("=" * 80)
-        logger.info("Starting data ingest")
-        logger.info("=" * 80)
-        start_time = time.time()
-        phase_timings = []
+        start_time, phase_timings = self._start_ingest()
 
         try:
             # Load contextual metadata
@@ -346,34 +299,42 @@ Check the logs for more details.
             # Load Taxonomies
             load_start = time.time()
             logger.info("Loading taxonomies...")
-            otu_lookup = self.load_taxonomies()
+            self.load_taxonomies()
             elapsed = time.time() - load_start
             phase_timings.append(f"Taxonomies: {elapsed:.2f}s")
             logger.info(f"Loading taxonomies completed in {time.time() - load_start:.2f} seconds")
 
             # Load OTU Abundance
             load_start = time.time()
-            logger.info("Loading OTU abundance...")
-            self.load_otu_abundance(otu_lookup)
+            logger.info('Loading OTU abundance tables...')
+            self.load_otu_abundance()
             elapsed = time.time() - load_start
-            phase_timings.append(f"OTU abundance: {elapsed:.2f}s")
-            logger.info(f"Loading OTU abundance completed in {time.time() - load_start:.2f} seconds")
+            phase_timings.append(f"OTU abundance tables: {elapsed:.2f}s")
+            logger.info(f"Loading OTU abundance tables completed in {time.time() - load_start:.2f} seconds")
 
             # Load Taxonomy OTU
             load_start = time.time()
-            logger.info("Loading taxonomy-OTU...")
+            logger.info('Building taxonomy_otu_export...')
             self.load_taxonomy_otu()
             elapsed = time.time() - load_start
-            phase_timings.append(f"Taxonomy-OTU: {elapsed:.2f}s")
-            logger.info(f"Loading taxonomy-OTU completed in {time.time() - load_start:.2f} seconds")
+            phase_timings.append(f"taxonomy_otu_export: {elapsed:.2f}s")
+            logger.info(f"Building taxonomy_otu_export completed in {time.time() - load_start:.2f} seconds")
 
             # Refresh Materialized View
             load_start = time.time()
-            logger.info("Refreshing materialized view...")
+            logger.info('Refreshing OTUSampleOTU...')
             refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
             elapsed = time.time() - load_start
-            phase_timings.append(f"Materialized view: {elapsed:.2f}s")
-            logger.info(f"Refreshing materialized view completed in {time.time() - load_start:.2f} seconds")
+            phase_timings.append(f"refresh_materialized_view: {elapsed:.2f}s")
+            logger.info(f"refresh_materialized_view completed in {time.time() - load_start:.2f} seconds")
+            
+            # Finalising
+            load_start = time.time()
+            logger.info("Finalising...")
+            self.complete()
+            elapsed = time.time() - load_start
+            phase_timings.append(f"Finalising: {elapsed:.2f}s")
+            logger.info(f"Finalising completed in {time.time() - load_start:.2f} seconds")
 
             # CKAN Update
             load_start = time.time()
@@ -382,20 +343,9 @@ Check the logs for more details.
             elapsed = time.time() - load_start
             phase_timings.append(f"CKAN update: {elapsed:.2f}s")
             logger.info(f"Updating from CKAN completed in {time.time() - load_start:.2f} seconds")
-            
-            # Finalization
-            load_start = time.time()
-            logger.info("Finalizing...")
-            self.complete()
-            elapsed = time.time() - load_start
-            phase_timings.append(f"Finalization: {elapsed:.2f}s")
-            logger.info(f"Finalizing completed in {time.time() - load_start:.2f} seconds")
 
             # End total timer
-            total_time = time.time() - start_time
-            logger.info("=" * 80)
-            logger.info(f"Data ingest completed in {total_time:.2f} seconds ({total_time/60:.2f} minutes)")
-            logger.info("=" * 80)
+            total_time = self._end_ingest(start_time, phase_timings)
 
             # Send success notification
             self._send_notification(success=True, total_time=total_time, phase_timings="\n".join(phase_timings))
@@ -425,6 +375,8 @@ Check the logs for more details.
         self._session.commit()
 
     def complete(self):
+        logger.info("Writing import metadata and closing session...")
+
         def write_missing(attr):
             instance = ExcludedSamples(
                 reason=attr,
@@ -435,6 +387,11 @@ Check the logs for more details.
         write_missing("sample_metadata_incomplete")
         write_missing("sample_non_integer")
         write_missing("sample_not_in_metadata")
+
+        logger.info(f"Number of samples with incomplete metadata: {len(self.sample_metadata_incomplete)}")
+        logger.info(f"Number of samples with non-integer IDs: {len(self.sample_non_integer)}")
+        logger.info(f"Number of samples not in metadata: {len(self.sample_not_in_metadata)}")
+
         self._write_metadata()
         self._session.close()
         self._analyze()
@@ -548,7 +505,6 @@ Check the logs for more details.
         ontologies = OrderedDict(
             tuple(zip(taxonomy_keys, taxonomy_ontology_classes)) +
             (('amplicon', OTUAmplicon),))
-
 
         fasta_rows_iter = FastaRowsIterator(
             self.fasta_files('*_seqs_listSET.fasta.gz'))
@@ -883,8 +839,6 @@ Check the logs for more details.
                 self.make_file_log(
                     fname, file_type='Abundance', rows_imported=(entry + 1), rows_skipped=rows_skipped)
 
-        logger.info('Loading OTU abundance tables')
-
         present_sample_ids = set([t[0] for t in self._session.query(SampleContext.id)])
 
         for amplicon_code, sampleotu_fname in self.amplicon_files('*.txt.gz'):
@@ -926,7 +880,6 @@ Check the logs for more details.
             conn.execute(text(f"DROP TABLE IF EXISTS {SCHEMA}.otu_hash_lookup"))
 
     def load_taxonomy_otu(self):
-        logger.info('Building taxonomy_otu_export')
         with self._engine.begin() as conn:
             conn.execute(
                 insert(taxonomy_otu_export).from_select(
@@ -936,3 +889,64 @@ Check the logs for more details.
                         [getattr(Taxonomy, name) for name in taxonomy_key_id_names]
                     ).select_from(
                         Taxonomy.__table__.join(taxonomy_otu).join(OTU))))
+
+    def _start_ingest(self):
+        # Start total timer
+        logger.info("=" * 80)
+        logger.info("Starting data ingest")
+        logger.info("=" * 80)
+        start_time = time.time()
+        phase_timings = []
+
+        return start_time, phase_timings
+    
+    def _end_ingest(self, start_time, phase_timings):
+        total_time = time.time() - start_time
+        logger.info("=" * 80)
+        logger.info(f"Data ingest completed in {total_time:.2f} seconds")
+        logger.info("Phase timings:")
+        for timing in phase_timings:
+            logger.info(f" - {timing}")
+        logger.info("=" * 80)
+
+        return total_time
+
+    def _send_notification(self, success, total_time=None, error_message=None, phase_timings=None):
+        """Sends email notification about ingest completion or failure"""
+        if not settings.INGEST_NOTIFY_EMAIL:
+            return
+
+        try:
+            if success:
+                subject = f"[BPA-OTU] Data Ingest Completed Successfully - {total_time/60:.1f} minutes"
+                message = f"""
+Data ingest completed successfully
+
+Total time: {total_time:.2f} seconds ({total_time/60:.2f} minutes)
+
+Phase timings:
+{phase_timings if phase_timings else 'N/A'}
+
+Import directory: {self._import_base}
+Revision date: {self._revision_date}
+                """
+            else:
+                subject = "[BPA-OTU] Data Ingest Failed"
+                message = f"""
+Data ingest FAILED!
+
+Error: {error_message}
+
+Import directory: {self._import_base}
+Revision date: {self._revision_date}
+
+Check the logs for more details.
+                """
+
+            send_email(
+                subject=subject,
+                content=message,
+                to=settings.INGEST_NOTIFY_EMAIL,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to send notification email: {e}")
