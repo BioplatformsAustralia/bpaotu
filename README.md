@@ -10,15 +10,16 @@ The project consists of these core components:
 
   - Background jobs are handled by a [Celery](https://docs.celeryq.dev) instance
 
-  - A [Redis](https://redis.io/) instance is used as both the Celery broker and result backend
+  - Both the Celery broker and result backend are handled by a [Redis](https://redis.io/) instance
 
 - The frontend is implemented in [React](https://reactjs.org/) and uses [Plotly](https://plotly.com/javascript/) for charts and [Leaflet](https://leafletjs.com/) for maps.
 
 - The data are stored in a Postgres database, which is populated from a set of files by an ingest operation (see below). 
 
+  - The ingest process depends on another Bioplatforms Australia project called `bpa-ingest` which is [maintained externally](https://github.com/BioplatformsAustralia/bpa-ingest).
+
   - Some ancillary data is fetched using the Python `ckanapi` periodically (sample metagenome data) and during operation (sample site images).
 
-  - The ingest process depends on another Bioplatforms Australia project called `bpa-ingest` which is [maintained externally](https://github.com/BioplatformsAustralia/bpa-ingest).
 
 All components run in separate Docker containers and are orchestrated using Docker Compose
 
@@ -28,20 +29,25 @@ Authentication and access to the data are free via [BioCommons Access](https://w
 
 Deployment into production from github is performed by [Bioplatforms Australia](https://bioplatforms.com/) using [CircleCI](https://circleci.com/)
 
+### Notes on Dependencies
 
-## Dockerfile descriptions
-
-- For production, both Django and the frontend webserver run in Docker containers.
+#### bpa-ingest
 
 - The version of `bpa-ingest` used is maintained in the `runtime-requirements.txt` file. When the AM metadata schema is updated, the `bpa-ingest` repository requires changes. These changes will be associated with a git tag by the `bpa-ingest` team for the new version. The entry in `runtime-requirements.txt` must be updated to use the version at this new tag. Note: This dependency was handled previously as a git submodule.
 
-For this reason the docker containers (at least `runserver` and `celeryworker`) need to run with a valid CKAN_API_KEY environment variable (see ./.env_local and ./docker-compose.yml).
+#### ckanapi
 
-- In _development_ mode, it has its own webserver, separate from Django, which serves the React assets and also proxies requests from the user  interface through to Django. The only exception is the ingest log (viewable at localhost:3000/ingest), which is served by Django.
+- The docker containers (at least `runserver` and `celeryworker`) need to run with a valid CKAN_API_KEY environment variable (see ./.env_local and ./docker-compose.yml).
 
-- In _production_ mode, the system requires that the browser session be logged in to the configured [CKAN](https://docs.ckan.org/) instance (see settings.py). This is an administrative restriction, and the system doesn't require CKAN authentication for functionality.
+## Dockerfiles
 
-Separate `docker-compose.yml` files are supplied for running the project in development and production modes
+The main Dockerfile defines all build stages for both development and production, as well as for the background worker.
+
+- In _development_ mode, it has its own webserver, separate from Django, which serves the React assets and also proxies requests from the user interface through to Django.
+
+- In _production_ mode, the system requires that the browser session be logged in to the configured OAuth instance (see settings.py). This is an administrative restriction, and the system doesn't require authentication for functionality.
+
+Separate `docker-compose.yml` files are supplied for running the project in development and production modes.
 
 - `docker-compose.yml` as is runs in development mode
 
@@ -51,7 +57,7 @@ Separate `docker-compose.yml` files are supplied for running the project in deve
 
   - e.g. `docker compose -f docker-compose.prod.yml up`
 
-The `docker-compose.yml` for the real production server is managed externally
+The `docker-compose.yml` for the real production server is managed externally.
 
 ### Development
 
@@ -92,6 +98,8 @@ This is made possible with the different build targets in `docker-compose-build.
 - `frontend` for production, running on nginx
 - `frontend-dev` for development, running on a Webpack Dev Server
 
+The only page served by Django itself is the ingest log (viewable at /ingest).
+
 ### DB Volume backup
 
 Running an ingest drops and recreates the schema every time -- meaning that existing ingested data is lost when performaning a new ingest. Since a full ingest can take many (~5) hours, this is a bit annoying when testing the ingest code, and afterwards wanting to go back to having all the data available locally.
@@ -102,7 +110,6 @@ The following docker commands allow the dbdata volume to be backed up and restor
 docker compose -f docker-compose.yml -f docker-compose.backup.yml run --rm backup
 docker compose -f docker-compose.yml -f docker-compose.backup.yml run --rm restore
 ```
-
 
 ## Development environment setup
 
