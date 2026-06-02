@@ -7,6 +7,7 @@ import re
 import tempfile
 import traceback
 import uuid
+import time
 from collections import OrderedDict, defaultdict
 from glob import glob
 from hashlib import md5
@@ -14,6 +15,7 @@ from itertools import zip_longest
 from ._version import __version__
 
 from django.conf import settings
+from django.core.mail import send_mail
 
 import sqlalchemy
 from bpaingest.metadata import DownloadMetadata
@@ -30,6 +32,7 @@ from sqlalchemy_utils import refresh_materialized_view
 
 from Bio import SeqIO
 
+from .mail import send_email
 from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon,
                   taxonomy_keys, taxonomy_key_id_names, rank_labels_lookup,
@@ -238,7 +241,7 @@ class DataImporter:
         ('store_cond', SampleStorageMethod),
     ])
 
-    def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True):
+    def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True, notify_email=None):
         self._engine = make_engine()
         self._create_extensions() # does this need to be after sessionmaker?
         self._session = sessionmaker(bind=self._engine)()
@@ -248,6 +251,7 @@ class DataImporter:
         self._revision_date = revision_date
         self._has_sql_context = has_sql_context
         self._force_fetch = force_fetch
+        self._notify_email = notify_email or getattr(settings, 'INGEST_NOTIFY_EMAIL', None)
 
         # These are used exclusively for reporting back to CSIRO on the state of the ingest
         self.sample_metadata_incomplete = set()
@@ -280,15 +284,43 @@ class DataImporter:
 
         self.ontology_init()
 
+    def _run_phase(self, phase_func, phase_name, phase_desc, phase_timings):
+        start_time = time.time()
+        logger.info(f"{phase_desc}...")
+        phase_func()
+        elapsed = time.time() - start_time
+        phase_timings.append({"name": phase_name, "time": elapsed})
+        logger.info(f"Completed phase: {phase_name} in {elapsed:.2f} seconds")
+
     def run(self):
-        self.load_contextual_metadata()
-        self.load_taxonomies()
-        self.load_otu_abundance()
-        self.load_taxonomy_otu()
-        logger.info('Refreshing OTUSampleOTU')
-        refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
-        self.complete()
-        update_from_ckan()
+        start_time, phase_timings = self._start_ingest()
+
+        try:
+            # Run each phase of the ingest, recording timings for reporting at the end
+            self._run_phase(self.load_contextual_metadata, "Contextual metadata", "Loading contextual metadata", phase_timings)
+            self._run_phase(self.load_taxonomies, "Taxonomies", "Loading taxonomies", phase_timings)
+            self._run_phase(self.load_otu_abundance, "OTU abundance tables", "Loading OTU abundance tables", phase_timings)
+            self._run_phase(self.load_taxonomy_otu, "taxonomy_otu_export", "Building taxonomy_otu_export", phase_timings)
+            self._run_phase(self.refresh_otu_sample_otu, "refresh_materialized_view", "Refreshing OTUSampleOTU", phase_timings)
+            self._run_phase(self.complete, "Finalising", "Finalising import", phase_timings)
+            self._run_phase(self.update_from_ckan, "CKAN update", "Updating from CKAN", phase_timings)
+
+            # End total timer
+            total_time = self._end_ingest(start_time, phase_timings)
+
+            # Send success notification
+            formatted_timings = self._format_phase_timings(phase_timings)
+            self._send_notification(success=True, total_time=total_time, phase_timings=formatted_timings)
+        
+        except Exception as e:
+            # Log error 
+            logger.error(f"Data ingest failed: {e}", exc_info=True)
+
+            # Send failure notification
+            error_details = f"{type(e).__name__}: {str(e)}\n\n{traceback.format_exc()}"
+            self._send_notification(success=False, error_message=error_details)
+
+            raise
 
     def ontology_init(self):
         # set blank as an option for all ontologies, bar Environment
@@ -305,6 +337,8 @@ class DataImporter:
         self._session.commit()
 
     def complete(self):
+        logger.info("Writing import metadata and closing session...")
+
         def write_missing(attr):
             instance = ExcludedSamples(
                 reason=attr,
@@ -315,6 +349,11 @@ class DataImporter:
         write_missing("sample_metadata_incomplete")
         write_missing("sample_non_integer")
         write_missing("sample_not_in_metadata")
+
+        logger.info(f"Number of samples with incomplete metadata: {len(self.sample_metadata_incomplete)}")
+        logger.info(f"Number of samples with non-integer IDs: {len(self.sample_non_integer)}")
+        logger.info(f"Number of samples not in metadata: {len(self.sample_not_in_metadata)}")
+
         self._write_metadata()
         self._session.close()
         self._analyze()
@@ -428,7 +467,6 @@ class DataImporter:
         ontologies = OrderedDict(
             tuple(zip(taxonomy_keys, taxonomy_ontology_classes)) +
             (('amplicon', OTUAmplicon),))
-
 
         fasta_rows_iter = FastaRowsIterator(
             self.fasta_files('*_seqs_listSET.fasta.gz'))
@@ -681,7 +719,7 @@ class DataImporter:
         # check whether or not we are using all the fields to assist us when
         # updating the code for new versions of the source spreadsheet
         utilised_fields = set()
-        logger.info("loading contextual metadata")
+        logger.info("loading contextual metadata from bpa-ingest")
         metadata = self.contextual_rows(AccessAMDContextualMetadata, name='amd-metadata')
         logger.info("loading sample context ontologies")
         mappings = self._load_ontology(DataImporter.amd_ontologies, metadata)
@@ -763,8 +801,6 @@ class DataImporter:
                 self.make_file_log(
                     fname, file_type='Abundance', rows_imported=(entry + 1), rows_skipped=rows_skipped)
 
-        logger.info('Loading OTU abundance tables')
-
         present_sample_ids = set([t[0] for t in self._session.query(SampleContext.id)])
 
         for amplicon_code, sampleotu_fname in self.amplicon_files('*.txt.gz'):
@@ -806,7 +842,6 @@ class DataImporter:
             conn.execute(text(f"DROP TABLE IF EXISTS {SCHEMA}.otu_hash_lookup"))
 
     def load_taxonomy_otu(self):
-        logger.info('Building taxonomy_otu_export')
         with self._engine.begin() as conn:
             conn.execute(
                 insert(taxonomy_otu_export).from_select(
@@ -816,3 +851,125 @@ class DataImporter:
                         [getattr(Taxonomy, name) for name in taxonomy_key_id_names]
                     ).select_from(
                         Taxonomy.__table__.join(taxonomy_otu).join(OTU))))
+
+    def refresh_otu_sample_otu(self):
+        refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
+
+    def update_from_ckan(self):
+        update_from_ckan()
+
+    def _format_time_with_minutes(self, seconds):
+        """Format time in seconds, adding minutes/seconds if >= 60 seconds."""
+        time_str = f"{seconds:.2f}s"
+        if seconds >= 60:
+            minutes = int(seconds // 60)
+            secs = int(seconds % 60)
+            time_str += f" ({minutes}min {secs}sec)"
+        return time_str
+
+    def _format_phase_timings(self, phase_timings):
+        """Format phase timings with aligned names and decimal-aligned times with hyphen bullets."""
+        if not phase_timings:
+            return ""
+        
+        # Find max name length and max integer part width
+        max_name_length = max(len(entry['name']) for entry in phase_timings)
+        max_int_width = 0
+        for entry in phase_timings:
+            time_str = f"{entry['time']:.1f}"
+            int_part = time_str.split('.')[0]
+            max_int_width = max(max_int_width, len(int_part))
+
+        # Find max widths for minute/second suffix alignment
+        max_min_width = 0
+        max_sec_width = 0
+        for entry in phase_timings:
+            if entry['time'] >= 60:
+                minutes = int(entry['time'] // 60)
+                secs = int(entry['time'] % 60)
+                max_min_width = max(max_min_width, len(str(minutes)))
+                max_sec_width = max(max_sec_width, len(str(secs)))
+        
+        lines = []
+        for entry in phase_timings:
+            padded_name = entry['name'].ljust(max_name_length)
+
+            time_str = f"{entry['time']:.1f}"
+            int_part, decimal_part = time_str.split('.')
+            padded_int = int_part.rjust(max_int_width)
+
+            suffix = ""
+            if entry['time'] >= 60:
+                minutes = int(entry['time'] // 60)
+                secs = int(entry['time'] % 60)
+                
+                padded_minutes = str(minutes).rjust(max_min_width)
+                padded_secs = str(secs).rjust(max_sec_width)
+                suffix = f" ({padded_minutes}min {padded_secs}sec)"
+
+            lines.append(f"- {padded_name}: {padded_int}.{decimal_part}s{suffix}")
+        
+        return "\n".join(lines)
+
+    def _start_ingest(self):
+        # Start total timer
+        logger.info("=" * 80)
+        logger.info("Starting data ingest")
+        logger.info("=" * 80)
+        start_time = time.time()
+        phase_timings = []
+
+        return start_time, phase_timings
+    
+    def _end_ingest(self, start_time, phase_timings):
+        total_time = time.time() - start_time
+        logger.info("=" * 80)
+        total_formatted = self._format_time_with_minutes(total_time)
+        logger.info(f"Data ingest completed in {total_formatted}")
+        logger.info("Phase timings:")
+        formatted = self._format_phase_timings(phase_timings)
+        for line in formatted.split('\n'):
+            logger.info(line)
+        logger.info("=" * 80)
+
+        return total_time
+
+    def _send_notification(self, success, total_time=None, error_message=None, phase_timings=None):
+        """Sends email notification about ingest completion or failure"""
+        if not settings.INGEST_NOTIFY_EMAIL:
+            return
+
+        try:
+            if success:
+                subject = f"[BPA-OTU] Data Ingest Completed Successfully - {total_time/60:.1f} minutes"
+                message = f"""
+Data ingest completed successfully
+
+Total time: {total_time:.1f} seconds ({total_time/60:.1f} minutes)
+
+Phase timings:
+{phase_timings if phase_timings else 'N/A'}
+
+Import directory: {self._import_base}
+Revision date: {self._revision_date}
+                """
+            else:
+                subject = "[BPA-OTU] Data Ingest Failed"
+                message = f"""
+Data ingest FAILED!
+
+Error: {error_message}
+
+Import directory: {self._import_base}
+Revision date: {self._revision_date}
+
+Check the logs for more details.
+                """
+
+            send_email(
+                subject=subject,
+                content=message,
+                to=settings.INGEST_NOTIFY_EMAIL,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to send notification email: {e}")

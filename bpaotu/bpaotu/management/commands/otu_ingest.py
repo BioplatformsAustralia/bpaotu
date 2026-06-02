@@ -9,7 +9,12 @@ class Command(BaseCommand):
         parser.add_argument('revision_date', type=str)
         parser.add_argument('--use-sql-context', action='store_true')
         parser.add_argument('--no-force-fetch', action='store_false')
+        parser.add_argument('--notify-email', type=str, default = None, 
+                            help = 'Email address to notify upon completion or failure')
 
     def handle(self, *args, **kwargs):
-        importer = DataImporter(kwargs['base_dir'], kwargs['revision_date'], kwargs['use_sql_context'], kwargs['no_force_fetch'])
+        importer = DataImporter(kwargs['base_dir'],
+                                 kwargs['revision_date'], 
+                                 kwargs['use_sql_context'], 
+                                 kwargs['no_force_fetch'])
         importer.run()
