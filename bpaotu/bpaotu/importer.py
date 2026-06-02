@@ -284,65 +284,26 @@ class DataImporter:
 
         self.ontology_init()
 
+    def _run_phase(self, phase_func, phase_name, phase_desc, phase_timings):
+        start_time = time.time()
+        logger.info(f"{phase_desc}...")
+        phase_func()
+        elapsed = time.time() - start_time
+        phase_timings.append({"name": phase_name, "time": elapsed})
+        logger.info(f"Completed phase: {phase_name} in {elapsed:.2f} seconds")
+
     def run(self):
         start_time, phase_timings = self._start_ingest()
 
         try:
-            # Load contextual metadata
-            load_start = time.time()
-            logger.info("Loading contextual metadata...")
-            self.load_contextual_metadata()
-            elapsed = time.time() - load_start
-            phase_timings.append({"name": "Contextual metadata", "time": elapsed})
-            logger.info(f"Loading contextual metadata completed in {elapsed:.2f} seconds")
-
-            # Load Taxonomies
-            load_start = time.time()
-            logger.info("Loading taxonomies...")
-            self.load_taxonomies()
-            elapsed = time.time() - load_start
-            phase_timings.append({"name": "Taxonomies", "time": elapsed})
-            logger.info(f"Loading taxonomies completed in {elapsed:.2f} seconds")
-
-            # Load OTU Abundance
-            load_start = time.time()
-            logger.info('Loading OTU abundance tables...')
-            self.load_otu_abundance()
-            elapsed = time.time() - load_start
-            phase_timings.append({"name": "OTU abundance tables", "time": elapsed})
-            logger.info(f"Loading OTU abundance tables completed in {elapsed:.2f} seconds")
-
-            # Load Taxonomy OTU
-            load_start = time.time()
-            logger.info('Building taxonomy_otu_export...')
-            self.load_taxonomy_otu()
-            elapsed = time.time() - load_start
-            phase_timings.append({"name": "taxonomy_otu_export", "time": elapsed})
-            logger.info(f"Building taxonomy_otu_export completed in {elapsed:.2f} seconds")
-
-            # Refresh Materialized View
-            load_start = time.time()
-            logger.info('Refreshing OTUSampleOTU...')
-            refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
-            elapsed = time.time() - load_start
-            phase_timings.append({"name": "refresh_materialized_view", "time": elapsed})
-            logger.info(f"Refreshing OTUSampleOTU completed in {elapsed:.2f} seconds")
-            
-            # Finalising
-            load_start = time.time()
-            logger.info("Finalising...")
-            self.complete()
-            elapsed = time.time() - load_start
-            phase_timings.append({"name": "Finalising", "time": elapsed})
-            logger.info(f"Finalising completed in {elapsed:.2f} seconds")
-
-            # CKAN Update
-            load_start = time.time()
-            logger.info("Updating from CKAN...")
-            update_from_ckan()
-            elapsed = time.time() - load_start
-            phase_timings.append({"name": "CKAN update", "time": elapsed})
-            logger.info(f"CKAN update completed in {elapsed:.2f} seconds")
+            # Run each phase of the ingest, recording timings for reporting at the end
+            self._run_phase(self.load_contextual_metadata, "Contextual metadata", "Loading contextual metadata", phase_timings)
+            self._run_phase(self.load_taxonomies, "Taxonomies", "Loading taxonomies", phase_timings)
+            self._run_phase(self.load_otu_abundance, "OTU abundance tables", "Loading OTU abundance tables", phase_timings)
+            self._run_phase(self.load_taxonomy_otu, "taxonomy_otu_export", "Building taxonomy_otu_export", phase_timings)
+            self._run_phase(self.refresh_otu_sample_otu, "refresh_materialized_view", "Refreshing OTUSampleOTU", phase_timings)
+            self._run_phase(self.complete, "Finalising", "Finalising import", phase_timings)
+            self._run_phase(self.update_from_ckan, "CKAN update", "Updating from CKAN", phase_timings)
 
             # End total timer
             total_time = self._end_ingest(start_time, phase_timings)
@@ -758,7 +719,7 @@ class DataImporter:
         # check whether or not we are using all the fields to assist us when
         # updating the code for new versions of the source spreadsheet
         utilised_fields = set()
-        logger.info("loading contextual metadata")
+        logger.info("loading contextual metadata from bpa-ingest")
         metadata = self.contextual_rows(AccessAMDContextualMetadata, name='amd-metadata')
         logger.info("loading sample context ontologies")
         mappings = self._load_ontology(DataImporter.amd_ontologies, metadata)
@@ -891,6 +852,12 @@ class DataImporter:
                     ).select_from(
                         Taxonomy.__table__.join(taxonomy_otu).join(OTU))))
 
+    def refresh_otu_sample_otu(self):
+        refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
+
+    def update_from_ckan(self):
+        update_from_ckan()
+
     def _format_time_with_minutes(self, seconds):
         """Format time in seconds, adding minutes/seconds if >= 60 seconds."""
         time_str = f"{seconds:.2f}s"
@@ -909,7 +876,7 @@ class DataImporter:
         max_name_length = max(len(entry['name']) for entry in phase_timings)
         max_int_width = 0
         for entry in phase_timings:
-            time_str = f"{entry['time']:.2f}"
+            time_str = f"{entry['time']:.1f}"
             int_part = time_str.split('.')[0]
             max_int_width = max(max_int_width, len(int_part))
 
@@ -927,7 +894,7 @@ class DataImporter:
         for entry in phase_timings:
             padded_name = entry['name'].ljust(max_name_length)
 
-            time_str = f"{entry['time']:.2f}"
+            time_str = f"{entry['time']:.1f}"
             int_part, decimal_part = time_str.split('.')
             padded_int = int_part.rjust(max_int_width)
 
@@ -978,7 +945,7 @@ class DataImporter:
                 message = f"""
 Data ingest completed successfully
 
-Total time: {total_time:.2f} seconds ({total_time/60:.2f} minutes)
+Total time: {total_time:.1f} seconds ({total_time/60:.1f} minutes)
 
 Phase timings:
 {phase_timings if phase_timings else 'N/A'}
