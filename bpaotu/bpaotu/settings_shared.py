@@ -1,6 +1,8 @@
 # settings shared between runserver and celeryworker
 
 import os
+import posixpath
+
 from ccg_django_utils.conf import EnvConfig
 from celery.schedules import crontab
 from contextlib import suppress
@@ -10,7 +12,7 @@ from ._version import __version__
 env = EnvConfig()
 
 
-# BASIC CONFIG
+## BASIC CONFIG
 
 # Default SSL on and forced, turn off if necessary
 PRODUCTION = env.get("production", False)
@@ -27,17 +29,13 @@ BPA_VERSION = VERSION
 SECRET_KEY = env.get("secret_key", "change-it")
 
 SCRIPT_NAME = env.get("script_name", os.environ.get("HTTP_SCRIPT_NAME", ""))
-FORCE_SCRIPT_NAME = env.get("force_script_name", "") or SCRIPT_NAME or None
+BASE_URL = SCRIPT_NAME
 
 WEBAPP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# ensure STATIC_URL always has a single slash between script name and static, and doesn't end with double slash if script name is "/"
 STATIC_ROOT = env.get('static_root', os.path.join(WEBAPP_ROOT, 'static'))
-STATIC_URL = '{0}/static/'.format(SCRIPT_NAME)
-STATIC_SERVER_PATH = STATIC_ROOT
-
-# This should be the path under the webapp is installed on the server ex. /bpa/otu on staging
-# TODO I think this is alwasy SCRIPT_NAME if not get separately from enviroment
-BASE_URL = SCRIPT_NAME
+STATIC_URL = posixpath.join("/", SCRIPT_NAME.strip("/"), "static") + "/"
 
 
 ## email
@@ -58,8 +56,22 @@ ANYMAIL = {
     },
 }
 
+# URL that handles the media served from MEDIA_ROOT. Make sure to use a
+# trailing slash.
+MEDIA_ROOT = env.get('media_root', os.path.join(WEBAPP_ROOT, 'static', 'media'))
+MEDIA_URL = ''
 
-## task specific config
+
+
+## EMAIL CONFIG
+
+EMAIL_SUBJECT_PREFIX = env.get("EMAIL_SUBJECT_PREFIX", '[Australian Microbiome]')
+MAIL_SERVER_HOST = env.get("MAIL_SERVER_HOST", "localhost")
+MAIL_SERVER_PORT = int(env.get("MAIL_SERVER_PORT", 25))
+MAIL_FROM = env.get("MAIL_FROM", "noreply@noreply.csiro.au")
+
+
+## TASK SPECIFIC CONFIG
 
 BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
 BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
@@ -69,7 +81,7 @@ OTU_EXPORT_URL = env.get('otu_export_url', STATIC_URL)
 OTU_EXPORT_EMAIL = env.get('metagenome_request_email', 'root-noreply@amotu.it.csiro.au') # 'am-data-requests@bioplatforms.com'
 
 
-## ckan config
+## CKAN CONFIG
 
 CKAN_SERVER = {
     'name': env.get('ckan_name', 'bpa-aws1'),
@@ -78,7 +90,7 @@ CKAN_SERVER = {
 }
 
 
-## redis config
+## REDIS CONFIG
 
 REDIS_HOST = env.get('REDIS_HOST', 'cache')
 REDIS_PORT = env.get('REDIS_PORT', '6379')
@@ -114,7 +126,7 @@ CACHES['image_results'] = CACHES['default']
 CACHES['contextual_schema_definition_results'] = CACHES['default']
 
 
-## celery config
+## CELERY WORKER CONFIG
 
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BROKER_URL = redis_url(2)
@@ -126,7 +138,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
 
-## celery beat config
+## CELERY BEAT CONFIG
 
 PERIODIC_CKAN_UPDATE_INTERVAL = 3600 # Seconds between CKAN queries for new resources
 PERIODIC_DOWNLOAD_RESULTS_CLEANUP_EXPIRY_HOURS = env.get('periodic_download_results_cleanup_expiry_hours', 72)
@@ -152,29 +164,28 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 
-## database config
+## DATABASE CONFIG
 
 DATABASES = {
     'default': {
-        # 'ENGINE': env.get_db_engine("dbtype", "pgsql"),
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': env.get("dbname", "webapp"),
         'USER': env.get("dbuser", "webapp"),
         'PASSWORD': env.get("dbpass", "webapp"),
         'HOST': env.get("dbserver", "db"),
         'PORT': env.get("dbport", "5432"),
         'OPTIONS': {
-            'connect_timeout': 60,  # Connect timeout (not query execution timeout)
-            'keepalives': 1,        # Enable TCP keepalives
-            'keepalives_idle': 600,  # Send keepalive after
-            'keepalives_interval': 60, # Retry every
+            'connect_timeout': 60,      # Connect timeout (not query execution timeout)
+            'keepalives': 1,            # Enable TCP keepalives
+            'keepalives_idle': 600,     # Send keepalive after
+            'keepalives_interval': 60,  # Retry every
             'keepalives_count': 100,    # Retry times before closing
         }
     }
 }
 
 
-## logging
+## LOGGING CONFIG
 
 LOG_LEVEL = env.get('log_level', "INFO")
 LOG_DIRECTORY = env.get('log_directory', os.path.join(WEBAPP_ROOT, "log"))

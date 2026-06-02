@@ -1,12 +1,18 @@
-from django.conf.urls import url
+from django.conf.urls import url, include
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
 
+from bpaotu.auth_app.views import dev_only_oauth_check_auth, dev_only_oauth_user_info
+
 admin.autodiscover()
 
 urlpatterns = [
+    # Auth endpoints
+    url(r'^oidc/', include('bpaotu.auth_app.urls')),
+    
+    # API endpoints
     url(r'^private/api/v1/config$', views.api_config, name="api_config"),
     url(r'^private/api/v1/cookie_consent_accepted$', views.cookie_consent_accepted, name="cookie_consent_accepted"),
     url(r'^private/api/v1/cookie_consent_declined$', views.cookie_consent_declined, name="cookie_consent_declined"),
@@ -40,10 +46,8 @@ urlpatterns = [
     url(r'^private/api/v1/otuexport_submission$', views.otuexport_submission, name="otuexport_submission"),
     url(r'^private/api/v1/export$', views.otu_export, name="otu_export"),
     url(r'^private/api/v1/export_biom$', views.otu_biom_export, name="otu_biom_export"),
-    url(
-        r'^private/api/v1/user/check_permissions$',
-        views.dev_only_ckan_check_permissions,
-        name="dev_only_ckan_check_permissions"),
+    url(r'^private/api/v1/user/check_auth$', dev_only_oauth_check_auth, name="dev_only_oauth_check_auth"),
+    url(r'^private/api/v1/user/user_info$', dev_only_oauth_user_info, name="dev_only_oauth_user_info"),
     url(
         r'^ingest/$',
         views.otu_log,
