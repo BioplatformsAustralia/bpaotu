@@ -293,62 +293,63 @@ class DataImporter:
             logger.info("Loading contextual metadata...")
             self.load_contextual_metadata()
             elapsed = time.time() - load_start
-            phase_timings.append(f"Contextual metadata: {elapsed:.2f}s")
-            logger.info(f"Loading contextual metadata completed in {time.time() - load_start:.2f} seconds")
+            phase_timings.append({"name": "Contextual metadata", "time": elapsed})
+            logger.info(f"Loading contextual metadata completed in {elapsed:.2f} seconds")
 
             # Load Taxonomies
             load_start = time.time()
             logger.info("Loading taxonomies...")
             self.load_taxonomies()
             elapsed = time.time() - load_start
-            phase_timings.append(f"Taxonomies: {elapsed:.2f}s")
-            logger.info(f"Loading taxonomies completed in {time.time() - load_start:.2f} seconds")
+            phase_timings.append({"name": "Taxonomies", "time": elapsed})
+            logger.info(f"Loading taxonomies completed in {elapsed:.2f} seconds")
 
             # Load OTU Abundance
             load_start = time.time()
             logger.info('Loading OTU abundance tables...')
             self.load_otu_abundance()
             elapsed = time.time() - load_start
-            phase_timings.append(f"OTU abundance tables: {elapsed:.2f}s")
-            logger.info(f"Loading OTU abundance tables completed in {time.time() - load_start:.2f} seconds")
+            phase_timings.append({"name": "OTU abundance tables", "time": elapsed})
+            logger.info(f"Loading OTU abundance tables completed in {elapsed:.2f} seconds")
 
             # Load Taxonomy OTU
             load_start = time.time()
             logger.info('Building taxonomy_otu_export...')
             self.load_taxonomy_otu()
             elapsed = time.time() - load_start
-            phase_timings.append(f"taxonomy_otu_export: {elapsed:.2f}s")
-            logger.info(f"Building taxonomy_otu_export completed in {time.time() - load_start:.2f} seconds")
+            phase_timings.append({"name": "taxonomy_otu_export", "time": elapsed})
+            logger.info(f"Building taxonomy_otu_export completed in {elapsed:.2f} seconds")
 
             # Refresh Materialized View
             load_start = time.time()
             logger.info('Refreshing OTUSampleOTU...')
             refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
             elapsed = time.time() - load_start
-            phase_timings.append(f"refresh_materialized_view: {elapsed:.2f}s")
-            logger.info(f"refresh_materialized_view completed in {time.time() - load_start:.2f} seconds")
+            phase_timings.append({"name": "refresh_materialized_view", "time": elapsed})
+            logger.info(f"Refreshing OTUSampleOTU completed in {elapsed:.2f} seconds")
             
             # Finalising
             load_start = time.time()
             logger.info("Finalising...")
             self.complete()
             elapsed = time.time() - load_start
-            phase_timings.append(f"Finalising: {elapsed:.2f}s")
-            logger.info(f"Finalising completed in {time.time() - load_start:.2f} seconds")
+            phase_timings.append({"name": "Finalising", "time": elapsed})
+            logger.info(f"Finalising completed in {elapsed:.2f} seconds")
 
             # CKAN Update
             load_start = time.time()
             logger.info("Updating from CKAN...")
             update_from_ckan()
             elapsed = time.time() - load_start
-            phase_timings.append(f"CKAN update: {elapsed:.2f}s")
-            logger.info(f"Updating from CKAN completed in {time.time() - load_start:.2f} seconds")
+            phase_timings.append({"name": "CKAN update", "time": elapsed})
+            logger.info(f"CKAN update completed in {elapsed:.2f} seconds")
 
             # End total timer
             total_time = self._end_ingest(start_time, phase_timings)
 
             # Send success notification
-            self._send_notification(success=True, total_time=total_time, phase_timings="\n".join(phase_timings))
+            formatted_timings = self._format_phase_timings(phase_timings)
+            self._send_notification(success=True, total_time=total_time, phase_timings=formatted_timings)
         
         except Exception as e:
             # Log error 
@@ -890,6 +891,59 @@ class DataImporter:
                     ).select_from(
                         Taxonomy.__table__.join(taxonomy_otu).join(OTU))))
 
+    def _format_time_with_minutes(self, seconds):
+        """Format time in seconds, adding minutes/seconds if >= 60 seconds."""
+        time_str = f"{seconds:.2f}s"
+        if seconds >= 60:
+            minutes = int(seconds // 60)
+            secs = int(seconds % 60)
+            time_str += f" ({minutes}min {secs}sec)"
+        return time_str
+
+    def _format_phase_timings(self, phase_timings):
+        """Format phase timings with aligned names and decimal-aligned times with hyphen bullets."""
+        if not phase_timings:
+            return ""
+        
+        # Find max name length and max integer part width
+        max_name_length = max(len(entry['name']) for entry in phase_timings)
+        max_int_width = 0
+        for entry in phase_timings:
+            time_str = f"{entry['time']:.2f}"
+            int_part = time_str.split('.')[0]
+            max_int_width = max(max_int_width, len(int_part))
+
+        # Find max widths for minute/second suffix alignment
+        max_min_width = 0
+        max_sec_width = 0
+        for entry in phase_timings:
+            if entry['time'] >= 60:
+                minutes = int(entry['time'] // 60)
+                secs = int(entry['time'] % 60)
+                max_min_width = max(max_min_width, len(str(minutes)))
+                max_sec_width = max(max_sec_width, len(str(secs)))
+        
+        lines = []
+        for entry in phase_timings:
+            padded_name = entry['name'].ljust(max_name_length)
+
+            time_str = f"{entry['time']:.2f}"
+            int_part, decimal_part = time_str.split('.')
+            padded_int = int_part.rjust(max_int_width)
+
+            suffix = ""
+            if entry['time'] >= 60:
+                minutes = int(entry['time'] // 60)
+                secs = int(entry['time'] % 60)
+                
+                padded_minutes = str(minutes).rjust(max_min_width)
+                padded_secs = str(secs).rjust(max_sec_width)
+                suffix = f" ({padded_minutes}min {padded_secs}sec)"
+
+            lines.append(f"- {padded_name}: {padded_int}.{decimal_part}s{suffix}")
+        
+        return "\n".join(lines)
+
     def _start_ingest(self):
         # Start total timer
         logger.info("=" * 80)
@@ -903,10 +957,12 @@ class DataImporter:
     def _end_ingest(self, start_time, phase_timings):
         total_time = time.time() - start_time
         logger.info("=" * 80)
-        logger.info(f"Data ingest completed in {total_time:.2f} seconds")
+        total_formatted = self._format_time_with_minutes(total_time)
+        logger.info(f"Data ingest completed in {total_formatted}")
         logger.info("Phase timings:")
-        for timing in phase_timings:
-            logger.info(f" - {timing}")
+        formatted = self._format_phase_timings(phase_timings)
+        for line in formatted.split('\n'):
+            logger.info(line)
         logger.info("=" * 80)
 
         return total_time
