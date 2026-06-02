@@ -9,12 +9,15 @@ services:
         "sh",
         "-c",
         "
+          start=$(date +%s) &&
           echo 'Backing up bpaotu_dbdata...' &&
           mkdir -p /backup && rm -f /backup/bpaotu_dbdata_backup.tar &&
 
           tar -cf - -C /volume_data . | tee /backup/bpaotu_dbdata_backup.tar > /dev/null &&
         
-          echo 'Backup file created at ./backup/bpaotu_dbdata_backup.tar'
+          end=$(date +%s) &&
+          echo 'Backup file created at ./backup/bpaotu_dbdata_backup.tar' &&
+          echo \"Backup completed in $((end - start)) seconds\"
         ",
       ]
 
@@ -28,12 +31,14 @@ services:
         "sh",
         "-c",
         "
+          start=$(date +%s) &&
           echo 'Restoring backup from ./backup/bpaotu_dbdata_backup.tar' &&
           
           rm -rf /volume_data/* &&
           tar -xf /backup/bpaotu_dbdata_backup.tar -C /volume_data &&
 
-          echo 'Restore completed'
+          end=$(date +%s) &&
+          echo \"Restore completed in $((end - start)) seconds\"
         ",
       ]
 
