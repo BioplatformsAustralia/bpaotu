@@ -196,8 +196,7 @@ In development, to see the output of the yarn server and view the logs (e.g. to 
 
 To update existing packages or install new packages, the ./frontend/package.json and ./frontend/yarn.lock files both must be updated.
 
-
-To avoid installing `yarn` or `npm` on the host, you can run `yarn` inside a Node container. A small helper script is included at `frontend/container-yarn.sh`, which can be executed manually, or by using the npm scripts in `frontend/package.json` to call it. These run Yarn in a container, update `package.json` and `yarn.lock`, and fix file ownership so the files are writable by your user.
+To avoid installing `yarn` or `npm` on the host, `yarn` can be run inside a Node container. A small helper script is included at `frontend/container-yarn.sh`, which can be executed manually, or by using the npm scripts in `frontend/package.json` to call it. These run Yarn in a container, update `package.json` and `yarn.lock`, and fix file ownership so the files are writable.
 
 From the repository root or the `frontend/` directory, regenerate the lockfile after editing `package.json`:
 
