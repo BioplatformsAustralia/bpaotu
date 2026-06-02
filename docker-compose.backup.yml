@@ -1,0 +1,42 @@
+services:
+  backup:
+    image: alpine
+    volumes:
+      - bpaotu_dbdata:/volume_data
+      - ./backup:/backup
+    command:
+      [
+        "sh",
+        "-c",
+        "
+          echo 'Backing up bpaotu_dbdata...' &&
+          mkdir -p /backup && rm -f /backup/bpaotu_dbdata_backup.tar &&
+
+          tar -cf - -C /volume_data . | tee /backup/bpaotu_dbdata_backup.tar > /dev/null &&
+        
+          echo 'Backup file created at ./backup/bpaotu_dbdata_backup.tar'
+        ",
+      ]
+
+  restore:
+    image: alpine
+    volumes:
+      - bpaotu_dbdata:/volume_data
+      - ./backup:/backup
+    command:
+      [
+        "sh",
+        "-c",
+        "
+          echo 'Restoring backup from ./backup/bpaotu_dbdata_backup.tar' &&
+          
+          rm -rf /volume_data/* &&
+          tar -xf /backup/bpaotu_dbdata_backup.tar -C /volume_data &&
+
+          echo 'Restore completed'
+        ",
+      ]
+
+volumes:
+  bpaotu_dbdata:
+    external: true

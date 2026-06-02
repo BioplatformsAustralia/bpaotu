@@ -91,7 +91,7 @@ def is_metaxa_otu(code):
 
 class FastaRowsIterator:
     hash_re = re.compile(r'^[a-fA-F0-9]{32}$') # md5
-    code_re = re.compile(r'^[GATC]+$')
+    code_re = re.compile(r'^[GATCN]+$')
 
     def __init__(self, fasta_files):
         self.fasta_files = tuple(fasta_files)
@@ -249,31 +249,46 @@ class DataImporter:
         self._has_sql_context = has_sql_context
         self._force_fetch = force_fetch
 
-        # these are used exclusively for reporting back to CSIRO on the state of the ingest
+        # These are used exclusively for reporting back to CSIRO on the state of the ingest
         self.sample_metadata_incomplete = set()
         self.sample_non_integer = set()
         self.sample_not_in_metadata = set()
 
         self.otu_invalid = set()
 
+        # We drop the whole schema and recreate it each time
+        # This is much simpler than trying to do an update / diff on the new ingest vs the old one
+        # and is not a problem because we are not trying to preserve any existing ingest data
+        #
+        # Note that things like metagenome requests and non-denoised data requests are stored in the public schema, so are not affected by this
         try:
             self._session.execute(DropSchema(SCHEMA, cascade=True))
         except sqlalchemy.exc.ProgrammingError:
             self._session.invalidate()
+
         self._session.execute(CreateSchema(SCHEMA))
         self._session.commit()
-        Base.metadata.create_all(self._engine)
+
+        # Partitioned tables cannot specify default tablespace in PostgreSQL.
+        # We temporarily clear the session's default_tablespace during table creation.
+        with self._engine.connect() as conn:
+            conn.execute("SET default_tablespace = ''")
+            try:
+                Base.metadata.create_all(conn)
+            finally:
+                conn.execute("RESET default_tablespace")
+
         self.ontology_init()
 
     def run(self):
         self.load_contextual_metadata()
-        otu_lookup = self.load_taxonomies()
-        self.load_otu_abundance(otu_lookup)
+        self.load_taxonomies()
+        self.load_otu_abundance()
         self.load_taxonomy_otu()
         logger.info('Refreshing OTUSampleOTU')
         refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
-        update_from_ckan()
         self.complete()
+        update_from_ckan()
 
     def ontology_init(self):
         # set blank as an option for all ontologies, bar Environment
@@ -405,9 +420,10 @@ class DataImporter:
             cur.close()
 
     def load_taxonomies(self):
-        # md5(otu code) -> otu ID, returned
+        # Use a database staging table for (otu_hash, amplicon_code) -> otu_id mapping.
+        # This avoids keeping the lookup in Python memory.
         taxonomy_fields = ( # field names must match field names in tmp_taxonomy_load below
-            ['id', 'amplicon_id', 'otu_id', 'traits'] +
+            ['id', 'amplicon_id', 'otu_hash', 'amplicon_code', 'otu_id', 'traits'] +
             taxonomy_key_id_names)
         ontologies = OrderedDict(
             tuple(zip(taxonomy_keys, taxonomy_ontology_classes)) +
@@ -419,10 +435,6 @@ class DataImporter:
 
         logger.info("loading sequences - importing fasta file")
 
-        # key: (otu_hash, amplicon), value: otu_id
-        # so that same hash can exist for a different amplicon (same hash for same amplicon will cause an error)
-        otu_lookup = {}
-
         with tmp_csv_file() as (w_otu, otu_fd), tmp_csv_file() as (w_seq, seq_fd), tmp_csv_file() as (w_lookup, lookup_fd):
             logger.info("Writing OTU hashes to temporary CSV file {}".format(otu_fd.name))
             logger.info("Writing OTU sequences to temporary CSV file {}".format(seq_fd.name))
@@ -433,9 +445,6 @@ class DataImporter:
             for (_id, row) in enumerate(fasta_rows_iter, 1):
                 w_otu.writerow([_id, row['otu_hash']])
                 w_seq.writerow([_id, row['sequence']])
-
-                # store in the in-memory lookup for finding otu.id from the otu hash in taxonomy files
-                otu_lookup[(row['otu_hash'], row['amplicon_code'])] = _id
                 w_lookup.writerow([_id, row['otu_hash'], row['amplicon_code']])
 
             logger.info(f"Loading OTU hash data from {otu_fd.name}")
@@ -444,7 +453,22 @@ class DataImporter:
             logger.info(f"Loading OTU sequences from {seq_fd.name}")
             self.load_from_csv("COPY sequence (id, seq) FROM STDIN CSV", seq_fd)
 
-            logger.info(f"Dumped OTU lookup to {lookup_fd.name}")
+            logger.info(f"Loading OTU lookup from {lookup_fd.name}")
+            with self._engine.begin() as conn:
+                conn.execute(text(
+                    f"CREATE TABLE {SCHEMA}.otu_hash_lookup ("
+                    "id integer NOT NULL PRIMARY KEY, "
+                    "code text NOT NULL, "
+                    "amplicon_code text NOT NULL)"
+                ))
+                conn.execute(text(
+                    f"CREATE INDEX ON {SCHEMA}.otu_hash_lookup (code, amplicon_code)"
+                ))
+                self.load_from_csv(
+                    f"COPY {SCHEMA}.otu_hash_lookup (id, code, amplicon_code) FROM STDIN CSV",
+                    lookup_fd, conn)
+
+        logger.info(f"Dumped OTU lookup to {lookup_fd.name}")
 
         # metaxa do not have sequences, just a SHA1 string that starts with mxa_
         # these need to be in the OTU table, but won't a corresponding record in the Sequence table
@@ -488,31 +512,15 @@ class DataImporter:
             for (_id, row) in enumerate(taxonomy_rows_iter, 1):
                 otu_hash = row['otu']
                 amplicon_code = row.get('amplicon_code', '')
-                otu_id = otu_lookup.get((otu_hash, amplicon_code))
-
-                if otu_id is None:
-                    # metaxa OTUs
-                    if is_metaxa_otu(otu_hash):
-                        # insert row into otu and get the id assigned by db and store in otu_id
-                        with self._engine.begin() as conn:
-                            result = conn.execute(
-                                insert(OTU)
-                                .values(code=otu_hash)
-                                .returning(OTU.id)
-                            )
-                            otu_id = result.scalar()
-
-                        # store it in the lookup so we don’t insert the same OTU twice
-                        otu_lookup[(otu_hash, amplicon_code)] = otu_id
-                    else:
-                        raise DataImportError(f"Unknown OTU hash: {otu_hash}; full row: {row}")
 
                 amplicon = row.get('amplicon', '')
                 amplicon_id = mappings.get('amplicon').get(amplicon, "") # should not be NULL (will cause an error)
 
                 taxonomy_row = [_id,
                                 amplicon_id,
-                                otu_id,
+                                otu_hash,
+                                amplicon_code,
+                                "",
                                 row['traits']] + [
                     mappings.get(field).get(row.get(field, ''), "")
                     for field in taxonomy_keys]
@@ -533,7 +541,9 @@ class DataImporter:
                     "tmp_taxonomy_load", tmp_metadata,
                     Column("id", Integer, nullable=False, primary_key=True),
                     Column("amplicon_id", Integer, nullable=False),
-                    Column("otu_id", Integer, nullable=False),
+                    Column("otu_hash", String, nullable=False),
+                    Column("amplicon_code", String, nullable=False),
+                    Column("otu_id", Integer),
                     Column('traits', ARRAY(String)),
                     *rank_columns,
                     prefixes=['TEMPORARY']
@@ -543,6 +553,38 @@ class DataImporter:
                 self.load_from_csv("COPY tmp_taxonomy_load (" +
                                 ",".join(taxonomy_fields) +
                                 ") FROM STDIN CSV", tax_fd, conn)
+
+                logger.info("Resolving OTU ids in taxonomy staging table")
+                conn.execute(text(
+                    f"UPDATE tmp_taxonomy_load AS t "
+                    f"SET otu_id = l.id "
+                    f"FROM {SCHEMA}.otu_hash_lookup AS l "
+                    f"WHERE t.otu_hash = l.code "
+                    f"AND t.amplicon_code = l.amplicon_code"
+                ))
+
+                logger.info("Inserting missing metaxa OTUs")
+                conn.execute(text(
+                    f"INSERT INTO {SCHEMA}.otu (code) "
+                    f"SELECT DISTINCT t.otu_hash "
+                    f"FROM tmp_taxonomy_load t "
+                    f"WHERE t.otu_id IS NULL AND t.otu_hash LIKE 'mxa_%'"
+                ))
+
+                conn.execute(text(
+                    "UPDATE tmp_taxonomy_load AS t "
+                    f"SET otu_id = o.id "
+                    f"FROM {SCHEMA}.otu AS o "
+                    f"WHERE t.otu_id IS NULL AND t.otu_hash = o.code"
+                ))
+
+                null_count = conn.execute(text(
+                    "SELECT COUNT(*) FROM tmp_taxonomy_load WHERE otu_id IS NULL"
+                )).scalar()
+                if null_count:
+                    raise DataImportError(
+                        f"Unknown OTU hashes in taxonomy data: {null_count} rows could not be resolved")
+
                 # Build Taxonomy() from unique taxonomies + amplicon + traits in
                 # tmp_taxonomy_load
                 sel = select(
@@ -571,8 +613,6 @@ class DataImporter:
 
         for fname, info in taxonomy_rows_iter.taxonomy_file_info.items():
             self.make_file_log(fname, **info)
-
-        return otu_lookup
 
     def save_ontology_errors(self, environment_ontology_errors):
         if environment_ontology_errors is None:
@@ -678,7 +718,7 @@ class DataImporter:
             logger.error(f'Missing "{version_file}" file. Analysis Version and URL will not be added.')
         self._methodology = f"{__package__}_{__version__}__analysis_{analysis_version}__{db_file}__{source_tar}"
 
-    def _otu_abundance_rows(self, fd, amplicon_code, otu_lookup):
+    def _otu_abundance_rows(self, fd, amplicon_code):
         reader = csv.reader(fd, dialect='excel-tab')
         header = [name.lower() for name in next(reader)]
         expected = ["#otu id", "sample_only", "abundance", "abundance_20k"]
@@ -704,25 +744,22 @@ class DataImporter:
                         self.sample_non_integer.add(sample_id)
                     continue
 
-            otu_id = otu_lookup.get((otu_hash, amplicon_code))
-            if not otu_id:
-                continue
             # Note that an unquoted empty string means NULL to psql COPY. See below
-            yield otu_id, sample_id, int_count, count_20k
+            yield otu_hash, sample_id, int_count, count_20k
 
-    def load_otu_abundance(self, otu_lookup):
+    def load_otu_abundance(self):
         def _make_sample_otus(fname, amplicon_code, present_sample_ids):
             with gzip.open(fname, 'rt') as fd:
-                tuple_rows = self._otu_abundance_rows(fd, amplicon_code, otu_lookup)
+                tuple_rows = self._otu_abundance_rows(fd, amplicon_code)
                 rows_skipped = 0
-                for entry, (otu_id, sample_id, count, count_20k) in enumerate(tuple_rows):
+                for entry, (otu_hash, sample_id, count, count_20k) in enumerate(tuple_rows):
                     if sample_id not in present_sample_ids:
                         if sample_id not in self.sample_metadata_incomplete \
                                 and sample_id not in self.sample_non_integer:
                             self.sample_not_in_metadata.add(sample_id)
                         rows_skipped += 1
                         continue
-                    yield (sample_id, otu_id, count, count_20k)
+                    yield (sample_id, otu_hash, amplicon_code, count, count_20k)
                 self.make_file_log(
                     fname, file_type='Abundance', rows_imported=(entry + 1), rows_skipped=rows_skipped)
 
@@ -739,10 +776,34 @@ class DataImporter:
                 log_amplicon("writing out OTU abundance data to CSV tempfile: {}".format(fd.name))
                 w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
                 log_amplicon("loading OTU abundance data into database")
-                # count_20k may be an unquoted empty string in the CSV file.
-                # COPY will interpret that as NULL by default. See
-                # https://www.postgresql.org/docs/current/sql-copy.html
-                self.load_from_csv("COPY otu.sample_otu (sample_id, otu_id, count, count_20k) FROM STDIN CSV", fd)
+                with self._engine.begin() as conn:
+                    conn.execute(text("DROP TABLE IF EXISTS tmp_sample_otu_load"))
+                    tmp_metadata = MetaData()
+                    temp_table = Table(
+                        "tmp_sample_otu_load", tmp_metadata,
+                        Column("sample_id", String, nullable=False),
+                        Column("otu_hash", String, nullable=False),
+                        Column("amplicon_code", String, nullable=False),
+                        Column("count", Integer, nullable=False),
+                        Column("count_20k", String),
+                        prefixes=['TEMPORARY']
+                    )
+                    temp_table.create(conn)
+                    logger.info("Loading OTU abundance staging data from {}".format(fd.name))
+                    self.load_from_csv(
+                        "COPY tmp_sample_otu_load (sample_id, otu_hash, amplicon_code, count, count_20k) FROM STDIN CSV",
+                        fd, conn)
+                    logger.info("Resolving OTU IDs for abundance data")
+                    conn.execute(text(
+                        f"INSERT INTO {SCHEMA}.sample_otu (sample_id, otu_id, count, count_20k) "
+                        "SELECT s.sample_id, l.id, s.count, NULLIF(s.count_20k, '')::integer "
+                        "FROM tmp_sample_otu_load AS s "
+                        f"JOIN {SCHEMA}.otu_hash_lookup AS l "
+                        "ON s.otu_hash = l.code AND s.amplicon_code = l.amplicon_code"
+                    ))
+
+        with self._engine.begin() as conn:
+            conn.execute(text(f"DROP TABLE IF EXISTS {SCHEMA}.otu_hash_lookup"))
 
     def load_taxonomy_otu(self):
         logger.info('Building taxonomy_otu_export')
