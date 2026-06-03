@@ -1,0 +1,90 @@
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.info-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.info-table tbody tr:first-child {
+  border-top: 1px solid #edf0f3;
+}
+
+.info-table tbody tr:nth-child(even) {
+  background-color: #f6f7f9;
+}
+
+.info-table tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+.info-table tbody tr:hover {
+  background-color: #e9eef5;
+}
+
+.info-table td {
+  padding: 6px 8px;
+}
+
+.info-tooltip {
+  margin-right: 8px;
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  top: -2px;
+  white-space: nowrap;
+}
+
+.info-label {
+  width: 30%;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.info-label-text {
+  font-size: 20px;
+  font-weight: bold;
+  text-align: left;
+}
+
+.info-units {
+  font-size: 13px;
+  font-weight: normal;
+  color: '#626267';
+  margin-left: 8px;
+}
+
+.info-value {
+  width: 50%;
+  text-align: right;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.tax-gtdb-controls {
+  display: inline-flex;
+  margin-left: 9px;
+  vertical-align: text-top;
+}
+
+.tax-gtdb-button {
+  font-size: 13px;
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  position: relative;
+  top: -1px;
+}
+
+.tax-gtdb-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  list-style: none;
+}
+
+.tax-gtdb-list li {
+  line-height: 1.3;
+}

@@ -68,11 +68,39 @@ export const clearPlotData = () => (dispatch, getState) => {
   dispatch(samplesComparisonModalClearPlotData())
 }
 
+export const validateUmapParams = (umapParams) => {
+  const errors: string[] = []
+
+  Object.entries(umapParams).forEach(([key, value]) => {
+    if (value === '' || value === null || value === undefined) {
+      errors.push(`${key} cannot be blank`)
+    }
+    if (Number.isNaN(Number(value))) {
+      errors.push(`${key} must be a number`)
+    }
+  })
+
+  const minDist = Number(umapParams.min_dist)
+  const spread = Number(umapParams.spread)
+
+  if (!Number.isNaN(minDist) && !Number.isNaN(spread)) {
+    if (minDist > spread) {
+      errors.push('min_dist must be less than or equal to spread')
+    }
+  }
+
+  return errors
+}
+
 export const runComparison =
   (umapParams, submissionId = null) =>
   (dispatch, getState) => {
     const state = getState()
     const filters = describeSearch(state)
+
+    const { umapParamsErrors } = state.searchPage.samplesComparisonModal
+
+    if (umapParamsErrors.length > 0) return
 
     // pass submissionId as action payload to determine if this is submission or resubmission
     dispatch(runComparisonStarted(submissionId))
@@ -229,15 +257,24 @@ export default handleActions(
       plotData: searchPageInitialState.samplesComparisonModal.plotData,
     }),
     [handleUmapParameters as any]: (state, action: any) => {
+      const nextParams = {
+        ...state.umapParams,
+        [action.payload.param]: action.payload.value,
+      }
+
+      const errors = validateUmapParams(nextParams)
+
       return {
         ...state,
-        umapParams: { ...state.umapParams, [action.payload.param]: action.payload.value },
+        umapParams: nextParams,
+        umapParamsErrors: errors,
       }
     },
     [resetUmapParameters as any]: (state, action: any) => {
       return {
         ...state,
         umapParams: searchPageInitialState.samplesComparisonModal.umapParams,
+        umapParamsErrors: [],
       }
     },
     [runComparisonStarted as any]: (state, action: any) => ({

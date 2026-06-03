@@ -88,6 +88,7 @@ function doSearch(url, filters, options) {
   const formData = new FormData()
   formData.append('start', (options.page * options.pageSize).toString())
   formData.append('length', options.pageSize)
+  formData.append('filtering', JSON.stringify(_get(options, 'filtered', [])))
   formData.append('sorting', JSON.stringify(_get(options, 'sorted', [])))
   formData.append('columns', JSON.stringify(_get(options, 'columns', [])))
   formData.append('otu_query', JSON.stringify(filters))
@@ -135,9 +136,18 @@ export const executeContextualSearch = partial(
   window.otu_search_config.required_table_headers_endpoint
 )
 
-function executeOtuSearch(url, filters) {
+function executeOtuSearch(
+  url,
+  filters,
+  extraParams: Record<string, string | number | boolean> = {}
+) {
   const formData = new FormData()
   formData.append('otu_query', JSON.stringify(filters))
+
+  Object.entries(extraParams).forEach(([key, value]) => {
+    formData.append(key, String(value) as string)
+  })
+
   return axios({
     method: 'post',
     url: url,
@@ -157,6 +167,31 @@ export const executeSampleSitesSearch = partial(
   executeOtuSearch,
   window.otu_search_config.search_sample_sites_endpoint
 )
+
+export const executeMagsSearch = (options, magId = null) => {
+  return axios.get(window.otu_search_config.mags_endpoint, {
+    params: {
+      start: (options.page * options.pageSize).toString(),
+      length: options.pageSize,
+      filtering: JSON.stringify(_get(options, 'filtered', [])),
+      sorting: JSON.stringify(_get(options, 'sorted', [])),
+      magId: magId,
+    },
+  })
+}
+
+export const executeMagsSitesMetadata = (filters) =>
+  executeOtuSearch(window.otu_search_config.search_sample_sites_endpoint, filters, {
+    skip_site_images: '1',
+  })
+
+export const executeSampleMagsCount = (sampleId) => {
+  return axios.get(window.otu_search_config.mags_sample_count_endpoint, {
+    params: {
+      sample_id: sampleId,
+    },
+  })
+}
 
 export const executeMetagenomeSearch = partial(
   executeOtuSearch,

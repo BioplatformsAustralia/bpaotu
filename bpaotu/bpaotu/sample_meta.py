@@ -32,31 +32,68 @@ def update_from_ckan():
     remote = make_ckan_remote()
     engine = make_engine()
 
+    n_total = 0
+    any_db_change = False
+
+    # try to fetch from ckan first, then update afterwards in a transaction
+    try:
+        def iter_chunks():
+            for chunk in ckan_query_chunked(remote, solr_query_mg_candidates):
+                yield [get_package_sample_id(pkg) for pkg in chunk['results']]
+        chunk_iter = iter_chunks()
+    except (requests.exceptions.RequestException,
+            urllib3.exceptions.HTTPError,
+            urllib3.exceptions.NewConnectionError,
+            socket.gaierror) as e:
+        logger.error("CKAN error: %s", e, exc_info=True)
+        return
+
+    # reset all has_metagenome flags, then apply per-chunk updates
     with engine.begin() as conn:
         h1 = get_hash(conn)
         conn.execute(
-            update(SampleMeta).where(
-                SampleMeta.has_metagenome == True).values(has_metagenome=False))
-        n_total = 0
-        for chunk in ckan_query_chunked(remote, solr_query_mg_candidates):
-            sample_ids = [get_package_sample_id(package) for package in chunk['results']]
-            n_total += len(sample_ids)
-            stmt = update(SampleMeta).where(
-                SampleMeta.sample_id.in_(sample_ids)).values(has_metagenome=True).returning(
-                    SampleMeta.sample_id)
-            update_results = [r[0] for r in conn.execute(stmt).fetchall()]
-            remaining = set(sample_ids) - set(update_results)
-            if remaining:
-                # There's no guarantee that sample ids in CKAN match those in
-                # SampleContext, so only insert SampleMeta rows for sample ids we know
-                # about.
-                conn.execute(
-                    insert(SampleMeta).from_select(
-                        ['sample_id', 'has_metagenome'],
-                        select([SampleContext.id, True]).where(
-                            SampleContext.id.in_(remaining))))
+            update(SampleMeta)
+            .where(SampleMeta.has_metagenome == True)
+            .values(has_metagenome=False)
+        )
+        any_db_change = True
 
-        logger.info("Found %d samples on CKAN with metagenome data", n_total)
-        h2 = get_hash(conn)
+    for sample_ids in chunk_iter:
+        n_total += len(sample_ids)
+        if not sample_ids:
+            continue
+
+        try:
+            with engine.begin() as conn:
+                stmt = (
+                    update(SampleMeta)
+                    .where(SampleMeta.sample_id.in_(sample_ids))
+                    .values(has_metagenome=True)
+                    .returning(SampleMeta.sample_id)
+                )
+                update_results = [r[0] for r in conn.execute(stmt).fetchall()]
+                remaining = set(sample_ids) - set(update_results)
+                if remaining:
+                    # There's no guarantee that sample ids in CKAN match those in
+                    # SampleContext, so only insert SampleMeta rows for sample ids we know
+                    # about.
+                    conn.execute(
+                        insert(SampleMeta).from_select(
+                            ['sample_id', 'has_metagenome'],
+                            select([SampleContext.id, True]).where(
+                                SampleContext.id.in_(remaining)
+                            )))
+
+                any_db_change = True
+        except Exception:
+            # Log and errors and continue to next chunk (avoids full-pipeline crash)
+            logger.exception("DB error while applying CKAN chunk - continuing...")
+            continue
+
+    logger.info("Found %d samples on CKAN with metagenome data", n_total)
+
+    if any_db_change:
+        with engine.begin() as conn:
+            h2 = get_hash(conn)
         if h2 != h1:
             caches['search_results'].clear()

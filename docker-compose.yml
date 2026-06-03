@@ -37,6 +37,7 @@ services:
       # bind-mount the backend source code in development to allow hot reloading of changes to the Django app
       - .:/app
       - ./data/dev:/data
+      - /data/MAGS:/data/MAGS
     ports:
       - "8080:8080" # Development mode port (runserver)
       - "8888:8888" # Jupyter Notebook port (for development/debugging)

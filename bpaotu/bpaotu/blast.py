@@ -7,6 +7,7 @@ import zipstream
 import base64
 
 from django.conf import settings
+from collections import defaultdict
 from contextlib import suppress
 
 from .base_task_wrapper import BaseTaskWrapper
@@ -139,7 +140,7 @@ class BlastWrapper(BaseTaskWrapper):
         ## No sample info 
         ##
         writer = csv.writer(fd)
-        writer.writerow(['OTU'] + self.BLAST_COLUMNS)
+        writer.writerow(['OTU id'] + self.BLAST_COLUMNS)
         yield fd.getvalue().encode('utf8')
         fd.seek(0)
         fd.truncate(0)
@@ -156,20 +157,34 @@ class BlastWrapper(BaseTaskWrapper):
         self._log('info', 'Adding sample data to blast results')
 
         blast_rows = self._blast_results()
-        otu_ids = blast_rows.keys()
+        otu_ids = list(blast_rows.keys())  # materialise order explicitly
+
+        # load all query results into memory, grouped by OTU id
+        rows_by_otu = defaultdict(list)
+        with SampleQuery(self._params) as query:
+            for row in query.matching_sample_otus_blast(otu_ids).yield_per(50):
+                rows_by_otu[row.OTU_id].append(row)
 
         with open(blast_sample_results_file, 'w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
-            writer.writerow(['OTU Code', 'OTU', 'sample_id', 'abundance', 'latitude', 'longitude'] + self.BLAST_COLUMNS)
-            
-            with SampleQuery(self._params) as query:
-                q = query.matching_sample_otus_blast(otu_ids)
+            writer.writerow(['OTU id', 'OTU Code', 'OTU', 'sample_id', 'abundance', 'latitude', 'longitude'] + self.BLAST_COLUMNS)
 
-                for OTU_id, OTU_code, OTU_seq, SampleOTU_count, SampleContext_id, SampleContext_latitude, SampleContext_longitude in q.yield_per(50):
-                    blast_row = blast_rows[OTU_id]
+            # write rows back in blast_rows order
+            for otu_id in otu_ids:
+                blast_row = blast_rows[otu_id]
+                for row in rows_by_otu.get(otu_id, []):
                     writer.writerow(
-                        [OTU_code, OTU_seq, format_sample_id(SampleContext_id), SampleOTU_count,
-                         SampleContext_latitude, SampleContext_longitude] + blast_row)
+                        [
+                            row.OTU_id,
+                            row.OTU_code,
+                            row.Sequence_seq,
+                            format_sample_id(row.SampleContext_id),
+                            row.SampleOTU_count,
+                            row.SampleContext_latitude,
+                            row.SampleContext_longitude,
+                        ]
+                        + blast_row
+                    )
 
         self._log('info', 'Finished adding sample data to blast results')
 

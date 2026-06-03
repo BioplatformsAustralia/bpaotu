@@ -37,25 +37,6 @@ WEBAPP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_ROOT = env.get('static_root', os.path.join(WEBAPP_ROOT, 'static'))
 STATIC_URL = posixpath.join("/", SCRIPT_NAME.strip("/"), "static") + "/"
 
-
-## email
-
-#DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'Bioplaforms Data Portal <help@bioplatforms.com>')
-DEFAULT_FROM_EMAIL = env.get('DJANGO_DEFAULT_FROM_EMAIL', 'no-reply@csiro.au')
-EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU] ')
-EMAIL_BACKEND = env.get('BPAOTU_EMAIL_BACKEND', "anymail.backends.amazon_ses.EmailBackend")
-EMAIL_HOST = env.get('BPAOTU_EMAIL_HOST', 'localhost')
-
-ANYMAIL = {
-    "AMAZON_SES_MESSAGE_TAG_NAME": "Type",
-    "AMAZON_SES_CLIENT_PARAMS": {
-        # example: override normal Boto credentials specifically for Anymail
-        "aws_access_key_id": env.get("AWS_ACCESS_KEY_FOR_ANYMAIL_SES"),
-        "aws_secret_access_key": env.get("AWS_SECRET_KEY_FOR_ANYMAIL_SES"),
-        "region_name": env.get("AWS_REGION_FOR_ANYMAIL_SES"),
-    },
-}
-
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
 MEDIA_ROOT = env.get('media_root', os.path.join(WEBAPP_ROOT, 'static', 'media'))
@@ -205,6 +186,9 @@ LOGGING = {
         'verbose-alt': {
             'format': '[%(levelname)s:%(asctime)s] %(message)s'
         },
+        'importer': {
+            'format': '[%(levelname)s:%(asctime)s] %(message)s'
+        },
         'db': {
             'format': '[%(duration)s:%(sql)s:%(params)s %(filename)s %(lineno)s %(funcName)s] %(message)s'
         },
@@ -240,6 +224,11 @@ LOGGING = {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
+        },
+        'console_importer': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'importer'
         },
         'shell': {
             'level': 'DEBUG',
@@ -299,6 +288,11 @@ LOGGING = {
         },
         'bpaotu-alt': {
             'handlers': ['console-alt', 'file'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'importer': {
+            'handlers': ['console_importer', 'file'],
             'level': LOG_LEVEL,
             'propagate': False,
         },

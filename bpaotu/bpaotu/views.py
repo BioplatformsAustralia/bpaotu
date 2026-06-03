@@ -19,7 +19,11 @@ from xhtml2pdf import pisa
 from sqlalchemy import Float, Integer
 
 from django.conf import settings
-from django.http import (HttpResponse, JsonResponse, HttpResponseServerError, StreamingHttpResponse)
+
+from django.http import (Http404, HttpResponse, JsonResponse, HttpResponseServerError,
+                         StreamingHttpResponse)
+from django.shortcuts import redirect
+
 from django.template import loader
 from django.urls import reverse
 from django.views.decorators.cache import cache_page
@@ -28,6 +32,7 @@ from django.views.decorators.http import require_GET, require_POST
 from bpaotu.auth_app.decorators import require_oauth
 
 from celery import current_app
+from pathlib import Path, PurePosixPath
 
 from . import tasks
 from .biom import biom_zip_file_generator
@@ -36,13 +41,13 @@ from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .krona import KronaPlot
 from .mail import send_email
 from .models import MetagenomeRequest
-from .otu import (OTUAmplicon, SampleContext, TaxonomySource, format_taxonomy_name)
+from .otu import (OTUAmplicon, SampleContext, TaxonomySource, MAG, format_taxonomy_name)
 from .params import clean_amplicon_filter, make_clean_taxonomy_filter, param_to_filters, selected_contextual_filters
 from .query import (ContextualFilter, ContextualFilterTermDate, ContextualFilterTermTime,
                     ContextualFilterTermFloat, ContextualFilterTermLongitude,
                     ContextualFilterTermOntology,
                     ContextualFilterTermSampleID, ContextualFilterTermString,
-                    MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
+                    MagQuery, MetadataInfo, OntologyInfo, OTUQueryParams, SampleQuery,
                     TaxonomyFilter, TaxonomyOptions)
 from .site_images import fetch_image, get_site_image_lookup_table, make_ckan_remote
 from .sample_comparison import comparison_zip_file_generator
@@ -51,7 +56,9 @@ from .submission import Submission
 from .tabular import tabular_zip_file_generator
 from .util import make_timestamp, parse_date, parse_time, parse_float, mem_usage_obj
 
-from .sample_run_id_dict import sample_run_id_dict
+from .lookups.sample_run_id_dict import sample_run_id_dict
+from .lookups.ncbi_am_id_dict import ncbi_am_id_dict
+from .lookups.omdb_dict import omdb_dict
 
 from mixpanel import Mixpanel
 import hashlib
@@ -102,6 +109,9 @@ def api_config(request):
         'contextual_graph_endpoint': reverse('contextual_graph_fields'),
         'taxonomy_graph_endpoint': reverse('taxonomy_graph_fields'),
         'taxonomy_search_endpoint': reverse('taxonomy_search'),
+        'mags_available': mags_available(),
+        'mags_endpoint': reverse('mags'),
+        'mags_sample_count_endpoint': reverse('mags_sample_count'),
         'search_endpoint': reverse('otu_search'),
         'export_endpoint': reverse('otu_export'),
         'export_biom_endpoint': reverse('otu_biom_export'),
@@ -293,6 +303,32 @@ def otu_search(request, contextual_filtering=True):
         results = query.matching_sample_headers(additional_headers, sorting)
 
     result_count = len(results)
+
+    filtering_raw = request.POST.get('filtering', '[]')
+    try:
+        filtering = json.loads(filtering_raw)
+    except json.JSONDecodeError:
+        filtering = []
+
+    header_index = {name: idx for idx, name in enumerate(all_headers)}
+
+    for f in filtering:
+        column = f['id']
+        value = f['value']
+
+        if not value:
+            continue
+
+        col_idx = header_index.get(column)
+        if col_idx is None:
+            continue
+
+        value_lower = value.lower()
+
+        results = [
+            row for row in results
+            if str(row[col_idx]).lower().startswith(value_lower)
+        ]
 
     if start >= result_count:
         start = (result_count // length) * length
@@ -1269,10 +1305,137 @@ def contextual_csv_download_endpoint(request):
 
 
 # --------------------------------------------------------------------------- #
+# MAGs tab ------------------------------------------------------------------ #
+# --------------------------------------------------------------------------- #
+
+@require_oauth
+@require_GET
+def mags(request):
+    """
+    private API: return all MAGs from the database
+    """
+
+    # TEMP: add the derived column until we have a unique bin_id column
+    MAG_HEADERS = [c.name for c in MAG.__table__.columns]
+
+    filtering_param = json.loads(request.GET.get('filtering', '[]'))
+    sorting_param = json.loads(request.GET.get('sorting', '[]'))
+
+    # if mag_id param is provided then add that to base filter
+    # (so that it comes up in a page refresh with url params)
+    mag_id = request.GET.get("magId")
+    if mag_id:
+        mag_id_param = { "id": "mag_id", "value": mag_id }
+        filtering_param.append(mag_id_param)
+
+    start = _int_get_param(request, 'start')
+    length = _int_get_param(request, 'length')
+    filtering = _parse_table_filtering(filtering_param, MAG_HEADERS)
+    sorting = _parse_table_sorting(sorting_param, MAG_HEADERS)
+
+    with MagQuery() as query:
+        total_count = query.count(filtering)
+        results = query.records(filtering, sorting, start, length)
+
+    def map_result(row):
+        d = dict(zip(MAG_HEADERS, row))
+        sample_id = d.get("sample_id")
+        ncbi_biosample = ncbi_am_id_dict.get(sample_id)
+
+        # add ncbi biosample
+        omdb_key = f"BPAM22-1_{ncbi_biosample}_METAG"
+        omdb_genomes = omdb_dict.get(omdb_key, [])
+
+        d["biosample"] = ncbi_biosample
+        d["omdb_count"] = len(omdb_genomes)
+
+        return d
+
+    return JsonResponse({
+        'data': [map_result(row) for row in results],
+        'rowsCount': total_count,
+    })
+
+
+MAGS_BASE_DIR = Path(settings.MAGS_BASE_DIR)
+MAG_FILE_TYPE_EXTENSION_MAP = {
+    "antismash": "-antismash.zip",
+    "cog": ".cog.gz",
+    "fa": ".fa.gz",
+    "gff": ".gff.gz",
+    "gtdbtk": "_gtdbtk.summary.tsv.gz",
+    "kegg": ".kegg.gz",
+    "orf.faa": ".orf.faa.gz",
+    "orf.fa": ".orf.fa.gz",
+    "orftable": ".orftable.gz",
+    "pfam": ".pfam.gz",
+}
+
+@require_GET
+def download_mag(request):
+    mag_id = request.GET.get('magId')
+    download_type = request.GET.get('downloadType')
+
+    if not mag_id or not download_type:
+        raise Http404()
+
+    ext = MAG_FILE_TYPE_EXTENSION_MAP.get(download_type)
+    if not ext:
+        raise Http404(f"Unexpected file type: {download_type}")
+    mag_filename = f"{mag_id}{ext}"
+
+    # Check the real filepath exists
+    # This is dependent on MAGS_BASE_DIR being mounted as a volume for docker to see
+    file_path = MAGS_BASE_DIR / mag_id / mag_filename
+    if not file_path.exists():
+        # This will open a new window with an error page (so that redux state on frontend is not lost)
+        logger.warning(f"MAG file does not exist: {file_path}")
+        return redirect(f"/mags/download_error?magId={mag_id}&downloadType={download_type}")
+
+    # Sanitise filename to prevent ../ attacks or other tricks
+    safe_filename = PurePosixPath(mag_filename).name
+
+    response = HttpResponse()
+    response["Content-Disposition"] = f'attachment; filename="{safe_filename}"'
+    response["X-Accel-Redirect"] = f"/protected/{mag_id}/{safe_filename}"
+
+    return response
+
+@require_oauth
+@require_GET
+def mags_sample_count(request):
+    sample_id = request.GET.get('sample_id')
+
+    if not sample_id:
+        raise Http404()
+
+    with MagQuery() as query:
+        total_count = (
+            query._session
+            .query(MAG)
+            .filter(MAG.sample_id == sample_id)
+            .count()
+        )
+
+    return JsonResponse({ 'sample_id': sample_id, 'sample_mags_count': total_count })
+
+
+def mags_available():
+    """Boot-time check if there are any MAGs in the database"""
+
+    try:
+        with MagQuery() as query:
+            return query.exists()
+    except Exception as e:
+        logger.error(f"Error running mags_available", exc_info=True)
+        return False
+
+
+# --------------------------------------------------------------------------- #
 # Map tab ------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #
 
-# also used for Interactive Map Search
+# also used for Interactive Map Search and MAGs Inspect
 @require_oauth
 @require_POST
 def otu_search_sample_sites(request):
@@ -1283,13 +1446,15 @@ def otu_search_sample_sites(request):
             'data': [],
             'sample_otus': []
         })
+
     data, sample_otus = spatial_query(params)
 
-    site_image_lookup_table = get_site_image_lookup_table()
-
-    for d in data:
-        key = (str(d['latitude']), str(d['longitude']))
-        d['site_images'] = site_image_lookup_table.get(key)
+    skip_site_images = request.POST.get('skip_site_images') == "1"
+    if not skip_site_images:
+        site_image_lookup_table = get_site_image_lookup_table()
+        for d in data:
+            key = (str(d['latitude']), str(d['longitude']))
+            d['site_images'] = site_image_lookup_table.get(key)
 
     track(request, 'otu_interactive_map_search', search_params_track_args(params))
 
@@ -1513,6 +1678,22 @@ def normalise_blast_search_string(s):
         raise OTUError("BLAST search string contains invalid characters: {}".format(invalid))
     return cleaned
 
+def reject_nones(xs):
+    return [x for x in xs if x is not None]
+
+def _parse_table_filtering(filtering, headers):
+    def parse_filtering(filter):
+        if 'id' not in filter:
+            return None
+        col_name = filter.get('id')
+        try:
+            col_idx = headers.index(col_name)
+        except ValueError:
+            return None
+        return {'col_idx': col_idx, 'value': filter.get('value', False)}
+
+    return reject_nones(parse_filtering(f) for f in filtering)
+
 def _parse_table_sorting(sorting, headers):
     def parse_sorting(sort):
         if 'id' not in sort:
@@ -1524,7 +1705,18 @@ def _parse_table_sorting(sorting, headers):
             return None
         return {'col_idx': col_idx, 'desc': sort.get('desc', False)}
 
-    def reject_nones(xs):
-        return [x for x in xs if x is not None]
-
     return reject_nones(parse_sorting(s) for s in sorting)
+
+def _int_post_param(request, param_name):
+    param = request.POST.get(param_name)
+    try:
+        return int(param) if param is not None else None
+    except ValueError:
+        return None
+
+def _int_get_param(request, param_name):
+    param = request.GET.get(param_name)
+    try:
+        return int(param) if param is not None else None
+    except ValueError:
+        return None

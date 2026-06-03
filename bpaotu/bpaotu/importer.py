@@ -15,7 +15,6 @@ from itertools import zip_longest
 from ._version import __version__
 
 from django.conf import settings
-from django.core.mail import send_mail
 
 import sqlalchemy
 from bpaingest.metadata import DownloadMetadata
@@ -34,7 +33,7 @@ from Bio import SeqIO
 
 from .mail import send_email
 from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
-                  ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon,
+                  ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon, MAG,
                   taxonomy_keys, taxonomy_key_id_names, rank_labels_lookup,
                   TaxonomySource, taxonomy_ontology_classes, format_taxonomy_name,
                   SampleAustralianSoilClassification,
@@ -51,24 +50,7 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   make_engine)
 from .sample_meta import update_from_ckan
 
-logger = logging.getLogger("bpaotu")
-
-
-
-# Prevent xlrd from using defusedxml
-# https://stackoverflow.com/a/65131301
-#
-# Otherwise when bpa-ingest calls xlrd.open_workbook() it throws this error:
-# AttributeError: 'ElementTree' object has no attribute 'getiterator'
-#
-# This happens in development because jupyter is installed in dev-requirements and it includes defusedxml via nbconvert
-# (It doesn't happen in production because jupyter is not installed in runtime-requirements, and defusedxml is not a dependency of anything else in runtime-requirements)
-if settings.DEBUG:
-    import xlrd
-    xlrd.xlsx.ensure_elementtree_imported(False, None)
-    xlrd.xlsx.Element_has_iter = True
-    logger.debug("xlrd monkeypatch applied to prevent defusedxml conflict")
-
+logger = logging.getLogger("importer")
 
 
 class DataImportError(Exception):
@@ -258,7 +240,21 @@ class DataImporter:
         ('store_cond', SampleStorageMethod),
     ])
 
-    def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True, notify_email=None):
+    def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True):
+        # Prevent xlrd from using defusedxml
+        # https://stackoverflow.com/a/65131301
+        #
+        # Otherwise when bpa-ingest calls xlrd.open_workbook() it throws this error:
+        # AttributeError: 'ElementTree' object has no attribute 'getiterator'
+        #
+        # This happens in development because jupyter is installed in dev-requirements and it includes defusedxml via nbconvert
+        # (It doesn't happen in production because jupyter is not installed in runtime-requirements, and defusedxml is not a dependency of anything else in runtime-requirements)
+        if settings.DEBUG:
+            import xlrd
+            xlrd.xlsx.ensure_elementtree_imported(False, None)
+            xlrd.xlsx.Element_has_iter = True
+            logger.debug("xlrd monkeypatch applied to prevent defusedxml conflict")
+
         self._engine = make_engine()
         self._create_extensions() # does this need to be after sessionmaker?
         self._session = sessionmaker(bind=self._engine)()
@@ -268,8 +264,8 @@ class DataImporter:
         self._revision_date = revision_date
         self._has_sql_context = has_sql_context
         self._force_fetch = force_fetch
-        self._notify_email = notify_email or getattr(settings, 'INGEST_NOTIFY_EMAIL', None)
 
+    def prep(self):
         # These are used exclusively for reporting back to CSIRO on the state of the ingest
         self.sample_metadata_incomplete = set()
         self.sample_non_integer = set()
@@ -307,13 +303,14 @@ class DataImporter:
         phase_func()
         elapsed = time.time() - start_time
         phase_timings.append({"name": phase_name, "time": elapsed})
-        logger.info(f"Completed phase: {phase_name} in {elapsed:.2f} seconds")
+        logger.info(f"Completed phase: {phase_name} in {elapsed:.1f} seconds")
 
     def run(self):
         start_time, phase_timings = self._start_ingest()
 
         try:
             # Run each phase of the ingest, recording timings for reporting at the end
+            self._run_phase(self.load_mags_bintable, "MAGS bintables", "Loading MAGS bintables", phase_timings)
             self._run_phase(self.load_contextual_metadata, "Contextual metadata", "Loading contextual metadata", phase_timings)
             self._run_phase(self.load_taxonomies, "Taxonomies", "Loading taxonomies", phase_timings)
             self._run_phase(self.load_otu_abundance, "OTU abundance tables", "Loading OTU abundance tables", phase_timings)

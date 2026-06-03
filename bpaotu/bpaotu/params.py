@@ -1,4 +1,5 @@
 import json
+import logging
 from collections import OrderedDict
 from .otu import (SampleContext)
 from .query import (ContextualFilter,
@@ -9,6 +10,8 @@ from .query import (ContextualFilter,
                     OTUQueryParams,
                     TaxonomyFilter, TaxonomyOptions)
 from .util import parse_date, parse_time, parse_float
+
+logger = logging.getLogger('bpaotu')
 
 
 def param_to_filters(query_str, contextual_filtering=True):

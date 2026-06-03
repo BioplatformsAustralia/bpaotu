@@ -18,11 +18,11 @@ const ContextualSearchResultsTable = () => {
     sorting: state.contextualPage.results.sorted,
   }))
 
+  // search once on initial mount
   useEffect(() => {
-    if (isEmpty(results.data)) {
-      dispatch(search())
-    }
-  }, [results.data, dispatch])
+    dispatch(search())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <SearchResultsTable
