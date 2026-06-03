@@ -11,6 +11,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy_utils import create_materialized_view
+from urllib.parse import quote_plus
 
 logger = logging.getLogger("bpaotu")
 SCHEMA = 'otu'
@@ -1102,3 +1103,37 @@ def make_engine():
     engine_string = 'postgres://%(USER)s:%(PASSWORD)s@%(HOST)s:%(PORT)s/%(NAME)s' % (conf)
     echo = os.environ.get('BPAOTU_ECHO') == '1'
     return create_engine(engine_string, echo=echo, connect_args={'options': '-csearch_path={}'.format(dbschema)})
+
+
+def make_engine():
+    conf = settings.DATABASES['default']
+    dbschema = 'otu,public'
+
+    # Use explicit psycopg2 connection string
+    user = conf['USER']
+    pw = quote_plus(conf['PASSWORD'])
+    host = conf['HOST']
+    port = conf['PORT']
+    name = conf['NAME']
+    engine_string = f"postgresql+psycopg2://{user}:{pw}@{host}:{port}/{name}"
+
+    # Use connect_args in settings and preserve any existing psycopg2 options
+    connect_args = dict(conf.get('OPTIONS', {}))
+    existing_options = connect_args.pop('options', '').strip()
+    options_parts = [f"-csearch_path={dbschema}"]
+    if existing_options:
+        options_parts.append(existing_options)
+    connect_args["options"] = " ".join(options_parts)
+
+    echo = os.environ.get('BPAOTU_ECHO') == '1'
+
+    return create_engine(
+        engine_string,
+        echo=echo,
+        pool_pre_ping=True, # detect and reconnect dropped connections
+        pool_recycle=int(os.environ.get('BPAOTU_POOL_RECYCLE', 3600)), # seconds
+        pool_timeout=int(os.environ.get('BPAOTU_POOL_TIMEOUT', 30)), # seconds to wait for a connection from pool
+        pool_size=int(os.environ.get('BPAOTU_POOL_SIZE', 10)),
+        max_overflow=int(os.environ.get('BPAOTU_MAX_OVERFLOW', 20)),
+        connect_args=connect_args
+    )

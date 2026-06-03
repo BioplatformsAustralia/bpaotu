@@ -19,25 +19,27 @@ from xhtml2pdf import pisa
 from sqlalchemy import Float, Integer
 
 from django.conf import settings
-from django.core.mail import send_mail
+
 from django.http import (Http404, HttpResponse, JsonResponse, HttpResponseServerError,
                          StreamingHttpResponse)
 from django.shortcuts import redirect
+
 from django.template import loader
 from django.urls import reverse
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
+from bpaotu.auth_app.decorators import require_oauth
 
 from celery import current_app
 from pathlib import Path, PurePosixPath
 
 from . import tasks
 from .biom import biom_zip_file_generator
-from .ckan_auth import require_CKAN_auth
 from .contextual import contextual_definitions, get_contextual_schema_definition, make_environment_lookup
 from .galaxy_client import galaxy_ensure_user, get_krona_workflow
 from .krona import KronaPlot
+from .mail import send_email
 from .models import MetagenomeRequest
 from .otu import (OTUAmplicon, SampleContext, TaxonomySource, MAG, format_taxonomy_name)
 from .params import clean_amplicon_filter, make_clean_taxonomy_filter, param_to_filters, selected_contextual_filters
@@ -139,9 +141,13 @@ def api_config(request):
         'static_base_url': settings.STATIC_URL,
         'galaxy_base_url': settings.GALAXY_BASE_URL,
         'ckan_base_url': settings.CKAN_SERVER['base_url'],
-        'ckan_check_permissions': (
-            settings.CKAN_CHECK_PERMISSIONS_URL if settings.PRODUCTION
-            else reverse('dev_only_ckan_check_permissions')),
+        'oauth_check_auth':
+            settings.OAUTH_CHECK_AUTH_URL if settings.ENABLE_AUTH
+            else reverse('dev_only_oauth_check_auth'),
+        'oauth_user_info':
+            settings.OAUTH_USER_INFO_URL if settings.ENABLE_AUTH
+            else reverse('dev_only_oauth_user_info'),
+        'register_access_url': settings.OAUTH_REGISTER_ACCESS_URL,
         'galaxy_integration': settings.GALAXY_INTEGRATION,
         'default_amplicon': settings.DEFAULT_AMPLICON,
         'default_taxonomies': [format_taxonomy_name(db, method)
@@ -150,7 +156,7 @@ def api_config(request):
     }
     return JsonResponse(config)
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def reference_data_options(request):
     """
@@ -164,7 +170,7 @@ def reference_data_options(request):
         'ranks': taxonomy_labels
     })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def trait_options(request):
     """
@@ -180,7 +186,7 @@ def trait_options(request):
         'possibilities': vals
     })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def taxonomy_options(request):
     """
@@ -241,7 +247,7 @@ def taxonomy_options(request):
         'initial': initial,
     })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def contextual_fields(request):
     """
@@ -265,7 +271,7 @@ def contextual_fields(request):
 # technically we should be using GET, but the specification
 # of the query (plus the datatables params) is large: so we
 # avoid the issues of long URLs by simply POSTing the query
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def otu_search(request, contextual_filtering=True):
     def _int_get_param(param_name):
@@ -355,7 +361,7 @@ def otu_search(request, contextual_filtering=True):
         'rowsCount': result_count,
     })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def otu_export(request):
     """
@@ -388,7 +394,7 @@ def otu_export(request):
 
     return response
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def otu_biom_export(request):
     timestamp = make_timestamp()
@@ -403,7 +409,7 @@ def otu_biom_export(request):
 
     return response
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def krona_request(request):
     params, errors = param_to_filters(request.POST['query'])
@@ -422,7 +428,7 @@ def krona_request(request):
 
 ## Taxonomy search ##
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def taxonomy_search(request):
     """
@@ -456,7 +462,7 @@ def serialise_taxa_search_result(result):
 
 ## Graphs ##
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def contextual_graph_fields(request, contextual_filtering=True):
     additional_headers = selected_contextual_filters(request.POST['otu_query'], contextual_filtering=contextual_filtering)
@@ -503,7 +509,7 @@ def contextual_graph_fields(request, contextual_filtering=True):
         'sampledata': sample_results,
     })
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def taxonomy_graph_fields(request, contextual_filtering=True):
     # Exclude environment field of contextual_filters
@@ -668,7 +674,7 @@ def do_on_galaxy(galaxy_action):
     return galaxy_wrapper_view
 
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 @do_on_galaxy
 def submit_to_galaxy(request, email):
@@ -681,7 +687,7 @@ def submit_to_galaxy(request, email):
     return submission_id, user_created
 
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 @do_on_galaxy
 def execute_workflow_on_galaxy(request, email):
@@ -694,7 +700,7 @@ def execute_workflow_on_galaxy(request, email):
     return submission_id, user_created
 
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def galaxy_submission(request):
     submission_id = request.GET['submission_id']
@@ -718,7 +724,7 @@ def galaxy_submission(request):
 
 ## Control endpoints for background tasks ##
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def submit_otuexport(request):
     try:
@@ -749,7 +755,7 @@ def submit_otuexport(request):
             'errors': [str(t) for t in exc.errors],
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def cancel_otuexport(request):
     try:
@@ -780,7 +786,7 @@ def cancel_otuexport(request):
             'errors': exc.errors,
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def otuexport_submission(request):
     submission_id = request.GET['submission_id']
@@ -840,7 +846,7 @@ def otuexport_submission(request):
     return JsonResponse(response)
 
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def submit_blast(request):
     try:
@@ -869,7 +875,7 @@ def submit_blast(request):
             'errors': exc.errors,
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def cancel_blast(request):
     try:
@@ -900,7 +906,7 @@ def cancel_blast(request):
             'errors': exc.errors,
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def blast_submission(request):
     submission_id = request.GET['submission_id']
@@ -945,7 +951,7 @@ def blast_submission(request):
     return JsonResponse(response)
 
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def submit_comparison(request):
     try:
@@ -998,7 +1004,7 @@ def submit_comparison(request):
             'errors': [str(t) for t in exc.errors],
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def cancel_comparison(request):
     try:
@@ -1029,7 +1035,7 @@ def cancel_comparison(request):
             'errors': exc.errors,
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def clear_comparison(request):
     try:
@@ -1060,7 +1066,7 @@ def clear_comparison(request):
             'errors': exc.errors,
         })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def comparison_submission(request):
     submission_id = request.GET['submission_id']
@@ -1135,7 +1141,7 @@ def comparison_submission(request):
 
 ## Misc endpoints for background tasks ##
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def otu_search_blast_otus(request):
     params, errors = param_to_filters(request.POST['otu_query'], contextual_filtering=True)
@@ -1154,7 +1160,7 @@ def otu_search_blast_otus(request):
         'rowsCount': result_count,
     })
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def comparison_download_distance_matrices(request):
     submission_id = request.GET['submission_id']
@@ -1173,7 +1179,7 @@ def comparison_download_distance_matrices(request):
 # Metagenome tab ------------------------------------------------------------ #
 # --------------------------------------------------------------------------- #
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def metagenome_search(request):
     """Returns list of Sample IDs for search params when opening Metagenome data request modal"""
@@ -1189,15 +1195,18 @@ def metagenome_search(request):
         logger.critical("Error in metagenome_search", exc_info=True)
         return HttpResponseServerError(str(e), content_type="text/plain")
 
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def metagenome_request(request):
-    """Submits a request for the specified file types for the given list of Sample IDS"""
+    """
+    Submits a request for the specified file types for the given list of Sample IDS
+    Sends an email to the user confirming the request, and an email to the team with the details of the request
+    """
     try:
         sample_ids = json.loads(request.POST['sample_ids'])
-        file_types=json.loads(request.POST['selected_files'])
+        file_types = json.loads(request.POST['selected_files'])
+        user_email = request.ckan_data.get('email')
         to_email = settings.METAGENOME_REQUEST_EMAIL
-        user_email=request.ckan_data.get('email')
 
         mg_request = MetagenomeRequest.objects.create(
             sample_ids='\n'.join(sample_ids),
@@ -1214,26 +1223,24 @@ def metagenome_request(request):
 
         track(request, 'otu_request_metagenome_files')
 
-        am_email ="Australian Microbiome Data Requests <{}>".format(to_email)
-
         template = loader.get_template('mg-ack-email.txt')
         body = template.render(template_vars, request)
-        send_mail(
+        send_email(
             "[MG#{}] Australian Microbiome: Metagenome data request received".format(request_id),
-             body,
-            am_email, [user_email])
+            body,
+            user_email)
 
         template = loader.get_template('mg-request-email.txt')
         body = template.render(template_vars, request)
-        send_mail(
+        send_email(
             "[MG#{}] Australian Microbiome: Metagenome data request".format(request_id),
             body,
-            am_email, [to_email])
+            to_email)
 
         return JsonResponse({
             'request_id': request_id,
-             'timestamp': mg_request.created,
-             'contact': to_email
+            'timestamp': mg_request.created,
+            'contact': to_email
             })
 
     except Exception as e:
@@ -1253,7 +1260,7 @@ def required_table_headers(request):
     """
     return otu_search(request, contextual_filtering=False)
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def contextual_csv_download_endpoint(request):
     data = request.GET.get('otu_query')
@@ -1301,7 +1308,7 @@ def contextual_csv_download_endpoint(request):
 # MAGs tab ------------------------------------------------------------------ #
 # --------------------------------------------------------------------------- #
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def mags(request):
     """
@@ -1394,7 +1401,7 @@ def download_mag(request):
 
     return response
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def mags_sample_count(request):
     sample_id = request.GET.get('sample_id')
@@ -1429,7 +1436,7 @@ def mags_available():
 # --------------------------------------------------------------------------- #
 
 # also used for Interactive Map Search and MAGs Inspect
-@require_CKAN_auth
+@require_oauth
 @require_POST
 def otu_search_sample_sites(request):
     params, errors = param_to_filters(request.POST['otu_query'])
@@ -1542,38 +1549,8 @@ def otu_log_download(request):
     filename = f"{metadata.revision_date}-csv.json"
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     return response
- 
-def dev_only_ckan_check_permissions(request):
-    if settings.PRODUCTION:
-        raise Http404('View does not exist in production')
 
-    # Uncomment to simulate user not logged in to CKAN
-    # from django.http import HttpResponseForbidden
-    # return HttpResponseForbidden()
-
-    # organisations = [
-    #     'anu-abc-upload', 'bpa-sepsis', 'australian-microbiome', 'bpa-project-documentation', 'bpa-barcode',
-    #     'bioplatforms-australia', 'bpa-base', 'bpa-great-barrier-reef', 'incoming-data', 'bpa-marine-microbes',
-    #     'bpa-melanoma', 'bpa-omg', 'bpa-stemcells', 'bpa-wheat-cultivars', 'bpa-wheat-pathogens-genomes',
-    #     'bpa-wheat-pathogens-transcript']
-    organisations = ['australian-microbiome']
-
-    data = json.dumps({
-        'email': settings.CKAN_DEVELOPMENT_USER_EMAIL,
-        'timestamp': time.time(),
-        'organisations': organisations,
-    })
-
-    secret_key = os.environ.get('BPAOTU_AUTH_SECRET_KEY').encode('utf8')
-    digest_maker = hmac.new(secret_key, digestmod='md5')
-    digest_maker.update(data.encode('utf8'))
-    digest = digest_maker.hexdigest()
-
-    response = '||'.join([digest, data])
-
-    return HttpResponse(response)
-
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def cookie_consent_declined(request):
     if settings.MIXPANEL_TOKEN:
@@ -1584,7 +1561,7 @@ def cookie_consent_declined(request):
 
     return HttpResponseNoContent()
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def cookie_consent_accepted(request):
     if settings.MIXPANEL_TOKEN:

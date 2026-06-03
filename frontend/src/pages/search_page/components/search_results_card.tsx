@@ -64,7 +64,6 @@ const krona_button = (cell_props, openKronaModal) => (
 
 const download = (baseURL, props, onlyContextual = false) => {
   const params = new URLSearchParams()
-  params.set('token', props.ckanAuthToken)
   params.set('q', JSON.stringify(props.describeSearch()))
   params.set('only_contextual', onlyContextual ? 't' : 'f')
 
@@ -385,7 +384,6 @@ function mapStateToProps(state) {
   const metaxaOptionId = !!metaxaOption ? metaxaOption.id : undefined
 
   return {
-    ckanAuthToken: state.auth.ckanAuthToken,
     galaxy: state.searchPage.galaxy,
     tips: state.searchPage.tips,
     metaxaAmpliconSelected: metaxaOptionId === selectedAmpliconId,

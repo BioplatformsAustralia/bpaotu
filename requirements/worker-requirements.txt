@@ -19,7 +19,6 @@ celery==5.5.3
 ccg-django-utils # settings env config
 colorlog==4.1.0 # logging
 psutil # debugging memory usage
-django-anymail[amazon_ses]==7.1.0 # send_mail
 
 ## Task related
 # periodic ckan update

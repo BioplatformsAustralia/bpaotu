@@ -6,60 +6,68 @@ from ccg_django_utils.conf import EnvConfig
 
 from .settings_shared import *
 
-
-
+def env_bool(value, default=False):
+    if value is None:
+        return default
+    return str(value).lower() in ("1", "true", "yes", "on")
 
 # a directory that will be writable by the webserver, for storing various files...
 WRITABLE_DIRECTORY = env.get("writable_directory", "/tmp") # FIXME used?
-BPAOTU_TMP_DIR = '/var/tmp' # For large temporary files
-
-BPAOTU_MISSING_VALUE_SENTINEL = -9999  # Missing values in sample contextual data.
-# See "Confirmed missing value" in
-# https://github.com/AusMicrobiome/contextualdb_doc/blob/main/db_schema_definitions/db_schema_definitions.xlsx
-
-BPAOTU_SCIENTIFIC_MANUAL_URL = "https://research.csiro.au/ambsm/"
-
-BPAOTU_MAP_CENTRE_LONGITUDE = 133.775
 
 
 # django-secure
-SECURE_SSL_REDIRECT = env.get("secure_ssl_redirect", PRODUCTION)
+SECURE_SSL_HOST = False # handled by nginx
+SECURE_SSL_REDIRECT = False # handled by nginx
 SECURE_CONTENT_TYPE_NOSNIFF = env.get("secure_content_type_nosniff", PRODUCTION)
 SECURE_BROWSER_XSS_FILTER = env.get("secure_browser_xss_filter", PRODUCTION)
 SECURE_HSTS_SECONDS = env.get("secure_hsts_seconds", 10)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.get("secure_hsts_include_subdomains", PRODUCTION)
-SECURE_SSL_HOST = env.get("secure_ssl_host", False)
 SECURE_REDIRECT_EXEMPT = env.getlist("secure_redirect_exempt", [])
 X_FRAME_OPTIONS = env.get("x_frame_options", 'DENY')
 ADMINS = [("alert", env.get("alert_email", "root@localhost"))]
 MANAGERS = ADMINS
 
+# CSRF and host settings
+# ALLOWED_HOSTS should be set to the actual hostnames in production, but we allow it to be overridden by env var for development and testing.
+# The default is to allow all hosts, which is not ideal, but is better than the alternative of having to set an env var just to get the development environment working.
 ALLOWED_HOSTS = env.getlist("allowed_hosts", ["*"])
 
-CKAN_SERVER = {
-    'name': env.get('ckan_name', 'bpa-aws1'),
-    'base_url': env.get('ckan_base_url', 'https://data.bioplatforms.com/'),
-    'api_key': env.get('ckan_api_key', ''),
-}
+# Note: must include scheme and port if not using default ports, and must match the actual host header sent by the client
+# (i.e. the hostname used to access the site in the browser) for CSRF protection to work.
+# In production, this should be set to the actual hostname(s) used to access the site, but we allow it to be overridden by env var for development and testing.
+CSRF_TRUSTED_ORIGINS = env.getlist("CSRF_TRUSTED_ORIGINS", [])
 
-DATABASES = {
-    'default': {
-        # 'ENGINE': env.get_db_engine("dbtype", "pgsql"),
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': env.get("dbname", "webapp"),
-        'USER': env.get("dbuser", "webapp"),
-        'PASSWORD': env.get("dbpass", "webapp"),
-        'HOST': env.get("dbserver", ""),
-        'PORT': env.get("dbport", ""),
-        'OPTIONS': {
-            'connect_timeout': 60,  # Connect timeout (not query execution timeout)
-            'keepalives': 1,        # Enable TCP keepalives
-            'keepalives_idle': 600,  # Send keepalive after
-            'keepalives_interval': 60, # Retry every
-            'keepalives_count': 100,    # Retry times before closing
-        }
-    }
-}
+# Tell Django to trust the X-Forwarded-Proto header set by our nginx frontend when determining if the request is secure
+# (i.e. was originally made over HTTPS).
+# This is important for things like generating correct redirect URLs
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# This honours the X-Forwarded-Host header set by our nginx frontend when constructing redirect URLS
+USE_X_FORWARDED_HOST = env.get("use_x_forwarded_host", True)
+
+
+# Sessions
+
+SESSION_COOKIE_AGE = env.get("session_cookie_age", 60 * 60)
+SESSION_COOKIE_PATH = "/"
+SESSION_SAVE_EVERY_REQUEST = env.get("session_save_every_request", True)
+SESSION_COOKIE_HTTPONLY = env.get("session_cookie_httponly", True)
+
+SESSION_COOKIE_NAME = env.get("session_cookie_name", "ccg_{0}".format(SCRIPT_NAME.replace("/", "")))
+SESSION_COOKIE_DOMAIN = env.get("session_cookie_domain", "") or None
+SESSION_COOKIE_SAMESITE = env.get("session_cookie_samesite", 'Lax')
+SESSION_COOKIE_SECURE = env_bool(
+    env.get("SESSION_COOKIE_SECURE", PRODUCTION),
+    default=PRODUCTION,
+)
+
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_SAMESITE = env.get("csrf_cookie_samesite", 'Lax')
+CSRF_COOKIE_SECURE = env_bool(
+    env.get("CSRF_COOKIE_SECURE", PRODUCTION),
+    default=PRODUCTION,
+)
+
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
@@ -71,14 +79,7 @@ REST_FRAMEWORK = {
     'PAGINATE_BY_PARAM': 'page_size',
 }
 
-SESSION_COOKIE_AGE = env.get("session_cookie_age", 60 * 60)
-SESSION_COOKIE_PATH = '{0}/'.format(SCRIPT_NAME)
-SESSION_SAVE_EVERY_REQUEST = env.get("session_save_every_request", True)
-SESSION_COOKIE_HTTPONLY = SESSION_COOKIE_HTTPONLY = env.get("session_cookie_httponly", True)
-SESSION_COOKIE_SECURE = env.get("session_cookie_secure", PRODUCTION)
-SESSION_COOKIE_NAME = env.get("session_cookie_name", "ccg_{0}".format(SCRIPT_NAME.replace("/", "")))
-SESSION_COOKIE_DOMAIN = env.get("session_cookie_domain", "") or None
-CSRF_USE_SESIONS = True
+
 
 LANGUAGE_CODE = env.get("language_code", 'en-us')
 USE_I18N = env.get("use_i18n", True)
@@ -99,20 +100,7 @@ SITE_ID = 1
 # If you set this to False, Django will not use timezone-aware datetimes.
 USE_TZ = True
 
-# URL that handles the media served from MEDIA_ROOT. Make sure to use a
-# trailing slash.
-MEDIA_ROOT = env.get('media_root', os.path.join(WEBAPP_ROOT, 'static', 'media'))
-MEDIA_URL = ''
 
-# These may be overridden, but it would be nice to stick to this convention
-STATIC_ROOT = env.get('static_root', os.path.join(WEBAPP_ROOT, 'static'))
-STATIC_URL = '{0}/static/'.format(SCRIPT_NAME)
-STATIC_SERVER_PATH = STATIC_ROOT
-
-BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
-BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
-OTU_EXPORT_PATH = env.get('otu_export_path', '/data/otu-export/')
-OTU_EXPORT_URL = env.get('otu_export_url', STATIC_URL)
 
 STATICFILES_DIRS = [
     # FIXME. This is almost certainly wrong, and should be handled by MEDIA_ROOT
@@ -134,6 +122,8 @@ STATICFILES_DIRS = [
     OTU_EXPORT_PATH,
 ]
 
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -142,7 +132,8 @@ MIDDLEWARE = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.locale.LocaleMiddleware')
+    'django.middleware.locale.LocaleMiddleware',
+)
 
 TEMPLATES = [
     {
@@ -178,64 +169,73 @@ TEMPLATES = [
             "lstrip_blocks": True
         }
      }
-
 ]
-
 
 ROOT_URLCONF = 'bpaotu.urls'
 
-INSTALLED_APPS = ('django.contrib.auth',
-                  'django.contrib.contenttypes',
-                  'django.contrib.humanize',
-                  'django.contrib.sessions',
-                  'django.contrib.sites',
-                  'django.contrib.messages',
-                  'django.contrib.staticfiles',
-                  'django.contrib.gis', # FIXME used?
-                  'django_extensions',
-                  'django.contrib.admin',
-                  'django.contrib.admindocs',
-                  'suit',
-                  'bpaotu',
-                  )
+INSTALLED_APPS = (
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.humanize',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'django_extensions',
+    'django.contrib.admin',
+    'django.contrib.admindocs',
+    'suit',
+    'bpaotu',
+    'bpaotu.auth_app',
+)
 
-if env.get("DEBUG_TOOLBAR", False):
-    INSTALLED_APPS += ('debug_toolbar', )
-    MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
-    INTERNAL_IPS = ('127.0.0.1',
-                    '172.16.2.189', )  # explicitly set this for your environment
+# This is here to placate the new system check framework, its also set in testsettings, where it belongs
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+###
+###
+###
+
+# Enable integration with BioCommons Access authentication (specific to the Bioplatforms data portal)
+ENABLE_AUTH = env.get('enable_auth', True)
+
+## Auth0 OIDC Configuration
+OAUTH_DOMAIN = env.get("oauth_domain", "")
+OAUTH_CLIENT_ID = env.get("oauth_client_id", "")
+OAUTH_CLIENT_SECRET = env.get("oauth_client_secret", "")
+OAUTH_AM_ORGANISATION = env.get("oauth_am_organisation", "australian-microbiome")
+OAUTH_CALLBACK_REDIRECT_URI = env.get("oauth_callback_redirect_uri", "")
+OAUTH_LOGOUT_REDIRECT_URI = env.get("oauth_logout_redirect_uri", "")
+OAUTH_FRONTEND_URL = env.get("oauth_frontend_url", "")
+OAUTH_CHECK_AUTH_URL = env.get('oauth_check_auth_url', '/oidc/check-auth')
+OAUTH_USER_INFO_URL = env.get('oauth_user_info_url', '/oidc/user-info')
+OAUTH_REGISTER_ACCESS_URL = env.get('oauth_register_access_url', "https://portal.access.services.biocommons.org.au/register",)
+
+#TEMP
+SKIP_SESSION_STATE_CHECK = env.get('skip_session_state_check', False)
 
 # downloads URL
 DEFAULT_PAGINATION = 50
-
-# This honours the X-Forwarded-Host header set by our nginx frontend when
-# constructing redirect URLS.
-USE_X_FORWARDED_HOST = env.get("use_x_forwarded_host", True)
-
-
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-
-CHMOD_USER = env.get("repo_user", "apache")
-CHMOD_GROUP = env.get("repo_group", "apache")
-
-# this is here to placate the new system check framework, its also set in testsettings,
-# where it belongs
-TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # ingest all
 DOWNLOADS_CHECKER_USER = env.get('downloads_checker_user', 'downloads_checker') # FIXME used?
 DOWNLOADS_CHECKER_PASS = env.get('downloads_checker_pass', 'ch3ck3r')
 DOWNLOADS_CHECKER_SLEEP = env.get('downloads_checker_sleep', 0.0)
 
-# enable integration with CKAN authentication (specific to the Bioplatforms data portal)
-CKAN_ENABLE_AUTH = env.get('ckan_enable_auth', True)
+# Ingest
+BPAOTU_TMP_DIR = '/var/tmp' # For large temporary files
 
-CKAN_CHECK_PERMISSIONS_URL = env.get('ckan_check_permissions_url', '/user/private/api/bpa/check_permissions')
+BPAOTU_MISSING_VALUE_SENTINEL = -9999  # Missing values in sample contextual data.
+# See "Confirmed missing value" in
+# https://github.com/AusMicrobiome/contextualdb_doc/blob/main/db_schema_definitions/db_schema_definitions.xlsx
+
+BPAOTU_SCIENTIFIC_MANUAL_URL = "https://research.csiro.au/ambsm/"
+
+BPAOTU_MAP_CENTRE_LONGITUDE = 133.775
 
 # email to use in development when CKAN auth integration is enabled
 CKAN_DEVELOPMENT_USER_EMAIL = env.get('ckan_devel_user_email', 'dev@bioplatforms.com')
 
-CKAN_AUTH_TOKEN_HEADER_NAME = env.get('ckan_auth_token_header_name', 'HTTP_X_BPAOTU_CKAN_TOKEN')
 
 GALAXY_BASE_URL = env.get('galaxy_base_url', 'https://galaxy-aust-dev.genome.edu.au')
 # This will fail late, only when the user is trying to submit workflows to galaxy
@@ -243,8 +243,8 @@ GALAXY_BASE_URL = env.get('galaxy_base_url', 'https://galaxy-aust-dev.genome.edu
 GALAXY_ADMIN_USER_API_KEY = env.get('galaxy_admin_user_api_key', '')
 GALAXY_INTEGRATION = GALAXY_ADMIN_USER_API_KEY != ''
 GALAXY_KRONA_WORKFLOW_ID = env.get('galaxy_krona_workflow_id', 'bf002aa8f96f4e7b')
-METAGENOME_REQUEST_EMAIL = env.get('metagenome_request_email', 'am-data-requests@bioplatforms.com')
 
+# UI
 DEFAULT_AMPLICON = env.get('DEFAULT_AMPLICON', '27f519r_bacteria')
 DEFAULT_TAXONOMIES = [
     # In priority order. Uses first available match as default for taxonomy selector.
