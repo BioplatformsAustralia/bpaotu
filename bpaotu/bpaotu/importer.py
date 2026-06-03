@@ -53,6 +53,23 @@ from .sample_meta import update_from_ckan
 logger = logging.getLogger("importer")
 
 
+
+# Prevent xlrd from using defusedxml
+# https://stackoverflow.com/a/65131301
+#
+# Otherwise when bpa-ingest calls xlrd.open_workbook() it throws this error:
+# AttributeError: 'ElementTree' object has no attribute 'getiterator'
+#
+# This happens in development because jupyter is installed in dev-requirements and it includes defusedxml via nbconvert
+# (It doesn't happen in production because jupyter is not installed in runtime-requirements, and defusedxml is not a dependency of anything else in runtime-requirements)
+if settings.DEBUG:
+    import xlrd
+    xlrd.xlsx.ensure_elementtree_imported(False, None)
+    xlrd.xlsx.Element_has_iter = True
+    logger.debug("xlrd monkeypatch applied to prevent defusedxml conflict")
+
+
+
 class DataImportError(Exception):
     pass
 
@@ -873,7 +890,7 @@ class DataImporter:
             batch = []
 
             for bintable_file in bintable_files:
-                logger.debug(f"Processing {bintable_file}")
+                # logger.debug(f"Processing {bintable_file}")
 
                 for row in self.iter_mags_bintable_rows(bintable_file):
                     batch.append(row)
@@ -970,7 +987,7 @@ class DataImporter:
         v2 = row[ks[1]]
 
         if v1 is None and v2 is None:
-            logger.warn(
+            logger.warning(
                 f"Missing {label} in row: "
                 f"'sample_id'={row['Sample ID']} 'MAG ID'={row['MAG ID']}"
             )
@@ -980,7 +997,7 @@ class DataImporter:
         if v in (None, "", "NA"):
             sample_id = r["Sample ID"]
             mag_id = r["MAG ID"]
-            logger.warn(f"Missing value in row: 'sample_id'={sample_id} 'MAG ID'={mag_id} for {key}")
+            logger.warning(f"Missing value in row: 'sample_id'={sample_id} 'MAG ID'={mag_id} for {key}")
             return None
         return int(v)
 
