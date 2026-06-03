@@ -53,23 +53,6 @@ from .sample_meta import update_from_ckan
 logger = logging.getLogger("importer")
 
 
-
-# Prevent xlrd from using defusedxml
-# https://stackoverflow.com/a/65131301
-#
-# Otherwise when bpa-ingest calls xlrd.open_workbook() it throws this error:
-# AttributeError: 'ElementTree' object has no attribute 'getiterator'
-#
-# This happens in development because jupyter is installed in dev-requirements and it includes defusedxml via nbconvert
-# (It doesn't happen in production because jupyter is not installed in runtime-requirements, and defusedxml is not a dependency of anything else in runtime-requirements)
-if settings.DEBUG:
-    import xlrd
-    xlrd.xlsx.ensure_elementtree_imported(False, None)
-    xlrd.xlsx.Element_has_iter = True
-    logger.debug("xlrd monkeypatch applied to prevent defusedxml conflict")
-
-
-
 class DataImportError(Exception):
     pass
 
@@ -258,6 +241,20 @@ class DataImporter:
     ])
 
     def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True):
+        # Prevent xlrd from using defusedxml
+        # https://stackoverflow.com/a/65131301
+        #
+        # Otherwise when bpa-ingest calls xlrd.open_workbook() it throws this error:
+        # AttributeError: 'ElementTree' object has no attribute 'getiterator'
+        #
+        # This happens in development because jupyter is installed in dev-requirements and it includes defusedxml via nbconvert
+        # (It doesn't happen in production because jupyter is not installed in runtime-requirements, and defusedxml is not a dependency of anything else in runtime-requirements)
+        if settings.DEBUG:
+            import xlrd
+            xlrd.xlsx.ensure_elementtree_imported(False, None)
+            xlrd.xlsx.Element_has_iter = True
+            logger.debug("xlrd monkeypatch applied to prevent defusedxml conflict")
+
         self._engine = make_engine()
         self._create_extensions() # does this need to be after sessionmaker?
         self._session = sessionmaker(bind=self._engine)()
