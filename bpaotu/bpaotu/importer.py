@@ -54,6 +54,23 @@ from .sample_meta import update_from_ckan
 logger = logging.getLogger("bpaotu")
 
 
+
+# Prevent xlrd from using defusedxml
+# https://stackoverflow.com/a/65131301
+#
+# Otherwise when bpa-ingest calls xlrd.open_workbook() it throws this error:
+# AttributeError: 'ElementTree' object has no attribute 'getiterator'
+#
+# This happens in development because jupyter is installed in dev-requirements and it includes defusedxml via nbconvert
+# (It doesn't happen in production because jupyter is not installed in runtime-requirements, and defusedxml is not a dependency of anything else in runtime-requirements)
+if settings.DEBUG:
+    import xlrd
+    xlrd.xlsx.ensure_elementtree_imported(False, None)
+    xlrd.xlsx.Element_has_iter = True
+    logger.debug("xlrd monkeypatch applied to prevent defusedxml conflict")
+
+
+
 class DataImportError(Exception):
     pass
 
@@ -851,6 +868,146 @@ class DataImporter:
                         [getattr(Taxonomy, name) for name in taxonomy_key_id_names]
                     ).select_from(
                         Taxonomy.__table__.join(taxonomy_otu).join(OTU))))
+
+    def load_mags_bintable(self):
+        logger.info('Building mags bintable')
+
+        bintable_files = self.mags_bintable_files()
+        bintable_files_count = len(bintable_files)
+
+        logger.info(f"Found {bintable_files_count} .bintable files")
+
+        if bintable_files_count == 0:
+            logger.error(f'No bintable files found')
+            return
+
+        # Drop + recreate table to handle schema changes
+        MAG.__table__.drop(self._engine, checkfirst=True)
+        MAG.__table__.create(self._engine)
+
+        # Process each bintable file in batches
+        with self._engine.begin() as conn:
+            batch = []
+
+            for bintable_file in bintable_files:
+                # logger.debug(f"Processing {bintable_file}")
+
+                for row in self.iter_mags_bintable_rows(bintable_file):
+                    batch.append(row)
+
+                    if len(batch) >= 1000:
+                        conn.execute(insert(MAG), batch)
+                        batch.clear()
+
+            if batch:
+                conn.execute(insert(MAG), batch)
+
+        logger.info("Done building mags bintable")
+    
+    def mags_bintable_files(self):
+        mag_dir = os.path.join(self._import_base, "MAG")
+        logger.info(f"Searching for .bintable files in {mag_dir}")
+        return glob(os.path.join(mag_dir, "*.bintable"))
+
+    def iter_mags_bintable_rows(self, path):
+        with open(path, newline="") as fh:
+            delimiter = "\t"
+            reader = csv.DictReader(fh, delimiter=delimiter)
+
+            for r in reader:
+                self.validate_bintable_row(r)
+
+                tax_gtdb_domain = None
+                tax_gtdb_phylum = None
+                tax_gtdb_class = None
+                tax_gtdb_order = None
+                tax_gtdb_family = None
+                tax_gtdb_genus = None
+                tax_gtdb_species = None
+
+                for part in r["GTDB Tax"].split(";"):
+                    if part.startswith("d__"):
+                        tax_gtdb_domain = part
+                    elif part.startswith("p__"):
+                        tax_gtdb_phylum = part
+                    elif part.startswith("c__"):
+                        tax_gtdb_class = part
+                    elif part.startswith("o__"):
+                        tax_gtdb_order = part
+                    elif part.startswith("f__"):
+                        tax_gtdb_family = part
+                    elif part.startswith("g__"):
+                        tax_gtdb_genus = part
+                    elif part.startswith("s__"):
+                        tax_gtdb_species = part
+
+                # note that some fields have the sample_id in them
+                # and that this may be cleaned up in the future
+                yield {
+                    "mag_id": r["MAG ID"],
+                    "sample_id": r["Sample ID"],
+                    "method": r["Method"],
+                    "tax": r["Tax"] or None,
+                    "tax_16s": r["Tax 16S"] or None,
+                    "tax_gtdb": r["GTDB Tax"] or None,
+                    "tax_gtdb_domain": tax_gtdb_domain,
+                    "tax_gtdb_phylum": tax_gtdb_phylum,
+                    "tax_gtdb_class": tax_gtdb_class,
+                    "tax_gtdb_order": tax_gtdb_order,
+                    "tax_gtdb_family": tax_gtdb_family,
+                    "tax_gtdb_genus": tax_gtdb_genus,
+                    "tax_gtdb_species": tax_gtdb_species,
+                    "length": self.to_int(r, "Length"),
+                    "gc_perc": self.to_float(r, "GC perc"),
+                    "num_contigs": self.to_int(r, "Num contigs"),
+                    "disparity": self.to_float(r, "Disparity"),
+                    "strain_het": self.to_float(r, "Strain het"),
+                    "coverage": self.to_float(r, f"Coverage"),
+                    "tpm": self.to_float(r, f"TPM"),
+                    "quality_checkm": self.to_float(r, "CheckM Quality"),
+                    "quality_checkm2": self.to_float(r, "CheckM2 Quality"),
+                    "completeness_checkm": self.to_float(r, "CheckM Completeness"),
+                    "completeness_checkm2": self.to_float(r, "CheckM2 Completeness"),
+                    "contamination_checkm": self.to_float(r, "CheckM Contamination"),
+                    "contamination_checkm2": self.to_float(r, "CheckM2 Contamination"),
+                    "contig_n50_checkm2": self.to_float(r, "CheckM2 Contig_N50"),
+                }
+
+    # placeholder for validation
+    def validate_bintable_row(self, row):
+        self.warn_if_both_missing(row, "quality (CheckM & CheckM2)", ("CheckM Quality", "CheckM2 Quality"))
+        self.warn_if_both_missing(row, "completeness (CheckM & CheckM2)", ("CheckM Completeness", "CheckM2 Completeness"))
+        self.warn_if_both_missing(row, "contamination (CheckM & CheckM2)", ("CheckM Contamination", "CheckM2 Contamination"))
+
+        if False:
+            raise DataImportError(f"ERROR TEXT row={row}")
+
+    def warn_if_both_missing(self, row, label, ks):
+        v1 = row[ks[0]]
+        v2 = row[ks[1]]
+
+        if v1 is None and v2 is None:
+            logger.warning(
+                f"Missing {label} in row: "
+                f"'sample_id'={row['Sample ID']} 'MAG ID'={row['MAG ID']}"
+            )
+
+    def to_int(self, r, key):
+        v = r[key]
+        if v in (None, "", "NA"):
+            sample_id = r["Sample ID"]
+            mag_id = r["MAG ID"]
+            logger.warning(f"Missing value in row: 'sample_id'={sample_id} 'MAG ID'={mag_id} for {key}")
+            return None
+        return int(v)
+
+    def to_float(self, r, key):
+        v = r[key]
+        if v in (None, "", "NA"):
+            sample_id = r["Sample ID"]
+            mag_id = r["MAG ID"]
+            return None
+        return float(v)
 
     def refresh_otu_sample_otu(self):
         refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
