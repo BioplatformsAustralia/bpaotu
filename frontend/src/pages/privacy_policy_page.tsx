@@ -25,8 +25,8 @@ const PrivacyPolicyPage = () => {
 
       <ul>
         <li>
-          Visit our website at https://data.bioplatforms.com/bpa/otu, or any website of ours that
-          links to this privacy notice
+          Visit our website at https://data.bioplatforms.com/, or any website of ours that links to
+          this privacy notice
         </li>
         <li>Engage with us in other related ways, including any data requests</li>
       </ul>

@@ -19,6 +19,7 @@ data/
 
 .env
 .env_local
+.env_prod
 
 node_modules
 yarn-error.log
@@ -38,7 +39,9 @@ rds/
 temp/
 .nvmrc
 
+backup/
 backup_*/
 dbdata_*/
 krona/
 celerybeat-schedule.*
+certs/

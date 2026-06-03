@@ -1,0 +1,68 @@
+# This config only listens to http because it assumes that the frontend is behind a reverse proxy
+# (on the same physical machine as the container) that handles TLS termination.
+#
+# An example nginx reverse proxy config is provided in frontend/nginx/reverse-proxy.conf
+# Use mkcert to generate self-signed certs for testing the production deployment locally,
+# placing them in the location expected by the reverse proxy config
+
+server {
+  listen 80;
+  server_name _;
+
+  # Make the guard in the shared include evaluate to "bypass" so nothing is blocked in live
+  # (note: maintenance mode implementation has been removed for now, but this is a placeholder for when it is restored)
+  set $maintenance_bypass 1;
+
+  # Serve the React frontend (SPA)
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # Send OAuth endpoints to Django backend
+  # (this location block must be before SPA catch-all)
+  location /oidc/ {
+    proxy_pass ${UPSTREAM_URL};
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    # NEVER cache auth endpoints
+    add_header Cache-Control "no-store" always;
+  }
+
+  # Ingest log is served by Django
+  location = /ingest {
+    return 301 /ingest/;
+  }
+
+  location ^~ /ingest/ {
+    proxy_pass ${UPSTREAM_URL};
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+
+    add_header Cache-Control "no-store" always;
+
+    # DEBUG: prove nginx matched this block
+    add_header X-Debug-Ingest "hit-nginx-ingest-location" always;
+  }
+
+
+  # All app locations (single source of truth)
+  include /etc/nginx/conf.d/amotu.locations.snippet;
+
+  # SPA catch-all
+  location / {
+    try_files $uri /index.html;
+  }
+
+  error_page 404 /404.html;
+  location = /404.html {
+    internal;
+  }
+}

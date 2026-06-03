@@ -196,7 +196,7 @@ export const downloadDistanceMatrices = () => (dispatch, getState) => {
     last(state.searchPage.samplesComparisonModal.submissions)
   const lastSubmission = getLastSubmission()
 
-  getComparisonDistanceMatrices(lastSubmission.submissionId, state.auth.ckanAuthToken)
+  getComparisonDistanceMatrices(lastSubmission.submissionId)
 
   return state
 }

@@ -5,11 +5,11 @@ import json
 import logging
 
 from django.conf import settings
-from django.core.mail import send_mail
 from contextlib import suppress
 from urllib.parse import urljoin
 
 from .base_task_wrapper import BaseTaskWrapper
+from .mail import send_email
 from .params import param_to_filters
 from .submission import Submission
 from .tabular import tabular_zip_file_generator
@@ -54,17 +54,13 @@ class OtuExportWrapper(BaseTaskWrapper):
         return True
 
     def _notify(self, full_url, user_email):
-        # access the submission so we can change the status
-        submission = Submission(self._submission_id)
-
         try:
-            am_email ="Australian Microbiome Data Requests <{}>".format(settings.OTU_EXPORT_EMAIL)
             body = self._email_text(full_url)
 
-            send_mail(
+            send_email(
                 "Australian Microbiome: OTU Export Download Available",
                 body,
-                am_email, [user_email])
+                user_email)
 
         except Exception as e:
             logger.critical("Error sending notify email", exc_info=True)
@@ -73,8 +69,6 @@ class OtuExportWrapper(BaseTaskWrapper):
         return True
 
     def _email_text(self, full_url):
-        submission = Submission(self._submission_id)
-
         lines = [
             "Your search results are ready for download here:",
             full_url,

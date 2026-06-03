@@ -350,7 +350,6 @@ function mapStateToProps(state) {
     isLoading,
     sample_ids,
     error,
-    ckanAuthToken: state.auth.ckanAuthToken,
     describeSearch: () => describeSearch(state),
   }
 }

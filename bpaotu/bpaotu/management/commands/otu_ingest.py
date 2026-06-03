@@ -16,6 +16,5 @@ class Command(BaseCommand):
         importer = DataImporter(kwargs['base_dir'],
                                  kwargs['revision_date'], 
                                  kwargs['use_sql_context'], 
-                                 kwargs['no_force_fetch'],
-                                 notify_email = kwargs.get('notify_email'))
+                                 kwargs['no_force_fetch'])
         importer.run()

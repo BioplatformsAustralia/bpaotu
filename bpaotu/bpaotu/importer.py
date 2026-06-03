@@ -32,6 +32,7 @@ from sqlalchemy_utils import refresh_materialized_view
 
 from Bio import SeqIO
 
+from .mail import send_email
 from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon,
                   taxonomy_keys, taxonomy_key_id_names, rank_labels_lookup,
@@ -51,6 +52,23 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
 from .sample_meta import update_from_ckan
 
 logger = logging.getLogger("bpaotu")
+
+
+
+# Prevent xlrd from using defusedxml
+# https://stackoverflow.com/a/65131301
+#
+# Otherwise when bpa-ingest calls xlrd.open_workbook() it throws this error:
+# AttributeError: 'ElementTree' object has no attribute 'getiterator'
+#
+# This happens in development because jupyter is installed in dev-requirements and it includes defusedxml via nbconvert
+# (It doesn't happen in production because jupyter is not installed in runtime-requirements, and defusedxml is not a dependency of anything else in runtime-requirements)
+if settings.DEBUG:
+    import xlrd
+    xlrd.xlsx.ensure_elementtree_imported(False, None)
+    xlrd.xlsx.Element_has_iter = True
+    logger.debug("xlrd monkeypatch applied to prevent defusedxml conflict")
+
 
 
 class DataImportError(Exception):
@@ -93,7 +111,7 @@ def is_metaxa_otu(code):
 
 class FastaRowsIterator:
     hash_re = re.compile(r'^[a-fA-F0-9]{32}$') # md5
-    code_re = re.compile(r'^[GATC]+$')
+    code_re = re.compile(r'^[GATCN]+$')
 
     def __init__(self, fasta_files):
         self.fasta_files = tuple(fasta_files)
@@ -252,138 +270,64 @@ class DataImporter:
         self._force_fetch = force_fetch
         self._notify_email = notify_email or getattr(settings, 'INGEST_NOTIFY_EMAIL', None)
 
-        # these are used exclusively for reporting back to CSIRO on the state of the ingest
+        # These are used exclusively for reporting back to CSIRO on the state of the ingest
         self.sample_metadata_incomplete = set()
         self.sample_non_integer = set()
         self.sample_not_in_metadata = set()
 
         self.otu_invalid = set()
 
+        # We drop the whole schema and recreate it each time
+        # This is much simpler than trying to do an update / diff on the new ingest vs the old one
+        # and is not a problem because we are not trying to preserve any existing ingest data
+        #
+        # Note that things like metagenome requests and non-denoised data requests are stored in the public schema, so are not affected by this
         try:
             self._session.execute(DropSchema(SCHEMA, cascade=True))
         except sqlalchemy.exc.ProgrammingError:
             self._session.invalidate()
+
         self._session.execute(CreateSchema(SCHEMA))
         self._session.commit()
-        Base.metadata.create_all(self._engine)
+
+        # Partitioned tables cannot specify default tablespace in PostgreSQL.
+        # We temporarily clear the session's default_tablespace during table creation.
+        with self._engine.connect() as conn:
+            conn.execute("SET default_tablespace = ''")
+            try:
+                Base.metadata.create_all(conn)
+            finally:
+                conn.execute("RESET default_tablespace")
+
         self.ontology_init()
 
-    def _send_notification(self, success, total_time=None, error_message=None, phase_timings=None):
-        """Sends email notification about ingest completion or failure"""
-        if not self._notify_email:
-            return
-
-        try:
-            if success:
-                subject = f"[BPA-OTU] Data Ingest Completed Successfully - {total_time/60:.1f} minutes"
-                message = f"""
-Data ingest completed successfully
-
-Total time: {total_time:.2f} seconds ({total_time/60:.2f} minutes)
-
-Phase timings:
-{phase_timings if phase_timings else 'N/A'}
-
-Import directory: {self._import_base}
-Revision date: {self._revision_date}
-                """
-            else:
-                subject = "[BPA-OTU] Data Ingest Failed"
-                message = f"""
-Data ingest FAILED!
-
-Error: {error_message}
-
-Import directory: {self._import_base}
-Revision date: {self._revision_date}
-
-Check the logs for more details.
-                """
-
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@csiro.au'),
-                recipient_list=[self._notify_email],
-                fail_silently=True 
-            )
-            logger.info(f"Notification email sent to {self._notify_email}")
-        except Exception as e:
-            logger.warning(f"Failed to send notification email: {e}")
+    def _run_phase(self, phase_func, phase_name, phase_desc, phase_timings):
+        start_time = time.time()
+        logger.info(f"{phase_desc}...")
+        phase_func()
+        elapsed = time.time() - start_time
+        phase_timings.append({"name": phase_name, "time": elapsed})
+        logger.info(f"Completed phase: {phase_name} in {elapsed:.2f} seconds")
 
     def run(self):
-        # Start total timer
-        logger.info("=" * 80)
-        logger.info("Starting data ingest")
-        logger.info("=" * 80)
-        start_time = time.time()
-        phase_timings = []
+        start_time, phase_timings = self._start_ingest()
 
         try:
-            # Load contextual metadata
-            load_start = time.time()
-            logger.info("Loading contextual metadata...")
-            self.load_contextual_metadata()
-            elapsed = time.time() - load_start
-            phase_timings.append(f"Contextual metadata: {elapsed:.2f}s")
-            logger.info(f"Loading contextual metadata completed in {time.time() - load_start:.2f} seconds")
-
-            # Load Taxonomies
-            load_start = time.time()
-            logger.info("Loading taxonomies...")
-            otu_lookup = self.load_taxonomies()
-            elapsed = time.time() - load_start
-            phase_timings.append(f"Taxonomies: {elapsed:.2f}s")
-            logger.info(f"Loading taxonomies completed in {time.time() - load_start:.2f} seconds")
-
-            # Load OTU Abundance
-            load_start = time.time()
-            logger.info("Loading OTU abundance...")
-            self.load_otu_abundance(otu_lookup)
-            elapsed = time.time() - load_start
-            phase_timings.append(f"OTU abundance: {elapsed:.2f}s")
-            logger.info(f"Loading OTU abundance completed in {time.time() - load_start:.2f} seconds")
-
-            # Load Taxonomy OTU
-            load_start = time.time()
-            logger.info("Loading taxonomy-OTU...")
-            self.load_taxonomy_otu()
-            elapsed = time.time() - load_start
-            phase_timings.append(f"Taxonomy-OTU: {elapsed:.2f}s")
-            logger.info(f"Loading taxonomy-OTU completed in {time.time() - load_start:.2f} seconds")
-
-            # Refresh Materialized View
-            load_start = time.time()
-            logger.info("Refreshing materialized view...")
-            refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
-            elapsed = time.time() - load_start
-            phase_timings.append(f"Materialized view: {elapsed:.2f}s")
-            logger.info(f"Refreshing materialized view completed in {time.time() - load_start:.2f} seconds")
-
-            # CKAN Update
-            load_start = time.time()
-            logger.info("Updating from CKAN...")
-            update_from_ckan()
-            elapsed = time.time() - load_start
-            phase_timings.append(f"CKAN update: {elapsed:.2f}s")
-            logger.info(f"Updating from CKAN completed in {time.time() - load_start:.2f} seconds")
-            
-            # Finalization
-            load_start = time.time()
-            logger.info("Finalizing...")
-            self.complete()
-            elapsed = time.time() - load_start
-            phase_timings.append(f"Finalization: {elapsed:.2f}s")
-            logger.info(f"Finalizing completed in {time.time() - load_start:.2f} seconds")
+            # Run each phase of the ingest, recording timings for reporting at the end
+            self._run_phase(self.load_contextual_metadata, "Contextual metadata", "Loading contextual metadata", phase_timings)
+            self._run_phase(self.load_taxonomies, "Taxonomies", "Loading taxonomies", phase_timings)
+            self._run_phase(self.load_otu_abundance, "OTU abundance tables", "Loading OTU abundance tables", phase_timings)
+            self._run_phase(self.load_taxonomy_otu, "taxonomy_otu_export", "Building taxonomy_otu_export", phase_timings)
+            self._run_phase(self.refresh_otu_sample_otu, "refresh_materialized_view", "Refreshing OTUSampleOTU", phase_timings)
+            self._run_phase(self.complete, "Finalising", "Finalising import", phase_timings)
+            self._run_phase(self.update_from_ckan, "CKAN update", "Updating from CKAN", phase_timings)
 
             # End total timer
-            total_time = time.time() - start_time
-            logger.info("=" * 80)
-            logger.info(f"Data ingest completed in {total_time:.2f} seconds ({total_time/60:.2f} minutes)")
-            logger.info("=" * 80)
+            total_time = self._end_ingest(start_time, phase_timings)
 
             # Send success notification
-            self._send_notification(success=True, total_time=total_time, phase_timings="\n".join(phase_timings))
+            formatted_timings = self._format_phase_timings(phase_timings)
+            self._send_notification(success=True, total_time=total_time, phase_timings=formatted_timings)
         
         except Exception as e:
             # Log error 
@@ -410,6 +354,8 @@ Check the logs for more details.
         self._session.commit()
 
     def complete(self):
+        logger.info("Writing import metadata and closing session...")
+
         def write_missing(attr):
             instance = ExcludedSamples(
                 reason=attr,
@@ -420,6 +366,11 @@ Check the logs for more details.
         write_missing("sample_metadata_incomplete")
         write_missing("sample_non_integer")
         write_missing("sample_not_in_metadata")
+
+        logger.info(f"Number of samples with incomplete metadata: {len(self.sample_metadata_incomplete)}")
+        logger.info(f"Number of samples with non-integer IDs: {len(self.sample_non_integer)}")
+        logger.info(f"Number of samples not in metadata: {len(self.sample_not_in_metadata)}")
+
         self._write_metadata()
         self._session.close()
         self._analyze()
@@ -525,23 +476,19 @@ Check the logs for more details.
             cur.close()
 
     def load_taxonomies(self):
-        # md5(otu code) -> otu ID, returned
+        # Use a database staging table for (otu_hash, amplicon_code) -> otu_id mapping.
+        # This avoids keeping the lookup in Python memory.
         taxonomy_fields = ( # field names must match field names in tmp_taxonomy_load below
-            ['id', 'amplicon_id', 'otu_id', 'traits'] +
+            ['id', 'amplicon_id', 'otu_hash', 'amplicon_code', 'otu_id', 'traits'] +
             taxonomy_key_id_names)
         ontologies = OrderedDict(
             tuple(zip(taxonomy_keys, taxonomy_ontology_classes)) +
             (('amplicon', OTUAmplicon),))
 
-
         fasta_rows_iter = FastaRowsIterator(
             self.fasta_files('*_seqs_listSET.fasta.gz'))
 
         logger.info("loading sequences - importing fasta file")
-
-        # key: (otu_hash, amplicon), value: otu_id
-        # so that same hash can exist for a different amplicon (same hash for same amplicon will cause an error)
-        otu_lookup = {}
 
         with tmp_csv_file() as (w_otu, otu_fd), tmp_csv_file() as (w_seq, seq_fd), tmp_csv_file() as (w_lookup, lookup_fd):
             logger.info("Writing OTU hashes to temporary CSV file {}".format(otu_fd.name))
@@ -553,9 +500,6 @@ Check the logs for more details.
             for (_id, row) in enumerate(fasta_rows_iter, 1):
                 w_otu.writerow([_id, row['otu_hash']])
                 w_seq.writerow([_id, row['sequence']])
-
-                # store in the in-memory lookup for finding otu.id from the otu hash in taxonomy files
-                otu_lookup[(row['otu_hash'], row['amplicon_code'])] = _id
                 w_lookup.writerow([_id, row['otu_hash'], row['amplicon_code']])
 
             logger.info(f"Loading OTU hash data from {otu_fd.name}")
@@ -564,7 +508,22 @@ Check the logs for more details.
             logger.info(f"Loading OTU sequences from {seq_fd.name}")
             self.load_from_csv("COPY sequence (id, seq) FROM STDIN CSV", seq_fd)
 
-            logger.info(f"Dumped OTU lookup to {lookup_fd.name}")
+            logger.info(f"Loading OTU lookup from {lookup_fd.name}")
+            with self._engine.begin() as conn:
+                conn.execute(text(
+                    f"CREATE TABLE {SCHEMA}.otu_hash_lookup ("
+                    "id integer NOT NULL PRIMARY KEY, "
+                    "code text NOT NULL, "
+                    "amplicon_code text NOT NULL)"
+                ))
+                conn.execute(text(
+                    f"CREATE INDEX ON {SCHEMA}.otu_hash_lookup (code, amplicon_code)"
+                ))
+                self.load_from_csv(
+                    f"COPY {SCHEMA}.otu_hash_lookup (id, code, amplicon_code) FROM STDIN CSV",
+                    lookup_fd, conn)
+
+        logger.info(f"Dumped OTU lookup to {lookup_fd.name}")
 
         # metaxa do not have sequences, just a SHA1 string that starts with mxa_
         # these need to be in the OTU table, but won't a corresponding record in the Sequence table
@@ -608,31 +567,15 @@ Check the logs for more details.
             for (_id, row) in enumerate(taxonomy_rows_iter, 1):
                 otu_hash = row['otu']
                 amplicon_code = row.get('amplicon_code', '')
-                otu_id = otu_lookup.get((otu_hash, amplicon_code))
-
-                if otu_id is None:
-                    # metaxa OTUs
-                    if is_metaxa_otu(otu_hash):
-                        # insert row into otu and get the id assigned by db and store in otu_id
-                        with self._engine.begin() as conn:
-                            result = conn.execute(
-                                insert(OTU)
-                                .values(code=otu_hash)
-                                .returning(OTU.id)
-                            )
-                            otu_id = result.scalar()
-
-                        # store it in the lookup so we don’t insert the same OTU twice
-                        otu_lookup[(otu_hash, amplicon_code)] = otu_id
-                    else:
-                        raise DataImportError(f"Unknown OTU hash: {otu_hash}; full row: {row}")
 
                 amplicon = row.get('amplicon', '')
                 amplicon_id = mappings.get('amplicon').get(amplicon, "") # should not be NULL (will cause an error)
 
                 taxonomy_row = [_id,
                                 amplicon_id,
-                                otu_id,
+                                otu_hash,
+                                amplicon_code,
+                                "",
                                 row['traits']] + [
                     mappings.get(field).get(row.get(field, ''), "")
                     for field in taxonomy_keys]
@@ -653,7 +596,9 @@ Check the logs for more details.
                     "tmp_taxonomy_load", tmp_metadata,
                     Column("id", Integer, nullable=False, primary_key=True),
                     Column("amplicon_id", Integer, nullable=False),
-                    Column("otu_id", Integer, nullable=False),
+                    Column("otu_hash", String, nullable=False),
+                    Column("amplicon_code", String, nullable=False),
+                    Column("otu_id", Integer),
                     Column('traits', ARRAY(String)),
                     *rank_columns,
                     prefixes=['TEMPORARY']
@@ -663,6 +608,38 @@ Check the logs for more details.
                 self.load_from_csv("COPY tmp_taxonomy_load (" +
                                 ",".join(taxonomy_fields) +
                                 ") FROM STDIN CSV", tax_fd, conn)
+
+                logger.info("Resolving OTU ids in taxonomy staging table")
+                conn.execute(text(
+                    f"UPDATE tmp_taxonomy_load AS t "
+                    f"SET otu_id = l.id "
+                    f"FROM {SCHEMA}.otu_hash_lookup AS l "
+                    f"WHERE t.otu_hash = l.code "
+                    f"AND t.amplicon_code = l.amplicon_code"
+                ))
+
+                logger.info("Inserting missing metaxa OTUs")
+                conn.execute(text(
+                    f"INSERT INTO {SCHEMA}.otu (code) "
+                    f"SELECT DISTINCT t.otu_hash "
+                    f"FROM tmp_taxonomy_load t "
+                    f"WHERE t.otu_id IS NULL AND t.otu_hash LIKE 'mxa_%'"
+                ))
+
+                conn.execute(text(
+                    "UPDATE tmp_taxonomy_load AS t "
+                    f"SET otu_id = o.id "
+                    f"FROM {SCHEMA}.otu AS o "
+                    f"WHERE t.otu_id IS NULL AND t.otu_hash = o.code"
+                ))
+
+                null_count = conn.execute(text(
+                    "SELECT COUNT(*) FROM tmp_taxonomy_load WHERE otu_id IS NULL"
+                )).scalar()
+                if null_count:
+                    raise DataImportError(
+                        f"Unknown OTU hashes in taxonomy data: {null_count} rows could not be resolved")
+
                 # Build Taxonomy() from unique taxonomies + amplicon + traits in
                 # tmp_taxonomy_load
                 sel = select(
@@ -691,8 +668,6 @@ Check the logs for more details.
 
         for fname, info in taxonomy_rows_iter.taxonomy_file_info.items():
             self.make_file_log(fname, **info)
-
-        return otu_lookup
 
     def save_ontology_errors(self, environment_ontology_errors):
         if environment_ontology_errors is None:
@@ -761,7 +736,7 @@ Check the logs for more details.
         # check whether or not we are using all the fields to assist us when
         # updating the code for new versions of the source spreadsheet
         utilised_fields = set()
-        logger.info("loading contextual metadata")
+        logger.info("loading contextual metadata from bpa-ingest")
         metadata = self.contextual_rows(AccessAMDContextualMetadata, name='amd-metadata')
         logger.info("loading sample context ontologies")
         mappings = self._load_ontology(DataImporter.amd_ontologies, metadata)
@@ -798,7 +773,7 @@ Check the logs for more details.
             logger.error(f'Missing "{version_file}" file. Analysis Version and URL will not be added.')
         self._methodology = f"{__package__}_{__version__}__analysis_{analysis_version}__{db_file}__{source_tar}"
 
-    def _otu_abundance_rows(self, fd, amplicon_code, otu_lookup):
+    def _otu_abundance_rows(self, fd, amplicon_code):
         reader = csv.reader(fd, dialect='excel-tab')
         header = [name.lower() for name in next(reader)]
         expected = ["#otu id", "sample_only", "abundance", "abundance_20k"]
@@ -824,29 +799,24 @@ Check the logs for more details.
                         self.sample_non_integer.add(sample_id)
                     continue
 
-            otu_id = otu_lookup.get((otu_hash, amplicon_code))
-            if not otu_id:
-                continue
             # Note that an unquoted empty string means NULL to psql COPY. See below
-            yield otu_id, sample_id, int_count, count_20k
+            yield otu_hash, sample_id, int_count, count_20k
 
-    def load_otu_abundance(self, otu_lookup):
+    def load_otu_abundance(self):
         def _make_sample_otus(fname, amplicon_code, present_sample_ids):
             with gzip.open(fname, 'rt') as fd:
-                tuple_rows = self._otu_abundance_rows(fd, amplicon_code, otu_lookup)
+                tuple_rows = self._otu_abundance_rows(fd, amplicon_code)
                 rows_skipped = 0
-                for entry, (otu_id, sample_id, count, count_20k) in enumerate(tuple_rows):
+                for entry, (otu_hash, sample_id, count, count_20k) in enumerate(tuple_rows):
                     if sample_id not in present_sample_ids:
                         if sample_id not in self.sample_metadata_incomplete \
                                 and sample_id not in self.sample_non_integer:
                             self.sample_not_in_metadata.add(sample_id)
                         rows_skipped += 1
                         continue
-                    yield (sample_id, otu_id, count, count_20k)
+                    yield (sample_id, otu_hash, amplicon_code, count, count_20k)
                 self.make_file_log(
                     fname, file_type='Abundance', rows_imported=(entry + 1), rows_skipped=rows_skipped)
-
-        logger.info('Loading OTU abundance tables')
 
         present_sample_ids = set([t[0] for t in self._session.query(SampleContext.id)])
 
@@ -859,13 +829,36 @@ Check the logs for more details.
                 log_amplicon("writing out OTU abundance data to CSV tempfile: {}".format(fd.name))
                 w.writerows(_make_sample_otus(sampleotu_fname, amplicon_code, present_sample_ids))
                 log_amplicon("loading OTU abundance data into database")
-                # count_20k may be an unquoted empty string in the CSV file.
-                # COPY will interpret that as NULL by default. See
-                # https://www.postgresql.org/docs/current/sql-copy.html
-                self.load_from_csv("COPY otu.sample_otu (sample_id, otu_id, count, count_20k) FROM STDIN CSV", fd)
+                with self._engine.begin() as conn:
+                    conn.execute(text("DROP TABLE IF EXISTS tmp_sample_otu_load"))
+                    tmp_metadata = MetaData()
+                    temp_table = Table(
+                        "tmp_sample_otu_load", tmp_metadata,
+                        Column("sample_id", String, nullable=False),
+                        Column("otu_hash", String, nullable=False),
+                        Column("amplicon_code", String, nullable=False),
+                        Column("count", Integer, nullable=False),
+                        Column("count_20k", String),
+                        prefixes=['TEMPORARY']
+                    )
+                    temp_table.create(conn)
+                    logger.info("Loading OTU abundance staging data from {}".format(fd.name))
+                    self.load_from_csv(
+                        "COPY tmp_sample_otu_load (sample_id, otu_hash, amplicon_code, count, count_20k) FROM STDIN CSV",
+                        fd, conn)
+                    logger.info("Resolving OTU IDs for abundance data")
+                    conn.execute(text(
+                        f"INSERT INTO {SCHEMA}.sample_otu (sample_id, otu_id, count, count_20k) "
+                        "SELECT s.sample_id, l.id, s.count, NULLIF(s.count_20k, '')::integer "
+                        "FROM tmp_sample_otu_load AS s "
+                        f"JOIN {SCHEMA}.otu_hash_lookup AS l "
+                        "ON s.otu_hash = l.code AND s.amplicon_code = l.amplicon_code"
+                    ))
+
+        with self._engine.begin() as conn:
+            conn.execute(text(f"DROP TABLE IF EXISTS {SCHEMA}.otu_hash_lookup"))
 
     def load_taxonomy_otu(self):
-        logger.info('Building taxonomy_otu_export')
         with self._engine.begin() as conn:
             conn.execute(
                 insert(taxonomy_otu_export).from_select(
@@ -875,3 +868,265 @@ Check the logs for more details.
                         [getattr(Taxonomy, name) for name in taxonomy_key_id_names]
                     ).select_from(
                         Taxonomy.__table__.join(taxonomy_otu).join(OTU))))
+
+    def load_mags_bintable(self):
+        logger.info('Building mags bintable')
+
+        bintable_files = self.mags_bintable_files()
+        bintable_files_count = len(bintable_files)
+
+        logger.info(f"Found {bintable_files_count} .bintable files")
+
+        if bintable_files_count == 0:
+            logger.error(f'No bintable files found')
+            return
+
+        # Drop + recreate table to handle schema changes
+        MAG.__table__.drop(self._engine, checkfirst=True)
+        MAG.__table__.create(self._engine)
+
+        # Process each bintable file in batches
+        with self._engine.begin() as conn:
+            batch = []
+
+            for bintable_file in bintable_files:
+                # logger.debug(f"Processing {bintable_file}")
+
+                for row in self.iter_mags_bintable_rows(bintable_file):
+                    batch.append(row)
+
+                    if len(batch) >= 1000:
+                        conn.execute(insert(MAG), batch)
+                        batch.clear()
+
+            if batch:
+                conn.execute(insert(MAG), batch)
+
+        logger.info("Done building mags bintable")
+    
+    def mags_bintable_files(self):
+        mag_dir = os.path.join(self._import_base, "MAG")
+        logger.info(f"Searching for .bintable files in {mag_dir}")
+        return glob(os.path.join(mag_dir, "*.bintable"))
+
+    def iter_mags_bintable_rows(self, path):
+        with open(path, newline="") as fh:
+            delimiter = "\t"
+            reader = csv.DictReader(fh, delimiter=delimiter)
+
+            for r in reader:
+                self.validate_bintable_row(r)
+
+                tax_gtdb_domain = None
+                tax_gtdb_phylum = None
+                tax_gtdb_class = None
+                tax_gtdb_order = None
+                tax_gtdb_family = None
+                tax_gtdb_genus = None
+                tax_gtdb_species = None
+
+                for part in r["GTDB Tax"].split(";"):
+                    if part.startswith("d__"):
+                        tax_gtdb_domain = part
+                    elif part.startswith("p__"):
+                        tax_gtdb_phylum = part
+                    elif part.startswith("c__"):
+                        tax_gtdb_class = part
+                    elif part.startswith("o__"):
+                        tax_gtdb_order = part
+                    elif part.startswith("f__"):
+                        tax_gtdb_family = part
+                    elif part.startswith("g__"):
+                        tax_gtdb_genus = part
+                    elif part.startswith("s__"):
+                        tax_gtdb_species = part
+
+                # note that some fields have the sample_id in them
+                # and that this may be cleaned up in the future
+                yield {
+                    "mag_id": r["MAG ID"],
+                    "sample_id": r["Sample ID"],
+                    "method": r["Method"],
+                    "tax": r["Tax"] or None,
+                    "tax_16s": r["Tax 16S"] or None,
+                    "tax_gtdb": r["GTDB Tax"] or None,
+                    "tax_gtdb_domain": tax_gtdb_domain,
+                    "tax_gtdb_phylum": tax_gtdb_phylum,
+                    "tax_gtdb_class": tax_gtdb_class,
+                    "tax_gtdb_order": tax_gtdb_order,
+                    "tax_gtdb_family": tax_gtdb_family,
+                    "tax_gtdb_genus": tax_gtdb_genus,
+                    "tax_gtdb_species": tax_gtdb_species,
+                    "length": self.to_int(r, "Length"),
+                    "gc_perc": self.to_float(r, "GC perc"),
+                    "num_contigs": self.to_int(r, "Num contigs"),
+                    "disparity": self.to_float(r, "Disparity"),
+                    "strain_het": self.to_float(r, "Strain het"),
+                    "coverage": self.to_float(r, f"Coverage"),
+                    "tpm": self.to_float(r, f"TPM"),
+                    "quality_checkm": self.to_float(r, "CheckM Quality"),
+                    "quality_checkm2": self.to_float(r, "CheckM2 Quality"),
+                    "completeness_checkm": self.to_float(r, "CheckM Completeness"),
+                    "completeness_checkm2": self.to_float(r, "CheckM2 Completeness"),
+                    "contamination_checkm": self.to_float(r, "CheckM Contamination"),
+                    "contamination_checkm2": self.to_float(r, "CheckM2 Contamination"),
+                    "contig_n50_checkm2": self.to_float(r, "CheckM2 Contig_N50"),
+                }
+
+    # placeholder for validation
+    def validate_bintable_row(self, row):
+        self.warn_if_both_missing(row, "quality (CheckM & CheckM2)", ("CheckM Quality", "CheckM2 Quality"))
+        self.warn_if_both_missing(row, "completeness (CheckM & CheckM2)", ("CheckM Completeness", "CheckM2 Completeness"))
+        self.warn_if_both_missing(row, "contamination (CheckM & CheckM2)", ("CheckM Contamination", "CheckM2 Contamination"))
+
+        if False:
+            raise DataImportError(f"ERROR TEXT row={row}")
+
+    def warn_if_both_missing(self, row, label, ks):
+        v1 = row[ks[0]]
+        v2 = row[ks[1]]
+
+        if v1 is None and v2 is None:
+            logger.warning(
+                f"Missing {label} in row: "
+                f"'sample_id'={row['Sample ID']} 'MAG ID'={row['MAG ID']}"
+            )
+
+    def to_int(self, r, key):
+        v = r[key]
+        if v in (None, "", "NA"):
+            sample_id = r["Sample ID"]
+            mag_id = r["MAG ID"]
+            logger.warning(f"Missing value in row: 'sample_id'={sample_id} 'MAG ID'={mag_id} for {key}")
+            return None
+        return int(v)
+
+    def to_float(self, r, key):
+        v = r[key]
+        if v in (None, "", "NA"):
+            sample_id = r["Sample ID"]
+            mag_id = r["MAG ID"]
+            return None
+        return float(v)
+
+    def refresh_otu_sample_otu(self):
+        refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
+
+    def update_from_ckan(self):
+        update_from_ckan()
+
+    def _format_time_with_minutes(self, seconds):
+        """Format time in seconds, adding minutes/seconds if >= 60 seconds."""
+        time_str = f"{seconds:.2f}s"
+        if seconds >= 60:
+            minutes = int(seconds // 60)
+            secs = int(seconds % 60)
+            time_str += f" ({minutes}min {secs}sec)"
+        return time_str
+
+    def _format_phase_timings(self, phase_timings):
+        """Format phase timings with aligned names and decimal-aligned times with hyphen bullets."""
+        if not phase_timings:
+            return ""
+        
+        # Find max name length and max integer part width
+        max_name_length = max(len(entry['name']) for entry in phase_timings)
+        max_int_width = 0
+        for entry in phase_timings:
+            time_str = f"{entry['time']:.1f}"
+            int_part = time_str.split('.')[0]
+            max_int_width = max(max_int_width, len(int_part))
+
+        # Find max widths for minute/second suffix alignment
+        max_min_width = 0
+        max_sec_width = 0
+        for entry in phase_timings:
+            if entry['time'] >= 60:
+                minutes = int(entry['time'] // 60)
+                secs = int(entry['time'] % 60)
+                max_min_width = max(max_min_width, len(str(minutes)))
+                max_sec_width = max(max_sec_width, len(str(secs)))
+        
+        lines = []
+        for entry in phase_timings:
+            padded_name = entry['name'].ljust(max_name_length)
+
+            time_str = f"{entry['time']:.1f}"
+            int_part, decimal_part = time_str.split('.')
+            padded_int = int_part.rjust(max_int_width)
+
+            suffix = ""
+            if entry['time'] >= 60:
+                minutes = int(entry['time'] // 60)
+                secs = int(entry['time'] % 60)
+                
+                padded_minutes = str(minutes).rjust(max_min_width)
+                padded_secs = str(secs).rjust(max_sec_width)
+                suffix = f" ({padded_minutes}min {padded_secs}sec)"
+
+            lines.append(f"- {padded_name}: {padded_int}.{decimal_part}s{suffix}")
+        
+        return "\n".join(lines)
+
+    def _start_ingest(self):
+        # Start total timer
+        logger.info("=" * 80)
+        logger.info("Starting data ingest")
+        logger.info("=" * 80)
+        start_time = time.time()
+        phase_timings = []
+
+        return start_time, phase_timings
+    
+    def _end_ingest(self, start_time, phase_timings):
+        total_time = time.time() - start_time
+        logger.info("=" * 80)
+        total_formatted = self._format_time_with_minutes(total_time)
+        logger.info(f"Data ingest completed in {total_formatted}")
+        logger.info("Phase timings:")
+        formatted = self._format_phase_timings(phase_timings)
+        for line in formatted.split('\n'):
+            logger.info(line)
+        logger.info("=" * 80)
+
+        return total_time
+
+    def _send_notification(self, success, total_time=None, error_message=None, phase_timings=None):
+        """Sends email notification about ingest completion or failure"""
+        if not settings.INGEST_NOTIFY_EMAIL:
+            return
+
+        try:
+            if success:
+                subject = f"[BPA-OTU] Data Ingest Completed Successfully - {total_time/60:.1f} minutes"
+                message = f"""
+Data ingest completed successfully
+
+Total time: {total_time:.1f} seconds ({total_time/60:.1f} minutes)
+
+Phase timings:
+{phase_timings if phase_timings else 'N/A'}
+
+Import directory: {self._import_base}
+Revision date: {self._revision_date}
+                """
+            else:
+                subject = "[BPA-OTU] Data Ingest Failed"
+                message = f"""
+Data ingest FAILED!
+
+Error: {error_message}
+
+Import directory: {self._import_base}
+Revision date: {self._revision_date}
+
+Check the logs for more details.
+                """
+
+            send_email(
+                subject=subject,
+                content=message,
+                to=settings.INGEST_NOTIFY_EMAIL,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to send notification email: {e}")

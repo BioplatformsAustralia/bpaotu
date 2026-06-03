@@ -3,7 +3,7 @@ import { get as _get, map, partial, join } from 'lodash'
 
 import { store } from 'index'
 import 'interfaces'
-import { ckanAuthInfoEnded } from 'reducers/auth'
+import { oauthCheckAuthEnded } from 'reducers/auth'
 import { taxonomy_keys } from 'app/constants'
 
 axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN'
@@ -11,14 +11,19 @@ axios.defaults.xsrfCookieName = 'csrftoken'
 
 axios.interceptors.response.use(null, (err) => {
   if (err.status === 403) {
-    store.dispatch(ckanAuthInfoEnded(new Error(err)))
+    // should this hit a refresh token endpoint?
+    // store.dispatch(oauthCheckAuthEnded(new Error(err)))
     return
   }
   return Promise.reject(err)
 })
 
-export function ckanAuthInfo() {
-  return axios.get(window.otu_search_config.ckan_check_permissions)
+export function oauthCheckAuth() {
+  return axios.get(window.otu_search_config.oauth_check_auth)
+}
+
+export function oauthUserInfo() {
+  return axios.get(window.otu_search_config.oauth_user_info)
 }
 
 export function getReferenceData() {
@@ -298,12 +303,13 @@ export function getComparisonSubmission(submissionId) {
   })
 }
 
-export function getComparisonDistanceMatrices(submissionId, ckanAuthToken) {
+export function getComparisonDistanceMatrices(submissionId) {
   const params = new URLSearchParams()
-  params.set('token', ckanAuthToken)
   params.set('submission_id', submissionId)
 
-  const url = `${window.otu_search_config.comparison_download_distance_matrices_endpoint}?${params.toString()}`
+  const url = `${
+    window.otu_search_config.comparison_download_distance_matrices_endpoint
+  }?${params.toString()}`
   window.open(url)
 }
 
