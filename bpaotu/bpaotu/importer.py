@@ -303,7 +303,7 @@ class DataImporter:
         phase_func()
         elapsed = time.time() - start_time
         phase_timings.append({"name": phase_name, "time": elapsed})
-        logger.info(f"Completed phase: {phase_name} in {elapsed:.2f} seconds")
+        logger.info(f"Completed phase: {phase_name} in {elapsed:.1f} seconds")
 
     def run(self):
         start_time, phase_timings = self._start_ingest()
