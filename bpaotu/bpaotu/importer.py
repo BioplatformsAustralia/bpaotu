@@ -1093,7 +1093,7 @@ class DataImporter:
 
     def _send_notification(self, success, total_time=None, error_message=None, phase_timings=None):
         """Sends email notification about ingest completion or failure"""
-        if not settings.INGEST_NOTIFY_EMAIL:
+        if not self._notify_email:
             return
 
         try:
@@ -1126,7 +1126,7 @@ Check the logs for more details.
             send_email(
                 subject=subject,
                 content=message,
-                to=settings.INGEST_NOTIFY_EMAIL,
+                to=self._notify_email,
             )
         except Exception as e:
             logger.warning(f"Failed to send notification email: {e}")

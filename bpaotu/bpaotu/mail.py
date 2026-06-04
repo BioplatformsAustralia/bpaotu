@@ -24,7 +24,7 @@ def send_email(subject, content, to, from_prefix=None):
 
     try:
         with smtplib.SMTP(settings.MAIL_SERVER_HOST, settings.MAIL_SERVER_PORT) as server:
-            server.send_message(msg)
+            server.send_message(msg, from_addr=settings.MAIL_FROM)
 
         logger.debug(f"Mail queued successfully to <{to}>: {subject}")
     except Exception as e:
