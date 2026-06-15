@@ -64,10 +64,16 @@ MEDIA_URL = ''
 
 ## EMAIL CONFIG
 
+EMAIL_BACKEND = env.get("BPAOTU_EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_SUBJECT_PREFIX = env.get("EMAIL_SUBJECT_PREFIX", '[Australian Microbiome]')
-MAIL_SERVER_HOST = env.get("MAIL_SERVER_HOST", "localhost")
-MAIL_SERVER_PORT = int(env.get("MAIL_SERVER_PORT", 25))
-MAIL_FROM = env.get("MAIL_FROM", "noreply@noreply.csiro.au")
+EMAIL_HOST = env.get("MAIL_SERVER_HOST", "localhost")
+EMAIL_PORT = int(env.get("MAIL_SERVER_PORT", 25))
+DEFAULT_FROM_EMAIL = env.get("MAIL_FROM", "noreply@noreply.csiro.au")
+
+# Legacy settings for backwards compatibility
+MAIL_SERVER_HOST = EMAIL_HOST
+MAIL_SERVER_PORT = EMAIL_PORT
+MAIL_FROM = DEFAULT_FROM_EMAIL
 
 INGEST_NOTIFY_EMAIL = env.get('ingest_notify_email', None)
 METAGENOME_REQUEST_EMAIL = env.get('metagenome_request_email', 'am-data-requests@bioplatforms.com')
