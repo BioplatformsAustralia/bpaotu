@@ -1010,7 +1010,13 @@ class DataImporter:
         return float(v)
 
     def refresh_otu_sample_otu(self):
-        refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
+        self._session.execute("SET work_mem = '256MB'")
+        self._session.execute("SET maintenance_work_mem = '512MB'")
+        try:
+            refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
+        finally:
+            self._session.execute("RESET work_mem")
+            self._session.execute("RESET maintenance_work_mem")
 
     def update_from_ckan(self):
         update_from_ckan()
