@@ -1,0 +1,2 @@
+# Run artifacts are local-only; commit the framework, not the results.
+results/

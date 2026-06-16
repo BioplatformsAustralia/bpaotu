@@ -14,7 +14,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         importer = DataImporter(kwargs['base_dir'],
-                                 kwargs['revision_date'], 
-                                 kwargs['use_sql_context'], 
-                                 kwargs['no_force_fetch'])
+                                 kwargs['revision_date'],
+                                 kwargs['use_sql_context'],
+                                 kwargs['no_force_fetch'],
+                                 kwargs['notify_email'])
         importer.run()
