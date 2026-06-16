@@ -1,55 +1,73 @@
 import axios from 'axios'
 import { createActions, handleActions } from 'redux-actions'
 
-import { ckanAuthInfo } from 'api'
+import { oauthCheckAuth } from 'api'
 
 import { handleSimpleAPIResponse } from 'reducers/utils'
 
-const { ckanAuthInfoStarted, ckanAuthInfoEnded } = createActions(
-  'CKAN_AUTH_INFO_STARTED',
-  'CKAN_AUTH_INFO_ENDED'
+const { oauthCheckAuthStarted, oauthCheckAuthEnded } = createActions(
+  'OAUTH_CHECK_AUTH_STARTED',
+  'OAUTH_CHECK_AUTH_ENDED'
 )
 
-export { ckanAuthInfoStarted, ckanAuthInfoEnded }
+export { oauthCheckAuthStarted, oauthCheckAuthEnded }
 
-export const getCKANAuthInfo = () => (dispatch, getState) => {
-  dispatch(ckanAuthInfoStarted())
-  handleSimpleAPIResponse(dispatch, ckanAuthInfo, ckanAuthInfoEnded)
+export const doOauthCheckAuth = () => (dispatch, getState) => {
+  dispatch(oauthCheckAuthStarted())
+  handleSimpleAPIResponse(dispatch, oauthCheckAuth, oauthCheckAuthEnded)
 }
 
-const initialState: any = {
-  ckanAuthToken: null,
-  isLoginInProgress: false,
-  isLoggedIn: false,
+export type AuthenticationState = {
+  isAuthenticated: boolean
+  isLoginInProgress: boolean
+  email: string | null
+  organisations: string[] | null
+}
+
+const initialState: AuthenticationState = {
+  isAuthenticated: false,
+  isLoginInProgress: true,
   email: null,
+  organisations: null, // even if authenticated, need to check if user has access to this data product
 }
 
-export default handleActions(
+export default handleActions<AuthenticationState>(
   {
-    [ckanAuthInfoStarted as any]: (state: any, action: any) => {
+    [oauthCheckAuthStarted as any]: (state: any, action: any) => {
       return {
         ...state,
         isLoginInProgress: true,
       }
     },
-    [ckanAuthInfoEnded as any]: {
+    [oauthCheckAuthEnded as any]: {
       next: (state: any, action: any) => {
-        const ckanAuthToken = action.payload.data
-        const [, data] = ckanAuthToken.split('||')
-        const { email, organisations } = JSON.parse(data)
-        axios.defaults.headers = {
-          'X-BPAOTU-CKAN-Token': ckanAuthToken,
+        const authData = action.payload.data
+
+        // Check if user is authenticated via OAuth
+        if (!authData.authenticated) {
+          return {
+            ...initialState,
+            isLoginInProgress: false,
+          }
         }
+
+        // Set default headers for authenticated requests
+        axios.defaults.headers = {
+          'X-BPAOTU-Auth': 'oauth',
+        }
+
         return {
-          isLoginInProgess: false,
-          isLoggedIn: true,
-          ckanAuthToken,
-          email,
-          organisations,
+          isAuthenticated: true,
+          isLoginInProgress: false,
+          email: authData.email,
+          organisations: authData.organisations || [],
         }
       },
-      throw: (state, action) => {
-        return initialState
+      throw: () => {
+        return {
+          ...initialState,
+          isLoginInProgress: false,
+        }
       },
     },
   },

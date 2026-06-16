@@ -8,7 +8,6 @@ import { ExportDataButton } from 'components/export_data_button'
 import ContextualSearchResultsTable from './search_results_table'
 
 const SearchResultsCard = (props) => {
-  const ckanAuthToken = useSelector((state: any) => state.auth.ckanAuthToken)
   const { extraColumns, sorting } = useSelector((state: any) => ({
     extraColumns: reject(
       map(state.contextualPage.selectColumns.columns, (c) => c.name),
@@ -19,7 +18,6 @@ const SearchResultsCard = (props) => {
 
   const exportCSV = () => {
     const params = new URLSearchParams()
-    params.set('token', ckanAuthToken)
     params.set('otu_query', JSON.stringify(EmptyOTUQuery))
     params.set('columns', JSON.stringify(extraColumns))
     params.set('sorting', JSON.stringify(sorting))

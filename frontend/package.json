@@ -2,7 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://data.bioplatforms.com/bpa/otu",
+  "homepage": "https://data.bioplatforms.com/",
   "engines": {
     "node": "^v16.13.0"
   },
@@ -76,7 +76,10 @@
     "start": "BROWSER=none react-scripts start",
     "build": "react-scripts --max_old_space_size=4096 build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "container:yarn": "./scripts/container-yarn.sh",
+    "container:install": "npm run container:yarn -- install",
+    "container:add": "npm run container:yarn -- add"
   },
   "eslintConfig": {
     "extends": "react-app"
