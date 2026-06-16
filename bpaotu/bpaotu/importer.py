@@ -265,7 +265,6 @@ class DataImporter:
         self._revision_date = revision_date
         self._has_sql_context = has_sql_context
         self._force_fetch = force_fetch
-        self._notify_email = notify_email or getattr(settings, 'INGEST_NOTIFY_EMAIL', None)
 
     def prep(self):
         # These are used exclusively for reporting back to CSIRO on the state of the ingest
