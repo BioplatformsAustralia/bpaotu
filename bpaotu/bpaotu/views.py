@@ -1307,7 +1307,7 @@ def contextual_csv_download_endpoint(request):
 # MAGs tab ------------------------------------------------------------------ #
 # --------------------------------------------------------------------------- #
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def mags(request):
     """
@@ -1400,7 +1400,7 @@ def download_mag(request):
 
     return response
 
-@require_CKAN_auth
+@require_oauth
 @require_GET
 def mags_sample_count(request):
     sample_id = request.GET.get('sample_id')
