@@ -849,11 +849,11 @@ class DataImporter:
                         prefixes=['TEMPORARY']
                     )
                     temp_table.create(conn)
-                    logger.info("Loading OTU abundance staging data from {}".format(fd.name))
+                    log_amplicon("Loading OTU abundance staging data from {}".format(fd.name))
                     self.load_from_csv(
                         "COPY tmp_sample_otu_load (sample_id, otu_hash, amplicon_code, count, count_20k) FROM STDIN CSV",
                         fd, conn)
-                    logger.info("Resolving OTU IDs for abundance data")
+                    log_amplicon("Resolving OTU IDs for abundance data")
                     conn.execute(text(
                         f"INSERT INTO {SCHEMA}.sample_otu (sample_id, otu_id, count, count_20k) "
                         "SELECT s.sample_id, l.id, s.count, NULLIF(s.count_20k, '')::integer "
