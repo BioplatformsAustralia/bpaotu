@@ -404,6 +404,7 @@ class DataImporter:
         logger.info("Completed ingest: vacuum analyze")
 
     def _build_ontology(self, db_class, vals):
+        logger.debug(f" build ontology: {db_class}")
         for val in sorted(vals):
             # this option is defined at import init
             if val == '':
@@ -411,6 +412,8 @@ class DataImporter:
             instance = db_class(value=val)
             self._session.add(instance)
         self._session.commit()
+        logger.debug(f" build ontology: (committed)")
+
         return dict((t.value, t.id) for t in self._session.query(db_class).all())
 
     def _load_ontology(self, ontology_defn, row_iter):
@@ -550,10 +553,16 @@ class DataImporter:
             taxonomy_rows_iter)
         taxonomy_source_id_by_name = mappings['taxonomy_source']
         for obj in self._session.query(TaxonomySource).all():
+            logger.debug(f" TaxonomySource: {obj}")
             obj.hierarchy_type = taxonomy_rows_iter.hierarchy_type_by_source[obj.value]
         self._session.commit()
+        logger.debug(f"loading taxonomies - pass 1, committed")
 
         with self._engine.begin() as conn:
+            logger.debug(f"create partitions")
+            logger.debug(f"- table:  {taxonomy_otu_export.name}")
+            logger.debug(f"- values: {taxonomy_source_id_by_name.values()}")
+
             create_partitions(conn,
                 taxonomy_otu_export.name,
                 taxonomy_source_id_by_name.values())
