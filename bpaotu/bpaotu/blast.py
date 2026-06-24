@@ -249,46 +249,66 @@ class BlastWrapper(BaseTaskWrapper):
         import matplotlib.colors as mcolors
 
         self._log('info', 'Creating map of blast results')
+
+        self._log('debug', ' read_csv')
         df = pd.read_csv(blast_sample_results_file, usecols=['latitude', 'longitude', 'pident'])
 
+        self._log('debug', ' drop_duplicates')
         df_unique = df.drop_duplicates()
+        self._log('debug', ' sort_values')
         df_unique = df.sort_values('pident') # sorting values so high pindent values are plotted last, and not obscured by low values (not they obscure the high values)
 
         # Convert longitude from -180 to 180 range to 0 to 360 range
+        self._log('debug', ' convert longitude range')
         df_unique['longitude'] = df_unique['longitude'].apply(lambda x: x + 360 if x < 0 else x)
 
         # Get the min and max values for lat and lon, to set the map size
+        self._log('debug', ' get min/max lat/lon')
         min_lat, max_lat = df_unique['latitude'].min(), df_unique['latitude'].max()
         min_lon, max_lon = df_unique['longitude'].min(), df_unique['longitude'].max()
 
         # Normalize the pident values for coloring
+        self._log('debug', ' mcolors.Normalize')
         norm = mcolors.Normalize(vmin=df_unique['pident'].min(), vmax=df_unique['pident'].max())
+        self._log('debug', ' cmap')
         cmap = plt.cm.viridis
 
         # Create the fig, axes
+        self._log('debug', ' subplots')
         fig, ax = plt.subplots(figsize=(12, 8))
 
         # Create a Basemap instance, iith bluemarble background
+        self._log('debug', ' create Basemap')
         m = Basemap(projection='mill', llcrnrlat=min_lat-5, urcrnrlat=max_lat+5,
                     llcrnrlon=min_lon-5, urcrnrlon=max_lon+5, resolution='c')
 
+        self._log('debug', ' bluemarble')
         m.bluemarble()
 
-        # Plot each point point with color based on pident value
+        # Plot each point with color based on pident value
+        self._log('debug', ' plot points')
         x, y = m(df_unique['longitude'].values, df_unique['latitude'].values)
 
         # Set dot size based on longitudinal range
+        self._log('debug', ' _calculate_dot_size')
         range_lon = max_lon - min_lon
         dot_size = self._calculate_dot_size(range_lon)
+        self._log('debug', ' scatter')
         sc = m.scatter(x, y, s=dot_size, c=df_unique['pident'].values, cmap=cmap, norm=norm, marker='o', zorder=5)
 
         # colorbar and titles
+        self._log('debug', ' colorbar')
         cbar = m.colorbar(sc, location='right', pad='5%')
+        self._log('debug', ' pident')
         cbar.set_label('pident')
+        self._log('debug', ' title')
         plt.title('Locations of related sequences')
 
         # Save it and add to zipstream
+        self._log('debug', ' make filename')
         filename = self._in('blast_results_sample_map.png')
+        self._log('debug', filename)
+        self._log('debug', 'savefig')
         plt.savefig(filename, format='png', dpi=300, bbox_inches='tight')
 
         self._log('info', 'Finished creating map of blast results')
