@@ -242,7 +242,7 @@ LOGGING = {
             'formatter': 'color'
         },
         'file': {
-            'level': 'INFO',
+            'level': 'INFO', # note that file is fixed to have a lowest level of INFO
             'class': 'ccg_django_utils.loghandlers.ParentPathFileHandler',
             'filename': os.path.join(LOG_DIRECTORY, 'registry.log'),
             'when': 'midnight',

@@ -244,6 +244,8 @@ class BlastWrapper(BaseTaskWrapper):
     def _produce_map(self, blast_sample_results_file):
         # based on github.com/AusMicrobiome/Maps
 
+        import matplotlib
+        matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         from mpl_toolkits.basemap import Basemap
         import matplotlib.colors as mcolors
@@ -309,7 +311,8 @@ class BlastWrapper(BaseTaskWrapper):
         filename = self._in('blast_results_sample_map.png')
         self._log('debug', filename)
         self._log('debug', 'savefig')
-        plt.savefig(filename, format='png', dpi=300, bbox_inches='tight')
+        fig.savefig(filename, format='png', dpi=300, bbox_inches='tight')
+        plt.close(fig)
 
         self._log('info', 'Finished creating map of blast results')
 
