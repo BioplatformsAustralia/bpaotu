@@ -30,6 +30,7 @@ def _spatial_query(params):
     this code actually executes the query, wrapped with cache
     (see below)
     """
+    logging.debug("_spatial_query")
     with OntologyInfo() as info:
         def make_ontology_export(ontology_cls):
             values = dict(info.get_values(ontology_cls))
@@ -64,7 +65,20 @@ def _spatial_query(params):
 
         with SampleQuery(params) as query:
             sample_otus_all = []
-            sample_id_selected = []
+            result = defaultdict(lambda: defaultdict(dict))
+            selected_sample_ids = []
+            batch_size = 500
+
+            def add_samples_from_ids(sample_ids):
+                if not sample_ids:
+                    return
+                for sample in query.matching_selected_samples(sample_ids, SampleContext):
+                    longitude = rewrap_longitude(sample.longitude)
+                    latlng = result[(sample.latitude, longitude)]
+                    latlng['latitude'] = sample.latitude
+                    latlng['longitude'] = longitude
+                    latlng['bpa_data'][sample.id] = samples_contextual_data(sample)
+
             for latitude, longitude, sample_id, richness, count_20k in (
                     query.matching_sample_otus_groupby_lat_lng_id_20k().yield_per(50)):
                 sample_otus_all.append(
@@ -73,18 +87,12 @@ def _spatial_query(params):
                      sample_id,
                      richness,
                      count_20k])
-                sample_id_selected.append(sample_id)
+                selected_sample_ids.append(sample_id)
+                if len(selected_sample_ids) >= batch_size:
+                    add_samples_from_ids(selected_sample_ids)
+                    selected_sample_ids = []
 
-            result = defaultdict(lambda: defaultdict(dict))
-
-            # It's typically faster to accumulate the sample_ids above and then
-            # fetch the actual samples here.
-            for sample in query.matching_selected_samples(sample_id_selected, SampleContext):
-                longitude = rewrap_longitude(sample.longitude)
-                latlng = result[(sample.latitude, longitude)]
-                latlng['latitude'] = sample.latitude
-                latlng['longitude'] = longitude
-                latlng['bpa_data'][sample.id] = samples_contextual_data(sample)
+            add_samples_from_ids(selected_sample_ids)
 
             return list(result.values()), sample_otus_all
 
@@ -95,6 +103,7 @@ def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=False):
     note that there are some hard-coded workarounds (see below)
     which will need to be removed if this is to be used more generally
     """
+    logging.debug("spatial_query")
     cache = caches['search_results']
     key = make_cache_key(
         'spatial_query',
