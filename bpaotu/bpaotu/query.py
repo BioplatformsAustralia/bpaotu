@@ -564,7 +564,7 @@ class SampleQuery:
         # log_query(q)
         return self._q_all_cached('matching_sample_graph', q)
 
-    def matching_sample_headers(self, required_headers=None, sorting=()):
+    def _sample_headers_query(self, required_headers=None, sorting=()):
         query_headers = [SampleContext.id, SampleContext.am_environment_id]
         joins = []  # Keep track of any foreign ontology classes which may be needed to be joined to.
 
@@ -599,8 +599,25 @@ class SampleQuery:
                 q = q.order_by(query_headers[int(sort_col)].desc())
             else:
                 q = q.order_by(query_headers[int(sort_col)])
-        # log_query(q)
+
+        return q, query_headers
+
+    def matching_sample_headers(self, required_headers=None, sorting=()):
+        q, _ = self._sample_headers_query(required_headers, sorting)
         return self._q_all_cached('matching_sample_headers', q)
+
+    def count_matching_sample_headers(self, required_headers=None):
+        q, _ = self._sample_headers_query(required_headers, ())
+        q = q.order_by(None)
+        return q.count()
+
+    def page_matching_sample_headers(self, required_headers=None, sorting=(), start=0, length=10):
+        q, _ = self._sample_headers_query(required_headers, sorting)
+        if start is not None:
+            q = q.offset(start)
+        if length is not None:
+            q = q.limit(length)
+        return q.all()
 
     def matching_selected_samples(self, subq, *query_entities):
         q = self._session.query(*query_entities)

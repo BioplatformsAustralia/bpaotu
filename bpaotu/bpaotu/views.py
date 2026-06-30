@@ -280,8 +280,8 @@ def otu_search(request, contextual_filtering=True):
         except ValueError:
             return None
 
-    start = _int_get_param('start')
-    length = _int_get_param('length')
+    start = _int_get_param('start') or 0
+    length = _int_get_param('length') or 10
 
     additional_headers = json.loads(request.POST.get('columns', '[]'))
     all_headers = ['sample_id', 'environment'] + additional_headers
@@ -298,40 +298,32 @@ def otu_search(request, contextual_filtering=True):
             'rowsCount': 0,
         })
 
-    with SampleQuery(params) as query:
-        results = query.matching_sample_headers(additional_headers, sorting)
-
-    result_count = len(results)
-
     filtering_raw = request.POST.get('filtering', '[]')
     try:
-        filtering = json.loads(filtering_raw)
+        filtering = _parse_table_filtering(json.loads(filtering_raw), all_headers)
     except json.JSONDecodeError:
         filtering = []
 
-    header_index = {name: idx for idx, name in enumerate(all_headers)}
+    with SampleQuery(params) as query:
+        result_count = query.count_matching_sample_headers(additional_headers)
+
+        if start >= result_count:
+            start = (result_count // length) * length if length else 0
+
+        results = query.page_matching_sample_headers(additional_headers, sorting, start, length)
 
     for f in filtering:
-        column = f['id']
+        col_idx = f['col_idx']
         value = f['value']
 
         if not value:
             continue
 
-        col_idx = header_index.get(column)
-        if col_idx is None:
-            continue
-
         value_lower = value.lower()
-
         results = [
             row for row in results
             if str(row[col_idx]).lower().startswith(value_lower)
         ]
-
-    if start >= result_count:
-        start = (result_count // length) * length
-    results = results[start:start + length]
 
     def get_environment(environment_id):
         if environment_id is None:
@@ -1151,9 +1143,7 @@ def otu_search_blast_otus(request):
         })
 
     with SampleQuery(params) as query:
-        results = query.matching_sample_headers()
-
-    result_count = len(results)
+        result_count = query.count_matching_sample_headers()
 
     return JsonResponse({
         'rowsCount': result_count,
