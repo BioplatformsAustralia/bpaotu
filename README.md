@@ -482,7 +482,7 @@ Files for each MAG should be organised under a subdirectory for the unique MAG I
 ```
 - "antismash": "-antismash.zip",
 - "cog": ".cog.gz",
-- "fa": ".fa.gz",
+- "fa": ".contigs.fa.gz",
 - "gff": ".gff.gz",
 - "gtdbtk": "_gtdbtk.summary.tsv.gz",
 - "kegg": ".kegg.gz",

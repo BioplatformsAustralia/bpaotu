@@ -1360,7 +1360,7 @@ MAGS_BASE_DIR = Path(settings.MAGS_BASE_DIR)
 MAG_FILE_TYPE_EXTENSION_MAP = {
     "antismash": "-antismash.zip",
     "cog": ".cog.gz",
-    "fa": ".fa.gz",
+    "fa": ".contigs.fa.gz",
     "gff": ".gff.gz",
     "gtdbtk": "_gtdbtk.summary.tsv.gz",
     "kegg": ".kegg.gz",
