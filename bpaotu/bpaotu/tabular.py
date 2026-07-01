@@ -25,6 +25,7 @@ import logging
 import time
 from bpaingest.projects.amdb.contextual import AustralianMicrobiomeSampleContextual
 
+# biopython
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 
