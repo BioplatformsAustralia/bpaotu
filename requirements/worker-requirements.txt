@@ -1,7 +1,7 @@
 ## Django & DB
 # (note: these should be keep in touch with runtime-requirements.txt)
-Django==2.2.10
-django-redis==4.10.0
+Django==3.2.25
+django-redis==4.12.1
 redis==3.4.1 # included by django-redis, specify version here to lock
 SQLAlchemy==1.3.16
 SQLAlchemy-Utils==0.41.1
@@ -34,7 +34,7 @@ umap-learn==0.5.7
 fastparquet==0.8
 pyarrow==8
 # galaxy
-requests==2.32.4
+requests==2.34.0
 # otu export
 biopython==1.80
 git+https://github.com/drollins/bpa-ingest.git@6.11.6-a

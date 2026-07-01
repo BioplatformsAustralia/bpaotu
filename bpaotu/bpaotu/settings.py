@@ -100,6 +100,7 @@ SITE_ID = 1
 # If you set this to False, Django will not use timezone-aware datetimes.
 USE_TZ = True
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 STATICFILES_DIRS = [
@@ -184,7 +185,6 @@ INSTALLED_APPS = (
     'django_extensions',
     'django.contrib.admin',
     'django.contrib.admindocs',
-    'suit',
     'bpaotu',
     'bpaotu.auth_app',
 )
