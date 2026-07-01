@@ -30,7 +30,6 @@ def _spatial_query(params):
     this code actually executes the query, wrapped with cache
     (see below)
     """
-    logging.debug("_spatial_query")
     with OntologyInfo() as info:
         def make_ontology_export(ontology_cls):
             values = dict(info.get_values(ontology_cls))
@@ -103,7 +102,6 @@ def spatial_query(params, cache_duration=CACHE_7DAYS, force_cache=False):
     note that there are some hard-coded workarounds (see below)
     which will need to be removed if this is to be used more generally
     """
-    logging.debug("spatial_query")
     cache = caches['search_results']
     key = make_cache_key(
         'spatial_query',
