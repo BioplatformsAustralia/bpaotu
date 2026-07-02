@@ -7,7 +7,7 @@ from bpaotu.celery import app
 from .submission import Submission
 from .task_utils import find_task_id_for_submission
 
-logger = logging.getLogger('bpaotu-alt')
+logger = logging.getLogger('bpaotu-worker')
 
 BASE_SHARED_DIR = "/data/shared"
 

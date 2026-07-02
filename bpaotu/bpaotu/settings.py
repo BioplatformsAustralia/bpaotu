@@ -24,8 +24,6 @@ SECURE_HSTS_SECONDS = env.get("secure_hsts_seconds", 10)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.get("secure_hsts_include_subdomains", PRODUCTION)
 SECURE_REDIRECT_EXEMPT = env.getlist("secure_redirect_exempt", [])
 X_FRAME_OPTIONS = env.get("x_frame_options", 'DENY')
-ADMINS = [("alert", env.get("alert_email", "root@localhost"))]
-MANAGERS = ADMINS
 
 # CSRF and host settings
 # ALLOWED_HOSTS should be set to the actual hostnames in production, but we allow it to be overridden by env var for development and testing.
