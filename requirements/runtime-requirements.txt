@@ -3,7 +3,7 @@ biopython==1.80
 boto==2.49.0
 ccg-django-utils==0.4.2
 celery==4.4.2
-colorlog==4.1.0
+colorlog==6.10.1
 django-extensions==3.2.3
 django-redis==4.12.1
 Django==4.2.30

@@ -17,7 +17,7 @@ from .site_images import make_ckan_remote
 from .metagenome import (get_package_sample_id, ckan_query_chunked,
                          solr_query_mg_candidates)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("bpaotu")
 
 def get_hash(conn):
     m = hashlib.md5()

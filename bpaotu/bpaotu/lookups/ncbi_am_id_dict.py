@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("bpaotu")
 
 LOOKUPS_PATH = os.getenv("LOOKUPS_PATH", "/app/bpaotu/bpaotu/lookups")
 CSV_PATH = Path(LOOKUPS_PATH) / "AM_to_ncbi_map.csv"

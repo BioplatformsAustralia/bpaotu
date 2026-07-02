@@ -17,7 +17,7 @@ celery==5.5.3
 
 ## Utilities
 ccg-django-utils # settings env config
-colorlog==4.1.0 # logging
+colorlog==6.10.1 # logging
 psutil # debugging memory usage
 
 ## Task related
