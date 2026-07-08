@@ -1,30 +1,28 @@
-authlib==1.7.2
-biopython==1.80
-boto==2.49.0
-ccg-django-utils==0.4.2
+authlib==1.7.2 ## latest
+biopython==1.87 ## latest
+ccg-django-utils==0.4.2 ## latest
 celery==4.4.2
-colorlog==6.10.1
-django-extensions==3.2.3
+colorlog==6.10.1 ## latest
+django-extensions==4.1 ## latest
 django-redis==4.12.1
 Django==4.2.30
 git+https://github.com/BioplatformsAustralia/bpa-ingest.git@6.11.6
 git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
-jinja2
+jinja2==3.1.6 ## latest
 matplotlib==3.8.3
 mixpanel==4.10.0
 numba==0.60.0
 numpy==1.26.4
 pandas==1.4.0
-Pillow>=8.1.1
-psutil
-psycopg2==2.8.5
+Pillow>=12.3.0 ## latest
+psutil==7.2.2 ## latest
+psycopg2==2.9.12 ## latest
 redis==3.4.1
 reportlab==4.0.9
-requests==2.34.0
+requests==2.34.2 ## latest
 sqlalchemy-citext==1.6.post1
 SQLAlchemy-Utils==0.41.1
 SQLAlchemy==1.3.16
-uwsgi==2.0.29
-uwsgitop==0.11
-xhtml2pdf==0.2.17
-zipstream==1.1.4
+uwsgi==2.0.31 ## latest
+xhtml2pdf==0.2.17 ## latest
+zipstream==1.1.4 ## latest
