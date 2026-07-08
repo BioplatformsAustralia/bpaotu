@@ -59,6 +59,7 @@ import 'leaflet-minimap/dist/Control.MiniMap.min.css'
 import 'react-leaflet-fullscreen/dist/styles.css'
 import 'react-leaflet-markercluster/dist/styles.min.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
+import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript'
 
 // Initial Viewport is Australia
 const MapInitialViewport = {
@@ -83,31 +84,45 @@ const tileLayer = {
   minZoom: 10.75,
 }
 
-// tslint:disable-next-line:max-classes-per-file
-const BPAImages = (props) => {
-  const tnUrl = (packageId, resourceId) =>
-    join(
-      [window.otu_search_config.base_url, 'private/site-image-thumbnail', packageId, resourceId],
-      '/'
-    )
-  const rsUrl = (packageId, resourceId) =>
-    join(
-      [window.otu_search_config.ckan_base_url, 'dataset', packageId, 'resource', resourceId],
-      '/'
-    )
+const buildThumbnailUrl = (packageId, resourceId) =>
+  join(
+    [window.otu_search_config.base_url.replace(/\/$/, ''), 'private/site-image-thumbnail', packageId, resourceId],
+    '/'
+  )
+
+const buildResourceUrl = (packageId, resourceId) =>
+  join(
+    [window.otu_search_config.ckan_base_url.replace(/\/$/, ''), 'dataset', packageId, 'resource', resourceId],
+    '/'
+  )
+
+const BPAImage = ({ packageId, resourceId }) => {
+  const [isVisible, setIsVisible] = useState(true)
+
+  if (!isVisible) {
+    return null
+  }
 
   return (
+    <div className="bpaotu-map-popup-inner__images">
+      <a href={buildResourceUrl(packageId, resourceId)} target="_other">
+        <img
+          alt="Australian Microbiome"
+          src={buildThumbnailUrl(packageId, resourceId)}
+          onError={() => setIsVisible(false)}
+        />
+      </a>
+    </div>
+  )
+}
+
+// tslint:disable-next-line:max-classes-per-file
+const BPAImages = (props) => {
+  return (
     <div>
-      {map(props.siteImages || [], ({ package_id, resource_id }, index) => {
-        const src = tnUrl(package_id, resource_id)
-        return (
-          <div key={index} className="bpaotu-map-popup-inner__images">
-            <a href={rsUrl(package_id, resource_id)} target="_other">
-              <img alt="Australian Microbiome" src={src} />
-            </a>
-          </div>
-        )
-      })}
+      {map(props.siteImages || [], ({ package_id, resource_id }, index) => (
+        <BPAImage key={index} packageId={package_id} resourceId={resource_id} />
+      ))}
     </div>
   )
 }

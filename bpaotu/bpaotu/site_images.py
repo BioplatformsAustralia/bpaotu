@@ -55,17 +55,38 @@ def _get_and_verify_resource(package_id, resource_id):
 def _build_lookup_table():
     lookup_table = defaultdict(list)
 
+    EXCLUDE_RESOURCE_FORMATS = {"MD5", "MD5SUM", "CHECKSUM"}
+
     def has_latlng_and_images(package):
         return 'latitude' in package and 'longitude' in package \
             and 'resources' in package and len(package['resources']) > 0
 
     for package in filter(has_latlng_and_images, _get_image_packages()):
         coord = (package['latitude'], package['longitude'])
-        lookup_table[coord] += [
-            {
+
+        filtered_resources = []
+        for resource in package.get('resources', []):
+            fmt = (resource.get('format') or '').strip().upper()
+            name = (resource.get('name') or '').lower()
+            url = (resource.get('url') or '').lower()
+
+            # Exclude known non-image resource formats or files (e.g. md5 checksums)
+            if fmt in EXCLUDE_RESOURCE_FORMATS:
+                logger.debug("Excluding resource by format: %s (%s)", resource.get('id'), fmt)
+                continue
+            if name.endswith('.md5') or url.endswith('.md5'):
+                logger.debug("Excluding resource by extension: %s", resource.get('id'))
+                continue
+
+            # Passed basic exclusion checks -> include
+            filtered_resources.append({
                 'package_id': package['id'],
-                'resource_id': resource['id']
-            } for resource in package['resources']]
+                'resource_id': resource['id'],
+            })
+
+        if filtered_resources:
+            lookup_table[coord] += filtered_resources
+
     return dict(lookup_table)
 
 
@@ -111,17 +132,24 @@ def text_to_svg(text):
 def fetch_image(package_id, resource_id):
     # security: we do not want this API endpoint to be used to retrieve
     # any data that is not a BASE site image.
+    content_type = None
     try:
         resource = _get_and_verify_resource(package_id, resource_id)
         if resource is None:
             raise HttpResponseForbidden()
         img_url = resource['url']
         content_type, _ = mimetypes.guess_type(img_url)
-        if content_type == None:
+        if content_type is None:
             return (None, content_type)
 
         r = requests.get(img_url, headers={'Authorization': settings.CKAN_SERVER['api_key']})
+        response_content_type = r.headers.get('content-type', '') or content_type
+        if not response_content_type.startswith('image/'):
+            logger.info("Skipping non-image response from CKAN: %s (%s)", img_url, response_content_type)
+            return (None, response_content_type)
+
         img_data = resize_image(r.content)
+        content_type = response_content_type
     except Exception as e:
         logger.error("Can't serve thumbnail image", exc_info=1)
         img_data = text_to_svg("fetch_image: " + str(e)).encode('utf8')
