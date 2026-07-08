@@ -4,8 +4,8 @@ ccg-django-utils==0.4.2 ## latest
 celery==4.4.2
 colorlog==6.10.1 ## latest
 django-extensions==4.1 ## latest
-django-redis==4.12.1
-Django==4.2.30
+django-redis==5.4.0
+Django==5.2.16
 git+https://github.com/BioplatformsAustralia/bpa-ingest.git@6.11.6
 git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
 jinja2==3.1.6 ## latest
@@ -17,7 +17,7 @@ pandas==1.4.0
 Pillow>=12.3.0 ## latest
 psutil==7.2.2 ## latest
 psycopg2==2.9.12 ## latest
-redis==3.4.1
+redis==8.0.1 # included by django-redis, specify version here to lock
 reportlab==4.0.9
 requests==2.34.2 ## latest
 sqlalchemy-citext==1.6.post1
