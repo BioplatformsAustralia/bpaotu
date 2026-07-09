@@ -10,9 +10,8 @@ psycopg2-binary==2.9.12 # need this binary rather than source package (which bui
 
 ## Core functionality
 numpy==1.26.4
-pandas==2.3.1
-scipy==1.13.1
-numba==0.60.0
+pandas==3.0.3
+numba==0.66.0
 celery==5.6.3
 
 ## Utilities
@@ -27,12 +26,12 @@ git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
 zipstream==1.1.4
 # blast
 basemap==1.4.1
-matplotlib==3.8.3
+matplotlib==3.8.4
 # comparison
 fastdist==1.1.6
 umap-learn==0.5.12
-fastparquet==0.8
-pyarrow==8
+fastparquet==2026.5.0
+pyarrow==24.0.0
 # galaxy
 requests==2.34.2
 # otu export
