@@ -9,14 +9,14 @@ Django==5.2.16
 git+https://github.com/BioplatformsAustralia/bpa-ingest.git@6.11.6
 git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
 jinja2==3.1.6 ## latest
-mixpanel==4.10.0
+mixpanel==5.1.0 ## latest
 numpy==1.26.4
-pandas==3.0.3
+pandas==3.0.3 ## latest
 Pillow>=12.3.0 ## latest
 psutil==7.2.2 ## latest
 psycopg2==2.9.12 ## latest
 redis==8.0.1 # included by django-redis, specify version here to lock
-reportlab==4.0.9
+reportlab==4.5.1 ## latest 4.x
 requests==2.34.2 ## latest
 sqlalchemy-citext==1.6.post1
 SQLAlchemy-Utils==0.41.1
