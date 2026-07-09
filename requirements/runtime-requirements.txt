@@ -1,7 +1,7 @@
 authlib==1.7.2 ## latest
 biopython==1.87 ## latest
 ccg-django-utils==0.4.2 ## latest
-celery==4.4.2
+celery==5.6.3 ## latest
 colorlog==6.10.1 ## latest
 django-extensions==4.1 ## latest
 django-redis==5.4.0
