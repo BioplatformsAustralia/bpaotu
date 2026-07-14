@@ -24,8 +24,6 @@ SECURE_HSTS_SECONDS = env.get("secure_hsts_seconds", 10)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.get("secure_hsts_include_subdomains", PRODUCTION)
 SECURE_REDIRECT_EXEMPT = env.getlist("secure_redirect_exempt", [])
 X_FRAME_OPTIONS = env.get("x_frame_options", 'DENY')
-ADMINS = [("alert", env.get("alert_email", "root@localhost"))]
-MANAGERS = ADMINS
 
 # CSRF and host settings
 # ALLOWED_HOSTS should be set to the actual hostnames in production, but we allow it to be overridden by env var for development and testing.
@@ -100,6 +98,7 @@ SITE_ID = 1
 # If you set this to False, Django will not use timezone-aware datetimes.
 USE_TZ = True
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 STATICFILES_DIRS = [
@@ -184,7 +183,6 @@ INSTALLED_APPS = (
     'django_extensions',
     'django.contrib.admin',
     'django.contrib.admindocs',
-    'suit',
     'bpaotu',
     'bpaotu.auth_app',
 )
@@ -250,5 +248,7 @@ DEFAULT_TAXONOMIES = [
     # In priority order. Uses first available match as default for taxonomy selector.
     ['silva138', 'SKlearn'],
     ['unite8', 'wang']]
+
+MAGS_BASE_DIR = env.get("MAGS_BASE_DIR", "/data/MAGS")
 
 MIXPANEL_TOKEN = env.get("MIXPANEL_TOKEN", "")

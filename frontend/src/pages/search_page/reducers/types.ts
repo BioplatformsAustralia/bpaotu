@@ -84,6 +84,9 @@ export interface PageState {
     searchString: string
     isOpen: boolean
     isLoading: boolean
+    isSearchValid: boolean
+    searchValidationError: string | null
+    hasAttemptedSearch: boolean
     selectIndex: number
     results: any[]
     error: string
@@ -116,6 +119,7 @@ export interface PageState {
       n_neighbors: number
       spread: number
     }
+    umapParamsErrors: string[]
     results: {
       ordination: any
       contextual: any
@@ -227,6 +231,9 @@ export const searchPageInitialState: PageState = {
     searchString: null,
     isOpen: false,
     isLoading: false,
+    isSearchValid: false,
+    searchValidationError: null,
+    hasAttemptedSearch: false,
     selectIndex: null,
     results: [],
     error: null,
@@ -256,6 +263,7 @@ export const searchPageInitialState: PageState = {
       n_neighbors: 15,
       spread: 1.0,
     },
+    umapParamsErrors: [],
     alerts: [],
     errors: [],
     submissions: [],

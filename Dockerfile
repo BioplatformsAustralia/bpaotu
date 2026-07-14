@@ -2,7 +2,7 @@
 # Base images
 # ===========================
 
-FROM python:3.9-slim-bullseye AS base
+FROM python:3.11-slim-bullseye AS base
 LABEL maintainer=https://github.com/BioplatformsAustralia/bpaotu
 
 # Create user + dirs

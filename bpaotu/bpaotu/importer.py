@@ -34,7 +34,7 @@ from Bio import SeqIO
 
 from .mail import send_email
 from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
-                  ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon,
+                  ImportedFile, ImportMetadata, OntologyErrors, OTUAmplicon, MAG,
                   taxonomy_keys, taxonomy_key_id_names, rank_labels_lookup,
                   TaxonomySource, taxonomy_ontology_classes, format_taxonomy_name,
                   SampleAustralianSoilClassification,
@@ -51,7 +51,7 @@ from .otu import (OTU, SCHEMA, Base, Environment, ExcludedSamples,
                   make_engine)
 from .sample_meta import update_from_ckan
 
-logger = logging.getLogger("bpaotu")
+logger = logging.getLogger("bpaotu-importer")
 
 
 class DataImportError(Exception):
@@ -241,7 +241,21 @@ class DataImporter:
         ('store_cond', SampleStorageMethod),
     ])
 
-    def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True, notify_email=None):
+    def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True):
+        # Prevent xlrd from using defusedxml
+        # https://stackoverflow.com/a/65131301
+        #
+        # Otherwise when bpa-ingest calls xlrd.open_workbook() it throws this error:
+        # AttributeError: 'ElementTree' object has no attribute 'getiterator'
+        #
+        # This only happens in development because jupyter is installed in dev-requirements and it includes defusedxml via nbconvert
+        # It doesn't happen in production because jupyter is not installed in runtime-requirements and defusedxml is not a dependency of anything else in runtime-requirements
+        if settings.DEBUG:
+            import xlrd
+            xlrd.xlsx.ensure_elementtree_imported(False, None)
+            xlrd.xlsx.Element_has_iter = True
+            logger.debug("xlrd monkeypatch applied to prevent defusedxml conflict")
+
         self._engine = make_engine()
         self._create_extensions() # does this need to be after sessionmaker?
         self._session = sessionmaker(bind=self._engine)()
@@ -251,8 +265,8 @@ class DataImporter:
         self._revision_date = revision_date
         self._has_sql_context = has_sql_context
         self._force_fetch = force_fetch
-        self._notify_email = notify_email or getattr(settings, 'INGEST_NOTIFY_EMAIL', None)
 
+    def prep(self):
         # These are used exclusively for reporting back to CSIRO on the state of the ingest
         self.sample_metadata_incomplete = set()
         self.sample_non_integer = set()
@@ -290,13 +304,14 @@ class DataImporter:
         phase_func()
         elapsed = time.time() - start_time
         phase_timings.append({"name": phase_name, "time": elapsed})
-        logger.info(f"Completed phase: {phase_name} in {elapsed:.2f} seconds")
+        logger.info(f"Completed phase: {phase_name} in {elapsed:.1f} seconds")
 
     def run(self):
         start_time, phase_timings = self._start_ingest()
 
         try:
             # Run each phase of the ingest, recording timings for reporting at the end
+            self._run_phase(self.load_mags_bintable, "MAGS bintables", "Loading MAGS bintables", phase_timings)
             self._run_phase(self.load_contextual_metadata, "Contextual metadata", "Loading contextual metadata", phase_timings)
             self._run_phase(self.load_taxonomies, "Taxonomies", "Loading taxonomies", phase_timings)
             self._run_phase(self.load_otu_abundance, "OTU abundance tables", "Loading OTU abundance tables", phase_timings)
@@ -389,6 +404,7 @@ class DataImporter:
         logger.info("Completed ingest: vacuum analyze")
 
     def _build_ontology(self, db_class, vals):
+        logger.debug(f" build ontology: {db_class}")
         for val in sorted(vals):
             # this option is defined at import init
             if val == '':
@@ -396,6 +412,8 @@ class DataImporter:
             instance = db_class(value=val)
             self._session.add(instance)
         self._session.commit()
+        logger.debug(f" build ontology: (committed)")
+
         return dict((t.value, t.id) for t in self._session.query(db_class).all())
 
     def _load_ontology(self, ontology_defn, row_iter):
@@ -535,10 +553,16 @@ class DataImporter:
             taxonomy_rows_iter)
         taxonomy_source_id_by_name = mappings['taxonomy_source']
         for obj in self._session.query(TaxonomySource).all():
+            logger.debug(f" TaxonomySource: {obj}")
             obj.hierarchy_type = taxonomy_rows_iter.hierarchy_type_by_source[obj.value]
         self._session.commit()
+        logger.debug(f"loading taxonomies - pass 1, committed")
 
         with self._engine.begin() as conn:
+            logger.debug(f"create partitions")
+            logger.debug(f"- table:  {taxonomy_otu_export.name}")
+            logger.debug(f"- values: {taxonomy_source_id_by_name.values()}")
+
             create_partitions(conn,
                 taxonomy_otu_export.name,
                 taxonomy_source_id_by_name.values())
@@ -825,11 +849,11 @@ class DataImporter:
                         prefixes=['TEMPORARY']
                     )
                     temp_table.create(conn)
-                    logger.info("Loading OTU abundance staging data from {}".format(fd.name))
+                    log_amplicon("Loading OTU abundance staging data from {}".format(fd.name))
                     self.load_from_csv(
                         "COPY tmp_sample_otu_load (sample_id, otu_hash, amplicon_code, count, count_20k) FROM STDIN CSV",
                         fd, conn)
-                    logger.info("Resolving OTU IDs for abundance data")
+                    log_amplicon("Resolving OTU IDs for abundance data")
                     conn.execute(text(
                         f"INSERT INTO {SCHEMA}.sample_otu (sample_id, otu_id, count, count_20k) "
                         "SELECT s.sample_id, l.id, s.count, NULLIF(s.count_20k, '')::integer "
@@ -851,6 +875,146 @@ class DataImporter:
                         [getattr(Taxonomy, name) for name in taxonomy_key_id_names]
                     ).select_from(
                         Taxonomy.__table__.join(taxonomy_otu).join(OTU))))
+
+    def load_mags_bintable(self):
+        logger.info('Building mags bintable')
+
+        bintable_files = self.mags_bintable_files()
+        bintable_files_count = len(bintable_files)
+
+        logger.info(f"Found {bintable_files_count} .bintable files")
+
+        if bintable_files_count == 0:
+            logger.error(f'No bintable files found')
+            return
+
+        # Drop + recreate table to handle schema changes
+        MAG.__table__.drop(self._engine, checkfirst=True)
+        MAG.__table__.create(self._engine)
+
+        # Process each bintable file in batches
+        with self._engine.begin() as conn:
+            batch = []
+
+            for bintable_file in bintable_files:
+                logger.debug(f"Processing {bintable_file}")
+
+                for row in self.iter_mags_bintable_rows(bintable_file):
+                    batch.append(row)
+
+                    if len(batch) >= 1000:
+                        conn.execute(insert(MAG), batch)
+                        batch.clear()
+
+            if batch:
+                conn.execute(insert(MAG), batch)
+
+        logger.info("Done building mags bintable")
+    
+    def mags_bintable_files(self):
+        mag_dir = os.path.join(self._import_base, "MAG")
+        logger.info(f"Searching for .bintable files in {mag_dir}")
+        return glob(os.path.join(mag_dir, "*.bintable"))
+
+    def iter_mags_bintable_rows(self, path):
+        with open(path, newline="") as fh:
+            delimiter = "\t"
+            reader = csv.DictReader(fh, delimiter=delimiter)
+
+            for r in reader:
+                self.validate_bintable_row(r)
+
+                tax_gtdb_domain = None
+                tax_gtdb_phylum = None
+                tax_gtdb_class = None
+                tax_gtdb_order = None
+                tax_gtdb_family = None
+                tax_gtdb_genus = None
+                tax_gtdb_species = None
+
+                for part in r["GTDB Tax"].split(";"):
+                    if part.startswith("d__"):
+                        tax_gtdb_domain = part
+                    elif part.startswith("p__"):
+                        tax_gtdb_phylum = part
+                    elif part.startswith("c__"):
+                        tax_gtdb_class = part
+                    elif part.startswith("o__"):
+                        tax_gtdb_order = part
+                    elif part.startswith("f__"):
+                        tax_gtdb_family = part
+                    elif part.startswith("g__"):
+                        tax_gtdb_genus = part
+                    elif part.startswith("s__"):
+                        tax_gtdb_species = part
+
+                # note that some fields have the sample_id in them
+                # and that this may be cleaned up in the future
+                yield {
+                    "mag_id": r["MAG ID"],
+                    "sample_id": r["Sample ID"],
+                    "method": r["Method"],
+                    "tax": r["Tax"] or None,
+                    "tax_16s": r["Tax 16S"] or None,
+                    "tax_gtdb": r["GTDB Tax"] or None,
+                    "tax_gtdb_domain": tax_gtdb_domain,
+                    "tax_gtdb_phylum": tax_gtdb_phylum,
+                    "tax_gtdb_class": tax_gtdb_class,
+                    "tax_gtdb_order": tax_gtdb_order,
+                    "tax_gtdb_family": tax_gtdb_family,
+                    "tax_gtdb_genus": tax_gtdb_genus,
+                    "tax_gtdb_species": tax_gtdb_species,
+                    "length": self.to_int(r, "Length"),
+                    "gc_perc": self.to_float(r, "GC perc"),
+                    "num_contigs": self.to_int(r, "Num contigs"),
+                    "disparity": self.to_float(r, "Disparity"),
+                    "strain_het": self.to_float(r, "Strain het"),
+                    "coverage": self.to_float(r, f"Coverage"),
+                    "tpm": self.to_float(r, f"TPM"),
+                    "quality_checkm": self.to_float(r, "CheckM Quality"),
+                    "quality_checkm2": self.to_float(r, "CheckM2 Quality"),
+                    "completeness_checkm": self.to_float(r, "CheckM Completeness"),
+                    "completeness_checkm2": self.to_float(r, "CheckM2 Completeness"),
+                    "contamination_checkm": self.to_float(r, "CheckM Contamination"),
+                    "contamination_checkm2": self.to_float(r, "CheckM2 Contamination"),
+                    "contig_n50_checkm2": self.to_float(r, "CheckM2 Contig_N50"),
+                }
+
+    # placeholder for validation
+    def validate_bintable_row(self, row):
+        self.warn_if_both_missing(row, "quality (CheckM & CheckM2)", ("CheckM Quality", "CheckM2 Quality"))
+        self.warn_if_both_missing(row, "completeness (CheckM & CheckM2)", ("CheckM Completeness", "CheckM2 Completeness"))
+        self.warn_if_both_missing(row, "contamination (CheckM & CheckM2)", ("CheckM Contamination", "CheckM2 Contamination"))
+
+        if False:
+            raise DataImportError(f"ERROR TEXT row={row}")
+
+    def warn_if_both_missing(self, row, label, ks):
+        v1 = row[ks[0]]
+        v2 = row[ks[1]]
+
+        if v1 is None and v2 is None:
+            logger.warn(
+                f"Missing {label} in row: "
+                f"'sample_id'={row['Sample ID']} 'MAG ID'={row['MAG ID']}"
+            )
+
+    def to_int(self, r, key):
+        v = r[key]
+        if v in (None, "", "NA"):
+            sample_id = r["Sample ID"]
+            mag_id = r["MAG ID"]
+            logger.warn(f"Missing value in row: 'sample_id'={sample_id} 'MAG ID'={mag_id} for {key}")
+            return None
+        return int(v)
+
+    def to_float(self, r, key):
+        v = r[key]
+        if v in (None, "", "NA"):
+            sample_id = r["Sample ID"]
+            mag_id = r["MAG ID"]
+            return None
+        return float(v)
 
     def refresh_otu_sample_otu(self):
         refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
