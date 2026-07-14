@@ -79,7 +79,7 @@ const resultsInitialState = {
   errors: [],
   data: [],
   page: 0,
-  pageSize: 10,
+  pageSize: 100,
   rowsCount: 0,
   filtered: [],
   sorted: [],

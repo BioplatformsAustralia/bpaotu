@@ -196,6 +196,9 @@ export const SearchResultsTable = (props) => {
     if (results.pages > 0) search()
   }
 
+  // if results are cleared show a smaller page size so that user can see the message
+  const pageSize = results.cleared ? 5 : results.pageSize
+
   return (
     <>
       <Alert color="secondary" className="text-center">
@@ -220,7 +223,7 @@ export const SearchResultsTable = (props) => {
         loading={results.isLoading}
         data={results.data}
         page={results.page}
-        pageSize={results.pageSize}
+        pageSize={pageSize}
         pages={results.pages}
         className="-striped -highlight"
         onSortedChange={onSortedChange}
