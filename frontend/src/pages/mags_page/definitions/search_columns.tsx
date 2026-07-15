@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 import { NavLink as RRNavLink } from 'react-router-dom'
 import { NavLink } from 'reactstrap'
 import md5 from 'blueimp-md5'
@@ -63,7 +63,7 @@ const InputNumberRange: React.FC<{
     [current, onChange]
   )
 
-  const DECIMAL_PATTERN = '^-?\d*\.?\d*$'
+  const DECIMAL_PATTERN = '^-?\\d*\\.?\\d*$'
 
   return (
     <>
@@ -473,22 +473,6 @@ const searchColumnsBase = [
   },
   // NOTE: last column needs a bit more minWidth than the width of the Input
 ]
-
-const columnTax = {
-  accessor: 'tax',
-  Header: <HeaderInfo accessor="tax" />,
-  sortable: true,
-  minWidth: 900,
-  Filter: ({ filter, onChange }) => <InputSearch filter={filter} onChange={onChange} width={900} />,
-}
-
-const columnTax16S = {
-  accessor: 'tax_16s',
-  Header: <HeaderInfo accessor="tax_16s" />,
-  sortable: true,
-  minWidth: 900,
-  Filter: ({ filter, onChange }) => <InputSearch filter={filter} onChange={onChange} width={900} />,
-}
 
 const columnTaxGTDB = {
   accessor: 'tax_gtdb',

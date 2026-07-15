@@ -32,7 +32,7 @@ const DropDownSelector = (props) => {
       selectValue(getDefaultOption(options))
       onChange()
     }
-  }, [selected, options, selectValue, onChange])
+  }, [selected.value, options, selectValue, onChange, getDefaultOption])
 
   const renderOption = (option) => ({
     value: option.id,

@@ -105,7 +105,6 @@ const TaxonomySearchModal = (props) => {
     isLoading,
     searchStringInput,
     searchString,
-    isSearchValid,
     searchValidationError,
     hasAttemptedSearch,
     selectIndex,
@@ -113,7 +112,6 @@ const TaxonomySearchModal = (props) => {
     error,
     rankLabelsLookup,
     closeTaxonomySearchModal,
-    amplicon,
   } = props
 
   const inputRef = useRef(null)
@@ -491,7 +489,7 @@ const TaxonomySearchModal = (props) => {
                           disabled={selectIndex && selectIndex !== index}
                           style={{ width: '80px' }}
                         >
-                          {selectIndex == index ? <Spinner size="sm"></Spinner> : 'Select'}
+                          {selectIndex === index ? <Spinner size="sm"></Spinner> : 'Select'}
                         </Button>
                       </th>
                     ))}
@@ -614,9 +612,6 @@ const TaxonomySearchModal = (props) => {
 }
 
 function mapStateToProps(state) {
-  const { isOpen, isLoading, searchStringInput, searchString, selectIndex, results, error } =
-    state.searchPage.taxonomySearchModal
-
   const selectedAmplicon = state.searchPage.filters.selectedAmplicon
   const ampliconNames = state.referenceData.amplicons
   const ampliconLookup = ampliconNames.values.find((x) => x.id === selectedAmplicon.value)

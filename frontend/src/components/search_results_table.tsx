@@ -162,7 +162,7 @@ export const SearchResultsTable = (props) => {
     }
 
     return defaultColumns.concat(kronaColumn, extraCols)
-  }, [defaultColumns, kronaColumn, runIdColumn, extraColumns, metagenome])
+  }, [defaultColumns, kronaColumn, runIdColumn, extraColumns, metagenome, contextual])
 
   const onPageChange = (pageIndex) => {
     changeTableProperties({

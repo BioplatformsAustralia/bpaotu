@@ -276,13 +276,17 @@ export const processDiscrete = (
         //
         // return months[date.getMonth()]
         return date.getMonth() + 1
-      case 'season':
+      case 'season': {
         const month = date.getMonth() + 1
 
         if ([12, 1, 2].includes(month)) return 'Summer'
         if ([3, 4, 5].includes(month)) return 'Autumn'
         if ([6, 7, 8].includes(month)) return 'Winter'
         if ([9, 10, 11].includes(month)) return 'Spring'
+        break
+      }
+      default:
+        return null
     }
   }
 

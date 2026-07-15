@@ -1,9 +1,7 @@
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
-import { NavLink as RRNavLink } from 'react-router-dom'
-import { NavLink } from 'reactstrap'
-import { Card, CardBody, CardHeader, Col, Container, Row } from 'reactstrap'
+import { Card, CardBody, CardHeader, Col, Row } from 'reactstrap'
 
 import { searchMags } from 'pages/mags_page/reducers/mags'
 import { fetchMagsSamples } from 'pages/mags_page/reducers/samples'

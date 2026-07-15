@@ -85,6 +85,7 @@ const UserProfile = ({ auth, header = false }: UserProfileProps) => {
       {user && user.picture && (
         <img
           src={user.picture}
+          alt={user.name || 'User profile'}
           className="rounded-circle"
           onClick={() => setIsDetailsOpen((prev) => !prev)}
           style={{

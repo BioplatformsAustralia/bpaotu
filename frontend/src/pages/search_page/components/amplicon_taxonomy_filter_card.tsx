@@ -59,28 +59,40 @@ const TaxonomyFilterCard = (props) => {
   const prevAmplicon = useRef({ ...EmptyOperatorAndValue })
 
   const { mismatch, valueAmplicon, valueR1, nameR1 } = props.mismatchState
+  const {
+    amplicons,
+    clearSearchResults,
+    fetchReferenceData,
+    fetchTraits,
+    metagenomeMode,
+    openTaxonomySearchModal,
+    selectTrait,
+    selectedAmplicon,
+    setMetagenomeMode,
+    updateTaxonomy,
+  } = props
 
   useEffect(() => {
     prevAmplicon.current = { ...EmptyOperatorAndValue }
-    props.setMetagenomeMode(props.metagenomeMode)
-    props.clearSearchResults()
-    props.fetchReferenceData()
-  }, [])
+    setMetagenomeMode(metagenomeMode)
+    clearSearchResults()
+    fetchReferenceData()
+  }, [clearSearchResults, fetchReferenceData, metagenomeMode, setMetagenomeMode])
 
   // (re)fetch taxonomy and traits when the amplicon selection becomes available or changes
   useEffect(() => {
     if (
-      props.amplicons.values.length > 0 &&
-      props.selectedAmplicon.value !== '' &&
-      (prevAmplicon.current.value !== props.selectedAmplicon.value ||
-        prevAmplicon.current.operator !== props.selectedAmplicon.operator)
+      amplicons.values.length > 0 &&
+      selectedAmplicon.value !== '' &&
+      (prevAmplicon.current.value !== selectedAmplicon.value ||
+        prevAmplicon.current.operator !== selectedAmplicon.operator)
     ) {
-      prevAmplicon.current = { ...props.selectedAmplicon }
-      props.fetchTraits()
-      props.selectTrait('')
-      props.updateTaxonomy()
+      prevAmplicon.current = { ...selectedAmplicon }
+      fetchTraits()
+      selectTrait('')
+      updateTaxonomy()
     }
-  }, [props.selectedAmplicon, props.amplicons.values])
+  }, [amplicons.values, fetchTraits, selectTrait, selectedAmplicon, updateTaxonomy])
 
   const clearFilters = () => {
     props.clearAllTaxonomyFilters()
@@ -115,7 +127,7 @@ const TaxonomyFilterCard = (props) => {
                   paddingTop: '0.15rem',
                   paddingBottom: '0.15rem',
                 }}
-                onClick={props.openTaxonomySearchModal}
+                onClick={openTaxonomySearchModal}
               >
                 search for a taxonomy
               </Button>

@@ -80,7 +80,7 @@ const App = (props) => {
 
   return (
     <div>
-      <Header userEmailAddress={props.auth.email} />
+      <Header />
       {renderContents()}
       <Footer />
 

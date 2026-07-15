@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState } from 'react'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import {
@@ -7,7 +7,6 @@ import {
   Container,
   Col,
   Input,
-  Label,
   UncontrolledTooltip,
   Row,
   Modal,
@@ -158,7 +157,6 @@ const SamplesComparisonModal = (props) => {
     contextualData,
     contextualFilters,
     plotData,
-    clearPlotData,
 
     comparisonStatus,
     // mem_usage,
@@ -363,11 +361,6 @@ const SamplesComparisonModal = (props) => {
   }
 
   const renderDownloadOptions = (downloadOptionsRef) => {
-    const closeAndRun = () => {
-      setShowUmapParameters(false)
-      runComparison(umapParams, submissionId)
-    }
-
     return (
       <div ref={downloadOptionsRef} className="popup-menu popup-menu-download">
         <Container>

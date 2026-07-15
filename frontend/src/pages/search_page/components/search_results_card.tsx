@@ -13,7 +13,7 @@ import { openKronaModal } from '../reducers/krona_modal'
 import { openMetagenomeModal, openMetagenomeModalSearch } from '../reducers/metagenome_modal'
 import { GalaxySubmission } from '../reducers/types'
 
-import { runOtuExport, cancelOtuExport } from '../reducers/otu_export'
+import { runOtuExport } from '../reducers/otu_export'
 
 import { metaxaAmpliconStringMatch } from 'app/constants'
 
@@ -117,7 +117,7 @@ const OtuExportBox = ({ state, clear }) => {
         {resultUrl && (
           <span>
             {' '}
-            <a target="_blank" href={resultUrl} className="alert-link">
+            <a target="_blank" rel="noopener noreferrer" href={resultUrl} className="alert-link">
               here
             </a>
           </span>
@@ -128,16 +128,8 @@ const OtuExportBox = ({ state, clear }) => {
 }
 
 const _SearchResultsCard = (props) => {
-  const exportTypeStandardRef = useRef(null)
   const [showExportTypeStandard, setShowExportTypeStandard] = useState(false)
   const [showExportTypeBIOM, setShowExportTypeBIOM] = useState(false)
-
-  const handleClick = (e) => {
-    // if ref.current exists and the clicked target is NOT inside it
-    if (exportTypeStandardRef.current && !exportTypeStandardRef.current.contains(e.target)) {
-      setShowExportTypeStandard(false)
-    }
-  }
 
   const isGalaxySubmissionDisabled = () => {
     if (props.galaxy.isSubmitting) {

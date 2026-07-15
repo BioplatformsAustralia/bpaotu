@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback } from 'react'
 import Plot from 'react-plotly.js'
 import { plotly_chart_config } from './plotly_chart'
 import { find, isString } from 'lodash'
@@ -16,11 +16,7 @@ import {
 } from '../../reducers/contextual'
 
 const HistogramChartContextual = (props: any) => {
-  const [markerLineWidth, setMarkerLineWidth] = useState([])
-
-  const highlightSelected = useCallback((data: any[], selected: any, lineWidth: number) => {
-    return data.map((d) => (d === selected ? lineWidth : 0))
-  }, [])
+  const markerLineWidth = []
 
   const findFilterIndex = useCallback((data: any[], selected: any) => {
     for (let i = 0; i < data.length; i++) {

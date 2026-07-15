@@ -26,7 +26,6 @@ const PieChartContextual = (props) => {
     selectContextualFilter,
     changeContextualFilterOperator,
     changeContextualFilterValue,
-    changeContextualFilterValue2,
     fetchContextualDataForGraph,
     fetchTaxonomyDataForGraph,
     selectToScroll,

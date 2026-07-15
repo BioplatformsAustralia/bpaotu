@@ -245,6 +245,7 @@ const SearchFilters = (props) => {
           )
           searchFilters.push(searchFilter)
         }
+        break
 
       case 'sampleIntegrityWarning':
         let selectedFilters = value['filters']

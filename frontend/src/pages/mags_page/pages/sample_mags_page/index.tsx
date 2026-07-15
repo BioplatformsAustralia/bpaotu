@@ -1,9 +1,7 @@
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
-import { NavLink as RRNavLink } from 'react-router-dom'
-import { NavLink } from 'reactstrap'
-import { Card, CardBody, CardHeader, Col, Container, Row } from 'reactstrap'
+import { Card, CardBody, CardHeader, Col, Row } from 'reactstrap'
 
 import { changeTablePropertiesMags, searchMags } from 'pages/mags_page/reducers/mags'
 import { fetchMagsSamples, fetchSampleMagsCount } from 'pages/mags_page/reducers/samples'
@@ -32,13 +30,13 @@ const SampleInformation = ({ record }) => {
 
 const SampleMagsInformation = ({ sampleId, omdbResult }) => {
   const dispatch = useDispatch()
-  const { isLoading, hasLoaded, sample_id, sample_mags_count } = useSelector(
+  const { isLoading, hasLoaded, sample_mags_count } = useSelector(
     (state: any) => state.magsPage.samples.sampleMagsCount
   )
 
   useEffect(() => {
     dispatch(fetchSampleMagsCount(sampleId))
-  }, [sampleId])
+  }, [dispatch, sampleId])
 
   const SampleMagsCount = () => {
     if (isLoading) return <em>Loading</em>
@@ -123,7 +121,7 @@ export const SampleMagsPage = (props) => {
         })
       )
     }
-  }, [sampleId])
+  }, [dispatch, results, sampleId])
 
   // if loading this page directly or for the first then sample metadata won't be present
   // (we may get it to fetch sample data /mags)

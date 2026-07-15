@@ -55,7 +55,7 @@ const BlastModal = (props) => {
     if (isOpen) {
       fetchBlastModalSamples()
     }
-  }, [isOpen])
+  }, [fetchBlastModalSamples, isOpen])
 
   // const steps = [
   //   {

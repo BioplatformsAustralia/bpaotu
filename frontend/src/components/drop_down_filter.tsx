@@ -20,7 +20,6 @@ interface Props {
 const DropDownFilter = (props) => {
   const {
     label,
-    info,
     isDisabled,
     selected,
     selectBoxOnly,

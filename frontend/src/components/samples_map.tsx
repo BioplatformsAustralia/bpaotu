@@ -59,7 +59,6 @@ import 'leaflet-minimap/dist/Control.MiniMap.min.css'
 import 'react-leaflet-fullscreen/dist/styles.css'
 import 'react-leaflet-markercluster/dist/styles.min.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
-import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript'
 
 // Initial Viewport is Australia
 const MapInitialViewport = {

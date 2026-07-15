@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button, Card, CardBody, CardHeader, Col, Container, Row } from 'reactstrap'
+import { Button, Card, CardBody, CardHeader } from 'reactstrap'
 import Octicon from 'components/octicon'
 
 import './downloads_table.css'
