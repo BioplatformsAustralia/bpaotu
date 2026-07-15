@@ -22,8 +22,10 @@ urlpatterns = [
     url(r'^private/api/v1/contextual-fields$', views.contextual_fields, name="contextual_fields"),
     url(r'^private/api/v1/contextual-graph-fields$', views.contextual_graph_fields, name="contextual_graph_fields"),
     url(r'^private/api/v1/taxonomy-graph-fields$', views.taxonomy_graph_fields, name="taxonomy_graph_fields"),
-    url(r'^private/api/v1/krona-request$', views.krona_request, name="krona_request"),
     url(r'^private/api/v1/taxonomy-search$', views.taxonomy_search, name="taxonomy_search"),
+    url(r'^private/api/v1/mags$', views.mags, name="mags"),
+    url(r'^private/api/v1/mags_sample_count$', views.mags_sample_count, name="mags_sample_count"),
+    url(r'^private/api/v1/krona-request$', views.krona_request, name="krona_request"),
     url(r'^private/api/v1/search$', views.otu_search, name="otu_search"),
     url(r'^private/api/v1/search-sample-sites$', views.otu_search_sample_sites, name="otu_search_sample_sites"),
     url(r'^private/api/v1/search-blast-otus$', views.otu_search_blast_otus, name="otu_search_blast_otus"),
@@ -76,6 +78,11 @@ urlpatterns = [
         r'^private/metagenome-search$',
         views.metagenome_search,
         name="metagenome_search"),
-
+    url(
+        # this can't start with mags otherwise react router will catch it
+        r'^ext/mags/download$',
+        views.download_mag,
+        name='download_mag'
+    ),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

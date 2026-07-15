@@ -1,6 +1,7 @@
 import { combineReducers } from 'redux'
 import contextualPageReducer from 'pages/contextual_page/reducers'
 import searchPageReducer from 'pages/search_page/reducers'
+import magsPageReducer from 'pages/mags_page/reducers'
 import mapPageReducer from 'pages/map_page/reducers'
 
 import authReducer from 'reducers/auth'
@@ -12,6 +13,7 @@ import taxonomyDataForGraphReducer from 'reducers/taxonomy_data_graph'
 const rootReducer = combineReducers({
   referenceData: referenceDataReducer,
   mapPage: mapPageReducer,
+  magsPage: magsPageReducer,
   searchPage: searchPageReducer,
   contextualPage: contextualPageReducer,
   contextualDataDefinitions: contextualDataDefinitionsReducer,

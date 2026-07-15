@@ -54,12 +54,13 @@ const resultsInitialState = {
 export default handleActions(
   {
     [changeTableProperties as any]: (state, action: any) => {
-      const { page, pageSize, sorted } = action.payload
+      const { page, pageSize, sorted, filtered } = action.payload
       return {
         ...state,
         page,
         pageSize,
         sorted,
+        filtered,
       }
     },
     [searchStarted as any]: (state, action: any) => ({

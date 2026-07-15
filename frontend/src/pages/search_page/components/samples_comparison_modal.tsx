@@ -46,59 +46,24 @@ import SearchFilters from './search_filters'
 
 import Plot from 'react-plotly.js'
 
-const LoadingSpinnerOverlay = ({ status }) => {
-  const loadingstyle = {
-    display: 'flex',
-    height: '100%',
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    background: 'rgba(0,0,0,0.4)',
-    zIndex: 99999,
-  } as React.CSSProperties
+import './samples_comparison_modal.css'
 
+const LoadingSpinnerOverlay = ({ status }) => {
   const inner = comparisonStatusMapping[status] || <>Loading</>
 
   return (
-    <div style={loadingstyle}>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <div className="overlay">
+      <div className="loading-container">
         <AnimateHelix />
-        <div
-          style={{
-            display: 'inline-block',
-            textAlign: 'center',
-            margin: 12,
-            padding: 6,
-            background: 'white',
-            width: '100%',
-          }}
-        >
-          {inner}
-        </div>
+        <div className="loading-text">{inner}</div>
       </div>
     </div>
   )
 }
 
 const ErrorOverlay = ({ errors }) => {
-  const loadingstyle = {
-    display: 'flex',
-    height: '100%',
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    background: 'rgba(0,0,0,0.4)',
-    zIndex: 99999,
-  } as React.CSSProperties
-
   return (
-    <div style={loadingstyle}>
+    <div className="overlay">
       <Alert color="danger">
         <h4 className="alert-heading">Error</h4>
         <ul>
@@ -112,18 +77,6 @@ const ErrorOverlay = ({ errors }) => {
     </div>
   )
 }
-
-const popupStyle = {
-  position: 'absolute',
-  backgroundColor: 'rgb(244, 244, 244)',
-  top: 0,
-  left: 0,
-  marginTop: '32px',
-  borderRadius: '12px',
-  boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
-  padding: '12px 0px',
-  zIndex: 10,
-} as React.CSSProperties
 
 const umapTooltipLookup = {
   n_neighbors: 'Controls how UMAP balances local versus global structure in the data',
@@ -198,6 +151,7 @@ const SamplesComparisonModal = (props) => {
     setSelectedFilterExtra,
 
     umapParams,
+    umapParamsErrors,
     handleUmapParameters,
     resetUmapParameters,
 
@@ -350,8 +304,10 @@ const SamplesComparisonModal = (props) => {
       runComparison(umapParams, submissionId)
     }
 
+    const hasUmapParamsErrors = umapParamsErrors.length > 0
+
     return (
-      <div ref={umapParamsRef} style={{ ...popupStyle, ...{ width: '300px' } }}>
+      <div ref={umapParamsRef} className="popup-menu popup-menu-umap">
         <Container>
           {Object.keys(umapTooltipLookup).map((param) => (
             <Row key={param}>
@@ -369,16 +325,34 @@ const SamplesComparisonModal = (props) => {
               />
             </Row>
           ))}
+
+          {hasUmapParamsErrors && (
+            <Row>
+              <Col className="popup-menu-error-container">
+                {umapParamsErrors.map((err, i) => (
+                  <div key={i} className="popup-menu-error">
+                    • {err}
+                  </div>
+                ))}
+              </Col>
+            </Row>
+          )}
+
           <Row>
-            <Col style={{ marginTop: 10, textAlign: 'right' }}>
+            <Col className="popup-menu-control">
               <Button onClick={resetUmapParameters} size="sm" color="link">
                 Reset to defaults
               </Button>
             </Col>
           </Row>
           <Row>
-            <Col style={{ marginTop: 10, textAlign: 'right' }}>
-              <Button onClick={closeAndRun} size="sm" color="primary">
+            <Col className="popup-menu-control">
+              <Button
+                onClick={closeAndRun}
+                size="sm"
+                color="primary"
+                disabled={hasUmapParamsErrors}
+              >
                 Run
               </Button>
             </Col>
@@ -395,7 +369,7 @@ const SamplesComparisonModal = (props) => {
     }
 
     return (
-      <div ref={downloadOptionsRef} style={{ ...popupStyle, ...{ width: '200px' } }}>
+      <div ref={downloadOptionsRef} className="popup-menu popup-menu-download">
         <Container>
           <Row>
             <Col>
@@ -659,6 +633,7 @@ const mapStateToProps = (state) => {
     setSelectedFilterExtra,
 
     umapParams,
+    umapParamsErrors,
 
     status,
     alerts,
@@ -684,6 +659,7 @@ const mapStateToProps = (state) => {
     setSelectedFilterExtra,
 
     umapParams,
+    umapParamsErrors,
 
     contextualData,
     contextualFilters: state.contextualDataDefinitions.filters,
