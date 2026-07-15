@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("bpaotu")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 LOOKUPS_PATH = os.getenv("LOOKUPS_PATH", "/app/bpaotu/bpaotu/lookups")

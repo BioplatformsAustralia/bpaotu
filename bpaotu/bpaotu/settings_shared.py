@@ -2,6 +2,7 @@
 
 import os
 import posixpath
+import logging
 
 from ccg_django_utils.conf import EnvConfig
 from celery.schedules import crontab
@@ -47,12 +48,22 @@ MEDIA_URL = ''
 ## EMAIL CONFIG
 
 EMAIL_SUBJECT_PREFIX = env.get("EMAIL_SUBJECT_PREFIX", '[Australian Microbiome]')
+
+# From env vars, with defaults
 MAIL_SERVER_HOST = env.get("MAIL_SERVER_HOST", "localhost")
 MAIL_SERVER_PORT = int(env.get("MAIL_SERVER_PORT", 25))
 MAIL_FROM = env.get("MAIL_FROM", "noreply@noreply.csiro.au")
 
+# Django email settings, using the above env vars
+EMAIL_HOST = MAIL_SERVER_HOST
+EMAIL_PORT = MAIL_SERVER_PORT
+DEFAULT_FROM_EMAIL = MAIL_FROM
+
+# Email recipients (comma separated lists)
 INGEST_NOTIFY_EMAIL = env.get('ingest_notify_email', None)
 METAGENOME_REQUEST_EMAIL = env.get('metagenome_request_email', 'am-data-requests@bioplatforms.com')
+alert_emails = env.get("alert_email", "root@localhost").split(",")
+ADMINS = [("alert", email.strip()) for email in alert_emails]
 
 
 ## TASK SPECIFIC CONFIG
@@ -177,28 +188,59 @@ with suppress(OSError):
         os.mkdir(LOG_DIRECTORY)
 os.path.exists(LOG_DIRECTORY), "No log directory, please create one: %s" % LOG_DIRECTORY
 
+# Filter that rewrites the level name to be 5 chars or min before formatting
+class ShortLevelFilter(logging.Filter):
+    LEVEL_MAP = {
+        "WARNING": "WARN",
+        "CRITICAL": "FATAL",
+    }
+
+    def filter(self, record):
+        record.levelname = self.LEVEL_MAP.get(record.levelname, record.levelname)
+        return True
+
+# Note that these are the final mapped values after ShortLevelFilter has been applied
+LOG_COLORS = {
+    'DEBUG': 'cyan',
+    'INFO': 'green',
+    'WARN': 'yellow',
+    'ERROR': 'red',
+    'FATAL': 'red,bg_white',
+}
+
+LEVEL_TEXT = '[%(levelname)-5s] '
+LEVEL_TEXT_COLOR = '[%(log_color)s%(levelname)-5s%(reset)s] '
+SIMPLE_TEXT = '%(asctime)s %(message)s'
+VERBOSE_TEXT = '%(asctime)s [%(filename)s:%(lineno)s:%(funcName)s] %(message)s'
+
+SIMPLE_FORMAT = LEVEL_TEXT + SIMPLE_TEXT
+VERBOSE_FORMAT = LEVEL_TEXT + VERBOSE_TEXT
+SIMPLE_FORMAT_COLOR = LEVEL_TEXT_COLOR + SIMPLE_TEXT
+VERBOSE_FORMAT_COLOR = LEVEL_TEXT_COLOR + VERBOSE_TEXT
+DB_FORMAT = LEVEL_TEXT + '(%(duration)s) [%(sql)s:%(params)s %(filename)s %(lineno)s %(funcName)s] %(message)s'
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
+        'simple': {
+            'format': SIMPLE_FORMAT
+        },
+        'simple-color': {
+            '()': 'colorlog.ColoredFormatter',
+            'log_colors': LOG_COLORS,
+            'format': SIMPLE_FORMAT_COLOR
+        },
         'verbose': {
-            'format': '[%(levelname)s:%(asctime)s:%(filename)s:%(lineno)s:%(funcName)s] %(message)s'
+            'format': VERBOSE_FORMAT
         },
-        'verbose-alt': {
-            'format': '[%(levelname)s:%(asctime)s] %(message)s'
-        },
-        'importer': {
-            'format': '[%(levelname)s:%(asctime)s] %(message)s'
+        'verbose-color': {
+            '()': 'colorlog.ColoredFormatter',
+            'log_colors': LOG_COLORS,
+            'format': VERBOSE_FORMAT_COLOR
         },
         'db': {
-            'format': '[%(duration)s:%(sql)s:%(params)s %(filename)s %(lineno)s %(funcName)s] %(message)s'
-        },
-        'simple': {
-            'format': '%(levelname)s %(message)s'
-        },
-        'color': {
-            '()': 'colorlog.ColoredFormatter',
-            'format': '[%(log_color)s%(levelname)-8s] %(filename)s:%(lineno)s %(funcName)s() %(message)s',
+            'format': DB_FORMAT
         },
     },
     'filters': {
@@ -208,45 +250,36 @@ LOGGING = {
         'require_debug_true': {
             '()': 'django.utils.log.RequireDebugTrue',
         },
+        'short_levels': {
+            '()': 'bpaotu.settings_shared.ShortLevelFilter',
+        },
     },
     'handlers': {
         'console': {
             'level': 'DEBUG',
-            'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
+            'formatter': 'verbose-color',
+            'filters': ['short_levels'],
         },
-        'console-alt': {
+        'console-worker': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose-alt'
+            'formatter': 'simple-color',
+            'filters': ['short_levels'],
         },
-        'console_prod': {
+        'console-importer': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
-        },
-        'console_importer': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'importer'
-        },
-        'shell': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
-        },
-        'rainbow': {
-            'level': 'DEBUG',
-            'class': 'colorlog.StreamHandler',
-            'formatter': 'color'
+            'formatter': 'simple',
+            'filters': ['short_levels'],
         },
         'file': {
             'level': 'INFO', # note that file is fixed to have a lowest level of INFO
             'class': 'ccg_django_utils.loghandlers.ParentPathFileHandler',
             'filename': os.path.join(LOG_DIRECTORY, 'registry.log'),
             'when': 'midnight',
-            'formatter': 'verbose'
+            'formatter': 'verbose',
+            'filters': ['short_levels'],
         },
         'mail_admins': {
             'level': 'ERROR',
@@ -254,66 +287,65 @@ LOGGING = {
             'class': 'django.utils.log.AdminEmailHandler',
             'include_html': True
         },
+        'db': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'db',
+            'filters': ['require_debug_true', 'short_levels'],
+        },
         'null': {
             'class': 'logging.NullHandler',
         },
     },
     'loggers': {
+        ## internal django loggers
+        # general
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['file', 'console'],
         },
+        # 4xx and 5xx errors (when DEBUG=False)
         'django.request': {
             'handlers': ['mail_admins'],
             'level': 'ERROR',
             'propagate': True,
         },
+        # security errors (when DEBUG=False)
         'django.security': {
             'handlers': ['mail_admins'],
             'level': 'ERROR',
             'propagate': True,
         },
-        'django.db.backends': {
-            'handlers': ['mail_admins'],
-            'level': 'CRITICAL',
-            'propagate': True,
-        },
-        'rainbow': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'bpaotu': {
-            'handlers': ['console_prod', 'file'],
-            'level': LOG_LEVEL,
-            'propagate': False,
-        },
-        'bpaotu-alt': {
-            'handlers': ['console-alt', 'file'],
-            'level': LOG_LEVEL,
-            'propagate': False,
-        },
-        'importer': {
-            'handlers': ['console_importer', 'file'],
-            'level': LOG_LEVEL,
-            'propagate': False,
-        },
+        # # database queries (when DEBUG=True, can be very verbose - uncomment if needed)
+        # 'django.db.backends': {
+        #     'handlers': ['db'],
+        #     'level': 'DEBUG',
+        #     'propagate': False,
+        # },
+        # third party libraries
         'libs': {
-            'handlers': ['rainbow', 'file'],
+            'handlers': ['file', 'console'],
             'level': 'DEBUG',
             'propagate': False,
         },
-        'bpaotu.bpaotu.management.commands': {
-            'handlers': ['rainbow'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'apps': {
-            'handlers': ['rainbow'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
+        # python warnings
         'py.warnings': {
             'handlers': ['console'],
+        },
+        # custom app loggers
+        'bpaotu': {
+            'handlers': ['file', 'console'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'bpaotu-worker': {
+            'handlers': ['file', 'console-worker'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'bpaotu-importer': {
+            'handlers': ['file', 'console-importer'],
+            'level': LOG_LEVEL,
+            'propagate': False,
         },
     }
 }

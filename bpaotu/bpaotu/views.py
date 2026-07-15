@@ -1630,11 +1630,19 @@ def track(request, event, args=None):
         try:
             email = request.ckan_data['email']
             ident = hash_ckan_email(email)
+            logger.debug(
+                "Tracking event: hash id=%s, event=%s, args=%s",
+                ident,
+                event,
+                args,
+            )
+
+            # Use a separate thread to avoid blocking the request/response cycle
             threading.Thread(target=lambda: mp.track(ident, event, args or {})).start()
         except Exception as e:
-            print(f"Mixpanel tracking failed: {e}")
+            logger.error(f"Mixpanel tracking failed: {e}", exc_info=True)
     else:
-        print("Mixpanel not configured, event not tracked.")
+        logger.warning("Mixpanel not configured, event not tracked.")
 
 def hash_ckan_email(email):
     """
