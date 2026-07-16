@@ -6,5 +6,7 @@ set -e
 #   ./container-yarn.sh install
 #   ./container-yarn.sh add lodash@4.17.21
 
-docker run --rm -v "$PWD":/frontend -w /frontend node:16-alpine \
+# Make sure the node version in the container matches the version specified in package.json and frontend/Dockerfile
+
+docker run --rm -v "$PWD":/frontend -w /frontend node:22-alpine \
   sh -c "if command -v yarn >/dev/null 2>&1; then yarn $*; else npm install -g yarn && yarn $*; fi && chown -R $(id -u):$(id -g) /frontend"
