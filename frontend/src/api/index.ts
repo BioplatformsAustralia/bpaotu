@@ -1,9 +1,7 @@
 import axios from 'axios'
 import { get as _get, map, partial, join } from 'lodash'
 
-import { store } from 'index'
 import 'interfaces'
-import { oauthCheckAuthEnded } from 'reducers/auth'
 import { taxonomy_keys } from 'app/constants'
 
 axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN'

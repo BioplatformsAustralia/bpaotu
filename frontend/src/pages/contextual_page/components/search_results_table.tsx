@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { isEmpty } from 'lodash'
 
 import 'react-table/react-table.css'
 import { fieldsToColumns, SearchResultsTable } from 'components/search_results_table'
@@ -9,13 +8,12 @@ import { changeTableProperties, search } from '../reducers/search'
 const ContextualSearchResultsTable = () => {
   const dispatch = useDispatch()
 
-  const { results, extraColumns, sorting } = useSelector((state: any) => ({
+  const { results, extraColumns } = useSelector((state: any) => ({
     results: state.contextualPage.results,
     extraColumns: fieldsToColumns(
       state.contextualPage.selectColumns.columns,
       state.contextualDataDefinitions
     ),
-    sorting: state.contextualPage.results.sorted,
   }))
 
   // search once on initial mount

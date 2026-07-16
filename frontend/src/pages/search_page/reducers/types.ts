@@ -301,7 +301,7 @@ export const searchPageInitialState: PageState = {
     data: [],
     page: 0,
     pages: 0,
-    pageSize: 10,
+    pageSize: 100,
     rowsCount: 0,
     sorted: [],
   },

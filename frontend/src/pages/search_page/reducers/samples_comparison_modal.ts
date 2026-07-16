@@ -6,11 +6,11 @@ import {
   getComparisonSubmission,
   getComparisonDistanceMatrices,
 } from 'api'
-import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
+import { changeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
 import { ComparisonSubmission, ErrorList, searchPageInitialState } from './types'
 
-import { get as _get, isNumber, last } from 'lodash'
+import { get as _get, last } from 'lodash'
 
 export const {
   openSamplesComparisonModal,
@@ -340,7 +340,6 @@ export default handleActions(
           const { ordination, contextual } = results
           const sample_ids = ordination.sample_ids
           const pointsBC = ordination.points['braycurtis']
-          const pointsJ = ordination.points['jaccard']
 
           contextualData = contextual.samples
 

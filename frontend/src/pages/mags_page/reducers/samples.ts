@@ -1,9 +1,8 @@
-import { map, get as _get, partial } from 'lodash'
+import { map, partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import { executeMagsSearch, executeMagsSitesMetadata, executeSampleMagsCount } from 'api'
+import {  executeMagsSitesMetadata, executeSampleMagsCount } from 'api'
 import { handleSimpleAPIResponse } from 'reducers/utils'
 import { EmptyOTUQuery } from 'search'
-import { ErrorList } from 'pages/search_page/reducers/types'
 
 export const {
   magsFetchSamplesStarted,

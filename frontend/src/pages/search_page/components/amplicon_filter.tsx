@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 
 import { get as _get } from 'lodash'
 import { connect } from 'react-redux'
@@ -15,34 +15,33 @@ import {
 
 const AmpliconFilter = (props) => {
   const [defaultAmplicon, setDefaultAmplicon] = useState(null)
+  const { options, metagenomeMode, keepExistingValue, selected, selectValue } = props
 
-  const calculateDefaultAmplicon = () => {
-    if (defaultAmplicon || props.options.length === 0) {
+  const calculateDefaultAmplicon = useCallback(() => {
+    if (defaultAmplicon || options.length === 0) {
       return
     }
-    const ampliconFunction = props.metagenomeMode
-      ? getDefaultMetagenomeAmplicon
-      : getDefaultAmplicon
-    const amplicon = ampliconFunction(props.options)
+    const ampliconFunction = metagenomeMode ? getDefaultMetagenomeAmplicon : getDefaultAmplicon
+    const amplicon = ampliconFunction(options)
     if (amplicon) {
       setDefaultAmplicon(amplicon)
-      props.selectValue(amplicon.id)
+      selectValue(amplicon.id)
     }
-  }
+  }, [defaultAmplicon, options, metagenomeMode, selectValue])
 
   useEffect(() => {
-    if (!props.keepExistingValue) {
+    if (!keepExistingValue) {
       calculateDefaultAmplicon()
     }
-  }, [props.options, props.metagenomeMode, props.keepExistingValue])
+  }, [calculateDefaultAmplicon, keepExistingValue])
 
   useEffect(() => {
-    if (!props.keepExistingValue) {
-      if (props.selected.value === '' && !props.metagenomeMode && defaultAmplicon) {
-        props.selectValue(defaultAmplicon.id)
+    if (!keepExistingValue) {
+      if (selected.value === '' && !metagenomeMode && defaultAmplicon) {
+        selectValue(defaultAmplicon.id)
       }
     }
-  }, [props.selected.value, props.metagenomeMode, defaultAmplicon, props.keepExistingValue])
+  }, [selected.value, metagenomeMode, defaultAmplicon, keepExistingValue, selectValue])
 
   return <DropDownFilter {...props} />
 }

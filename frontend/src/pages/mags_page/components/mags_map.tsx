@@ -1,34 +1,11 @@
 import React, { useEffect, useState } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
+import { useSelector } from 'react-redux'
 
-import {
-  Map,
-  Marker,
-  Popup,
-  TileLayer,
-  LayersControl,
-  GeoJSON,
-  FeatureGroup,
-  Rectangle,
-  ScaleControl,
-  CircleMarker,
-} from 'react-leaflet'
+import { Map, Marker, Popup, TileLayer, LayersControl, CircleMarker } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-markercluster'
 import FullscreenControl from 'react-leaflet-fullscreen'
 
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  Col,
-  Container,
-  Row,
-  Nav,
-  NavItem,
-  NavLink,
-  TabContent,
-  TabPane,
-} from 'reactstrap'
+import { Card, CardBody, CardHeader } from 'reactstrap'
 
 import { ArcGIS, tileLayer } from 'app/map'
 
@@ -59,7 +36,7 @@ const MagsMap: React.FC<Props> = ({ sampleId }) => {
   const sampleRecord = samples.data.find((x) => Object.keys(x.bpadata).includes(sampleId))
 
   const [position, setPosition] = useState<[number, number]>([0, 0])
-  const [zoom, setZoom] = useState(8)
+  const zoom = 8
 
   useEffect(() => {
     if (!sampleRecord) return

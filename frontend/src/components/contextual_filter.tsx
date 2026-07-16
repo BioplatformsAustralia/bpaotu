@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { filter as _filter, get as _get, isArray, find } from 'lodash'
+import { filter as _filter, isArray, find } from 'lodash'
 import { Col, Input, Row, UncontrolledTooltip } from 'reactstrap'
 import Octicon from 'components/octicon'
 
@@ -11,7 +11,6 @@ const ContextualFilter = (props) => {
     filter,
     dataDefinition,
     dataDefinitions,
-    definitions,
     optionsLoading,
     remove,
     select,
@@ -44,7 +43,6 @@ const ContextualFilter = (props) => {
 
   const TypeBasedOperatorAndValue = TypeToOperatorAndValue[type]
   const filterTipId = 'FilterTip-' + index + '-' + filter.name
-  const definition = find(definitions, (def) => def.name === filter.name)
 
   return (
     <ContextualDropDown

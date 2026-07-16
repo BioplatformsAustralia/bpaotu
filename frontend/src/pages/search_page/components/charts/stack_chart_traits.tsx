@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import Plot from 'react-plotly.js'
-import { find, filter as lodashFilter } from 'lodash'
+import { find } from 'lodash'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 
@@ -8,7 +8,7 @@ import { plotly_chart_config } from '../charts/plotly_chart'
 import { selectEnvironment } from '../../reducers/contextual'
 
 const StackChartTraits = (props: any) => {
-  const { environment, taxonomy, taxonomyGraphdata, contextualFilters, width, height, filter } =
+  const { environment, taxonomy, contextualFilters, width, height, filter } =
     props
 
   const loadChartData = (

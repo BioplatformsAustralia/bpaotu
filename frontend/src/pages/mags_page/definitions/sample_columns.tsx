@@ -1,6 +1,3 @@
-import React, { useMemo } from 'react'
-import { NavLink as RRNavLink } from 'react-router-dom'
-import { NavLink } from 'reactstrap'
 
 export const sampleColumnsLookup = {
   'Sample ID': {

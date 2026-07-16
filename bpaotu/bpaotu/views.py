@@ -1462,9 +1462,8 @@ def site_image_thumbnail(request, package_id, resource_id):
 
     buf, content_type = fetch_image(package_id, resource_id)
 
-    if buf == None:
-        # not ideal, but detecting a non image will require a bit more changes
-        return HttpResponse('')
+    if buf is None:
+        return HttpResponse(status=204)
     else:
         return HttpResponse(buf.getvalue(), content_type=content_type)
 

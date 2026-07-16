@@ -50,6 +50,11 @@ CACHE_7DAYS = (60 * 60 * 24 * 7)
 __METADATA_UUID = None  # cache
 
 
+def is_missing_mag_table_error(exc):
+    error_text = str(exc).lower()
+    return 'relation' in error_text and 'mag' in error_text and 'does not exist' in error_text
+
+
 def make_cache_key(*args):
     """
     make a cache key, which will be tied to the UUID of the current import,
@@ -377,8 +382,14 @@ class MagQuery:
 
     def exists(self, filtering=()):
         """Return True if at least one MAG row exists matching the filters."""
-        q, _ = self._base_query(filtering)
-        return q.first() is not None
+        try:
+            q, _ = self._base_query(filtering)
+            return q.first() is not None
+        except sqlalchemy.exc.ProgrammingError as exc:
+            if is_missing_mag_table_error(exc):
+                logger.warning("MAG table is not available; treating MAGs as unavailable")
+                return False
+            raise
 
     def count(self, filtering=()):
         q, _ = self._base_query(filtering)

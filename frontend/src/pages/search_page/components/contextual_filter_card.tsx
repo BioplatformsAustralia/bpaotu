@@ -96,7 +96,6 @@ const ContextualFilterCard = (props) => {
     contextualFilters,
     contextualFiltersMode,
     dataDefinitions,
-    definitions,
     definitions_url,
     fetchContextualDataDefinitions,
     optionsLoading,

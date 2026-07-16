@@ -1,8 +1,7 @@
-import React, { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import React from 'react'
 
-import { NavLink as RRNavLink, useLocation } from 'react-router-dom'
-import { Card, CardHeader, CardBody, Container, Row, Col, NavLink } from 'reactstrap'
+import { useLocation } from 'react-router-dom'
+import { Card, CardHeader, CardBody, Container, Row, Col } from 'reactstrap'
 
 const leftColumnStyle = {
   display: 'inline-block',
@@ -35,9 +34,14 @@ export const MagDownloadErrorPage = (props) => {
               </p>
               <p>Please contact us to request more information.</p>
               <p>
-                <a href="#" onClick={() => window.close()}>
+                <button
+                  type="button"
+                  className="btn btn-link p-0"
+                  onClick={() => window.close()}
+                  style={{ textDecoration: 'underline' }}
+                >
                   Close this window and return to data portal
-                </a>
+                </button>
               </p>
             </CardBody>
           </Card>

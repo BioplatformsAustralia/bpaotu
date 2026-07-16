@@ -22,6 +22,7 @@ export const OMDBLink = ({ result }) => {
         <a
           href={`https://omdb.microbiomics.io/repository/ocean/genomes-by-sample?search_term=BPAM22-1_${biosample}_METAG&search_column=sample`}
           target="_blank"
+          rel="noopener noreferrer"
         >
           <span style={{ marginLeft: 6 }}>
             <Octicon name="link-external" />

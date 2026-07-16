@@ -20,9 +20,8 @@ const EnvironmentFilter = () => {
     selected: state.searchPage.filters.contextual.selectedEnvironment,
   }))
 
-  const { options, loading } = useSelector((state: any) => ({
+  const { options } = useSelector((state: any) => ({
     options: state.contextualDataDefinitions.environment,
-    loading: state.contextualDataDefinitions.isLoading,
   }))
 
   const renderOption = (option) => ({ value: option.id, label: option.name })

@@ -1,10 +1,7 @@
 import * as React from 'react'
 import { Alert, Container } from 'reactstrap'
 
-export default (props) => {
-  // ckanURL changed to host location so that ckan and bpaotu are pointed to the same server address
-  const ckanURL = (path: string) => `${window.location.origin}/${path}`
-
+export default () => {
   return (
     <Container fluid={true}>
       <Alert color="danger" className="text-center">

@@ -1,8 +1,6 @@
-import { map, get as _get, partial } from 'lodash'
+import { get as _get } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import { executeMagsSearch, executeMagsSitesMetadata } from 'api'
-import { handleSimpleAPIResponse } from 'reducers/utils'
-import { EmptyOTUQuery } from 'search'
+import { executeMagsSearch } from 'api'
 import { ErrorList } from 'pages/search_page/reducers/types'
 
 export const { changeTablePropertiesMags, searchMagsStarted, searchMagsEnded } = createActions(
@@ -79,7 +77,7 @@ const resultsInitialState = {
   errors: [],
   data: [],
   page: 0,
-  pageSize: 10,
+  pageSize: 100,
   rowsCount: 0,
   filtered: [],
   sorted: [],

@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import debounce from 'lodash/debounce'
-import { Alert, UncontrolledTooltip } from 'reactstrap'
+import { Alert } from 'reactstrap'
 
 import ReactTable from 'react-table'
 import 'react-table/react-table.css'
