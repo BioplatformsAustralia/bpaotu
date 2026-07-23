@@ -3,11 +3,11 @@ console.log('index.tsx start')
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css'
 
-import { Buffer } from 'buffer'
-import process from 'process'
+// import { Buffer } from 'buffer'
+// import process from 'process'
 
-window.Buffer = Buffer
-window.process = process
+// window.Buffer = Buffer
+// window.process = process
 
 import 'core-js'
 import axios from 'axios'
@@ -77,7 +77,7 @@ axios
   .catch((error) => {
     console.log('Error fetching app config')
 
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.NODE_ENV === 'development') {
       const message =
         '<h1>NODE_ENV === development only message</h1><p>perhaps taxonomy or spatial cache is still warming</p>'
       document.write(message)

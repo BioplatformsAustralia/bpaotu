@@ -20,16 +20,16 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
     proxy: {
-      '/private/': {
-        target: 'http://runserver:8080/',
+      '/private': {
+        target: 'http://runserver:8080',
         changeOrigin: true,
       },
-      '/oidc/': {
-        target: 'http://runserver:8080/',
+      '/oidc': {
+        target: 'http://runserver:8080',
         changeOrigin: true,
       },
-      '/ingest/': {
-        target: 'http://runserver:8080/',
+      '/ingest': {
+        target: 'http://runserver:8080',
         changeOrigin: true,
       },
     },
@@ -40,8 +40,8 @@ export default defineConfig({
       app: path.resolve(__dirname, 'src/app'),
       aggregation: path.resolve(__dirname, 'src/aggregation'),
       api: path.resolve(__dirname, 'src/api'),
-      buffer: 'buffer/',
-      process: 'process/browser',
+      // buffer: 'buffer/',
+      // process: 'process/browser',
       components: path.resolve(__dirname, 'src/components'),
       pages: path.resolve(__dirname, 'src/pages'),
       providers: path.resolve(__dirname, 'src/providers'),
@@ -54,6 +54,6 @@ export default defineConfig({
   },
 
   optimizeDeps: {
-    include: ['buffer', 'process'],
+    // include: ['buffer', 'process'],
   },
 })
