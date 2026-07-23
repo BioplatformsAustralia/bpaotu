@@ -3,7 +3,8 @@ import { first, join, keys, map, find } from 'lodash'
 import { Nav, NavItem, NavLink, TabContent, TabPane, UncontrolledTooltip, Alert } from 'reactstrap'
 
 import L from 'leaflet'
-import 'leaflet-minimap'
+import MiniMap from 'leaflet-minimap'
+
 import {
   Map,
   Marker,
@@ -627,7 +628,7 @@ class SamplesMap extends React.Component<any> {
     attribution: ArcGIS.attribution,
   })
 
-  new L.Control.MiniMap(layer, { toggleDisplay: true }).addTo(
+  new MiniMap(layer, { toggleDisplay: true }).addTo(
     this.leafletMap.leafletElement
   )
 }

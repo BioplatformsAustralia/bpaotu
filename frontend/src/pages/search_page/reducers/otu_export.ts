@@ -151,8 +151,8 @@ export default handleActions(
       next: (state, action: any) => {
         const actionSubmission = action.payload.data.submission
         const actionSubmissionState = actionSubmission.state
-        const lastSubmission = last(state.submissions)
-        const newLastSubmissionState = ((submission) => {
+        const lastSubmission = last(state.submissions) as OtuExportSubmission | undefined
+        const newLastSubmissionState = ((submission: OtuExportSubmission) => {
           const { state: status, error } = action.payload.data.submission
           const newState = {
             ...submission,

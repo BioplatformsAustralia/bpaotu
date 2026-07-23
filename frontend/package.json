@@ -84,6 +84,10 @@
       "last 1 safari version"
     ]
   },
+  "resolutions": {
+    "@types/react": "17.0.93",
+    "@types/react-dom": "17.0.26"
+  },
   "devDependencies": {
     "@types/jest": "24.0.18",
     "@types/leaflet": "^1.7.0",
