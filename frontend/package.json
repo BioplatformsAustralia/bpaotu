@@ -12,7 +12,7 @@
     "@turf/turf": "6.3.0",
     "add": "^2.0.9",
     "analytics": "^0.8.19",
-    "axios": "0.19.0",
+    "axios": "^1.18.1",
     "blueimp-md5": "^2.19.0",
     "body-scroll-lock": "^3.1.5",
     "bootstrap": "4.3.1",

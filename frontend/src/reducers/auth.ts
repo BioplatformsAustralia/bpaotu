@@ -52,9 +52,7 @@ export default handleActions<AuthenticationState>(
         }
 
         // Set default headers for authenticated requests
-        axios.defaults.headers = {
-          'X-BPAOTU-Auth': 'oauth',
-        }
+        axios.defaults.headers.common['X-BPAOTU-Auth'] = 'oauth'
 
         return {
           isAuthenticated: true,
