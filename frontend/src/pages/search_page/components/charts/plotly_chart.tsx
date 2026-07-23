@@ -1,4 +1,4 @@
-import * as Plotly from 'plotly.js'
+import * as Plotly from 'plotly.js-dist-min'
 
 const icon = {
   width: 1792,

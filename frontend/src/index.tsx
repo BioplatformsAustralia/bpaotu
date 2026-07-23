@@ -1,5 +1,13 @@
+console.log('index.tsx start')
+
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css'
+
+import { Buffer } from 'buffer'
+import process from 'process'
+
+window.Buffer = Buffer
+window.process = process
 
 import 'core-js'
 import axios from 'axios'
@@ -22,6 +30,8 @@ import mixpanelPlugin from '@analytics/mixpanel'
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose
 
 export const store = createStore(reducers, composeEnhancers(applyMiddleware(thunk)))
+
+console.log('config before request', window.otu_search_config)
 
 axios
   .get(window.otu_search_config.base_url + '/private/api/v1/config')

@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import { first, join, keys, map, find } from 'lodash'
 import { Nav, NavItem, NavLink, TabContent, TabPane, UncontrolledTooltip, Alert } from 'reactstrap'
 
-import * as L from 'leaflet'
-import * as MiniMap from 'leaflet-minimap'
+import L from 'leaflet'
+import 'leaflet-minimap'
 import {
   Map,
   Marker,
@@ -617,15 +617,20 @@ class SamplesMap extends React.Component<any> {
     this.props.fetchSamples()
   }
 
+  // There is no react-leaflet wrapper for the MiniMap plugin, so we initialise
+  // the Leaflet control directly once we have access to the underlying Leaflet
+  // map instance via the react-leaflet ref.
   public setUpMiniMap = () => {
-    // There is no port of the MiniMap plugin to React so we use the JS plugin directly and wire it up manually using a `ref` to the L.Map object
-    const layer = new L.TileLayer(ArcGIS.url, {
-      minZoom: 0,
-      maxZoom: 13,
-      attribution: ArcGIS.attribution,
-    })
-    new MiniMap(layer, { toggleDisplay: true }).addTo(this.leafletMap.leafletElement)
-  }
+  const layer = new L.TileLayer(ArcGIS.url, {
+    minZoom: 0,
+    maxZoom: 13,
+    attribution: ArcGIS.attribution,
+  })
+
+  new L.Control.MiniMap(layer, { toggleDisplay: true }).addTo(
+    this.leafletMap.leafletElement
+  )
+}
 
   public handleClick = (e) => {
     // const { lat, lng } = e.latlng;

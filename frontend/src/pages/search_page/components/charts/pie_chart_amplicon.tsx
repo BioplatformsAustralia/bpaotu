@@ -1,5 +1,5 @@
 import React from 'react'
-import Plot from 'react-plotly.js'
+import Plot from './plot'
 import { plotly_chart_config } from './plotly_chart'
 import { connect } from 'react-redux'
 import { startCase, fromPairs, unzip } from 'lodash'

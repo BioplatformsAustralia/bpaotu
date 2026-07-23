@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import Plot from 'react-plotly.js'
+import Plot from './plot'
 import { plotly_chart_config } from './plotly_chart'
 import { find, filter as lodashFilter } from 'lodash'
 import { connect } from 'react-redux'

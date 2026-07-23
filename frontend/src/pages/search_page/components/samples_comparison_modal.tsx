@@ -43,7 +43,7 @@ import {
 
 import SearchFilters from './search_filters'
 
-import Plot from 'react-plotly.js'
+import Plot from './charts/plot'
 
 import './samples_comparison_modal.css'
 

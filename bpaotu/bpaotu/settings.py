@@ -33,7 +33,7 @@ ALLOWED_HOSTS = env.getlist("allowed_hosts", ["*"])
 # Note: must include scheme and port if not using default ports, and must match the actual host header sent by the client
 # (i.e. the hostname used to access the site in the browser) for CSRF protection to work.
 # In production, this should be set to the actual hostname(s) used to access the site, but we allow it to be overridden by env var for development and testing.
-CSRF_TRUSTED_ORIGINS = env.getlist("CSRF_TRUSTED_ORIGINS", [])
+CSRF_TRUSTED_ORIGINS = env.getlist("CSRF_TRUSTED_ORIGINS", ["http://localhost:3000"])
 
 # Tell Django to trust the X-Forwarded-Proto header set by our nginx frontend when determining if the request is secure
 # (i.e. was originally made over HTTPS).

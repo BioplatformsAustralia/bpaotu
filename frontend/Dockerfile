@@ -32,6 +32,8 @@ ENV NODE_OPTIONS=--openssl-legacy-provider
 # Copy application source required for dev server
 COPY src ./src
 COPY public ./public
+COPY index.html ./index.html
+COPY vite.config.ts ./vite.config.ts
 COPY package.json ./package.json
 COPY tsconfig.json ./tsconfig.json
 
@@ -51,6 +53,8 @@ ENV NODE_OPTIONS=--openssl-legacy-provider
 # Copy application source required for build
 COPY src ./src
 COPY public ./public
+COPY index.html ./index.html
+COPY vite.config.ts ./vite.config.ts
 COPY package.json ./package.json
 COPY tsconfig.json ./tsconfig.json
 
