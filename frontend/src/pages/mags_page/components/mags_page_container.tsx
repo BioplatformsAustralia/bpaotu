@@ -1,9 +1,9 @@
 import React from 'react'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Container, Row, NavLink } from 'reactstrap'
 
-const MagsPageContainer = ({ children }) => {
-  const history = useHistory()
+const MagsPageContainer = ({ children }) => {6
+  const navigate = useNavigate()
 
   return (
     <Container fluid={true}>
@@ -13,7 +13,7 @@ const MagsPageContainer = ({ children }) => {
             href="#"
             onClick={(e) => {
               e.preventDefault()
-              history.go(-1) // go back 1
+              navigate(-1) // go back 1
             }}
           >
             Back

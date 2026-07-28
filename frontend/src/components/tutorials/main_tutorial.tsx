@@ -1,5 +1,4 @@
 import React, { useContext } from 'react'
-import { withRouter } from 'react-router-dom'
 import { connect } from 'react-redux'
 
 import { Tutorial, TutorialBadge, AMBLink, stepsStyle } from 'components/tutorial'
@@ -496,4 +495,4 @@ const mapStateToProps = (state) => {
   }
 }
 
-export default connect(mapStateToProps, null)(withRouter(MainTutorial))
+export default connect(mapStateToProps, null)(MainTutorial)

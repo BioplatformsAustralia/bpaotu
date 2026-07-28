@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Route, Switch } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 
 import ContextualPage from 'pages/contextual_page'
 import MapPage from 'pages/map_page'
@@ -10,16 +10,16 @@ import PrivacyPolicy from 'pages/privacy_policy_page'
 
 export default (_) => (
   <div>
-    <Switch>
-      <Route path="/" component={SampleSearchPage} exact={true} />
-      <Route path="/metagenome" component={MetagenomeSearchPage} />
-      <Route path="/contextual" component={ContextualPage} />
-      <Route path="/mags" component={MagsPage} exact={true} />
-      <Route path="/mags/sample/:sample_id" component={SampleMagsPage} />
-      <Route path="/mags/mag/:mag_id" component={InspectMagPage} />
-      <Route path="/mags/download_error" component={MagDownloadErrorPage} />
-      <Route path="/map" component={MapPage} />
-      <Route path="/privacy-policy" component={PrivacyPolicy} />
-    </Switch>
+    <Routes>
+      <Route path="/" element={<SampleSearchPage />} />
+      <Route path="/metagenome" element={<MetagenomeSearchPage />} />
+      <Route path="/contextual" element={<ContextualPage />} />
+      <Route path="/mags" element={<MagsPage />} />
+      <Route path="/mags/sample/:sample_id" element={<SampleMagsPage />} />
+      <Route path="/mags/mag/:mag_id" element={<InspectMagPage />} />
+      <Route path="/mags/download_error" element={<MagDownloadErrorPage />} />
+      <Route path="/map" element={<MapPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+    </Routes>
   </div>
 )

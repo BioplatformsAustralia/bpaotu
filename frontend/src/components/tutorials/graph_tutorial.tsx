@@ -1,5 +1,4 @@
 import React, { useContext } from 'react'
-import { withRouter } from 'react-router-dom'
 
 import Octicon from 'components/octicon'
 import { Tutorial, TutorialBadge, stepsStyle } from 'components/tutorial'
@@ -526,4 +525,4 @@ const GraphTutorial = (props) => {
   )
 }
 
-export default withRouter(GraphTutorial)
+export default GraphTutorial

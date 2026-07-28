@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react'
 import { connect } from 'react-redux'
-import { Link, withRouter } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { bindActionCreators } from 'redux'
 
 import CookieConsent, { getCookieConsentValue } from 'react-cookie-consent'
@@ -128,4 +128,4 @@ function mapDispatchToProps(dispatch) {
   )
 }
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(App) as any)
+export default connect(mapStateToProps, mapDispatchToProps)(App) as any
