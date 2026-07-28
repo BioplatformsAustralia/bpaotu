@@ -1,7 +1,7 @@
 import React from 'react'
 import Tour from 'reactour'
 import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock'
-import { Badge, UncontrolledTooltip } from 'reactstrap'
+import { Button, UncontrolledTooltip } from 'reactstrap'
 import Octicon from 'components/octicon'
 
 export const stepsStyle = {
@@ -50,24 +50,26 @@ export const Tutorial = (props) => {
 }
 
 export const TutorialBadge = ({ id, onClick, tooltip = '' }) => {
+  const tutorialButtonStyle: React.CSSProperties = {
+    fontSize: '14px',
+    marginTop: '-10px',
+    padding: '10px 25px',
+    border: 0,
+    color: '#041e48',
+    backgroundColor: '#17c496',
+  }
+
   return (
     <>
-      <Badge
+      <Button
         id={id}
-        style={{
-          cursor: 'pointer',
-          fontSize: '14px',
-          marginTop: '-10px',
-          padding: '10px 25px',
-          color: '#041e48',
-          backgroundColor: '#17c496',
-        }}
+        className='rounded-pill'
+        style={tutorialButtonStyle}
         onClick={onClick}
-        pill
       >
         <Octicon name="book" />
         <span style={{ marginLeft: 6 }}>Tutorial</span>
-      </Badge>
+      </Button>
       <UncontrolledTooltip target={id} placement="auto">
         {tooltip}
       </UncontrolledTooltip>

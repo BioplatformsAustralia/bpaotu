@@ -15,7 +15,7 @@
     "axios": "^1.18.1",
     "blueimp-md5": "^2.19.0",
     "body-scroll-lock": "^3.1.5",
-    "bootstrap": "4.3.1",
+    "bootstrap": "^5.3",
     "buffer": "^6.0.3",
     "core-js": "^3.49.0",
     "d3": "^7.9.0",

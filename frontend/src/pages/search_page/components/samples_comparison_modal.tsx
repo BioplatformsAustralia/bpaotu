@@ -388,7 +388,7 @@ const SamplesComparisonModal = (props) => {
         data-tut="reactour__CloseSamplesComparisonModal"
         id="CloseSamplesComparisonModal"
       >
-        Interactive Sample Comparison Search
+        Interactive Sample Comparison Searchz
         <div style={{ marginLeft: 30, display: 'inline-block' }}>{renderControlButtons()}</div>
       </ModalHeader>
       <ModalBody>

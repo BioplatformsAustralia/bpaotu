@@ -62,7 +62,12 @@ const ContextualFilterLinkButton = ({ title, url, tooltip }) => {
       <Button
         size="sm"
         color="secondary"
-        style={{ cursor: 'pointer', margin: '-15px 2px', padding: '3px 10px' }}
+        style={{
+          cursor: 'pointer',
+          margin: '0px 2px',
+          paddingTop: '3px',
+          paddingBottom: '0px'
+        }}
         href={url}
         target="_blank"
       >

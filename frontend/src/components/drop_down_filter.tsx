@@ -79,12 +79,13 @@ const DropDownFilter = (props) => {
   }
 
   return (
-    <FormGroup row={true}>
+    <FormGroup className="form-group" row={true} noMargin>
       <FilterHeader label={props.label} info={props.info} />
       <Col sm={3}>
         <Input
           type="select"
           name="operator"
+          className="form-control"
           disabled={isDisabled}
           value={selected.operator}
           onChange={onOperatorChange}

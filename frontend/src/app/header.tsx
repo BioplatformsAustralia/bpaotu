@@ -1,122 +1,132 @@
-import React, { useState } from 'react'
-import { join } from 'lodash'
+  import React, { useState } from 'react'
+  import { join } from 'lodash'
 
-import { useSelector } from 'react-redux'
-import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap'
-import { NavLink as RRNavLink } from 'react-router-dom'
+  import { useSelector } from 'react-redux'
+  import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink as RSNavLink } from 'reactstrap'
+  import { NavLink  } from 'react-router-dom'
 
-import MainTutorial from 'components/tutorials/main_tutorial'
-import UserProfile from 'components/user_profile'
+  import MainTutorial from 'components/tutorials/main_tutorial'
+  import UserProfile from 'components/user_profile'
 
-const Header = () => {
-  const { auth } = useSelector((state: any) => ({
-    auth: state.auth,
-  }))
+  const Header = () => {
+    const { auth } = useSelector((state: any) => ({
+      auth: state.auth,
+    }))
 
-  // manage state of NavbarToggler for smaller screens
-  const [isOpen, setIsOpen] = useState(false)
-  const toggle = () => setIsOpen(!isOpen)
+    // manage state of NavbarToggler for smaller screens
+    const [isOpen, setIsOpen] = useState(false)
+    const toggle = () => setIsOpen(!isOpen)
 
-  const magsAvailable = window.otu_search_config.mags_available
+    const magsAvailable = window.otu_search_config.mags_available
 
-  const navLinkStyle = {
-    paddingLeft: '16px',
-    paddingRight: '16px',
-  } as React.CSSProperties
+    const navLinkStyle = {
+      paddingLeft: '16px',
+      paddingRight: '16px',
+    } as React.CSSProperties
 
-  const logoPNG =
-    window.otu_search_config.static_base_url +
-    join(['bpa-logos', 'BIO-RGB_Full-POS_Portal.png'], '/')
+    const logoPNG =
+      window.otu_search_config.static_base_url +
+      join(['bpa-logos', 'BIO-RGB_Full-POS_Portal.png'], '/')
 
-  return (
-    <Navbar color="light" light={true} expand="lg">
-      <NavbarBrand className="site-header-logo" href="/">
-        <img className="logo" src={logoPNG} alt="Bioplatform Australia" />
-      </NavbarBrand>
-      <NavbarToggler onClick={toggle} />
-      <Collapse isOpen={isOpen} navbar={true}>
-        <Nav tabs className="navbar-nav">
-          <NavItem>
-            <NavLink
-              style={navLinkStyle}
-              activeClassName="active"
-              tag={RRNavLink}
-              data-tut="tabHighlighterAmplicon"
-              to="/"
-              exact={true}
-            >
-              {/*<Octicon name="beaker" />*/}
-              Amplicon
-            </NavLink>
-          </NavItem>
-
-          <NavItem>
-            <NavLink
-              style={navLinkStyle}
-              activeClassName="active"
-              tag={RRNavLink}
-              data-tut="tabHighlighterMetagenome"
-              to="/metagenome"
-            >
-              {/*<Octicon name="list-unordered" />*/}
-              Metagenome
-            </NavLink>
-          </NavItem>
-
-          <NavItem>
-            <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/contextual">
-              {/*<Octicon name="file" />*/}
-              Contextual
-            </NavLink>
-          </NavItem>
-
-          {magsAvailable && (
+    return (
+      <Navbar color="light" light={true} expand="lg">
+        <NavbarBrand className="site-header-logo" href="/">
+          <img className="logo" src={logoPNG} alt="Bioplatform Australia" />
+        </NavbarBrand>
+        <NavbarToggler onClick={toggle} />
+        <Collapse isOpen={isOpen} navbar={true}>
+          <Nav tabs className="navbar-nav">
             <NavItem>
-              <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/mags">
-                {/*<Octicon name="file" />*/}
-                MAGs
+              <NavLink
+                to="/"
+                end
+                data-tut="tabHighlighterAmplicon"
+                style={navLinkStyle}
+                className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+              >
+                {/*<Octicon name="beaker" />*/}
+                Amplicon
               </NavLink>
             </NavItem>
-          )}
 
-          <NavItem>
-            <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/map">
-              {/*<Octicon name="globe" />*/}
-              Map
-            </NavLink>
-          </NavItem>
-        </Nav>
-        <Nav className="ml-auto" navbar={true}>
-          <NavItem>
-            <NavLink>
-              <MainTutorial />
-            </NavLink>
-          </NavItem>
+            <NavItem>
+              <NavLink
+                to="/metagenome"
+                data-tut="tabHighlighterMetagenome"
+                style={navLinkStyle}
+                className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+              >
+                {/*<Octicon name="list-unordered" />*/}
+                Metagenome
+              </NavLink>
+            </NavItem>
 
-          <NavItem>
-            <NavLink href="mailto:help@bioplatforms.com?subject=Australian%20Microbiome%20Help">
-              Help
-            </NavLink>
-          </NavItem>
+            <NavItem>
+              <NavLink
+                to="/contextual"
+                style={navLinkStyle}
+                className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+              >
+                {/*<Octicon name="file" />*/}
+                Contextual
+              </NavLink>
+            </NavItem>
 
-          <NavItem>
-            <NavLink
-              target="_am"
-              href={
-                window.otu_search_config.ckan_base_url + 'organization/about/australian-microbiome'
-              }
-            >
-              Australian Microbiome Home
-            </NavLink>
-          </NavItem>
+            {magsAvailable && (
+              <NavItem>
+                <NavLink
+                  to="/mags"
+                  style={navLinkStyle}
+                  className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+                >
+                  {/*<Octicon name="file" />*/}
+                  MAGs
+                </NavLink>
+              </NavItem>
+            )}
 
-          <NavItem>
-            <UserProfile auth={auth} header={true} />
-          </NavItem>
-        </Nav>
-      </Collapse>
-    </Navbar>
-  )
-}
+            <NavItem>
+              <NavLink
+                to="/map"
+                style={navLinkStyle}
+                  className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+              >
+                {/*<Octicon name="globe" />*/}
+                Map
+              </NavLink>
+            </NavItem>
+          </Nav>
+          <Nav className="ms-auto" navbar={true}>
+            <NavItem>
+              <RSNavLink>
+                <MainTutorial />
+              </RSNavLink>
+            </NavItem>
 
-export default Header
+            <NavItem>
+              <RSNavLink href="mailto:help@bioplatforms.com?subject=Australian%20Microbiome%20Help">
+                Help
+              </RSNavLink>
+            </NavItem>
+
+            <NavItem>
+              <RSNavLink
+                target="_am"
+                href={
+                  window.otu_search_config.ckan_base_url + 'organization/about/australian-microbiome'
+                }
+              >
+                Australian Microbiome Home
+              </RSNavLink>
+            </NavItem>
+
+            <NavItem>
+              <UserProfile auth={auth} header={true} />
+            </NavItem>
+          </Nav>
+        </Collapse>
+      </Navbar>
+    )
+  }
+
+  export default Header

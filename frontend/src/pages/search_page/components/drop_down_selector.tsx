@@ -57,7 +57,7 @@ const DropDownSelector = (props) => {
   }
 
   return (
-    <FormGroup row>
+    <FormGroup className="form-group" row={true} noMargin>
       <FilterHeader label={label} info={info} />
       <Col sm={9}>
         <Select

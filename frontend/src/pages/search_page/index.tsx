@@ -82,7 +82,7 @@ const SearchPage = (props) => {
         </Col>
       </Row>
 
-      <Row className="space-above space-below">
+      <Row className="mt-4 mb-4">
         {props.isSearchInProgress ? (
           <Col className="text-center" sm={12}>
             <AnimateHelix scale={0.2} />
@@ -126,8 +126,8 @@ const SearchPage = (props) => {
             <Col sm={{ size: 2 }}>
               <SearchButton
                 id="InteractiveSampleComparisonButton"
-                octicon="globe"
-                text="Interactive sample comparison"
+                octicon="git-compare"
+                text="Sample comparison"
                 onClick={interactiveSampleComparison}
               />
               {props.isComparisonRunning && <SearchRunningIcon />}
