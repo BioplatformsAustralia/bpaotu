@@ -1,10 +1,15 @@
 import { get as _get } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
+import type { Reducer } from 'redux'
+import type { AnyAction } from 'redux'
 
 import { executeKrona } from 'api'
 
 import { searchPageInitialState, ErrorList } from './types'
 import { describeSearch } from './search'
+import type { PageState } from './types'
+
+type KronaModalState = PageState['kronaModal']
 
 export const { openKronaModal, closeKronaModal, runKronaStarted, runKronaEnded } = createActions(
   'OPEN_KRONA_MODAL',
@@ -33,7 +38,8 @@ export const runKronaRequest = (sampleId) => (dispatch, getState) => {
     })
 }
 
-export default handleActions(
+const kronaModalReducer: Reducer<KronaModalState, AnyAction> =
+  handleActions<KronaModalState, any>(
   {
     [runKronaStarted as any]: (state, action) => ({
       ...state,
@@ -82,3 +88,5 @@ export default handleActions(
   },
   searchPageInitialState.kronaModal
 )
+
+export default kronaModalReducer

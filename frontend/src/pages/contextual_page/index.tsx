@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react'
-import { connect } from 'react-redux'
 
 import { useAnalytics } from 'use-analytics'
 import { Col, Container, Row } from 'reactstrap'
@@ -7,7 +6,7 @@ import { Col, Container, Row } from 'reactstrap'
 import SearchResultsCard from './components/search_results_card'
 import SelectColumnsCard from './components/select_columns_card'
 
-export const ContextualPage = (props) => {
+export const ContextualPage = () => {
   const { page } = useAnalytics()
 
   // track page visit only on first render
@@ -32,11 +31,4 @@ export const ContextualPage = (props) => {
   )
 }
 
-function mapStateToProps(state) {
-  return {
-    isSearchButtonDisabled: state.searchPage.results.isLoading,
-    errors: state.searchPage.results.errors,
-  }
-}
-
-export default connect(mapStateToProps)(ContextualPage)
+export default ContextualPage

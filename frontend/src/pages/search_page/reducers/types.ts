@@ -307,6 +307,8 @@ export const searchPageInitialState: PageState = {
   },
 }
 
+export type SearchResultsState = typeof searchPageInitialState.results
+
 export class ErrorList extends Error {
   public msgs: string[]
   constructor(...msgs) {

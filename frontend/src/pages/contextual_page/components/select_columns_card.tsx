@@ -1,7 +1,8 @@
 import React, { useEffect, useCallback } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import { Button, Card, CardBody, CardFooter, CardHeader } from 'reactstrap'
 import { find } from 'lodash'
+
+import { useAppSelector, useAppDispatch } from 'hooks/redux'
 
 import { fetchContextualDataDefinitions } from 'reducers/contextual_data_definitions'
 import { search } from '../reducers/search'
@@ -10,14 +11,14 @@ import { addColumn, clearColumns, removeColumn, selectColumn } from '../reducers
 import { ContextualDropDown } from 'components/contextual_drop_down'
 
 const SelectColumnsCard = () => {
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
 
-  const { columns, dataDefinitions, optionsLoading } = useSelector((state: any) => ({
+  const { columns, dataDefinitions, optionsLoading } = useAppSelector((state) => ({
     columns: state.contextualPage.selectColumns.columns,
     dataDefinitions: state.contextualDataDefinitions.values,
     optionsLoading: state.contextualDataDefinitions.isLoading,
   }))
-
+  
   // Fetch data definitions on mount
   useEffect(() => {
     dispatch(fetchContextualDataDefinitions())

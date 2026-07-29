@@ -1,8 +1,14 @@
 import { createActions, handleActions } from 'redux-actions'
+import type { Reducer } from 'redux'
+import type { AnyAction } from 'redux'
+
 import { executeBlastOtuSearch, executeBlast, executeCancelBlast, getBlastSubmission } from 'api'
 import { handleSimpleAPIResponse, changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
 import { BlastSubmission, ErrorList, searchPageInitialState } from './types'
+import type { PageState } from 'pages/search_page/reducers/types'
+
+type BlastSearchCardState = PageState['blastSearchModal']
 
 import {
   filter,
@@ -144,7 +150,9 @@ const BLAST_ALERT_IN_PROGRESS = alert(
 )
 const BLAST_ALERT_ERROR = alert('An error occured while running BLAST.', 'danger')
 
-export default handleActions(
+
+const blastSearchCardReducer: Reducer<BlastSearchCardState, AnyAction> =
+  handleActions<BlastSearchCardState, any>(
   {
     [openBlastModal as any]: (state, action) => ({
       ...state,
@@ -330,3 +338,5 @@ export default handleActions(
   },
   searchPageInitialState.blastSearchModal
 )
+
+export default blastSearchCardReducer

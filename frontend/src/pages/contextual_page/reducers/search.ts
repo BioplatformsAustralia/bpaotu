@@ -1,9 +1,13 @@
 import { get as _get, isEmpty, map, reject } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
+import type { PageState } from 'pages/search_page/reducers/types'
+import type { Reducer, AnyAction } from 'redux'
 
 import { executeContextualSearch } from 'api'
 import { ErrorList } from 'pages/search_page/reducers/types'
 import { EmptyOTUQuery } from 'search'
+
+type SearchResultsState = PageState['results']
 
 export const { changeTableProperties, searchStarted, searchEnded } = createActions({
   CONTEXTUAL_PAGE: {
@@ -51,43 +55,47 @@ const resultsInitialState = {
   sorted: [],
 }
 
-export default handleActions(
-  {
-    [changeTableProperties as any]: (state, action: any) => {
-      const { page, pageSize, sorted, filtered } = action.payload
-      return {
-        ...state,
-        page,
-        pageSize,
-        sorted,
-        filtered,
-      }
-    },
-    [searchStarted as any]: (state, action: any) => ({
-      ...state,
-      errors: [],
-      isLoading: true,
-    }),
-    [searchEnded as any]: {
-      next: (state, action: any) => {
-        const rowsCount = action.payload.data.rowsCount
-        const pages = Math.ceil(rowsCount / state.pageSize)
-        const newPage = Math.min(pages - 1 < 0 ? 0 : pages - 1, state.page)
+
+const searchResultsReducer: Reducer<SearchResultsState, AnyAction> =
+  handleActions<SearchResultsState, any>(
+    {
+      [changeTableProperties as any]: (state, action: any) => {
+        const { page, pageSize, sorted, filtered } = action.payload
         return {
           ...state,
-          isLoading: false,
-          data: action.payload.data.data,
-          rowsCount,
-          pages,
-          page: newPage,
+          page,
+          pageSize,
+          sorted,
+          filtered,
         }
       },
-      throw: (state, action: any) => ({
+      [searchStarted as any]: (state, action: any) => ({
         ...state,
-        isLoading: false,
-        errors: action.payload.msgs,
+        errors: [],
+        isLoading: true,
       }),
+      [searchEnded as any]: {
+        next: (state, action: any) => {
+          const rowsCount = action.payload.data.rowsCount
+          const pages = Math.ceil(rowsCount / state.pageSize)
+          const newPage = Math.min(pages - 1 < 0 ? 0 : pages - 1, state.page)
+          return {
+            ...state,
+            isLoading: false,
+            data: action.payload.data.data,
+            rowsCount,
+            pages,
+            page: newPage,
+          }
+        },
+        throw: (state, action: any) => ({
+          ...state,
+          isLoading: false,
+          errors: action.payload.msgs,
+        }),
+      },
     },
-  },
-  resultsInitialState
-)
+    resultsInitialState
+  )
+
+export default searchResultsReducer

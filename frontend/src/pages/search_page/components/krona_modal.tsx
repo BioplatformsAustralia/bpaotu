@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
 import { Alert, Button, Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
 import SanitizedHTML from 'react-sanitized-html'
+
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
 
 import AnimateHelix, { loadingstyle } from 'components/animate_helix'
 
@@ -40,13 +40,16 @@ const ErrorOverlay = ({ errors }) => {
 }
 
 const KronaModal = (props) => {
-  const { isLoading, isOpen, runKronaRequest, sample_id, html, error } = props
+  const dispatch = useAppDispatch()
+  const { isOpen, isLoading, sample_id, html, error } = useAppSelector(
+    (state) => state.searchPage.kronaModal
+  )
 
   useEffect(() => {
     if (isOpen) {
-      runKronaRequest(sample_id)
+      dispatch(runKronaRequest(sample_id))
     }
-  }, [isOpen, runKronaRequest, sample_id])
+  }, [isOpen, dispatch, sample_id])
 
   const downloadHtmlFile = () => {
     const blob = new Blob([html], { type: 'text/html' })
@@ -59,7 +62,7 @@ const KronaModal = (props) => {
   }
 
   const closeModal = () => {
-    props.closeKronaModal()
+    dispatch(closeKronaModal())
   }
 
   const modalBody = () => {
@@ -173,26 +176,4 @@ const KronaModal = (props) => {
   )
 }
 
-const mapStateToProps = (state) => {
-  const { isOpen, isLoading, sample_id, html, error } = state.searchPage.kronaModal
-
-  return {
-    isOpen,
-    isLoading,
-    sample_id,
-    html,
-    error,
-  }
-}
-
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(
-    {
-      runKronaRequest,
-      closeKronaModal,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(KronaModal as any)
+export default KronaModal

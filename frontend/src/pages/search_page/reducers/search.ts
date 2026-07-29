@@ -7,6 +7,11 @@ import { executeSearch } from 'api'
 import { getAmpliconFilter, isMetagenomeSearch } from '../reducers/amplicon'
 import { submitToGalaxyEnded, submitToGalaxyStarted } from './submit_to_galaxy'
 import { ErrorList, searchPageInitialState, EmptyOperatorAndValue } from './types'
+import type { Reducer } from 'redux'
+import type { AnyAction } from 'redux'
+import type { PageState } from './types'
+
+type SearchResultsState = PageState['results']
 
 export const { changeTableProperties, searchStarted, searchEnded } = createActions(
   'CHANGE_TABLE_PROPERTIES',
@@ -118,7 +123,8 @@ export const search = (track) => (dispatch, getState) => {
     })
 }
 
-export default handleActions(
+const searchResultsReducer: Reducer<SearchResultsState, AnyAction> =
+  handleActions<SearchResultsState, any>(
   {
     [changeTableProperties as any]: (state, action: any) => {
       const { page, pageSize, sorted } = action.payload
@@ -175,3 +181,5 @@ export default handleActions(
   },
   searchPageInitialState.results
 )
+
+export default searchResultsReducer
