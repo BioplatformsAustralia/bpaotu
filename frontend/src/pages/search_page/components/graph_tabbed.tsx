@@ -22,6 +22,9 @@ import { EnvironmentInfo } from './environment_filter'
 import { ContextualFilterInfo } from './contextual_filter_card'
 
 import classnames from 'classnames'
+import GraphTabButton from './graph_tab_button'
+
+import './graph.css'
 
 const ContextualTab = (props) => {
   const {
@@ -155,143 +158,77 @@ const GraphTabbed = (props) => {
   return (
     <>
       <div style={{ margin: '0px -15px' }}>
-        <Nav tabs>
-          <NavItem>
-            <NavLink>{'      '}</NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink
-              data-tut="reactour__graph_amplicon"
-              id="reactour__graph_amplicon"
-              className={classnames({ active: selectedTab === 'tab_amplicon' })}
-              onClick={() => {
-                selectTab('tab_amplicon')
-              }}
-            >
-              {'Amplicon '}
-              <span id="ampliconTipGraphTab">
-                <Octicon name="info" align="top" />
-              </span>
-              <UncontrolledTooltip target="ampliconTipGraphTab" placement="auto">
-                {AmpliconFilterInfo}
-              </UncontrolledTooltip>
-            </NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink
-              data-tut="reactour__graph_taxonomy"
-              id="reactour__graph_taxonomy"
-              className={classnames({ active: selectedTab === 'tab_taxonomy' })}
-              onClick={() => {
-                selectTab('tab_taxonomy')
-              }}
-            >
-              {'Taxonomy '}
-              <span id="taxonomyTipGraphTab">
-                <Octicon name="info" align="top" />
-              </span>
-              <UncontrolledTooltip target="taxonomyTipGraphTab" placement="auto">
-                {TaxonomyFilterInfo}
-              </UncontrolledTooltip>
-            </NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink
-              data-tut="reactour__graph_traits"
-              id="reactour__graph_traits"
-              className={classnames({ active: selectedTab === 'tab_traits' })}
-              onClick={() => {
-                selectTab('tab_traits')
-              }}
-            >
-              {'Traits '}
-              <span id="traitsTipGraphTab">
-                <Octicon name="info" align="top" />
-              </span>
-              <UncontrolledTooltip target="traitsTipGraphTab" placement="auto">
-                {TraitFilterInfo}
-              </UncontrolledTooltip>
-            </NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink
-              data-tut="reactour__graph_environment"
-              id="reactour__graph_environment"
-              className={classnames({
-                active: selectedTab === 'tab_am_environment_id',
-              })}
-              onClick={() => {
-                selectTab('tab_am_environment_id')
-              }}
-            >
-              {'Environment '}
-              <span id="environmentTipGraphTab">
-                <Octicon name="info" align="top" />
-              </span>
-              <UncontrolledTooltip target="environmentTipGraphTab" placement="auto">
-                {EnvironmentInfo}
-              </UncontrolledTooltip>
-            </NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink
-              data-tut="reactour__graph_contextual"
-              id="reactour__graph_contextual"
-              className={classnames({ active: selectedTab === 'tab_contextual' })}
-              onClick={() => {
-                selectTab('tab_contextual')
-              }}
-            >
-              {'Contextual Filters '}
-              <span id="contextualFiltersTipGraphTab">
-                <Octicon name="info" align="top" />
-              </span>
-              <UncontrolledTooltip target="contextualFiltersTipGraphTab" placement="auto">
-                {ContextualFilterInfo}
-              </UncontrolledTooltip>
-            </NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink
-              data-tut="reactour__graph_taxonomy_am_environment"
-              id="reactour__graph_taxonomy_am_environment"
-              className={classnames({
-                active: selectedTab === 'tab_taxonomy_am_environment_id',
-              })}
-              onClick={() => {
-                selectTab('tab_taxonomy_am_environment_id')
-              }}
-            >
-              {'Taxonomy vs Environment '}
-              <span id="taxonomyEnvironmentTipGraphTab">
-                <Octicon name="info" align="top" />
-              </span>
-              <UncontrolledTooltip target="taxonomyEnvironmentTipGraphTab" placement="auto">
-                {'Relative abundance of taxonomy for AM environment '}
-              </UncontrolledTooltip>
-            </NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink
-              data-tut="reactour__graph_traits_am_environment"
-              id="reactour__graph_traits_am_environment"
-              className={classnames({
-                active: selectedTab === 'tab_traits_am_environment_id',
-              })}
-              onClick={() => {
-                selectTab('tab_traits_am_environment_id')
-              }}
-            >
-              {'Traits vs Environment '}
-              <span id="traitsEnvironmentTipGraphTab">
-                <Octicon name="info" align="top" />
-              </span>
-              <UncontrolledTooltip target="traitsEnvironmentTipGraphTab" placement="auto">
-                {'Relative abundance of traits for AM environment '}
-              </UncontrolledTooltip>
-            </NavLink>
-          </NavItem>
-        </Nav>
+        <div className="graph-tabs">
+          <GraphTabButton
+            id="reactour__graph_amplicon"
+            dataTut="reactour__graph_amplicon"
+            tabId="tab_amplicon"
+            label="Amplicon"
+            selectedTab={selectedTab}
+            selectTab={selectTab}
+            tooltip={AmpliconFilterInfo}
+          />
+
+          <GraphTabButton
+            id="reactour__graph_taxonomy"
+            dataTut="reactour__graph_taxonomy"
+            tabId="tab_taxonomy"
+            label="Taxonomy"
+            selectedTab={selectedTab}
+            selectTab={selectTab}
+            tooltip={TaxonomyFilterInfo}
+          />
+
+          <GraphTabButton
+            id="reactour__graph_traits"
+            dataTut="reactour__graph_traits"
+            tabId="tab_traits"
+            label="Traits"
+            selectedTab={selectedTab}
+            selectTab={selectTab}
+            tooltip={TraitFilterInfo}
+          />
+
+          <GraphTabButton
+            id="reactour__graph_environment"
+            dataTut="reactour__graph_environment"
+            tabId="tab_am_environment_id"
+            label="Environment"
+            selectedTab={selectedTab}
+            selectTab={selectTab}
+            tooltip={EnvironmentInfo}
+          />
+
+          <GraphTabButton
+            id="reactour__graph_contextual"
+            dataTut="reactour__graph_contextual"
+            tabId="tab_contextual"
+            label="Contextual Filters"
+            selectedTab={selectedTab}
+            selectTab={selectTab}
+            tooltip={ContextualFilterInfo}
+          />
+
+          <GraphTabButton
+            id="reactour__graph_taxonomy_am_environment"
+            dataTut="reactour__graph_taxonomy_am_environment"
+            tabId="tab_taxonomy_am_environment_id"
+            label="Taxonomy vs Environment"
+            selectedTab={selectedTab}
+            selectTab={selectTab}
+            tooltip="Relative abundance of taxonomy for AM environment"
+          />
+
+          <GraphTabButton
+            id="reactour__graph_traits_am_environment"
+            dataTut="reactour__graph_traits_am_environment"
+            tabId="tab_traits_am_environment_id"
+            label="Traits vs Environment"
+            selectedTab={selectedTab}
+            selectTab={selectTab}
+            tooltip="Relative abundance of traits for AM environment"
+          />
+        </div>
         <TabContent activeTab={selectedTab}>
           <TabPane tabId="tab_amplicon">
             <PieChartAmplicon

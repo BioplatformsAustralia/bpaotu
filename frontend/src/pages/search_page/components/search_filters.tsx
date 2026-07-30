@@ -19,6 +19,15 @@ import { isMetagenomeSearch } from '../reducers/amplicon'
 import { clearAllTaxonomyFilters } from '../reducers/taxonomy'
 import { selectTrait } from '../reducers/trait'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
+import { RootState } from 'app/store'
+
+type TaxonomyFilters = RootState['searchPage']['filters']['taxonomy']
+
+const InfoBox = (props) => (
+  <div className="alert alert-secondary py-1 px-2 mb-1" style={{ borderWidth: '1px' }}>
+    {props.children}
+  </div>
+)
 
 const SearchFilterButton = (props) => {
   const mytooltip: CSSProperties = {
@@ -29,21 +38,21 @@ const SearchFilterButton = (props) => {
 
   return (
     <Button
-      size="sm"
-      style={{ marginRight: 0 }}
-      outline={true}
+      size="md"
+      className="me-1 mb-1 px-2 py-1"
+      outline
       color={props.color}
       disabled={props.disabled}
     >
       {props.text.length > 75 ? (
         <>
-          {props.text.substring(0, 75)}&nbsp;
+          {props.text.substring(0, 75)}
           <span id={'context_filter_' + props.index}>
             &nbsp;
             <Octicon name="kebab-horizontal" />
           </span>
           {props.octicon ? (
-            <span onClick={props.onClick}>
+            <span onClick={props.onClick} className="ms-1">
               <Octicon name={props.octicon} />
             </span>
           ) : (
@@ -60,9 +69,9 @@ const SearchFilterButton = (props) => {
         </>
       ) : (
         <>
-          {props.text}&nbsp;
+          {props.text}
           {props.octicon ? (
-            <span onClick={props.onClick}>
+            <span onClick={props.onClick} className="ms-1">
               <Octicon name={props.octicon} />
             </span>
           ) : (
@@ -73,12 +82,6 @@ const SearchFilterButton = (props) => {
     </Button>
   )
 }
-
-const InfoBox = (props) => (
-  <div className="alert-secondary btn-sm" style={{ borderWidth: '1px', borderStyle: 'solid' }}>
-    {props.children}
-  </div>
-)
 
 const SearchFilters = (props) => {
   const getSelectedFilter = useCallback((filters, filter_id, filter_name) => {
@@ -162,139 +165,157 @@ const SearchFilters = (props) => {
     [props]
   )
 
-  let searchFilters = []
+  const renderSelectedAmplicon = (value) => {
+    if (!value.value) return null
 
-  for (const [key, value] of Object.entries(props.filters)) {
-    switch (key) {
-      case 'selectedAmplicon':
-        if (value['value']) {
-          searchFilters.push(
-            <InfoBox key={'selectedAmplicon'}>
-              {'Amplicon <' +
-                value['operator'] +
-                '> ' +
-                getSelectedFilter(props.amplicons, value['value'], 'value')}
-            </InfoBox>
-          )
-        }
-        break
-      case 'selectedTrait':
-        if (value['value']) {
-          let searchFilter = (
-            <SearchFilterButton
-              onClick={onSelectTrait}
-              color="secondary"
-              key={key}
-              octicon={props.static ? '' : 'x'}
-              text={
-                'Trait <' +
-                value['operator'] +
-                '> ' +
-                getSelectedFilter(props.traits, value['value'], 'value')
-              }
-            />
-          )
-          searchFilters.push(searchFilter)
-        }
-        break
-      case 'taxonomy':
-        for (const [taxoType, taxoValue] of Object.entries(value)) {
-          let selectedTaxo = taxoValue['selected']
-          if (selectedTaxo && selectedTaxo['value']) {
-            const text =
-              props.rankLabels[taxoType] +
-              ' <' +
-              selectedTaxo['operator'] +
-              '> ' +
-              getSelectedFilter(taxoValue['options'], selectedTaxo['value'], 'value')
-            if (taxonomy_ranks.indexOf(taxoType) < 0) {
-              searchFilters.push(<InfoBox key={taxoType}>{text}</InfoBox>)
-            } else {
-              searchFilters.push(
-                <SearchFilterButton
-                  id={taxoType}
-                  onClick={() => onSelectTaxonomy(taxoType)}
-                  color="secondary"
-                  key={taxoType}
-                  octicon={props.static ? '' : 'x'}
-                  text={text}
-                />
-              )
-            }
-          }
-        }
-        break
-
-      case 'contextual':
-        let selectedEnvironmentValue = value['selectedEnvironment']
-        if (selectedEnvironmentValue && selectedEnvironmentValue['value']) {
-          const searchFilterText =
-            'AM Environment <' +
-            selectedEnvironmentValue['operator'] +
-            '> ' +
-            getSelectedFilter(props.environment, selectedEnvironmentValue['value'], 'name')
-
-          let searchFilter = (
-            <SearchFilterButton
-              onClick={onSelectEnvironment}
-              color="info"
-              key={'selectedEnvironment'}
-              octicon={props.static ? '' : 'x'}
-              text={searchFilterText}
-            />
-          )
-          searchFilters.push(searchFilter)
-        }
-        break
-
-      case 'sampleIntegrityWarning':
-        let selectedFilters = value['filters']
-        for (let selectedFilterIndex in selectedFilters) {
-          let selectedFilter = selectedFilters[selectedFilterIndex]
-          if (selectedFilter && selectedFilter['name']) {
-            let name = selectedFilter['name']
-            let value = selectedFilter['value']
-            let value2 = selectedFilter['value2']
-            let values = selectedFilter['values']
-
-            let text = getSelectedFilterDisplayName(props.contextualFilters, name)
-            let selectedFilterValue = getSelectedFilterValue(props.contextualFilters, name, value)
-
-            if (values.length > 0) {
-              text +=
-                ' <' + (selectedFilter['operator'] ? "isn't" : 'is') + '> ' + values.join(', ')
-            } else if (value2 && value) {
-              text +=
-                ' <' +
-                (selectedFilter['operator'] ? 'not between' : 'between') +
-                '> ' +
-                value +
-                ' and ' +
-                value2
-            } else if (!isNull(value)) {
-              text +=
-                ' <' +
-                (selectedFilter['operator'] ? "doesn't contain" : 'contains') +
-                '> ' +
-                selectedFilterValue
-            }
-            let searchFilter = (
-              <SearchFilterButton
-                index={selectedFilterIndex}
-                onClick={() => onSelectFilter(selectedFilterIndex, name, key)}
-                color="success"
-                key={`${selectedFilterIndex}-${key}`}
-                octicon={props.static ? '' : 'x'}
-                text={text}
-              />
-            )
-
-            searchFilters.push(searchFilter)
-          }
-        }
-        break
-    }
+    return (
+      <InfoBox key="selectedAmplicon">
+        {`Amplicon <${value.operator}> ${getSelectedFilter(props.amplicons, value.value, 'value')}`}
+      </InfoBox>
+    )
   }
+
+  const renderSelectedTrait = (value) => {
+    if (!value.value) return null
+
+    return (
+      <SearchFilterButton
+        key="selectedTrait"
+        color="secondary"
+        octicon={props.static ? '' : 'x'}
+        onClick={onSelectTrait}
+        text={`Trait <${value.operator}> ${getSelectedFilter(props.traits, value.value, 'value')}`}
+      />
+    )
+  }
+
+  const renderTaxonomyFilters = (taxonomy: TaxonomyFilters) =>
+    Object.entries(taxonomy).flatMap(([taxoType, taxoValue]) => {
+      const selected = taxoValue.selected
+      if (!selected?.value) return []
+
+      const text = `${props.rankLabels[taxoType]} <${selected.operator}> ${getSelectedFilter(
+        taxoValue.options,
+        selected.value,
+        'value'
+      )}`
+
+      if (taxonomy_ranks.indexOf(taxoType) < 0) {
+        return [<InfoBox key={taxoType}>{text}</InfoBox>]
+      }
+
+      return [
+        <SearchFilterButton
+          key={taxoType}
+          id={taxoType}
+          color="secondary"
+          octicon={props.static ? '' : 'x'}
+          onClick={() => onSelectTaxonomy(taxoType)}
+          text={text}
+        />,
+      ]
+    })
+
+  const renderContextualFilter = (value) => {
+    const selectedEnvironment = value.selectedEnvironment
+
+    const environmentFilter =
+      selectedEnvironment?.value ? (
+        <SearchFilterButton
+          key="selectedEnvironment"
+          color="info"
+          octicon={props.static ? '' : 'x'}
+          onClick={onSelectEnvironment}
+          text={`AM Environment <${selectedEnvironment.operator}> ${getSelectedFilter(
+            props.environment,
+            selectedEnvironment.value,
+            'name'
+          )}`}
+        />
+      ) : null
+
+    const contextualFilters = value.filters.flatMap((filter, index) => {
+      if (!filter?.name) return []
+
+      let text = getSelectedFilterDisplayName(props.contextualFilters, filter.name)
+      const selectedValue = getSelectedFilterValue(
+        props.contextualFilters,
+        filter.name,
+        filter.value
+      )
+
+      if (filter.values.length > 0) {
+        text += ` <${filter.operator ? "isn't" : 'is'}> ${filter.values.join(', ')}`
+      } else if (filter.value && filter.value2) {
+        text += ` <${filter.operator ? 'not between' : 'between'}> ${filter.value} and ${filter.value2}`
+      } else if (!isNull(filter.value)) {
+        text += ` <${filter.operator ? "doesn't contain" : 'contains'}> ${selectedValue}`
+      }
+
+      return [
+        <SearchFilterButton
+          key={`${index}-contextual`}
+          index={index}
+          color="success"
+          octicon={props.static ? '' : 'x'}
+          onClick={() => onSelectFilter(index, filter.name, 'contextual')}
+          text={text}
+        />,
+      ]
+    })
+
+    return [
+      environmentFilter,
+      ...contextualFilters,
+    ].filter(Boolean)
+  }
+
+  const renderSampleIntegrityFilters = (value) =>
+    value.filters.flatMap((filter, index) => {
+      if (!filter?.name) return []
+
+      let text = getSelectedFilterDisplayName(props.contextualFilters, filter.name)
+      const selectedValue = getSelectedFilterValue(
+        props.contextualFilters,
+        filter.name,
+        filter.value
+      )
+
+      if (filter.values.length > 0) {
+        text += ` <${filter.operator ? "isn't" : 'is'}> ${filter.values.join(', ')}`
+      } else if (filter.value && filter.value2) {
+        text += ` <${filter.operator ? 'not between' : 'between'}> ${filter.value} and ${filter.value2}`
+      } else if (!isNull(filter.value)) {
+        text += ` <${filter.operator ? "doesn't contain" : 'contains'}> ${selectedValue}`
+      }
+
+      return [
+        <SearchFilterButton
+          key={`${index}-sampleIntegrityWarning`}
+          index={index}
+          color="success"
+          octicon={props.static ? '' : 'x'}
+          onClick={() => onSelectFilter(index, filter.name, 'sampleIntegrityWarning')}
+          text={text}
+        />,
+      ]
+    })
+
+  const filterRenderers = {
+    selectedAmplicon: renderSelectedAmplicon,
+    selectedTrait: renderSelectedTrait,
+    taxonomy: renderTaxonomyFilters,
+    contextual: renderContextualFilter,
+    sampleIntegrityWarning: renderSampleIntegrityFilters,
+  }
+
+  const searchFilters = Object.entries(props.filters).flatMap(([key, value]) => {
+    const renderer = filterRenderers[key]
+    if (!renderer) return []
+
+    const result = renderer(value)
+    return Array.isArray(result) ? result : result ? [result] : []
+  })
 
   return (
     <>
@@ -303,6 +324,7 @@ const SearchFilters = (props) => {
           <Input
             type="select"
             bsSize="sm"
+            className="form-select-sm"
             value={props.contextualFiltersMode}
             color="info"
             onChange={(evt) => onSelectFilterType(evt.target.value)}
