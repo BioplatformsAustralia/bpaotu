@@ -196,7 +196,7 @@ const ContextualFilterCard = () => {
 
         <Row>
           <Col sm={12}>
-            <Alert color="secondary">
+            <Alert color="secondary" fade={false}>
               <FormGroup check>
                 <Label sm={12} check color="primary">
                   <Input
@@ -245,7 +245,7 @@ const ContextualFilterCard = () => {
         {contextualFilters.length >= 2 && (
           <Row>
             <Col sm={12}>
-              <Alert color="secondary">
+              <Alert color="secondary" fade={false}>
                 <Form inline={true}>
                   Samples must match &nbsp;
                   <Input

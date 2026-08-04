@@ -33,6 +33,7 @@ const AlertBoxes = (props) => (
       <Alert
         key={idx}
         color={alert.color}
+        fade={false}
         className="text-center"
         toggle={() => props.clearAlerts(idx)}
       >
@@ -109,6 +110,7 @@ const OtuExportBox = ({ state, clear }) => {
     >
       <Alert
         color="info"
+        fade={false}
         className="text-center"
         toggle={clear}
         style={{ marginBottom: 0, width: '50%' }}

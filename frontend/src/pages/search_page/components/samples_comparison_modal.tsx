@@ -63,7 +63,7 @@ const LoadingSpinnerOverlay = ({ status }) => {
 const ErrorOverlay = ({ errors }) => {
   return (
     <div className="overlay">
-      <Alert color="danger">
+      <Alert color="danger" fade={false}>
         <h4 className="alert-heading">Error</h4>
         <ul>
           {errors.map((err, idx) => (

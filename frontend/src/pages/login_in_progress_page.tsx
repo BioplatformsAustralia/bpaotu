@@ -4,7 +4,7 @@ import { Alert, Container } from 'reactstrap'
 export default (props) => {
   return (
     <Container fluid={true}>
-      <Alert color="warning" className="text-center">
+      <Alert color="warning" className="text-center" fade={false}>
         <h4 className="alert-heading">Login Required</h4>
         <p>
           Please stand by while we're checking your permissions to the Bioplatforms Data Portal. If

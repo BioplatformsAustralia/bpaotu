@@ -204,6 +204,7 @@ const BlastSearchCard = () => {
             <Alert
               key={idx}
               color={alert.color}
+              fade={false}
               className="text-center"
               toggle={() => dispatch(clearBlastAlert(idx))}
             >

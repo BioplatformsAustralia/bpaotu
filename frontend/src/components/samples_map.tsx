@@ -527,14 +527,14 @@ class SamplesMap extends React.Component<any> {
       <div style={{ height: '100%' }}>
         <div className="text-center" style={{ margin: '-12px 0px' }}>
           {this.props.isLoading || this.state.isLoading ? (
-            <Alert color="info">
+            <Alert color="info" fade={false}>
               Processing...
               {this.state.isLoading &&
                 ` Gridcell calculation may take a while depending on the number of sample locations. `}
               {` Please wait. Once completed, map will automatically refresh.`}
             </Alert>
           ) : (
-            <Alert color="success">
+            <Alert color="success" fade={false}>
               Showing {this.props.sample_otus.length} samples in {this.props.markers.length} sample
               locations{' '}
               <span id="tipShowSample">

@@ -174,7 +174,7 @@ const MetagenomeModal = (props) => {
 
     if (props.error || requestState === 4) {
       return (
-        <Alert color="danger">
+        <Alert color="danger" fade={false}>
           {props.error && <>Search failed: {props.error}</>}
           {requestState === 4 && (
             <>Submission failed: {submissionResponse && `${status}: ${statusText}. ${data}`}</>
@@ -239,7 +239,7 @@ const MetagenomeModal = (props) => {
         const { request_id, timestamp, contact } = submissionResponse.data
 
         return (
-          <Alert color="success">
+          <Alert color="success" fade={false}>
             <h4>Thank you for your data request</h4>
             <p>
               Your request id is <strong>{request_id}</strong>, lodged at {timestamp}

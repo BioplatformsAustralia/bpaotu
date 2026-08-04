@@ -4,7 +4,7 @@ import { Alert, Container } from 'reactstrap'
 export default () => {
   return (
     <Container fluid={true}>
-      <Alert color="danger" className="text-center">
+      <Alert color="danger" className="text-center" fade={false}>
         <h4 className="alert-heading">Australian Microbiome Data Access Required</h4>
         <p>You do not have access to the Australian Microbiome data.</p>
         <p>

@@ -66,7 +66,7 @@ const GraphDashboard = (props) => {
       {chartEnabled ? (
         <div>
           {isEmpty(contextualGraphdata) ? (
-            <Alert color="warning">No matching samples</Alert>
+            <Alert color="warning" fade={false}>No matching samples</Alert>
           ) : showTabbedGraph ? (
             <GraphTabbed
               selectedEnvironment={selectedEnvironment}

@@ -201,7 +201,7 @@ export const SearchResultsTable = (props) => {
 
   return (
     <>
-      <Alert color="secondary" className="text-center">
+      <Alert color="secondary" className="text-center" fade={false}>
         <h6 className="alert-heading">
           {results.cleared
             ? 'Please use the search button to start your search'
