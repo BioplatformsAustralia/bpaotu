@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import {
   Alert,
   Button,
@@ -121,7 +121,8 @@ const ParamControl = ({ param, value, tooltip, onChange, onKeyPress }) => {
   )
 }
 
-const SamplesComparisonModal = (props) => {
+const SamplesComparisonModal = () => {
+  const dispatch = useAppDispatch()
   const umapParamsRef = useRef(null)
   const downloadOptionsRef = useRef(null)
 
@@ -132,38 +133,36 @@ const SamplesComparisonModal = (props) => {
   const chartWidth = window.innerWidth * 0.7
   const chartHeight = window.innerHeight * 0.7
 
+  const samplesComparisonState = useAppSelector(
+    (state: RootState) => state.searchPage.samplesComparisonModal
+  )
+  const contextualFilters = useAppSelector((state: RootState) => state.contextualDataDefinitions.filters)
   const {
     isOpen,
     isLoading,
     isCancelled,
-    runComparison,
-    cancelComparison,
-    clearComparison,
-    closeSamplesComparisonModal,
-    downloadDistanceMatrices,
-
     selectedMethod,
     selectedFilter,
     selectedFilterExtra,
-    setSelectedMethod,
-    setSelectedFilter,
-    setSelectedFilterExtra,
-
     umapParams,
     umapParamsErrors,
-    handleUmapParameters,
-    resetUmapParameters,
-
     contextualData,
-    contextualFilters,
     plotData,
-
-    comparisonStatus,
-    // mem_usage,
-    // timestamps,
+    status: comparisonStatus,
     errors,
     submissions,
-  } = props
+  } = samplesComparisonState
+
+  const runComparisonAction = (params, submissionId?) => dispatch(runComparison(params, submissionId))
+  const cancelComparisonAction = () => dispatch(cancelComparison())
+  const clearComparisonAction = () => dispatch(clearComparison())
+  const closeSamplesComparisonModalAction = () => dispatch(closeSamplesComparisonModal())
+  const downloadDistanceMatricesAction = () => dispatch(downloadDistanceMatrices())
+  const setSelectedMethodAction = (value: string) => dispatch(setSelectedMethod(value))
+  const setSelectedFilterAction = (value: string) => dispatch(setSelectedFilter(value))
+  const setSelectedFilterExtraAction = (value: string) => dispatch(setSelectedFilterExtra(value))
+  const handleUmapParametersAction = (payload: any) => dispatch(handleUmapParameters(payload))
+  const resetUmapParametersAction = () => dispatch(resetUmapParameters())
 
   const lastSubmission = submissions.slice(-1)[0]
 
@@ -284,10 +283,10 @@ const SamplesComparisonModal = (props) => {
         )}
         {showRunNewComparison && (
           <>
-            <Button onClick={() => runComparison(umapParams, submissionId)} color="primary">
+            <Button onClick={() => runComparisonAction(umapParams, submissionId)} color="primary">
               Run New Comparison
             </Button>
-            <Button onClick={clearComparison} color="link">
+            <Button onClick={clearComparisonAction} color="link">
               Clear
             </Button>
           </>
@@ -299,7 +298,7 @@ const SamplesComparisonModal = (props) => {
   const renderUmapControls = (umapParamsRef) => {
     const closeAndRun = () => {
       setShowUmapParameters(false)
-      runComparison(umapParams, submissionId)
+      runComparisonAction(umapParams, submissionId)
     }
 
     const hasUmapParamsErrors = umapParamsErrors.length > 0
@@ -313,7 +312,7 @@ const SamplesComparisonModal = (props) => {
                 param={param}
                 value={umapParams[param]}
                 tooltip={umapTooltipLookup[param]}
-                onChange={(e) => handleUmapParameters({ param, value: e.target.value })}
+                onChange={(e) => handleUmapParametersAction({ param, value: e.target.value })}
                 onKeyPress={(e) => {
                   // Run if pressing enter
                   if (e.charCode === 13) {
@@ -338,7 +337,7 @@ const SamplesComparisonModal = (props) => {
 
           <Row>
             <Col className="popup-menu-control">
-              <Button onClick={resetUmapParameters} size="sm" color="link">
+              <Button onClick={resetUmapParametersAction} size="sm" color="link">
                 Reset to defaults
               </Button>
             </Col>
@@ -366,7 +365,7 @@ const SamplesComparisonModal = (props) => {
         <Container>
           <Row>
             <Col>
-              <Button onClick={downloadDistanceMatrices} size="sm" color="link">
+              <Button onClick={downloadDistanceMatricesAction} size="sm" color="link">
                 Distance Matrices
               </Button>
             </Col>
@@ -384,7 +383,7 @@ const SamplesComparisonModal = (props) => {
       id="reactour__SamplesComparison"
     >
       <ModalHeader
-        toggle={closeSamplesComparisonModal}
+        toggle={closeSamplesComparisonModalAction}
         data-tut="reactour__CloseSamplesComparisonModal"
         id="CloseSamplesComparisonModal"
       >
@@ -404,7 +403,7 @@ const SamplesComparisonModal = (props) => {
                 placeholder={'Select a method'}
                 value={selectedMethod}
                 onChange={(e) => {
-                  setSelectedMethod(e.target.value)
+                  setSelectedMethodAction(e.target.value)
                 }}
               >
                 <option value="braycurtis">Bray-Curtis</option>
@@ -432,7 +431,7 @@ const SamplesComparisonModal = (props) => {
               <select
                 value={selectedFilter}
                 onChange={(e) => {
-                  setSelectedFilter(e.target.value)
+                  setSelectedFilterAction(e.target.value)
                 }}
               >
                 <option value="">(Select a contextual filter)</option>
@@ -457,7 +456,7 @@ const SamplesComparisonModal = (props) => {
                 <Col xs="1" style={{ paddingLeft: 0, paddingRight: 0 }}>
                   <select
                     value={selectedFilterExtra}
-                    onChange={(e) => setSelectedFilterExtra(e.target.value)}
+                    onChange={(e) => setSelectedFilterExtraAction(e.target.value)}
                   >
                     {['year', 'season', 'month'].map((v) => (
                       <option key={v} value={v}>
@@ -611,79 +610,4 @@ const SamplesComparisonModal = (props) => {
   )
 }
 
-const mapStateToProps = (state) => {
-  const {
-    isOpen,
-    isLoading,
-    isFinished,
-    isCancelled,
-
-    selectedMethod,
-    setSelectedMethod,
-    selectedFilter,
-    setSelectedFilter,
-    selectedFilterExtra,
-    setSelectedFilterExtra,
-
-    umapParams,
-    umapParamsErrors,
-
-    status,
-    alerts,
-    errors,
-    submissions,
-    contextualData,
-    plotData,
-    // mem_usage,
-    // timestamps,
-  } = state.searchPage.samplesComparisonModal
-
-  return {
-    isOpen,
-    isLoading,
-    isFinished,
-    isCancelled,
-
-    selectedMethod,
-    setSelectedMethod,
-    selectedFilter,
-    setSelectedFilter,
-    selectedFilterExtra,
-    setSelectedFilterExtra,
-
-    umapParams,
-    umapParamsErrors,
-
-    contextualData,
-    contextualFilters: state.contextualDataDefinitions.filters,
-    plotData,
-
-    comparisonStatus: status,
-    alerts,
-    errors,
-    submissions,
-    // mem_usage,
-    // timestamps,
-  }
-}
-
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(
-    {
-      clearPlotData,
-      closeSamplesComparisonModal,
-      downloadDistanceMatrices,
-      handleUmapParameters,
-      resetUmapParameters,
-      runComparison,
-      cancelComparison,
-      clearComparison,
-      setSelectedMethod,
-      setSelectedFilter,
-      setSelectedFilterExtra,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(SamplesComparisonModal)
+export default SamplesComparisonModal

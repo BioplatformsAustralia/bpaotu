@@ -1,6 +1,5 @@
 import React, { useEffect, useContext } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
 import { Col, Container, Row } from 'reactstrap'
 
 import { triggerHashedIdentify } from 'app/analytics'
@@ -26,6 +25,14 @@ import { search } from './reducers/search'
 import { clearSearchResults } from './reducers/search'
 
 const SearchPage = (props) => {
+  const dispatch = useAppDispatch()
+  const isSearchInProgress = useAppSelector((state) => state.searchPage.results.isLoading)
+  const isBlastSearchRunning = useAppSelector((state) => state.searchPage.blastSearchModal.isSubmitting)
+  const isBlastSearchFinished = useAppSelector((state) => state.searchPage.blastSearchModal.isFinished)
+  const isComparisonRunning = useAppSelector((state) => state.searchPage.samplesComparisonModal.isLoading)
+  const isComparisonFinished = useAppSelector((state) => state.searchPage.samplesComparisonModal.isFinished)
+  const errors = useAppSelector((state) => state.searchPage.results.errors)
+  const auth = useAppSelector((state) => state.auth)
   const { page, track, identify } = useAnalytics()
   const { setMainTourStep } = useContext(TourContext)
 
@@ -40,21 +47,28 @@ const SearchPage = (props) => {
     setMainTourStep(0)
   }, [setMainTourStep])
 
+  const clearSearchResultsAction = () => dispatch(clearSearchResults())
+  const searchAction = (trackValue) => dispatch(search(trackValue))
+  const openBlastModalAction = () => dispatch(openBlastModal())
+  const openSamplesMapModalAction = () => dispatch(openSamplesMapModal())
+  const openSamplesGraphModalAction = () => dispatch(openSamplesGraphModal())
+  const openSamplesComparisonModalAction = () => dispatch(openSamplesComparisonModal())
+
   const newSearch = () => {
-    props.clearSearchResults()
-    props.search(track)
+    clearSearchResultsAction()
+    searchAction(track)
   }
   const blastSearch = () => {
-    props.openBlastModal()
+    openBlastModalAction()
   }
   const interactiveMapSearch = () => {
-    props.openSamplesMapModal()
+    openSamplesMapModalAction()
   }
   const interactiveGraphSearch = () => {
-    props.openSamplesGraphModal()
+    openSamplesGraphModalAction()
   }
   const interactiveSampleComparison = () => {
-    props.openSamplesComparisonModal()
+    openSamplesComparisonModalAction()
   }
 
   const children = React.Children.toArray(props.children)
@@ -62,7 +76,7 @@ const SearchPage = (props) => {
   // this is here so we can access the auth state
   // it will trigger on both Amplicon and Metagenome search pages
   // but that is not an issue
-  triggerHashedIdentify(identify, props.auth.email)
+  triggerHashedIdentify(identify, auth.email)
 
   return (
     <Container fluid={true}>
@@ -78,12 +92,12 @@ const SearchPage = (props) => {
 
       <Row className="space-above">
         <Col sm={{ size: 6, offset: 3 }}>
-          <SearchErrors errors={props.errors} />
+          <SearchErrors errors={errors} />
         </Col>
       </Row>
 
       <Row className="mt-4 mb-4">
-        {props.isSearchInProgress ? (
+        {isSearchInProgress ? (
           <Col className="text-center" sm={12}>
             <AnimateHelix scale={0.2} />
           </Col>
@@ -104,8 +118,8 @@ const SearchPage = (props) => {
                 text="BLAST search"
                 onClick={blastSearch}
               />
-              {props.isBlastSearchRunning && <SearchRunningIcon />}
-              {props.isBlastSearchFinished && <SearchFinishedIcon />}
+              {isBlastSearchRunning && <SearchRunningIcon />}
+              {isBlastSearchFinished && <SearchFinishedIcon />}
             </Col>
             <Col sm={{ size: 2 }}>
               <SearchButton
@@ -130,8 +144,8 @@ const SearchPage = (props) => {
                 text="Sample comparison"
                 onClick={interactiveSampleComparison}
               />
-              {props.isComparisonRunning && <SearchRunningIcon />}
-              {props.isComparisonFinished && <SearchFinishedIcon />}
+              {isComparisonRunning && <SearchRunningIcon />}
+              {isComparisonFinished && <SearchFinishedIcon />}
             </Col>
           </>
         )}
@@ -142,33 +156,7 @@ const SearchPage = (props) => {
   )
 }
 
-function mapStateToProps(state) {
-  return {
-    isSearchInProgress: state.searchPage.results.isLoading,
-    isBlastSearchRunning: state.searchPage.blastSearchModal.isSubmitting,
-    isBlastSearchFinished: state.searchPage.blastSearchModal.isFinished,
-    isComparisonRunning: state.searchPage.samplesComparisonModal.isLoading,
-    isComparisonFinished: state.searchPage.samplesComparisonModal.isFinished,
-    errors: state.searchPage.results.errors,
-    auth: state.auth,
-  }
-}
-
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      openBlastModal,
-      openSamplesMapModal,
-      openSamplesGraphModal,
-      openSamplesComparisonModal,
-      search,
-      clearSearchResults,
-    },
-    dispatch
-  )
-}
-
-const ConnectedSearchPage = withAnalytics(connect(mapStateToProps, mapDispatchToProps)(SearchPage))
+const ConnectedSearchPage = withAnalytics(SearchPage)
 
 export function SampleSearchPage() {
   return (

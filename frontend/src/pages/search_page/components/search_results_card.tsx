@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { last } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import { Alert, Button, Card, CardBody, CardHeader } from 'reactstrap'
 
 import { ExportDataButton } from 'components/export_data_button'
@@ -13,7 +13,7 @@ import { openKronaModal } from '../reducers/krona_modal'
 import { openMetagenomeModal, openMetagenomeModalSearch } from '../reducers/metagenome_modal'
 import { GalaxySubmission } from '../reducers/types'
 
-import { runOtuExport } from '../reducers/otu_export'
+import { clearOtuExportAlert, runOtuExport } from '../reducers/otu_export'
 
 import { metaxaAmpliconStringMatch } from 'app/constants'
 
@@ -128,41 +128,71 @@ const OtuExportBox = ({ state, clear }) => {
 }
 
 const _SearchResultsCard = (props) => {
+  const dispatch = useAppDispatch()
+  const galaxy = useAppSelector((state: RootState) => state.searchPage.galaxy)
+  const tips = useAppSelector((state: RootState) => state.searchPage.tips)
+  const otuExport = useAppSelector((state: RootState) => state.searchPage.otuExport)
+  const describeSearchValue = useAppSelector((state: RootState) => describeSearch(state))
+  const metaxaAmpliconSelected = useAppSelector((state: RootState) => {
+    const selectedAmpliconId = state.searchPage.filters.selectedAmplicon.value
+    const metaxaOption = state.referenceData.amplicons.values.find((x) =>
+      x.value.startsWith(metaxaAmpliconStringMatch)
+    )
+    const metaxaOptionId = !!metaxaOption ? metaxaOption.id : undefined
+    return metaxaOptionId === selectedAmpliconId
+  })
+  const submitToGalaxyAction = () => dispatch(submitToGalaxy())
+  const workflowOnGalaxyAction = () => dispatch(workflowOnGalaxy())
+  const clearGalaxyAlertAction = (idx) => dispatch(clearGalaxyAlert(idx))
+  const clearTipsAction = (idx) => dispatch(clearTips(idx))
+  const showPhinchTipAction = () => dispatch(showPhinchTip())
+  const openKronaModalAction = (sampleId) => dispatch(openKronaModal(sampleId))
+  const runOtuExportAction = () => dispatch(runOtuExport())
+  const clearOtuExportAction = () => dispatch(clearOtuExportAlert())
+  const openMetagenomeModalAction = (sampleId) => dispatch(openMetagenomeModal(sampleId))
+  const openMetagenomeModalSearchAction = () => dispatch(openMetagenomeModalSearch())
+
   const [showExportTypeStandard, setShowExportTypeStandard] = useState(false)
   const [showExportTypeBIOM, setShowExportTypeBIOM] = useState(false)
 
   const isGalaxySubmissionDisabled = () => {
-    if (props.galaxy.isSubmitting) {
+    if (galaxy.isSubmitting) {
       return true
     }
 
-    const lastSubmission: GalaxySubmission = last(props.galaxy.submissions)
+    const lastSubmission: GalaxySubmission = last(galaxy.submissions)
     return lastSubmission && !lastSubmission.finished
   }
 
   const exportBIOMPacket = () => {
-    props.showPhinchTip()
+    showPhinchTipAction()
     alert('runOtuExportBIOM')
-    // props.runOtuExportBIOM()
+    // runOtuExportBIOMAction()
   }
 
   const exportBIOM = () => {
-    props.showPhinchTip()
-    download(window.otu_search_config.export_biom_endpoint, props)
+    showPhinchTipAction()
+    download(window.otu_search_config.export_biom_endpoint, {
+      describeSearch: () => describeSearchValue,
+    })
   }
 
   const exportCSVPacket = () => {
     setShowExportTypeStandard(false)
-    props.runOtuExport()
+    runOtuExportAction()
   }
 
   const exportCSV = () => {
     setShowExportTypeStandard(false)
-    download(window.otu_search_config.export_endpoint, props)
+    download(window.otu_search_config.export_endpoint, {
+      describeSearch: () => describeSearchValue,
+    })
   }
 
   const exportCSVOnlyContextual = () => {
-    download(window.otu_search_config.export_endpoint, props, true)
+    download(window.otu_search_config.export_endpoint, {
+      describeSearch: () => describeSearchValue,
+    }, true)
   }
 
   const Popup = ({ children, onClose }) => {
@@ -289,7 +319,7 @@ const _SearchResultsCard = (props) => {
                 octicon="clippy"
                 text="Export Data to Galaxy Australia for further analysis"
                 disabled={isGalaxySubmissionDisabled()}
-                onClick={props.submitToGalaxy}
+                onClick={submitToGalaxyAction}
               />
             )}
             {window.otu_search_config.galaxy_integration && (
@@ -299,18 +329,18 @@ const _SearchResultsCard = (props) => {
                 octicon="graph"
                 text="Export Data to Galaxy Australia for Krona Taxonomic Abundance Graph"
                 disabled={isGalaxySubmissionDisabled()}
-                onClick={props.workflowOnGalaxy}
+                onClick={workflowOnGalaxyAction}
               />
             )}
           </div>
-          <OtuExportBox state={props.otuExport} clear={props.clearOtuExport} />
+          <OtuExportBox state={otuExport} clear={clearOtuExportAction} />
         </CardHeader>
         <CardBody>
-          <AlertBoxes alerts={props.galaxy.alerts} clearAlerts={props.clearGalaxyAlert} />
-          <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
+          <AlertBoxes alerts={galaxy.alerts} clearAlerts={clearGalaxyAlertAction} />
+          <AlertBoxes alerts={tips.alerts} clearAlerts={clearTipsAction} />
           <SearchResultsTable
-            metagenome={props.metaxaAmpliconSelected}
-            krona_func={(cell_props) => krona_button(cell_props, props.openKronaModal)}
+            metagenome={metaxaAmpliconSelected}
+            krona_func={(cell_props) => krona_button(cell_props, openKronaModalAction)}
           />
         </CardBody>
       </Card>
@@ -324,9 +354,21 @@ const _SearchResultsCard = (props) => {
   )
 }
 
+export const SearchResultsCard = _SearchResultsCard
+
 const _MetagenomeSearchResultsCard = (props) => {
+  const dispatch = useAppDispatch()
+  const tips = useAppSelector((state: RootState) => state.searchPage.tips)
+  const clearTipsAction = (idx) => dispatch(clearTips(idx))
+  const showPhinchTipAction = () => dispatch(showPhinchTip())
+  const openMetagenomeModalSearchAction = () => dispatch(openMetagenomeModalSearch())
+  const openMetagenomeModalAction = (sampleId) => dispatch(openMetagenomeModal(sampleId))
+  const runOtuExportAction = () => dispatch(runOtuExport())
+
   const exportCSVOnlyContextualMetagenome = () => {
-    download(window.otu_search_config.export_endpoint, props, true)
+    download(window.otu_search_config.export_endpoint, {
+      describeSearch: () => describeSearch(state),
+    }, true)
   }
 
   return (
@@ -338,7 +380,7 @@ const _MetagenomeSearchResultsCard = (props) => {
               id="RequestMetagenomeFiles"
               octicon="desktop-download"
               text={`Request metagenome files for all selected samples`}
-              onClick={props.openMetagenomeModalSearch}
+              onClick={openMetagenomeModalSearchAction}
             />
             <ExportDataButton
               id="ExportContextualOnly"
@@ -349,10 +391,10 @@ const _MetagenomeSearchResultsCard = (props) => {
           </div>
         </CardHeader>
         <CardBody>
-          <AlertBoxes alerts={props.tips.alerts} clearAlerts={props.clearTips} />
+          <AlertBoxes alerts={tips.alerts} clearAlerts={clearTipsAction} />
           <SearchResultsTable
-            cell_func={(cell_props) => cell_button(cell_props, props.openMetagenomeModal)}
-            krona_func={(cell_props) => krona_button(cell_props, props.openKronaModal)}
+            cell_func={(cell_props) => cell_button(cell_props, openMetagenomeModalAction)}
+            krona_func={(cell_props) => krona_button(cell_props, openKronaModalAction)}
             metagenome
           />
         </CardBody>
@@ -368,53 +410,4 @@ const _MetagenomeSearchResultsCard = (props) => {
   )
 }
 
-function mapStateToProps(state) {
-  const selectedAmpliconId = state.searchPage.filters.selectedAmplicon.value
-  const metaxaOption = state.referenceData.amplicons.values.find((x) =>
-    x.value.startsWith(metaxaAmpliconStringMatch)
-  )
-  const metaxaOptionId = !!metaxaOption ? metaxaOption.id : undefined
-
-  return {
-    galaxy: state.searchPage.galaxy,
-    tips: state.searchPage.tips,
-    metaxaAmpliconSelected: metaxaOptionId === selectedAmpliconId,
-    describeSearch: () => describeSearch(state),
-    otuExport: state.searchPage.otuExport,
-  }
-}
-
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      submitToGalaxy,
-      workflowOnGalaxy,
-      clearGalaxyAlert,
-      clearTips,
-      showPhinchTip,
-      openKronaModal,
-      runOtuExport,
-    },
-    dispatch
-  )
-}
-
-export const SearchResultsCard = connect(mapStateToProps, mapDispatchToProps)(_SearchResultsCard)
-
-function mapMgDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      clearTips,
-      showPhinchTip,
-      openMetagenomeModalSearch,
-      openMetagenomeModal,
-      runOtuExport,
-    },
-    dispatch
-  )
-}
-
-export const MetagenomeSearchResultsCard = connect(
-  mapStateToProps,
-  mapMgDispatchToProps
-)(_MetagenomeSearchResultsCard)
+export const MetagenomeSearchResultsCard = _MetagenomeSearchResultsCard

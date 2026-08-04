@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { isString, pickBy, keys, join, values, filter } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import {
   Modal,
   ModalBody,
@@ -52,6 +52,10 @@ interface SubmissionResponseData {
 }
 
 const MetagenomeModal = (props) => {
+  const dispatch = useAppDispatch()
+  const modalState = useAppSelector((state: RootState) => state.searchPage.metagenomeModal)
+  const isOpen = modalState?.isOpen ?? false
+  const sample_ids = modalState?.sample_ids ?? []
   const [selected, setSelected] = useState({})
   const [requestState, setRequestState] = useState(0)
   const [submissionResponse, setSubmissionResponse] = useState<SubmissionResponse>({})
@@ -66,7 +70,7 @@ const MetagenomeModal = (props) => {
   } = useContext(TourContext)
 
   useEffect(() => {
-    if (props.isOpen) {
+    if (isOpen) {
       if (isMainTourOpen) {
         setIsMainTourOpen(false)
         setIsRequestSubtourOpen(true)
@@ -106,7 +110,7 @@ const MetagenomeModal = (props) => {
     event.preventDefault()
 
     if (requestState === 1) {
-      metagenomeRequest(props.sample_ids, keys(pickBy(selected)))
+      metagenomeRequest(sample_ids, keys(pickBy(selected)))
         .then((response) => {
           setSubmissionResponse(response)
           setRequestState(3) // Request acknowledged
@@ -343,24 +347,4 @@ const MetagenomeModal = (props) => {
   )
 }
 
-function mapStateToProps(state) {
-  const { isOpen, isLoading, sample_ids, error } = state.searchPage.metagenomeModal
-  return {
-    isOpen,
-    isLoading,
-    sample_ids,
-    error,
-    describeSearch: () => describeSearch(state),
-  }
-}
-
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      closeMetagenomeModal,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(MetagenomeModal as any)
+export default MetagenomeModal as any

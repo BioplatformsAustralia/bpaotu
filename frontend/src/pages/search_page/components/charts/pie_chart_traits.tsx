@@ -1,8 +1,8 @@
 import React from 'react'
 import Plot from './plot'
 import { plotly_chart_config } from './plotly_chart'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import { startCase } from 'lodash'
 
 import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
@@ -12,15 +12,12 @@ import { selectTrait } from '../../reducers/trait'
 import { updateTaxonomyDropDowns } from '../../reducers/taxonomy'
 
 const PieChartTraits = (props: any) => {
+  const dispatch = useAppDispatch()
   const {
     taxonomyGraphdata,
     filter,
     width,
     height,
-    selectTrait,
-    updateTaxonomy,
-    fetchContextualDataForGraph,
-    fetchTaxonomyDataForGraph,
     selectToScroll,
     selectTab,
   } = props
@@ -65,10 +62,10 @@ const PieChartTraits = (props: any) => {
       let env_val = points[0].text
       let textData = chart_data[0].text
       if (!textData.includes(env_val)) env_val = ''
-      selectTrait(env_val)
-      updateTaxonomy()
-      fetchContextualDataForGraph()
-      fetchTaxonomyDataForGraph()
+      dispatch(selectTrait(env_val))
+      dispatch(updateTaxonomyDropDowns('')())
+      dispatch(fetchContextualDataForGraph())
+      dispatch(fetchTaxonomyDataForGraph())
       selectToScroll(filter)
       selectTab('tab_' + filter)
     }
@@ -93,23 +90,4 @@ const PieChartTraits = (props: any) => {
   )
 }
 
-function mapStateToProps(state: any) {
-  return {
-    options: state.referenceData.traits.values,
-    selected: state.searchPage.filters.selectedTrait,
-  }
-}
-
-function mapDispatchToProps(dispatch: any) {
-  return bindActionCreators(
-    {
-      selectTrait,
-      updateTaxonomy: updateTaxonomyDropDowns(''),
-      fetchContextualDataForGraph,
-      fetchTaxonomyDataForGraph,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(PieChartTraits)
+export default PieChartTraits

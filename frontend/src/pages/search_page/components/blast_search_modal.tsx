@@ -1,6 +1,4 @@
 import React, { useContext, useEffect } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
 import { Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
 
 import { useAppDispatch, useAppSelector } from 'hooks/redux'

@@ -2,8 +2,8 @@ import React, { useCallback } from 'react'
 import Plot from './plot'
 import { plotly_chart_config } from './plotly_chart'
 import { find, isUndefined, sum, startCase } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import { createAction } from 'redux-actions'
 
 import { taxonomy_ranks } from 'app/constants'
@@ -16,6 +16,10 @@ import { updateTaxonomyDropDowns } from '../../reducers/taxonomy'
 const make_id = (name: string, tx_id: string | number) => `${name}_${tx_id}`
 
 const SunBurstChartTaxonomy = (props: any) => {
+  const dispatch = useAppDispatch()
+  const taxonomy = useAppSelector((state: RootState) => state.searchPage.filters.taxonomy)
+  const rankLabels = useAppSelector((state: RootState) => state.referenceData.ranks.rankLabels)
+
   const loadTaxonomyData = useCallback(
     (sunburst_data, parentId, taxonomy, taxa, taxa_label, taxonomyGraphData) => {
       let selectedTaxonomy = taxonomy.selected.value
@@ -51,15 +55,15 @@ const SunBurstChartTaxonomy = (props: any) => {
 
   const onSelectTaxonomy = useCallback(
     (taxa: string, value: any) => {
-      const found = find(props.taxonomy[taxa].options, (obj) => String(obj.value) === String(value))
+      const found = find(taxonomy[taxa].options, (obj) => String(obj.value) === String(value))
       if (found && found.id !== undefined) {
-        props.selectTaxonomyValue(taxa, found.id)
-        props.updateTaxonomyDropDown(taxa)
-        props.fetchContextualDataForGraph()
-        props.fetchTaxonomyDataForGraph()
+        dispatch(createAction('SELECT_' + taxa.toUpperCase())(found.id))
+        dispatch(updateTaxonomyDropDowns(taxa)())
+        dispatch(fetchContextualDataForGraph())
+        dispatch(fetchTaxonomyDataForGraph())
       }
     },
-    [props]
+    [dispatch, taxonomy]
   )
 
   const get_clickable_rank = useCallback(
@@ -72,7 +76,7 @@ const SunBurstChartTaxonomy = (props: any) => {
         ? rank
         : null
     },
-    [props.taxonomy]
+    [taxonomy]
   )
 
   const generateGraphData = useCallback(() => {
@@ -96,7 +100,7 @@ const SunBurstChartTaxonomy = (props: any) => {
       }
     }
     return sunburst_data
-  }, [props.taxonomyGraphdata, props.rankLabels, props.taxonomy, loadTaxonomyData])
+  }, [props.taxonomyGraphdata, props.rankLabels, taxonomy, loadTaxonomyData])
 
   const title = startCase(props.filter) + ' Plot'
   const graphData = generateGraphData()
@@ -180,24 +184,4 @@ const SunBurstChartTaxonomy = (props: any) => {
   )
 }
 
-const mapStateToProps = (state) => {
-  return {
-    taxonomy: state.searchPage.filters.taxonomy,
-    rankLabels: state.referenceData.ranks.rankLabels,
-  }
-}
-
-const mapDispatchToProps = (dispatch: any) => {
-  return bindActionCreators(
-    {
-      selectEnvironment,
-      selectTaxonomyValue: (taxa, id) => createAction('SELECT_' + taxa.toUpperCase())(id),
-      updateTaxonomyDropDown: (taxa) => updateTaxonomyDropDowns(taxa)(),
-      fetchContextualDataForGraph,
-      fetchTaxonomyDataForGraph,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(SunBurstChartTaxonomy)
+export default SunBurstChartTaxonomy

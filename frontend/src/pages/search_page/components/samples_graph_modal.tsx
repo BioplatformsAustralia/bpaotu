@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import {
   Modal,
   ModalBody,
@@ -41,18 +41,18 @@ const TabIcon = ({ viewType, octicon, text, tooltip }) => {
   )
 }
 
-const SamplesGraphModal = (props) => {
+const SamplesGraphModal = () => {
+  const dispatch = useAppDispatch()
   const [tourStep, setTourStep] = useState(0)
   const [scrollToSelected, setScrollToSelected] = useState('')
   const [selectedTab, setSelectedTab] = useState('tab_amplicon')
   const [showTabbedGraph, setShowTabbedGraph] = useState(true)
 
-  const { isOpen, closeSamplesGraphModal, fetchContextualDataForGraph, fetchTaxonomyDataForGraph } =
-    props
+  const isOpen = useAppSelector((state: RootState) => state.searchPage.samplesGraphModal.isOpen)
 
   const handleSearchFilterClick = (selectedElement) => {
-    fetchContextualDataForGraph()
-    fetchTaxonomyDataForGraph()
+    dispatch(fetchContextualDataForGraph())
+    dispatch(fetchTaxonomyDataForGraph())
     setScrollToSelected(selectedElement)
   }
 
@@ -130,7 +130,7 @@ const SamplesGraphModal = (props) => {
     >
       <ModalHeader
         id="CloseSamplesGraphModal"
-        toggle={closeSamplesGraphModal}
+        toggle={() => dispatch(closeSamplesGraphModal())}
         data-tut="reactour__CloseSamplesGraphModal"
       >
         <span>Interactive Graphical Search</span>
@@ -209,20 +209,4 @@ const SamplesGraphModal = (props) => {
   )
 }
 
-const mapStateToProps = (state) => {
-  const { isOpen } = state.searchPage.samplesGraphModal
-  return { isOpen }
-}
-
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(
-    {
-      closeSamplesGraphModal,
-      fetchContextualDataForGraph,
-      fetchTaxonomyDataForGraph,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(SamplesGraphModal)
+export default SamplesGraphModal

@@ -2,8 +2,8 @@ import React, { useCallback } from 'react'
 import Plot from './plot'
 import { plotly_chart_config } from './plotly_chart'
 import { find, isString } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 
 import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
@@ -16,6 +16,7 @@ import {
 } from '../../reducers/contextual'
 
 const HistogramChartContextual = (props: any) => {
+  const dispatch = useAppDispatch()
   const markerLineWidth = []
 
   const findFilterIndex = useCallback((data: any[], selected: any) => {
@@ -25,22 +26,12 @@ const HistogramChartContextual = (props: any) => {
     return data.length
   }, [])
 
-  const {
-    filter,
-    contextualGraphdata,
-    dataDefinitions,
-    width,
-    height,
-    filters,
-    selectContextualFilter,
-    changeContextualFilterOperator,
-    changeContextualFilterValue,
-    changeContextualFilterValue2,
-    fetchContextualDataForGraph,
-    fetchTaxonomyDataForGraph,
-    selectToScroll,
-    selectTab,
-  } = props
+  const { filter, contextualGraphdata, width, height, selectToScroll, selectTab } = props
+  const filters = useAppSelector((state: RootState) => state.searchPage.filters)
+  const contextualDataDefinitions = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.filters
+  )
+  const dataDefinitions = props.dataDefinitions ?? contextualDataDefinitions
 
   const graphData = contextualGraphdata[filter]
   const dataDefinition = find(dataDefinitions, (dd) => dd.name === filter)
@@ -94,12 +85,12 @@ const HistogramChartContextual = (props: any) => {
     }
 
     const index = findFilterIndex(filters.contextual.filters, filter)
-    selectContextualFilter(index, filter)
-    changeContextualFilterOperator(index, '')
-    changeContextualFilterValue(index, value)
-    changeContextualFilterValue2(index, value2)
-    fetchContextualDataForGraph()
-    fetchTaxonomyDataForGraph()
+    dispatch(selectContextualFilter(index, filter))
+    dispatch(changeContextualFilterOperator(index, ''))
+    dispatch(changeContextualFilterValue(index, value))
+    dispatch(changeContextualFilterValue2(index, value2))
+    dispatch(fetchContextualDataForGraph())
+    dispatch(fetchTaxonomyDataForGraph())
     selectToScroll(filter)
     selectTab('tab_contextual')
   }
@@ -126,25 +117,4 @@ const HistogramChartContextual = (props: any) => {
   )
 }
 
-function mapStateToProps(state: any) {
-  return {
-    filters: state.searchPage.filters,
-    dataDefinitions: state.contextualDataDefinitions.filters,
-  }
-}
-
-function mapDispatchToProps(dispatch: any) {
-  return bindActionCreators(
-    {
-      selectContextualFilter,
-      changeContextualFilterOperator,
-      changeContextualFilterValue,
-      changeContextualFilterValue2,
-      fetchContextualDataForGraph,
-      fetchTaxonomyDataForGraph,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(HistogramChartContextual)
+export default HistogramChartContextual

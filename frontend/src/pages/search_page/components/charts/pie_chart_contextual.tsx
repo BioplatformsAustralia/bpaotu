@@ -2,8 +2,8 @@ import React, { useCallback } from 'react'
 import Plot from './plot'
 import { plotly_chart_config } from './plotly_chart'
 import { find } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 
 import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
@@ -16,21 +16,17 @@ import {
 } from '../../reducers/contextual'
 
 const PieChartContextual = (props) => {
+  const dispatch = useAppDispatch()
   const {
     filter,
     contextualGraphdata,
-    dataDefinitions,
     width,
     height,
-    filters,
-    selectContextualFilter,
-    changeContextualFilterOperator,
-    changeContextualFilterValue,
-    fetchContextualDataForGraph,
-    fetchTaxonomyDataForGraph,
     selectToScroll,
     selectTab,
   } = props
+  const filters = useAppSelector((state: RootState) => state.searchPage.filters)
+  const dataDefinitions = useAppSelector((state: RootState) => state.contextualDataDefinitions.filters)
 
   const findFilterIndex = useCallback((data, selected) => {
     for (let i = 0; i < data.length; i++) {
@@ -87,11 +83,12 @@ const PieChartContextual = (props) => {
     let textData = chart_data[0].text
     if (!textData.includes(env_val)) env_val = ''
     let index = findFilterIndex(filters.contextual.filters, filter)
-    selectContextualFilter(index, filter)
-    changeContextualFilterOperator(index, '')
-    changeContextualFilterValue(index, env_val)
-    fetchContextualDataForGraph()
-    fetchTaxonomyDataForGraph()
+    dispatch(selectContextualFilter(index, filter))
+    dispatch(changeContextualFilterOperator(index, ''))
+    dispatch(changeContextualFilterValue(index, env_val))
+    dispatch(changeContextualFilterValue2(index, env_val))
+    dispatch(fetchContextualDataForGraph())
+    dispatch(fetchTaxonomyDataForGraph())
     selectToScroll(filter)
     selectTab('tab_contextual')
   }
@@ -115,25 +112,4 @@ const PieChartContextual = (props) => {
   )
 }
 
-function mapStateToProps(state) {
-  return {
-    filters: state.searchPage.filters,
-    dataDefinitions: state.contextualDataDefinitions.filters,
-  }
-}
-
-function mapDispatchToProps(dispatch: any) {
-  return bindActionCreators(
-    {
-      selectContextualFilter,
-      changeContextualFilterOperator,
-      changeContextualFilterValue,
-      changeContextualFilterValue2,
-      fetchContextualDataForGraph,
-      fetchTaxonomyDataForGraph,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(PieChartContextual)
+export default PieChartContextual

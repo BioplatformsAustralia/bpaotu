@@ -1,13 +1,15 @@
 import React from 'react'
 import Plot from './plot'
 import { plotly_chart_config } from './plotly_chart'
-import { connect } from 'react-redux'
+import { useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import { startCase, fromPairs, unzip } from 'lodash'
 
 import { getAmpliconFilter } from '../../reducers/amplicon'
 
 const PieChartAmplicon = (props) => {
-  const { taxonomyGraphdata, filter, options, width, height } = props
+  const options = useAppSelector((state: RootState) => state.referenceData.amplicons.values)
+  const { taxonomyGraphdata, filter, width, height } = props
 
   if (!taxonomyGraphdata) {
     return null
@@ -57,11 +59,4 @@ const PieChartAmplicon = (props) => {
   )
 }
 
-function mapStateToProps(state) {
-  return {
-    options: state.referenceData.amplicons.values,
-    selected: getAmpliconFilter(state),
-  }
-}
-
-export default connect(mapStateToProps)(PieChartAmplicon)
+export default PieChartAmplicon

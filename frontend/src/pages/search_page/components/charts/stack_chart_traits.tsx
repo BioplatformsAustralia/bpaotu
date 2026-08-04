@@ -1,15 +1,20 @@
 import React, { useMemo } from 'react'
 import Plot from './plot'
 import { find } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 
 import { plotly_chart_config } from '../charts/plotly_chart'
 import { selectEnvironment } from '../../reducers/contextual'
 
 const StackChartTraits = (props: any) => {
-  const { environment, taxonomy, contextualFilters, width, height, filter } =
-    props
+  const dispatch = useAppDispatch()
+  const { width, height, filter } = props
+  const taxonomy = useAppSelector((state: RootState) => state.searchPage.filters.taxonomy)
+  const contextualFilters = useAppSelector(
+    (state: RootState) => state.searchPage.filters.contextual.filters
+  )
+  const environment = useAppSelector((state: RootState) => state.contextualDataDefinitions.environment)
 
   const loadChartData = (
     environment: any,
@@ -161,22 +166,4 @@ const StackChartTraits = (props: any) => {
   )
 }
 
-const mapStateToProps = (state: any) => {
-  return {
-    taxonomy: state.searchPage.filters.taxonomy,
-    contextualFilters: state.searchPage.filters.contextual.filters,
-    environment: state.contextualDataDefinitions.environment,
-    traits: state.contextualDataDefinitions,
-  }
-}
-
-const mapDispatchToProps = (dispatch: any) => {
-  return bindActionCreators(
-    {
-      selectEnvironment,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(StackChartTraits)
+export default StackChartTraits

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import { createAction } from 'redux-actions'
 
 import {
@@ -100,6 +100,22 @@ const stickyStyle = {
 } as React.CSSProperties
 
 const TaxonomySearchModal = (props) => {
+  const dispatch = useAppDispatch()
+  const modalState = useAppSelector((state: RootState) => state.searchPage.taxonomySearchModal)
+  const selectedAmplicon = useAppSelector((state: RootState) => state.searchPage.filters.selectedAmplicon)
+  const amplicons = useAppSelector((state: RootState) => state.referenceData.amplicons)
+  const rankLabelsLookup = useAppSelector((state: RootState) => state.referenceData.ranks.rankLabelsLookup)
+  const taxonomy = useAppSelector((state: RootState) => state.searchPage.filters.taxonomy)
+  const handleSetSelectIndexAction = (index: number) => dispatch(handleSetSelectIndex(index))
+  const selectAmpliconAction = (value: string) => dispatch(selectAmplicon(value))
+  const selectTaxonomyValueAction = (taxa: string, id: string) =>
+    dispatch(createAction('SELECT_' + taxa.toUpperCase())(id))
+  const updateTaxonomyDropDownAction = (taxa: string) => dispatch(updateTaxonomyDropDowns(taxa))
+  const closeTaxonomySearchModalAction = () => dispatch(closeTaxonomySearchModal())
+  const handleTaxonomySearchStringAction = (value: string) => dispatch(handleTaxonomySearchString(value))
+  const handleClearAction = () => dispatch(handleClear())
+  const runTaxonomySearchAction = () => dispatch(runTaxonomySearch())
+
   const {
     isOpen,
     isLoading,
@@ -110,9 +126,11 @@ const TaxonomySearchModal = (props) => {
     selectIndex,
     results,
     error,
-    rankLabelsLookup,
-    closeTaxonomySearchModal,
-  } = props
+  } = modalState
+
+  const ampliconLookup = amplicons.values.find((x) => x.id === selectedAmplicon.value)
+  const ampliconName = ampliconLookup && ampliconLookup.value
+  const amplicon = { ...selectedAmplicon, text: ampliconName }
 
   const inputRef = useRef(null)
 
@@ -237,9 +255,9 @@ const TaxonomySearchModal = (props) => {
 
   // uses the same mechanism when clicking on a slice of the taxonomy pie chart in Interactive Graph Search
   const setTaxonomy = (taxonomy, index) => {
-    props.handleSetSelectIndex(index)
-    const currentAmplicon = props.amplicon
-    const currentTaxonomy = props.taxonomy
+    handleSetSelectIndexAction(index)
+    const currentAmplicon = amplicon
+    const currentTaxonomy = taxonomy
 
     // track whether we changed source and the first rank we changed
     let sourceChanged = false
@@ -249,14 +267,14 @@ const TaxonomySearchModal = (props) => {
     if (taxonomy.amplicon) {
       // if amplicon value is already the same, using selectAmplicon again messes with dropdowns
       if (currentAmplicon.value !== taxonomy.amplicon.id) {
-        props.selectAmplicon(taxonomy.amplicon.id)
+        selectAmpliconAction(taxonomy.amplicon.id)
       }
     }
     if (taxonomy.taxonomy_source) {
       if (currentTaxonomy.taxonomy_source.selected.value !== taxonomy.taxonomy_source.id) {
         // need to use updateTaxonomyDropDown if taxonomy source has changed
-        props.selectTaxonomyValue('taxonomy_source', taxonomy.taxonomy_source.id)
-        props.updateTaxonomyDropDown('taxonomy_source')
+        selectTaxonomyValueAction('taxonomy_source', taxonomy.taxonomy_source.id)
+        updateTaxonomyDropDownAction('taxonomy_source')
         sourceChanged = true
       }
     }
@@ -270,7 +288,7 @@ const TaxonomySearchModal = (props) => {
       const nextVal = taxonomy[rank] && taxonomy[rank].id
 
       if (currentVal !== nextVal) {
-        props.selectTaxonomyValue(rank, nextVal)
+        selectTaxonomyValueAction(rank, nextVal)
         if (!firstChangedRank) firstChangedRank = rank
       }
     }
@@ -280,43 +298,43 @@ const TaxonomySearchModal = (props) => {
 
     if (taxonomy.r2) {
       if (currentTaxonomy.r2.selected.value !== taxonomy.r2.id) {
-        props.selectTaxonomyValue('r2', taxonomy.r2.id)
+        selectTaxonomyValueAction('r2', taxonomy.r2.id)
         if (!firstChangedRank) firstChangedRank = 'r2'
       }
     }
     if (taxonomy.r3) {
       if (currentTaxonomy.r3.selected.value !== taxonomy.r3.id) {
-        props.selectTaxonomyValue('r3', taxonomy.r3.id)
+        selectTaxonomyValueAction('r3', taxonomy.r3.id)
         if (!firstChangedRank) firstChangedRank = 'r3'
       }
     }
     if (taxonomy.r4) {
       if (currentTaxonomy.r4.selected.value !== taxonomy.r4.id) {
-        props.selectTaxonomyValue('r4', taxonomy.r4.id)
+        selectTaxonomyValueAction('r4', taxonomy.r4.id)
         if (!firstChangedRank) firstChangedRank = 'r4'
       }
     }
     if (taxonomy.r5) {
       if (currentTaxonomy.r5.selected.value !== taxonomy.r5.id) {
-        props.selectTaxonomyValue('r5', taxonomy.r5.id)
+        selectTaxonomyValueAction('r5', taxonomy.r5.id)
         if (!firstChangedRank) firstChangedRank = 'r5'
       }
     }
     if (taxonomy.r6) {
       if (currentTaxonomy.r6.selected.value !== taxonomy.r6.id) {
-        props.selectTaxonomyValue('r6', taxonomy.r6.id)
+        selectTaxonomyValueAction('r6', taxonomy.r6.id)
         if (!firstChangedRank) firstChangedRank = 'r6'
       }
     }
     if (taxonomy.r7) {
       if (currentTaxonomy.r7.selected.value !== taxonomy.r7.id) {
-        props.selectTaxonomyValue('r7', taxonomy.r7.id)
+        selectTaxonomyValueAction('r7', taxonomy.r7.id)
         if (!firstChangedRank) firstChangedRank = 'r7'
       }
     }
     if (taxonomy.r8) {
       if (currentTaxonomy.r8.selected.value !== taxonomy.r8.id) {
-        props.selectTaxonomyValue('r8', taxonomy.r8.id)
+        selectTaxonomyValueAction('r8', taxonomy.r8.id)
         if (!firstChangedRank) firstChangedRank = 'r8'
       }
     }
@@ -324,13 +342,13 @@ const TaxonomySearchModal = (props) => {
     // if source did NOT change, we still need to kick the cascade from
     // the first rank that changed so lower ranks fetch their options.
     if (!sourceChanged && firstChangedRank) {
-      props.updateTaxonomyDropDown(firstChangedRank)
+      updateTaxonomyDropDownAction(firstChangedRank)
     }
 
     // just short delay before closing
     // apparently looks cool seeing some of the dropdowns change magically
     setTimeout(() => {
-      closeTaxonomySearchModal()
+      closeTaxonomySearchModalAction()
     }, 300)
   }
 
@@ -340,7 +358,7 @@ const TaxonomySearchModal = (props) => {
     if (isLoading) return
 
     if (trimmed) {
-      props.runTaxonomySearch()
+      runTaxonomySearchAction()
     }
   }
 
@@ -379,7 +397,7 @@ const TaxonomySearchModal = (props) => {
       onOpened={handleModalOpened}
     >
       <ModalHeader
-        toggle={closeTaxonomySearchModal}
+        toggle={closeTaxonomySearchModalAction}
         data-tut="reactour__CloseTaxonomySearchModal"
         id="CloseTaxonomySearchModal"
       >
@@ -430,7 +448,7 @@ const TaxonomySearchModal = (props) => {
               value={searchStringInput}
               placeholder="e.g. Skeletonema"
               disabled={isLoading}
-              onChange={(evt) => props.handleTaxonomySearchString(evt.target.value)}
+              onChange={(evt) => handleTaxonomySearchStringAction(evt.target.value)}
               onKeyDown={(evt) => {
                 if (evt.key === 'Enter') {
                   onSubmit()
@@ -443,7 +461,7 @@ const TaxonomySearchModal = (props) => {
               Taxonomy Search
             </Button>
             {results.length > 1 && (
-              <Button color="link" onClick={props.handleClear}>
+              <Button color="link" onClick={handleClearAction}>
                 Clear
               </Button>
             )}
@@ -611,34 +629,4 @@ const TaxonomySearchModal = (props) => {
   )
 }
 
-function mapStateToProps(state) {
-  const selectedAmplicon = state.searchPage.filters.selectedAmplicon
-  const ampliconNames = state.referenceData.amplicons
-  const ampliconLookup = ampliconNames.values.find((x) => x.id === selectedAmplicon.value)
-  const ampliconName = ampliconLookup && ampliconLookup.value
-
-  return {
-    ...state.searchPage.taxonomySearchModal,
-    amplicon: { ...selectedAmplicon, ...{ text: ampliconName } },
-    taxonomy: state.searchPage.filters.taxonomy,
-    rankLabelsLookup: state.referenceData.ranks.rankLabelsLookup,
-  }
-}
-
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      handleTaxonomySearchString,
-      handleSetSelectIndex,
-      handleClear,
-      runTaxonomySearch,
-      closeTaxonomySearchModal,
-      selectAmplicon,
-      selectTaxonomyValue: (taxa, id) => createAction('SELECT_' + taxa.toUpperCase())(id),
-      updateTaxonomyDropDown: (taxa) => updateTaxonomyDropDowns(taxa)(),
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(TaxonomySearchModal)
+export default TaxonomySearchModal

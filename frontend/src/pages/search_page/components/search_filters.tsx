@@ -1,7 +1,6 @@
 import React, { CSSProperties, useCallback } from 'react'
 import { find, isNull } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
 import { createAction } from 'redux-actions'
 import { Button, Input, UncontrolledTooltip } from 'reactstrap'
 
@@ -84,6 +83,36 @@ const SearchFilterButton = (props) => {
 }
 
 const SearchFilters = (props) => {
+  const dispatch = useAppDispatch()
+  const amplicons = useAppSelector((state: any) => state.referenceData.amplicons.values)
+  const traits = useAppSelector((state: any) => state.referenceData.traits.values)
+  const rankLabels = useAppSelector((state: any) => state.referenceData.ranks.rankLabels)
+  const filters = useAppSelector((state: any) => state.searchPage.filters)
+  const contextualFilterDefinitions = useAppSelector(
+    (state: any) => state.contextualDataDefinitions.filters
+  )
+  const contextualFiltersMode = useAppSelector(
+    (state: any) => state.searchPage.filters.contextual.filtersMode
+  )
+  const selectedContextualFilters = useAppSelector(
+    (state: any) => state.searchPage.filters.contextual.filters
+  )
+  const environment = useAppSelector((state: any) => state.contextualDataDefinitions.environment)
+  const { static: staticFilter, handleSearchFilterClick } = props as any
+  const selectTraitAction = (value: string) => dispatch(selectTrait(value))
+  const fetchTraitsAction = () => dispatch(fetchTraits())
+  const clearAllTaxonomyFiltersAction = () => dispatch(clearAllTaxonomyFilters())
+  const clearTaxonomyValueAction = (taxonomy: string) =>
+    dispatch(createAction('SELECT_' + taxonomy.toUpperCase())(''))
+  const updateTaxonomyDropDownAction = (taxonomy: string) =>
+    dispatch(updateTaxonomyDropDowns(taxonomy))
+  const selectEnvironmentAction = (value: string) => dispatch(selectEnvironment(value))
+  const removeContextualFilterAction = (index: number) => dispatch(removeContextualFilter(index))
+  const selectContextualFiltersModeAction = (mode: string) =>
+    dispatch(selectContextualFiltersMode(mode))
+  const removeSampleIntegrityWarningFilterAction = (index: number) =>
+    dispatch(removeSampleIntegrityWarningFilter(index))
+
   const getSelectedFilter = useCallback((filters, filter_id, filter_name) => {
     for (let i in filters) {
       let filter = filters[i]
@@ -124,45 +153,45 @@ const SearchFilters = (props) => {
   }, [])
 
   const onSelectTrait = useCallback(() => {
-    props.selectTrait('')
-    props.updateTaxonomyDropDown('')
-    props.handleSearchFilterClick('amplicon_id')
-  }, [props])
+    selectTraitAction('')
+    updateTaxonomyDropDownAction('')
+    handleSearchFilterClick('amplicon_id')
+  }, [handleSearchFilterClick])
 
   const onSelectTaxonomy = useCallback(
     (taxa) => {
-      props.clearTaxonomyValue(taxa)
-      props.updateTaxonomyDropDown(taxa)
-      props.handleSearchFilterClick('taxonomy_id')
+      clearTaxonomyValueAction(taxa)
+      updateTaxonomyDropDownAction(taxa)
+      handleSearchFilterClick('taxonomy_id')
     },
-    [props]
+    [handleSearchFilterClick]
   )
 
   const onSelectEnvironment = useCallback(() => {
-    props.selectEnvironment('')
-    props.handleSearchFilterClick('am_environment_id')
-  }, [props])
+    selectEnvironmentAction('')
+    handleSearchFilterClick('am_environment_id')
+  }, [handleSearchFilterClick])
 
   const onSelectFilter = useCallback(
     (index, filter, key) => {
       if (key === 'contextual') {
-        props.removeContextualFilter(index)
+        removeContextualFilterAction(index)
       }
       if (key === 'sampleIntegrityWarning') {
-        props.removeSampleIntegrityWarningFilter(index)
+        removeSampleIntegrityWarningFilterAction(index)
       }
 
-      props.handleSearchFilterClick(filter)
+      handleSearchFilterClick(filter)
     },
-    [props]
+    [handleSearchFilterClick]
   )
 
   const onSelectFilterType = useCallback(
     (mode) => {
-      props.selectContextualFiltersMode(mode)
-      props.handleSearchFilterClick('')
+      selectContextualFiltersModeAction(mode)
+      handleSearchFilterClick('')
     },
-    [props]
+    [handleSearchFilterClick]
   )
 
   const renderSelectedAmplicon = (value) => {
@@ -170,7 +199,7 @@ const SearchFilters = (props) => {
 
     return (
       <InfoBox key="selectedAmplicon">
-        {`Amplicon <${value.operator}> ${getSelectedFilter(props.amplicons, value.value, 'value')}`}
+        {`Amplicon <${value.operator}> ${getSelectedFilter(amplicons, value.value, 'value')}`}
       </InfoBox>
     )
   }
@@ -182,9 +211,9 @@ const SearchFilters = (props) => {
       <SearchFilterButton
         key="selectedTrait"
         color="secondary"
-        octicon={props.static ? '' : 'x'}
+        octicon={staticFilter ? '' : 'x'}
         onClick={onSelectTrait}
-        text={`Trait <${value.operator}> ${getSelectedFilter(props.traits, value.value, 'value')}`}
+        text={`Trait <${value.operator}> ${getSelectedFilter(traits, value.value, 'value')}`}
       />
     )
   }
@@ -194,7 +223,7 @@ const SearchFilters = (props) => {
       const selected = taxoValue.selected
       if (!selected?.value) return []
 
-      const text = `${props.rankLabels[taxoType]} <${selected.operator}> ${getSelectedFilter(
+      const text = `${rankLabels[taxoType]} <${selected.operator}> ${getSelectedFilter(
         taxoValue.options,
         selected.value,
         'value'
@@ -209,7 +238,7 @@ const SearchFilters = (props) => {
           key={taxoType}
           id={taxoType}
           color="secondary"
-          octicon={props.static ? '' : 'x'}
+          octicon={staticFilter ? '' : 'x'}
           onClick={() => onSelectTaxonomy(taxoType)}
           text={text}
         />,
@@ -224,10 +253,10 @@ const SearchFilters = (props) => {
         <SearchFilterButton
           key="selectedEnvironment"
           color="info"
-          octicon={props.static ? '' : 'x'}
+          octicon={staticFilter ? '' : 'x'}
           onClick={onSelectEnvironment}
           text={`AM Environment <${selectedEnvironment.operator}> ${getSelectedFilter(
-            props.environment,
+            environment,
             selectedEnvironment.value,
             'name'
           )}`}
@@ -237,9 +266,9 @@ const SearchFilters = (props) => {
     const contextualFilters = value.filters.flatMap((filter, index) => {
       if (!filter?.name) return []
 
-      let text = getSelectedFilterDisplayName(props.contextualFilters, filter.name)
+      let text = getSelectedFilterDisplayName(contextualFilterDefinitions, filter.name)
       const selectedValue = getSelectedFilterValue(
-        props.contextualFilters,
+        contextualFilterDefinitions,
         filter.name,
         filter.value
       )
@@ -257,7 +286,7 @@ const SearchFilters = (props) => {
           key={`${index}-contextual`}
           index={index}
           color="success"
-          octicon={props.static ? '' : 'x'}
+          octicon={staticFilter ? '' : 'x'}
           onClick={() => onSelectFilter(index, filter.name, 'contextual')}
           text={text}
         />,
@@ -274,9 +303,9 @@ const SearchFilters = (props) => {
     value.filters.flatMap((filter, index) => {
       if (!filter?.name) return []
 
-      let text = getSelectedFilterDisplayName(props.contextualFilters, filter.name)
+      let text = getSelectedFilterDisplayName(contextualFilterDefinitions, filter.name)
       const selectedValue = getSelectedFilterValue(
-        props.contextualFilters,
+        contextualFilterDefinitions,
         filter.name,
         filter.value
       )
@@ -294,7 +323,7 @@ const SearchFilters = (props) => {
           key={`${index}-sampleIntegrityWarning`}
           index={index}
           color="success"
-          octicon={props.static ? '' : 'x'}
+          octicon={staticFilter ? '' : 'x'}
           onClick={() => onSelectFilter(index, filter.name, 'sampleIntegrityWarning')}
           text={text}
         />,
@@ -309,7 +338,7 @@ const SearchFilters = (props) => {
     sampleIntegrityWarning: renderSampleIntegrityFilters,
   }
 
-  const searchFilters = Object.entries(props.filters).flatMap(([key, value]) => {
+  const searchFilters = Object.entries(filters).flatMap(([key, value]) => {
     const renderer = filterRenderers[key]
     if (!renderer) return []
 
@@ -319,13 +348,13 @@ const SearchFilters = (props) => {
 
   return (
     <>
-      {props.selectedContextualFilters.length >= 2 && (
+      {selectedContextualFilters.length >= 2 && (
         <div data-tut="reactour__graph_any_all">
           <Input
             type="select"
             bsSize="sm"
             className="form-select-sm"
-            value={props.contextualFiltersMode}
+            value={contextualFiltersMode}
             color="info"
             onChange={(evt) => onSelectFilterType(evt.target.value)}
           >
@@ -339,36 +368,4 @@ const SearchFilters = (props) => {
   )
 }
 
-function mapStateToProps(state) {
-  return {
-    amplicons: state.referenceData.amplicons.values,
-    traits: state.referenceData.traits.values,
-    rankLabels: state.referenceData.ranks.rankLabels,
-    filters: state.searchPage.filters,
-    staticFilters: state.searchPage.samplesComparisonModal.staticFilters,
-    isMetagenomeSearch: isMetagenomeSearch(state),
-    environment: state.contextualDataDefinitions.environment,
-    contextualFilters: state.contextualDataDefinitions.filters,
-    contextualFiltersMode: state.searchPage.filters.contextual.filtersMode,
-    selectedContextualFilters: state.searchPage.filters.contextual.filters,
-  }
-}
-
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      selectTrait,
-      fetchTraits,
-      clearAllTaxonomyFilters,
-      clearTaxonomyValue: (taxonomy) => createAction('SELECT_' + taxonomy.toUpperCase())(''),
-      updateTaxonomyDropDown: (taxonomy) => updateTaxonomyDropDowns(taxonomy)(),
-      selectEnvironment,
-      removeContextualFilter,
-      selectContextualFiltersMode,
-      removeSampleIntegrityWarningFilter,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(SearchFilters)
+export default SearchFilters
