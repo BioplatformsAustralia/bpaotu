@@ -1,5 +1,7 @@
-import { find, get as _get, isEmpty, map, reject, uniq } from 'lodash'
+import { find, get as _get, isEmpty, map, reject, uniq, last } from 'lodash'
 import { createActions, handleActions, createAction } from 'redux-actions'
+
+import { createSearchHash } from './utils'
 
 import { taxonomy_keys } from 'app/constants'
 
@@ -89,12 +91,22 @@ export const describeSearch = (state) => {
   }
 }
 
+export const getSearchHash = (state) =>
+  createSearchHash(describeSearch(state))
+
+export const hasSearchChanged = (state) => {
+  const curr = getSearchHash(state)
+  const prev = state.searchPage.results.lastSearchParams
+  return curr !== prev
+}
+
 export const search = (track) => (dispatch, getState) => {
   const state = getState()
 
   dispatch(searchStarted())
 
   const filters = describeSearch(state)
+  const searchHash = createSearchHash(filters)
 
   const contextualColumns = reject(
     map(filters.contextual_filters.filters, (f) => f.field),
@@ -116,7 +128,12 @@ export const search = (track) => (dispatch, getState) => {
         dispatch(searchEnded(new ErrorList(...data.data.errors)))
         return
       }
-      dispatch(searchEnded(data))
+      dispatch(
+        searchEnded({
+          ...data,
+          lastSearchParams: searchHash
+        })
+      )
     })
     .catch((error) => {
       dispatch(searchEnded(new ErrorList('Unhandled server-side error!')))
@@ -159,6 +176,7 @@ const searchResultsReducer: Reducer<SearchResultsState, AnyAction> =
           rowsCount,
           pages,
           page: newPage,
+          lastSearchParams: action.payload.lastSearchParams,
         }
       },
       throw: (state, action: any) => ({

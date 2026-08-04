@@ -169,6 +169,7 @@ export interface PageState {
     pageSize: number
     rowsCount: number
     sorted: any[]
+    lastSearchParams: string | null
   }
 }
 
@@ -304,6 +305,7 @@ export const searchPageInitialState: PageState = {
     pageSize: 100,
     rowsCount: 0,
     sorted: [],
+    lastSearchParams: null,
   },
 }
 

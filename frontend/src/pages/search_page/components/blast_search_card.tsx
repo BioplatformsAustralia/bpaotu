@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {
   Alert,
   Button,
@@ -25,6 +25,7 @@ import {
   cancelBlast,
 } from '../reducers/blast_search_modal'
 import { getAmpliconFilter } from '../reducers/amplicon'
+import { search, hasSearchChanged } from '../reducers/search'
 
 const blastStatusMapping = {
   init: 'Initialising',
@@ -53,8 +54,15 @@ const BlastSearchCard = () => {
     sequenceValue,
   } = useAppSelector((state) => state.searchPage.blastSearchModal)
 
-  const ampliconFilter = useAppSelector((state) => getAmpliconFilter(state))
-  console.log('ampliconFilter:', ampliconFilter)
+  const searchChanged = useAppSelector((state) =>
+    hasSearchChanged(state)
+  )
+
+  useEffect(() => {
+    if (searchChanged) {
+      dispatch(search(null))
+    }
+  }, [dispatch, searchChanged])
 
   const isAmpliconSelected = useAppSelector(
     (state) => getAmpliconFilter(state).value

@@ -58,7 +58,7 @@ const SearchPage = (props) => {
     clearSearchResultsAction()
     searchAction(track)
   }
-  const blastSearch = () => {
+  const openBlastModalClick = () => {
     openBlastModalAction()
   }
   const interactiveMapSearch = () => {
@@ -116,7 +116,7 @@ const SearchPage = (props) => {
                 id="BLASTSearchButton"
                 octicon="beaker"
                 text="BLAST search"
-                onClick={blastSearch}
+                onClick={openBlastModalClick}
               />
               {isBlastSearchRunning && <SearchRunningIcon />}
               {isBlastSearchFinished && <SearchFinishedIcon />}
