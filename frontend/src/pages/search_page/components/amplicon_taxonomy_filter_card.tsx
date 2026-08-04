@@ -16,7 +16,7 @@ import { useAppDispatch, useAppSelector } from 'hooks/redux'
 import { fetchReferenceData } from 'reducers/reference_data/reference_data'
 import { fetchTraits } from 'reducers/reference_data/traits'
 
-import { setMetagenomeMode, getAmpliconFilter, selectAmplicon } from '../reducers/amplicon'
+import { setMetagenomeMode, getAmpliconFilter } from '../reducers/amplicon'
 import { clearSearchResults } from '../reducers/search'
 import { clearAllTaxonomyFilters, updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import { openTaxonomySearchModal } from '../reducers/taxonomy_search_modal'
@@ -70,10 +70,6 @@ const TaxonomyFilterCard = () => {
   )
 
   const selectedAmplicon = useAppSelector(getAmpliconFilter)
-
-  useEffect(() => {
-    console.log('selectedAmplicon', selectedAmplicon)
-  }, [selectedAmplicon])
 
   const mismatchState = useAppSelector((state) => {
     let mismatch = false
@@ -131,12 +127,6 @@ const TaxonomyFilterCard = () => {
 
   // (re)fetch taxonomy and traits when the amplicon selection becomes available or changes
   useEffect(() => {
-    console.log('taxonomy effect', {
-      options: amplicons.values.length,
-      selected: selectedAmplicon,
-      prev: prevAmplicon.current,
-    })
-    
     if (
       amplicons.values.length > 0 &&
       selectedAmplicon.value !== '' &&
@@ -147,11 +137,8 @@ const TaxonomyFilterCard = () => {
     ) {
       prevAmplicon.current = { ...selectedAmplicon }
 
-      console.log('dispatching fetchTraits')
       dispatch(fetchTraits())
-      console.log('dispatching selectTrait')
       dispatch(selectTrait(''))
-      console.log('dispatching updateTaxonomyDropDowns')
       dispatch(updateTaxonomyDropDowns(''))
     }
   }, [dispatch, amplicons.values, selectedAmplicon.value, selectedAmplicon.operator])
