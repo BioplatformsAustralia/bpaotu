@@ -34,14 +34,20 @@ const disableTaxonomyFilter = (type) => () => ({ type: `DISABLE_${type.toUpperCa
 
 const taxonomyConfigFor = (target) => ({ type: target, taxonomies: taxonomiesBefore(target) })
 
-const makeTaxonomyFetcher = (config) => () => (dispatch, getState) => {
+const makeTaxonomyFetcher = (config) => (dispatch, getState) => {
+  console.log('makeTaxonomyFetcher', 'fetching taxonomy', config.type)
+
   const state = getState()
 
   const selectedAmplicon = getAmpliconFilter(state)
+  console.log('makeTaxonomyFetcher', 'selected amplicon', selectedAmplicon)
+
   const selectedTaxonomies = map(
     config.taxonomies,
     (taxonomy) => state.searchPage.filters.taxonomy[taxonomy].selected
   )
+  console.log('makeTaxonomyFetcher', 'selected taxonomies', selectedTaxonomies)
+
   const selectedTrait = state.searchPage.filters.selectedTrait
 
   if (
@@ -62,27 +68,33 @@ const makeTaxonomyFetcher = (config) => () => (dispatch, getState) => {
     })
 }
 
-export const updateTaxonomyDropDownsInner = (taxonomy) => () => (dispatch, getState) => {
+export const updateTaxonomyDropDownsInner = (taxonomy) => (dispatch, getState) => {
   const rest = taxonomy === '' ? taxonomy_keys : taxonomiesAfter(taxonomy)
   if (isEmpty(rest)) {
     dispatch(taxonomyOptionsLoading(false))
     return Promise.resolve()
   }
   const nextTaxonomy = first(rest)
-  const fetcher = makeTaxonomyFetcher(taxonomyConfigFor(nextTaxonomy))
-  dispatch(fetcher()).then(() => {
-    return dispatch(updateTaxonomyDropDownsInner(nextTaxonomy)())
+  return dispatch(
+    makeTaxonomyFetcher(taxonomyConfigFor(nextTaxonomy))
+  ).then(() => {
+    return dispatch(updateTaxonomyDropDownsInner(nextTaxonomy))
   })
 }
 
-export const updateTaxonomyDropDowns = (taxonomy) => () => (dispatch, getState) => {
+export const updateTaxonomyDropDowns = (taxonomy) => (dispatch, getState) => {
+  console.log('updateTaxonomyDropDowns', taxonomy)
+
   const rest = taxonomy === '' ? taxonomy_keys : taxonomiesAfter(taxonomy)
+
+  console.log('updateTaxonomyDropDowns', 'taxonomy queue', rest)
+
   if (isEmpty(rest)) {
     return Promise.resolve()
   }
   dispatch(taxonomyOptionsLoading(true))
   rest.forEach((t) => dispatch(disableTaxonomyFilter(t)()))
-  return updateTaxonomyDropDownsInner(taxonomy)()(dispatch, getState)
+  return dispatch(updateTaxonomyDropDownsInner(taxonomy))
 }
 
 export const clearAllTaxonomyFilters = createAction('CLEAR_ALL_TAXONOMY_FILTERS')
@@ -124,6 +136,7 @@ function makeTaxonomyReducer(taxonomyName) {
         }
 
       case actionTypes.fetchEnded:
+        console.log('taxonomy fetch ended', taxonomyName, action.payload)
         const possibilites = action.payload.data
           ? action.payload.data.possibilities.new_options.possibilities
           : []

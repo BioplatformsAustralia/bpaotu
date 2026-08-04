@@ -1,8 +1,8 @@
 import React, { useContext, useEffect } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
 
+import type { RootState } from 'app/store'
 import SamplesMap from 'components/samples_map'
 import { Tutorial, AMBLink, stepsStyle } from 'components/tutorial'
 import { TourContext } from 'providers/tour_provider'
@@ -11,15 +11,17 @@ import { closeSamplesMapModal, fetchSampleMapModalSamples } from '../reducers/sa
 
 import SearchFilters from './search_filters'
 
-const SamplesMapModal = (props) => {
-  const {
-    isOpen,
-    closeSamplesMapModal,
-    fetchSampleMapModalSamples,
-    isLoading,
-    markers,
-    sample_otus,
-  } = props
+const SamplesMapModal = () => {
+  const dispatch = useDispatch()
+  const { isOpen, isLoading, markers, sample_otus } = useSelector((state: RootState) => {
+    const { isLoading, isOpen, markers, sample_otus } = state.searchPage.samplesMapModal
+    return {
+      isLoading,
+      isOpen,
+      markers,
+      sample_otus,
+    }
+  })
 
   const {
     isMainTourOpen,
@@ -53,6 +55,9 @@ const SamplesMapModal = (props) => {
     setMainTourStep,
   ])
 
+  const handleCloseModal = () => dispatch(closeSamplesMapModal())
+  const handleFetchSamples = () => dispatch(fetchSampleMapModalSamples())
+
   const steps = [
     {
       selector: '[data-tut="reactour__SamplesMap"]',
@@ -79,7 +84,7 @@ const SamplesMapModal = (props) => {
   return (
     <Modal isOpen={isOpen} data-tut="reactour__SamplesMap" id="reactour__SamplesMap">
       <ModalHeader
-        toggle={closeSamplesMapModal}
+        toggle={handleCloseModal}
         data-tut="reactour__CloseSamplesMapModal"
         id="CloseSamplesMapModal"
       >
@@ -87,7 +92,7 @@ const SamplesMapModal = (props) => {
       </ModalHeader>
       <ModalBody>
         <SamplesMap
-          fetchSamples={fetchSampleMapModalSamples}
+          fetchSamples={handleFetchSamples}
           isLoading={isLoading}
           isOpen={isOpen}
           markers={markers}
@@ -95,7 +100,7 @@ const SamplesMapModal = (props) => {
         />
       </ModalBody>
       <ModalFooter>
-        <SearchFilters handleSearchFilterClick={fetchSampleMapModalSamples} />
+        <SearchFilters handleSearchFilterClick={handleFetchSamples} />
       </ModalFooter>
       <Tutorial
         steps={steps}
@@ -117,24 +122,4 @@ const SamplesMapModal = (props) => {
   )
 }
 
-const mapStateToProps = (state) => {
-  const { isLoading, isOpen, markers, sample_otus } = state.searchPage.samplesMapModal
-  return {
-    isLoading,
-    isOpen,
-    markers,
-    sample_otus,
-  }
-}
-
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(
-    {
-      closeSamplesMapModal,
-      fetchSampleMapModalSamples,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(SamplesMapModal)
+export default SamplesMapModal
