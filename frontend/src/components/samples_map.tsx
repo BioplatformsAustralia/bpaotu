@@ -28,8 +28,8 @@ import GridCellSizer from 'pages/search_page/components/gridcell_sizer'
 import Octicon from 'components/octicon'
 import AnimateHelix from 'components/animate_helix'
 
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import type { RootState } from 'app/store'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
 import {
   removeContextualFilter,
   changeContextualFilterOperator,
@@ -221,6 +221,33 @@ export const MarkerPopup = (props) => {
         </TabPane>
       </TabContent>
     </>
+  )
+}
+
+const SamplesMapContainer = (props: any) => {
+  const dispatch = useAppDispatch()
+  const filters = useAppSelector((state: RootState) => state.searchPage.filters)
+  const dataDefinitions = useAppSelector((state: RootState) => state.contextualDataDefinitions.filters)
+
+  const contextualActions = {
+    selectContextualFilter: (index: number, filterName: string) =>
+      dispatch(selectContextualFilter(index, filterName)),
+    removeContextualFilter: (index: number) => dispatch(removeContextualFilter(index)),
+    changeContextualFilterOperator: (index: number, operator: string) =>
+      dispatch(changeContextualFilterOperator(index, operator)),
+    changeContextualFilterValue: (index: number, value: any) =>
+      dispatch(changeContextualFilterValue(index, value)),
+    changeContextualFilterValue2: (index: number, value2: any) =>
+      dispatch(changeContextualFilterValue2(index, value2)),
+  }
+
+  return (
+    <SamplesMap
+      {...props}
+      {...contextualActions}
+      filters={filters}
+      dataDefinitions={dataDefinitions}
+    />
   )
 }
 
@@ -768,24 +795,4 @@ class SamplesMap extends React.Component<any> {
   }
 }
 
-const mapStateToProps = (state) => {
-  return {
-    filters: state.searchPage.filters,
-    dataDefinitions: state.contextualDataDefinitions.filters,
-  }
-}
-
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(
-    {
-      selectContextualFilter,
-      removeContextualFilter,
-      changeContextualFilterOperator,
-      changeContextualFilterValue,
-      changeContextualFilterValue2,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(SamplesMap)
+export default SamplesMapContainer
