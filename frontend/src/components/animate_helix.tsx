@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React from 'react'
 import styled, { keyframes, css } from 'styled-components'
 
 export const loadingstyle = {
@@ -294,7 +294,12 @@ function getAnimations(time, timedelay, ease_circ, size, color1, color2) {
   `
 }
 
-const Helix = styled.div`
+type HelixProps = {
+  color1?: string
+  color2?: string
+}
+
+const Helix = styled.div<HelixProps>`
   display: inline-block;
   position: relative;
   vertical-align: middle;
@@ -312,7 +317,7 @@ const Helix = styled.div`
     border-radius: 50%;
     position: absolute;
   }
-  ${(props) =>
+  ${(props: HelixProps) =>
     getAnimations(
       time,
       timedelay,
@@ -323,33 +328,41 @@ const Helix = styled.div`
     )}
 `
 
-const HelixContainer = styled.div`
+type HelixContainerProps = {
+  scale?: number
+}
+
+const HelixContainer = styled.div<HelixContainerProps>`
   display: inline-block;
   position: relative;
-  transform: scale(${(props) => (props.scale ? props.scale : scale)});
+  transform: scale(${(props: HelixContainerProps) => props.scale ?? scale});
 `
 
-type IProps = { scale: number; color1: string; color2: string }
+type IProps = {
+  scale?: number
+  color1?: string
+  color2?: string
+}
 
-class AnimateHelix extends Component<any, IProps> {
-  render() {
-    return (
-      <>
-        <HelixContainer scale={this.props.scale}>
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-          <Helix color1={this.props.color1} color2={this.props.color2} />
-        </HelixContainer>
-      </>
-    )
-  }
+const AnimateHelix = ({
+  scale: scaleProp,
+  color1,
+  color2,
+}: IProps) => {
+  return (
+    <HelixContainer scale={scaleProp}>
+      <Helix color1={color1} color2={color2} />
+      <Helix color1={color1} color2={color2} />
+      <Helix color1={color1} color2={color2} />
+      <Helix color1={color1} color2={color2} />
+      <Helix color1={color1} color2={color2} />
+      <Helix color1={color1} color2={color2} />
+      <Helix color1={color1} color2={color2} />
+      <Helix color1={color1} color2={color2} />
+      <Helix color1={color1} color2={color2} />
+      <Helix color1={color1} color2={color2} />
+    </HelixContainer>
+  )
 }
 
 export default AnimateHelix
