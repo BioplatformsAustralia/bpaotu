@@ -19,6 +19,7 @@ const SunBurstChartTaxonomy = (props: any) => {
   const dispatch = useAppDispatch()
   const taxonomy = useAppSelector((state: RootState) => state.searchPage.filters.taxonomy)
   const rankLabels = useAppSelector((state: RootState) => state.referenceData.ranks.rankLabels)
+  const chartTaxonomy = props.taxonomy || taxonomy
 
   const loadTaxonomyData = useCallback(
     (sunburst_data, parentId, taxonomy, taxa, taxa_label, taxonomyGraphData) => {
@@ -72,11 +73,11 @@ const SunBurstChartTaxonomy = (props: any) => {
       const rank = Array.isArray(cd) ? cd[0] : cd // cd will be 1-element array for pie chart
       return isUndefined(e.nextLevel) &&
         e.points[0].label !== e.points[0].root &&
-        props.taxonomy[rank].selected.value === ''
+        chartTaxonomy[rank].selected.value === ''
         ? rank
         : null
     },
-    [taxonomy]
+    [chartTaxonomy]
   )
 
   const generateGraphData = useCallback(() => {
@@ -84,14 +85,14 @@ const SunBurstChartTaxonomy = (props: any) => {
     if (props.taxonomyGraphdata && props.taxonomyGraphdata.taxonomy) {
       let parentId = ''
       for (const taxa of taxonomy_ranks) {
-        const taxa_label = props.rankLabels[taxa]
+        const taxa_label = rankLabels[taxa] || ''
         if (!taxa_label) {
           break // Reached the last rank for the current taxonomy
         }
         const selectedTaxonomy = loadTaxonomyData(
           sunburst_data,
           parentId,
-          props.taxonomy[taxa],
+          chartTaxonomy[taxa],
           taxa,
           taxa_label,
           props.taxonomyGraphdata.taxonomy
@@ -100,7 +101,7 @@ const SunBurstChartTaxonomy = (props: any) => {
       }
     }
     return sunburst_data
-  }, [props.taxonomyGraphdata, props.rankLabels, taxonomy, loadTaxonomyData])
+  }, [props.taxonomyGraphdata, taxonomy, loadTaxonomyData, rankLabels])
 
   const title = startCase(props.filter) + ' Plot'
   const graphData = generateGraphData()

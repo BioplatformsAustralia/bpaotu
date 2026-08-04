@@ -277,7 +277,7 @@ const SamplesComparisonModal = () => {
     return (
       <div style={{ display: 'flex', gap: '10px', position: 'relative' }}>
         {showRunComparison && (
-          <Button onClick={() => runComparison(umapParams)} color="primary">
+          <Button onClick={() => runComparisonAction(umapParams)} color="primary">
             Run Comparison
           </Button>
         )}
