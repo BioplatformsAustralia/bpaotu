@@ -55,7 +55,7 @@ axios
           </TourProvider>
         </AnalyticsProvider>
       </Provider>,
-      document.getElementById('root')
+      document.getElementById('root'),
     )
   })
   .catch((error) => {

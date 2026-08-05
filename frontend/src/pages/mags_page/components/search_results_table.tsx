@@ -70,7 +70,7 @@ const SearchResultsTable = (props) => {
           return col
         }
       }),
-    [sampleId]
+    [sampleId],
   )
 
   const debouncedSearch = useMemo(
@@ -84,9 +84,9 @@ const SearchResultsTable = (props) => {
           leading: false,
           trailing: true,
           maxWait: 2000, //  so fast typing still triggers a search eventually
-        }
+        },
       ),
-    [dispatch]
+    [dispatch],
   )
 
   useEffect(() => {

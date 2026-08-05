@@ -134,9 +134,11 @@ const SamplesComparisonModal = () => {
   const chartHeight = window.innerHeight * 0.7
 
   const samplesComparisonState = useAppSelector(
-    (state: RootState) => state.searchPage.samplesComparisonModal
+    (state: RootState) => state.searchPage.samplesComparisonModal,
   )
-  const contextualFilters = useAppSelector((state: RootState) => state.contextualDataDefinitions.filters)
+  const contextualFilters = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.filters,
+  )
   const {
     isOpen,
     isLoading,
@@ -153,7 +155,8 @@ const SamplesComparisonModal = () => {
     submissions,
   } = samplesComparisonState
 
-  const runComparisonAction = (params, submissionId?) => dispatch(runComparison(params, submissionId))
+  const runComparisonAction = (params, submissionId?) =>
+    dispatch(runComparison(params, submissionId))
   const cancelComparisonAction = () => dispatch(cancelComparison())
   const clearComparisonAction = () => dispatch(clearComparison())
   const closeSamplesComparisonModalAction = () => dispatch(closeSamplesComparisonModal())
@@ -194,7 +197,7 @@ const SamplesComparisonModal = () => {
       selectedFilter,
       selectedFilterObject,
       selectedFilterExtra,
-      markerSize
+      markerSize,
     )
   }
 
@@ -593,7 +596,11 @@ const SamplesComparisonModal = () => {
                 },
               ],
             }}
-            config={{ displayLogo: false, scrollZoom: false, displayModeBar: true }}
+            config={{
+              displayLogo: false,
+              scrollZoom: false,
+              displayModeBar: true,
+            }}
             useResizeHandler
             style={{
               width: '100%',

@@ -13,7 +13,7 @@ const ContextualSearchResultsTable = () => {
     results: state.contextualPage.results,
     extraColumns: fieldsToColumns(
       state.contextualPage.selectColumns.columns,
-      state.contextualDataDefinitions
+      state.contextualDataDefinitions,
     ),
   }))
 

@@ -1,5 +1,5 @@
 import { createActions, handleActions } from 'redux-actions'
-import { type Reducer, type AnyAction} from 'redux'
+import { type Reducer, type AnyAction } from 'redux'
 import {
   executeComparison,
   executeCancelComparison,
@@ -10,7 +10,12 @@ import {
 import { changeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
 
-import { ComparisonSubmission, ErrorList, searchPageInitialState, type SearchPageState } from './types'
+import {
+  ComparisonSubmission,
+  ErrorList,
+  searchPageInitialState,
+  type SearchPageState,
+} from './types'
 
 type SampleComparisonModalState = SearchPageState['samplesComparisonModal']
 
@@ -51,7 +56,7 @@ export const {
   'CANCEL_COMPARISON_STARTED',
   'CANCEL_COMPARISON_ENDED',
   'CLEAR_COMPARISON_STARTED',
-  'CLEAR_COMPARISON_ENDED'
+  'CLEAR_COMPARISON_ENDED',
 )
 
 const COMPARISON_SUBMISSION_POLL_FREQUENCY_MS = 5000
@@ -201,7 +206,7 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
         // based on how long first few state changes take and what the current state is
         setTimeout(
           () => dispatch(autoUpdateComparisonSubmission()),
-          COMPARISON_SUBMISSION_POLL_FREQUENCY_MS
+          COMPARISON_SUBMISSION_POLL_FREQUENCY_MS,
         )
       }
     })
@@ -211,9 +216,9 @@ export const autoUpdateComparisonSubmission = () => (dispatch, getState) => {
         dispatch(
           comparisonSubmissionUpdateEnded(
             new Error(
-              'Server-side error. It is possible that the result set is too large. Please run a search with fewer samples.'
-            )
-          )
+              'Server-side error. It is possible that the result set is too large. Please run a search with fewer samples.',
+            ),
+          ),
         )
       } else {
         dispatch(comparisonSubmissionUpdateEnded(new Error('Unhandled server-side error!')))
@@ -233,9 +238,10 @@ export const downloadDistanceMatrices = () => (dispatch, getState) => {
   return state
 }
 
-
-const samplesComparisonModalReducer: Reducer<SampleComparisonModalState, AnyAction> =
-  handleActions<SampleComparisonModalState, any>(
+const samplesComparisonModalReducer: Reducer<SampleComparisonModalState, AnyAction> = handleActions<
+  SampleComparisonModalState,
+  any
+>(
   {
     [openSamplesComparisonModal as any]: (state, action) => ({
       ...state,
@@ -392,7 +398,7 @@ const samplesComparisonModalReducer: Reducer<SampleComparisonModalState, AnyActi
           submissions: changeElementAtIndex(
             state.submissions,
             state.submissions.length - 1,
-            (_) => newLastSubmissionState
+            (_) => newLastSubmissionState,
           ),
           isLoading: isLoading,
           isFinished: isFinished,
@@ -418,7 +424,7 @@ const samplesComparisonModalReducer: Reducer<SampleComparisonModalState, AnyActi
               finished: true,
               succeeded: false,
               error: action.error,
-            })
+            }),
           ),
           isLoading: false,
           isFinished: false,
@@ -460,7 +466,7 @@ const samplesComparisonModalReducer: Reducer<SampleComparisonModalState, AnyActi
       status: 'cleared',
     }),
   },
-  searchPageInitialState.samplesComparisonModal
+  searchPageInitialState.samplesComparisonModal,
 )
 
 export default samplesComparisonModalReducer

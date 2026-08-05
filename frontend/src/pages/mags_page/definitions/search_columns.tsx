@@ -51,7 +51,7 @@ const InputNumberRange: React.FC<{
       if (!next.min && !next.max) return onChange(undefined) // tells react-table to clear
       onChange(next)
     },
-    [current, onChange]
+    [current, onChange],
   )
 
   const handleMaxChange = useCallback(
@@ -60,7 +60,7 @@ const InputNumberRange: React.FC<{
       if (!next.min && !next.max) return onChange(undefined) // tells react-table to clear
       onChange(next)
     },
-    [current, onChange]
+    [current, onChange],
   )
 
   const DECIMAL_PATTERN = '^-?\\d*\\.?\\d*$'

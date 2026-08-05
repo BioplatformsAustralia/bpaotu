@@ -6,8 +6,7 @@ import { combineActions, createActions, handleAction, handleActions } from 'redu
 import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { searchPageInitialState, type SearchPageState } from './types'
 
-type SampleIntegrityWarningState =
-  SearchPageState['filters']['sampleIntegrityWarning']
+type SampleIntegrityWarningState = SearchPageState['filters']['sampleIntegrityWarning']
 
 export const {
   selectEnvironment,
@@ -16,7 +15,7 @@ export const {
 } = createActions(
   'SELECT_ENVIRONMENT',
   'SELECT_ENVIRONMENT_OPERATOR',
-  'SELECT_SAMPLE_INTEGRITY_WARNING_FILTERS_MODE'
+  'SELECT_SAMPLE_INTEGRITY_WARNING_FILTERS_MODE',
 )
 
 const selectedEnvironmentReducer: Reducer<
@@ -33,7 +32,7 @@ const selectedEnvironmentReducer: Reducer<
       operator: action.payload,
     }),
   },
-  searchPageInitialState.filters.sampleIntegrityWarning.selectedEnvironment
+  searchPageInitialState.filters.sampleIntegrityWarning.selectedEnvironment,
 )
 
 // unclear as to why selectSampleIntegrityWarningsMode does not work here
@@ -44,7 +43,7 @@ const sampleIntegrityWarningFiltersModeReducer: Reducer<
 > = handleAction<SampleIntegrityWarningState['filtersMode'], any>(
   selectSampleIntegrityWarningFiltersMode,
   (_state, action) => action.payload,
-  searchPageInitialState.filters.sampleIntegrityWarning.filtersMode
+  searchPageInitialState.filters.sampleIntegrityWarning.filtersMode,
 )
 
 const EmptySampleIntegrityWarningFilter = {
@@ -76,17 +75,32 @@ export const {
   clearSampleIntegrityWarningFilters,
 } = createActions(
   {
-    SELECT_SAMPLE_INTEGRITY_WARNING_FILTER: (index, value) => ({ index, value }),
-    CHANGE_SAMPLE_INTEGRITY_WARNING_FILTER_OPERATOR: (index, operator) => ({ index, operator }),
-    CHANGE_SAMPLE_INTEGRITY_WARNING_FILTER_VALUE: (index, value) => ({ index, value }),
-    CHANGE_SAMPLE_INTEGRITY_WARNING_FILTER_VALUE2: (index, value) => ({ index, value }),
-    CHANGE_SAMPLE_INTEGRITY_WARNING_FILTER_VALUES: (index, values) => ({ index, values }),
+    SELECT_SAMPLE_INTEGRITY_WARNING_FILTER: (index, value) => ({
+      index,
+      value,
+    }),
+    CHANGE_SAMPLE_INTEGRITY_WARNING_FILTER_OPERATOR: (index, operator) => ({
+      index,
+      operator,
+    }),
+    CHANGE_SAMPLE_INTEGRITY_WARNING_FILTER_VALUE: (index, value) => ({
+      index,
+      value,
+    }),
+    CHANGE_SAMPLE_INTEGRITY_WARNING_FILTER_VALUE2: (index, value) => ({
+      index,
+      value,
+    }),
+    CHANGE_SAMPLE_INTEGRITY_WARNING_FILTER_VALUES: (index, values) => ({
+      index,
+      values,
+    }),
   },
   'CHECK_SAMPLE_INTEGRITY_WARNING_FILTER',
   'UNCHECK_SAMPLE_INTEGRITY_WARNING_FILTER',
   'ADD_SAMPLE_INTEGRITY_WARNING_FILTER',
   'REMOVE_SAMPLE_INTEGRITY_WARNING_FILTER',
-  'CLEAR_SAMPLE_INTEGRITY_WARNING_FILTERS'
+  'CLEAR_SAMPLE_INTEGRITY_WARNING_FILTERS',
 )
 
 export const doesFilterMatchEnvironment = (environment) => (filter) => {
@@ -98,90 +112,85 @@ export const doesFilterMatchEnvironment = (environment) => (filter) => {
   return isNull(filter.environment) || op(filter)
 }
 
-const sampleIntegrityWarningFiltersReducer: Reducer<
-  SampleIntegrityWarningState,
-  AnyAction
-> = handleActions<SampleIntegrityWarningState, any>(
-  {
-    [checkSampleIntegrityWarningFilter as any]: (state: any, action) => ({
-      ...state,
-      filters: [...state.filters, SampleIntegrityWarningsSampleIntegrityWarning],
-    }),
-    [uncheckSampleIntegrityWarningFilter as any]: (state: any, action) => ({
-      ...state,
-      filters: [],
-    }),
-    [addSampleIntegrityWarningFilter as any]: (state: any, action) => ({
-      ...state,
-      filters: [...state.filters, EmptySampleIntegrityWarningFilter],
-    }),
-    [removeSampleIntegrityWarningFilter as any]: (state: any, action) => ({
-      ...state,
-      filters: removeElementAtIndex(state.filters, action.payload),
-    }),
-    [clearSampleIntegrityWarningFilters as any]: (state: any, action) => ({
-      ...state,
-      filters: [],
-    }),
-    [combineActions(selectEnvironment, selectEnvironmentOperator) as any]: (state, action) => ({
-      ...state,
-      filters: filter(state.filters, (f) => {
-        if (f.name === '') {
-          return true
-        }
-        if (state.dataDefinitions) {
-          const dataDefinition = find(state.dataDefinitions.filters, (dd) => dd.name === f.name)
-          return doesFilterMatchEnvironment(state.selectedEnvironment)(dataDefinition)
-            ? f
-            : EmptySampleIntegrityWarningFilter
-        }
+const sampleIntegrityWarningFiltersReducer: Reducer<SampleIntegrityWarningState, AnyAction> =
+  handleActions<SampleIntegrityWarningState, any>(
+    {
+      [checkSampleIntegrityWarningFilter as any]: (state: any, action) => ({
+        ...state,
+        filters: [...state.filters, SampleIntegrityWarningsSampleIntegrityWarning],
       }),
-    }),
-    [selectSampleIntegrityWarningFilter as any]: (state: any, action: any) => ({
-      ...state,
-      filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
-        ...EmptySampleIntegrityWarningFilter,
-        name: action.payload.value,
-      })),
-    }),
-    [changeSampleIntegrityWarningFilterOperator as any]: (state: any, action: any) => ({
-      ...state,
-      filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
-        ...filter,
-        operator: action.payload.operator,
-      })),
-    }),
-    [changeSampleIntegrityWarningFilterValue as any]: (state: any, action: any) => ({
-      ...state,
-      filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
-        ...filter,
-        value: action.payload.value,
-      })),
-    }),
-    [changeSampleIntegrityWarningFilterValue2 as any]: (state: any, action: any) => ({
-      ...state,
-      filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
-        ...filter,
-        value2: action.payload.value,
-      })),
-    }),
-    [changeSampleIntegrityWarningFilterValues as any]: (state: any, action: any) => ({
-      ...state,
-      filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
-        ...filter,
-        values: action.payload.values,
-      })),
-    }),
-  },
-  searchPageInitialState.filters.sampleIntegrityWarning
-)
+      [uncheckSampleIntegrityWarningFilter as any]: (state: any, action) => ({
+        ...state,
+        filters: [],
+      }),
+      [addSampleIntegrityWarningFilter as any]: (state: any, action) => ({
+        ...state,
+        filters: [...state.filters, EmptySampleIntegrityWarningFilter],
+      }),
+      [removeSampleIntegrityWarningFilter as any]: (state: any, action) => ({
+        ...state,
+        filters: removeElementAtIndex(state.filters, action.payload),
+      }),
+      [clearSampleIntegrityWarningFilters as any]: (state: any, action) => ({
+        ...state,
+        filters: [],
+      }),
+      [combineActions(selectEnvironment, selectEnvironmentOperator) as any]: (state, action) => ({
+        ...state,
+        filters: filter(state.filters, (f) => {
+          if (f.name === '') {
+            return true
+          }
+          if (state.dataDefinitions) {
+            const dataDefinition = find(state.dataDefinitions.filters, (dd) => dd.name === f.name)
+            return doesFilterMatchEnvironment(state.selectedEnvironment)(dataDefinition)
+              ? f
+              : EmptySampleIntegrityWarningFilter
+          }
+        }),
+      }),
+      [selectSampleIntegrityWarningFilter as any]: (state: any, action: any) => ({
+        ...state,
+        filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
+          ...EmptySampleIntegrityWarningFilter,
+          name: action.payload.value,
+        })),
+      }),
+      [changeSampleIntegrityWarningFilterOperator as any]: (state: any, action: any) => ({
+        ...state,
+        filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
+          ...filter,
+          operator: action.payload.operator,
+        })),
+      }),
+      [changeSampleIntegrityWarningFilterValue as any]: (state: any, action: any) => ({
+        ...state,
+        filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
+          ...filter,
+          value: action.payload.value,
+        })),
+      }),
+      [changeSampleIntegrityWarningFilterValue2 as any]: (state: any, action: any) => ({
+        ...state,
+        filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
+          ...filter,
+          value2: action.payload.value,
+        })),
+      }),
+      [changeSampleIntegrityWarningFilterValues as any]: (state: any, action: any) => ({
+        ...state,
+        filters: changeElementAtIndex(state.filters, action.payload.index, (filter) => ({
+          ...filter,
+          values: action.payload.values,
+        })),
+      }),
+    },
+    searchPageInitialState.filters.sampleIntegrityWarning,
+  )
 
-const combinedSampleIntegrityWarningReducers: Reducer<
-  SampleIntegrityWarningState,
-  AnyAction
-> = (
+const combinedSampleIntegrityWarningReducers: Reducer<SampleIntegrityWarningState, AnyAction> = (
   state = searchPageInitialState.filters.sampleIntegrityWarning,
-  action
+  action,
 ) => ({
   ...state,
   selectedEnvironment: selectedEnvironmentReducer(state.selectedEnvironment, action),
@@ -191,12 +200,7 @@ const combinedSampleIntegrityWarningReducers: Reducer<
 
 // This reducer is using reduceReducers because it needs access to both the dataDefinitions and the filters.
 // Otherwise we could just use combineReducers just like for the other reducers in the app.
-const sampleIntegrityWarningReducer: Reducer<
-  SampleIntegrityWarningState,
-  AnyAction
-> = reduceReducers(
-  combinedSampleIntegrityWarningReducers,
-  sampleIntegrityWarningFiltersReducer
-)
+const sampleIntegrityWarningReducer: Reducer<SampleIntegrityWarningState, AnyAction> =
+  reduceReducers(combinedSampleIntegrityWarningReducers, sampleIntegrityWarningFiltersReducer)
 
 export default sampleIntegrityWarningReducer

@@ -20,7 +20,7 @@ export const {
   'CLOSE_SAMPLES_MAP_MODAL',
 
   'SAMPLES_MAP_MODAL_FETCH_SAMPLES_STARTED',
-  'SAMPLES_MAP_MODAL_FETCH_SAMPLES_ENDED'
+  'SAMPLES_MAP_MODAL_FETCH_SAMPLES_ENDED',
 )
 
 export const fetchSampleMapModalSamples = () => (dispatch, getState) => {
@@ -31,40 +31,42 @@ export const fetchSampleMapModalSamples = () => (dispatch, getState) => {
   handleSimpleAPIResponse(
     dispatch,
     partial(executeSampleSitesSearch, filters),
-    samplesMapModalFetchSamplesEnded
+    samplesMapModalFetchSamplesEnded,
   )
 }
 
-const samplesMapModalReducer: Reducer<SamplesMapModalState, AnyAction> =
-  handleActions<SamplesMapModalState, any>(
-    {
-      [openSamplesMapModal as any]: (state, action) => ({
-        ...state,
-        isOpen: true,
-      }),
-      [closeSamplesMapModal as any]: (state, action) => ({
-        ...state,
-        isOpen: false,
-      }),
-      [samplesMapModalFetchSamplesStarted as any]: (state, action) => ({
-        ...state,
-        isLoading: true,
-        markers: [],
-        sample_otus: [],
-      }),
-      [samplesMapModalFetchSamplesEnded as any]: (state, action: any) => ({
-        ...state,
-        isLoading: false,
-        markers: map(action.payload.data.data, (sample) => ({
-          bpadata: sample.bpa_data,
-          lat: sample.latitude,
-          lng: sample.longitude,
-          site_images: sample.site_images,
-        })),
-        sample_otus: action.payload.data.sample_otus,
-      }),
-    },
-    searchPageInitialState.samplesMapModal
-  )
+const samplesMapModalReducer: Reducer<SamplesMapModalState, AnyAction> = handleActions<
+  SamplesMapModalState,
+  any
+>(
+  {
+    [openSamplesMapModal as any]: (state, action) => ({
+      ...state,
+      isOpen: true,
+    }),
+    [closeSamplesMapModal as any]: (state, action) => ({
+      ...state,
+      isOpen: false,
+    }),
+    [samplesMapModalFetchSamplesStarted as any]: (state, action) => ({
+      ...state,
+      isLoading: true,
+      markers: [],
+      sample_otus: [],
+    }),
+    [samplesMapModalFetchSamplesEnded as any]: (state, action: any) => ({
+      ...state,
+      isLoading: false,
+      markers: map(action.payload.data.data, (sample) => ({
+        bpadata: sample.bpa_data,
+        lat: sample.latitude,
+        lng: sample.longitude,
+        site_images: sample.site_images,
+      })),
+      sample_otus: action.payload.data.sample_otus,
+    }),
+  },
+  searchPageInitialState.samplesMapModal,
+)
 
 export default samplesMapModalReducer

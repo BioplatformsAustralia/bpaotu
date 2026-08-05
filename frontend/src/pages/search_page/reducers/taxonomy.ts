@@ -20,7 +20,9 @@ const taxonomiesAfter = (target) =>
 const fetchStarted = (type) => `FETCH_${type.toUpperCase()}_STARTED`
 const fetchEnded = (type) => `FETCH_${type.toUpperCase()}_ENDED`
 
-const fetchTaxonomyOptionsStarted = (type) => () => ({ type: fetchStarted(type) })
+const fetchTaxonomyOptionsStarted = (type) => () => ({
+  type: fetchStarted(type),
+})
 
 const fetchTaxonomyOptionsEnded = (type) => (data) => ({
   type: fetchEnded(type),
@@ -29,10 +31,17 @@ const fetchTaxonomyOptionsEnded = (type) => (data) => ({
 
 export const taxonomyOptionsLoading = createAction('TAXONOMY_OPTIONS_LOADING')
 
-const clearTaxonomyFilter = (type) => () => ({ type: `CLEAR_${type.toUpperCase()}` })
-const disableTaxonomyFilter = (type) => () => ({ type: `DISABLE_${type.toUpperCase()}` })
+const clearTaxonomyFilter = (type) => () => ({
+  type: `CLEAR_${type.toUpperCase()}`,
+})
+const disableTaxonomyFilter = (type) => () => ({
+  type: `DISABLE_${type.toUpperCase()}`,
+})
 
-const taxonomyConfigFor = (target) => ({ type: target, taxonomies: taxonomiesBefore(target) })
+const taxonomyConfigFor = (target) => ({
+  type: target,
+  taxonomies: taxonomiesBefore(target),
+})
 
 const makeTaxonomyFetcher = (config) => (dispatch, getState) => {
   const state = getState()
@@ -41,7 +50,7 @@ const makeTaxonomyFetcher = (config) => (dispatch, getState) => {
 
   const selectedTaxonomies = map(
     config.taxonomies,
-    (taxonomy) => state.searchPage.filters.taxonomy[taxonomy].selected
+    (taxonomy) => state.searchPage.filters.taxonomy[taxonomy].selected,
   )
 
   const selectedTrait = state.searchPage.filters.selectedTrait
@@ -71,9 +80,7 @@ export const updateTaxonomyDropDownsInner = (taxonomy) => (dispatch, getState) =
     return Promise.resolve()
   }
   const nextTaxonomy = first(rest)
-  return dispatch(
-    makeTaxonomyFetcher(taxonomyConfigFor(nextTaxonomy))
-  ).then(() => {
+  return dispatch(makeTaxonomyFetcher(taxonomyConfigFor(nextTaxonomy))).then(() => {
     return dispatch(updateTaxonomyDropDownsInner(nextTaxonomy))
   })
 }
@@ -131,7 +138,10 @@ function makeTaxonomyReducer(taxonomyName) {
         const possibilites = action.payload.data
           ? action.payload.data.possibilities.new_options.possibilities
           : []
-        const options = map(possibilites, (option: any) => ({ id: option[0], value: option[1] }))
+        const options = map(possibilites, (option: any) => ({
+          id: option[0],
+          value: option[1],
+        }))
 
         const isSelectedStillInOptions = (selectedOption) => {
           if (selectedOption.value === '') {
@@ -152,7 +162,10 @@ function makeTaxonomyReducer(taxonomyName) {
         let selected
         if (taxonomyName === 'r1') {
           // initial value for rank1 select sent from backend
-          const initialSelectedValue = { value: action.payload.data.initial, operator: 'is' }
+          const initialSelectedValue = {
+            value: action.payload.data.initial,
+            operator: 'is',
+          }
 
           if (isSelectedStillInOptions(state.selected)) {
             selected = isSelectedValueBlank(state.selected)
@@ -201,7 +214,7 @@ export default function taxonomyReducer(state = searchPageInitialState.filters.t
   return {
     ...state,
     ...mapValues(pick(state, taxonomy_keys), (value, key) =>
-      makeTaxonomyReducer(key)(value, action)
+      makeTaxonomyReducer(key)(value, action),
     ),
   }
 }

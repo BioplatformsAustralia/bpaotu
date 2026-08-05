@@ -324,7 +324,7 @@ const Helix = styled.div<HelixProps>`
       ease_circ,
       size,
       props.color1 ? props.color1 : color1,
-      props.color2 ? props.color2 : color2
+      props.color2 ? props.color2 : color2,
     )}
 `
 
@@ -344,11 +344,7 @@ type IProps = {
   color2?: string
 }
 
-const AnimateHelix = ({
-  scale: scaleProp,
-  color1,
-  color2,
-}: IProps) => {
+const AnimateHelix = ({ scale: scaleProp, color1, color2 }: IProps) => {
   return (
     <HelixContainer scale={scaleProp}>
       <Helix color1={color1} color2={color2} />

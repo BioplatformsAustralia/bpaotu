@@ -50,7 +50,7 @@ const SunBurstChartTaxonomy = (props: any) => {
       }
       return selectedTaxonomy
     },
-    []
+    [],
   )
 
   const onSelectTaxonomy = useCallback(
@@ -63,7 +63,7 @@ const SunBurstChartTaxonomy = (props: any) => {
         dispatch(fetchTaxonomyDataForGraph())
       }
     },
-    [dispatch, taxonomy]
+    [dispatch, taxonomy],
   )
 
   const get_clickable_rank = useCallback(
@@ -76,11 +76,18 @@ const SunBurstChartTaxonomy = (props: any) => {
         ? rank
         : null
     },
-    [chartTaxonomy]
+    [chartTaxonomy],
   )
 
   const generateGraphData = useCallback(() => {
-    let sunburst_data = { labels: [], parents: [], text: [], ids: [], values: [], customdata: [] }
+    let sunburst_data = {
+      labels: [],
+      parents: [],
+      text: [],
+      ids: [],
+      values: [],
+      customdata: [],
+    }
     if (props.taxonomyGraphdata && props.taxonomyGraphdata.taxonomy) {
       let parentId = ''
       for (const taxa of taxonomy_ranks) {
@@ -94,7 +101,7 @@ const SunBurstChartTaxonomy = (props: any) => {
           chartTaxonomy[taxa],
           taxa,
           taxa_label,
-          props.taxonomyGraphdata.taxonomy
+          props.taxonomyGraphdata.taxonomy,
         )
         parentId = make_id(taxa, selectedTaxonomy)
       }

@@ -24,7 +24,7 @@ const taxonomyLoadingReducer = handleActions(
       return action.payload
     },
   },
-  false
+  false,
 )
 
 const filtersReducer = combineReducers({

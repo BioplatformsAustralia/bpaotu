@@ -12,7 +12,7 @@ const SearchResultsCard = (props) => {
   const { extraColumns, sorting } = useAppSelector((state) => ({
     extraColumns: reject(
       map(state.contextualPage.selectColumns.columns, (c) => c.name),
-      (c) => isEmpty(c)
+      (c) => isEmpty(c),
     ),
     sorting: state.contextualPage.results.sorted,
   }))

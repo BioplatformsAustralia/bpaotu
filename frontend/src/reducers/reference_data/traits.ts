@@ -1,6 +1,6 @@
 import { map } from 'lodash'
 import { createActions, handleAction } from 'redux-actions'
-import { type Reducer, type AnyAction} from 'redux'
+import { type Reducer, type AnyAction } from 'redux'
 import { getTraits } from 'api'
 import { selectTrait } from 'pages/search_page/reducers/trait'
 import { getAmpliconFilter } from 'pages/search_page/reducers/amplicon'
@@ -11,7 +11,7 @@ type TraitsState = ReferenceDataState['traits']
 
 export const { fetchTraitsStarted, fetchTraitsEnded } = createActions(
   'FETCH_TRAITS_STARTED',
-  'FETCH_TRAITS_ENDED'
+  'FETCH_TRAITS_ENDED',
 )
 
 export const fetchTraits = () => {
@@ -29,8 +29,7 @@ export const fetchTraits = () => {
   }
 }
 
-const traitsReducer: Reducer<TraitsState, AnyAction> =
-  handleAction<TraitsState, any>(
+const traitsReducer: Reducer<TraitsState, AnyAction> = handleAction<TraitsState, any>(
   fetchTraitsEnded,
   {
     next: (state, action: any) => ({
@@ -51,7 +50,7 @@ const traitsReducer: Reducer<TraitsState, AnyAction> =
       }
     },
   },
-  referenceDataInitialState.traits
+  referenceDataInitialState.traits,
 )
 
 export default traitsReducer

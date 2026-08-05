@@ -17,7 +17,7 @@ const MapPage = () => {
       markers: state.mapPage.samples,
       sample_otus: state.mapPage.sample_otus,
       abundance_matrix: state.mapPage.abundance_matrix,
-    })
+    }),
   )
 
   // track page visit only on first render

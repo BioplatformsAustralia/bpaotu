@@ -16,7 +16,7 @@ export const {
   },
   'ADD_COLUMN',
   'REMOVE_COLUMN',
-  'CLEAR_COLUMNS'
+  'CLEAR_COLUMNS',
 )
 
 const EmptyColumn = {
@@ -35,8 +35,7 @@ const columnsReducer = handleActions<ColumnsState>(
   {
     [addColumn as any]: (state) => [...state, EmptyColumn],
 
-    [removeColumn as any]: (state, action: any) =>
-      removeElementAtIndex(state, action.payload),
+    [removeColumn as any]: (state, action: any) => removeElementAtIndex(state, action.payload),
 
     [clearColumns as any]: () => [],
 
@@ -46,7 +45,7 @@ const columnsReducer = handleActions<ColumnsState>(
         name: action.payload.value,
       })),
   },
-  []
+  [],
 )
 
 export type SelectColumnsState = {

@@ -9,14 +9,14 @@ class HeatMapLegendControl extends MapControl {
     d > 0.8
       ? 'red'
       : d > 0.7
-      ? 'yellow'
-      : d > 0.6
-      ? 'lime'
-      : d > 0.4
-      ? 'cyan'
-      : d > 0.0
-      ? 'blue'
-      : 'blue'
+        ? 'yellow'
+        : d > 0.6
+          ? 'lime'
+          : d > 0.4
+            ? 'cyan'
+            : d > 0.0
+              ? 'blue'
+              : 'blue'
 
   createLeafletElement() {
     const HeatMapLegendControl = L.Control.extend({
@@ -45,7 +45,7 @@ class HeatMapLegendControl extends MapControl {
             '</linearGradient>' +
             '</defs>' +
             '<rect x="0" y="0" width="500" height="16" fill="url(#linear)" />' +
-            '</svg>'
+            '</svg>',
         )
         div.innerHTML = labels.join('')
         return div

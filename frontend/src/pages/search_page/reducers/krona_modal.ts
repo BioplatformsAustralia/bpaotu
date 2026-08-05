@@ -1,6 +1,6 @@
 import { get as _get } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import { type Reducer, type AnyAction} from 'redux'
+import { type Reducer, type AnyAction } from 'redux'
 
 import { executeKrona } from 'api'
 
@@ -13,7 +13,7 @@ export const { openKronaModal, closeKronaModal, runKronaStarted, runKronaEnded }
   'OPEN_KRONA_MODAL',
   'CLOSE_KRONA_MODAL',
   'RUN_KRONA_STARTED',
-  'RUN_KRONA_ENDED'
+  'RUN_KRONA_ENDED',
 )
 
 export const runKronaRequest = (sampleId) => (dispatch, getState) => {
@@ -36,8 +36,7 @@ export const runKronaRequest = (sampleId) => (dispatch, getState) => {
     })
 }
 
-const kronaModalReducer: Reducer<KronaModalState, AnyAction> =
-  handleActions<KronaModalState, any>(
+const kronaModalReducer: Reducer<KronaModalState, AnyAction> = handleActions<KronaModalState, any>(
   {
     [runKronaStarted as any]: (state, action) => ({
       ...state,
@@ -84,7 +83,7 @@ const kronaModalReducer: Reducer<KronaModalState, AnyAction> =
       error: '',
     }),
   },
-  searchPageInitialState.kronaModal
+  searchPageInitialState.kronaModal,
 )
 
 export default kronaModalReducer

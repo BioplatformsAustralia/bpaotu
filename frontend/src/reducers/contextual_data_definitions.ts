@@ -9,7 +9,7 @@ import { handleSimpleAPIResponse } from 'reducers/utils'
 const { fetchContextualDataDefinitionsStarted, fetchContextualDataDefinitionsEnded } =
   createActions(
     'FETCH_CONTEXTUAL_DATA_DEFINITIONS_STARTED',
-    'FETCH_CONTEXTUAL_DATA_DEFINITIONS_ENDED'
+    'FETCH_CONTEXTUAL_DATA_DEFINITIONS_ENDED',
   )
 
 export function fetchContextualDataDefinitions() {
@@ -18,7 +18,7 @@ export function fetchContextualDataDefinitions() {
     handleSimpleAPIResponse(
       dispatch,
       getContextualDataDefinitions,
-      fetchContextualDataDefinitionsEnded
+      fetchContextualDataDefinitionsEnded,
     )
   }
 }
@@ -62,7 +62,7 @@ const contextualDataDefinitionsReducer: Reducer<ContextualDataDefinitionsState, 
         const environment = find(definitions, isEnvironment)
         const sample_id = find(definitions, isSampleID)
         const allButEnvironment = reject(definitions, isEnvironment)
-        
+
         return {
           isLoading: false,
           environment: map(environment.values, ([id, name]) => ({ id, name })),
@@ -74,7 +74,7 @@ const contextualDataDefinitionsReducer: Reducer<ContextualDataDefinitionsState, 
         }
       },
     },
-    initialState
+    initialState,
   )
 
 export default contextualDataDefinitionsReducer

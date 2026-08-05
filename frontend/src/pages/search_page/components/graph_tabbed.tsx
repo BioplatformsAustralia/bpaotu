@@ -72,7 +72,9 @@ const ContextualTab = (props) => {
       <NavItem key={filterName}>
         <NavLink
           key={filterName}
-          className={classnames({ active: activeContextualTab === 'tab_' + filterName })}
+          className={classnames({
+            active: activeContextualTab === 'tab_' + filterName,
+          })}
           onClick={() => {
             toggleContextualTab('tab_' + filterName)
           }}
@@ -96,7 +98,7 @@ const ContextualTab = (props) => {
       <Nav pills>
         <>
           {tablist.map(
-            (tab) => applyEnvironmentFilter(selectedEnvironment, tab) && createNavItem(tab)
+            (tab) => applyEnvironmentFilter(selectedEnvironment, tab) && createNavItem(tab),
           )}
         </>
       </Nav>

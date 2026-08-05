@@ -86,14 +86,25 @@ const tileLayer = {
 
 const buildThumbnailUrl = (packageId, resourceId) =>
   join(
-    [window.otu_search_config.base_url.replace(/\/$/, ''), 'private/site-image-thumbnail', packageId, resourceId],
-    '/'
+    [
+      window.otu_search_config.base_url.replace(/\/$/, ''),
+      'private/site-image-thumbnail',
+      packageId,
+      resourceId,
+    ],
+    '/',
   )
 
 const buildResourceUrl = (packageId, resourceId) =>
   join(
-    [window.otu_search_config.ckan_base_url.replace(/\/$/, ''), 'dataset', packageId, 'resource', resourceId],
-    '/'
+    [
+      window.otu_search_config.ckan_base_url.replace(/\/$/, ''),
+      'dataset',
+      packageId,
+      'resource',
+      resourceId,
+    ],
+    '/',
   )
 
 const BPAImage = ({ packageId, resourceId }) => {
@@ -227,7 +238,9 @@ export const MarkerPopup = (props) => {
 const SamplesMapContainer = (props: any) => {
   const dispatch = useAppDispatch()
   const filters = useAppSelector((state: RootState) => state.searchPage.filters)
-  const dataDefinitions = useAppSelector((state: RootState) => state.contextualDataDefinitions.filters)
+  const dataDefinitions = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.filters,
+  )
 
   const contextualActions = {
     selectContextualFilter: (index: number, filterName: string) =>
@@ -320,7 +333,14 @@ class SamplesMap extends React.Component<any> {
   handleZoomstart = (map, maxZoom, defaultZoom, position) => {
     const currentZoom = this.leafletMap ? this.leafletMap.leafletElement.getZoom() : 4
     const v = 1 / Math.pow(2, Math.max(0, Math.min(maxZoom - currentZoom, 12)))
-    return { maxZoom, currentZoom, defaultZoom, v, intensity: v * 1000, position }
+    return {
+      maxZoom,
+      currentZoom,
+      defaultZoom,
+      v,
+      intensity: v * 1000,
+      position,
+    }
   }
 
   initDrawElement = () => {
@@ -340,11 +360,11 @@ class SamplesMap extends React.Component<any> {
     var rectangle: [number, number][] = []
     const lat = find(
       this.props.filters.contextual.filters,
-      (latlng) => latlng.name === this.lat_filter
+      (latlng) => latlng.name === this.lat_filter,
     )
     const lng = find(
       this.props.filters.contextual.filters,
-      (latlng) => latlng.name === this.lng_filter
+      (latlng) => latlng.name === this.lng_filter,
     )
     if (lat && lng) {
       rectangle = [
@@ -376,14 +396,14 @@ class SamplesMap extends React.Component<any> {
         this.props.filters.contextual.filters,
         this.lat_filter,
         lat_value,
-        lat_value2
+        lat_value2,
       )
       this.props.removeContextualFilter(index_lat)
       const index_lng = this.findFilterValueIndex(
         this.props.filters.contextual.filters,
         this.lng_filter,
         lng_value,
-        lng_value2
+        lng_value2,
       )
       this.props.removeContextualFilter(index_lng)
     })
@@ -422,7 +442,7 @@ class SamplesMap extends React.Component<any> {
     if (this.samplePoints && !this.featureCollectionData) {
       let cellAggregatedData = aggregateSamplesByCell(
         this.siteAggregatedData,
-        this.state.gridcellSize
+        this.state.gridcellSize,
       )
       this.featureCollectionData = this.makeFeatureCollection(cellAggregatedData)
     }
@@ -649,16 +669,14 @@ class SamplesMap extends React.Component<any> {
   // the Leaflet control directly once we have access to the underlying Leaflet
   // map instance via the react-leaflet ref.
   public setUpMiniMap = () => {
-  const layer = new L.TileLayer(ArcGIS.url, {
-    minZoom: 0,
-    maxZoom: 13,
-    attribution: ArcGIS.attribution,
-  })
+    const layer = new L.TileLayer(ArcGIS.url, {
+      minZoom: 0,
+      maxZoom: 13,
+      attribution: ArcGIS.attribution,
+    })
 
-  new MiniMap(layer, { toggleDisplay: true }).addTo(
-    this.leafletMap.leafletElement
-  )
-}
+    new MiniMap(layer, { toggleDisplay: true }).addTo(this.leafletMap.leafletElement)
+  }
 
   public handleClick = (e) => {
     // const { lat, lng } = e.latlng;
@@ -692,11 +710,11 @@ class SamplesMap extends React.Component<any> {
       '<br />' +
       strongHeader(
         "Std Richness per grid cell <span style='fontSize:16px' title='Std Richness per grid cell = Richness per grid cell / Sites per grid cell'>&#9432;</span>",
-        layer.feature.properties.stdCellRichness
+        layer.feature.properties.stdCellRichness,
       ) +
       strongHeader(
         "Std Abundance per grid cell <span style='fontSize:16px' title='Std Abundance per grid cell = Abundance per grid cell / Sites per grid cell'>&#9432;</span>",
-        layer.feature.properties.stdCellAbundance
+        layer.feature.properties.stdCellAbundance,
       ) +
       '<br />' +
       strongHeader('Max Sites per grid cell', layer.feature.properties.maxSites) +
@@ -705,28 +723,28 @@ class SamplesMap extends React.Component<any> {
       '<br />' +
       strongHeader(
         "Wtd Sites per grid cell <span style='fontSize:16px' title='Wtd Sites per grid cell = Sites per grid cell / Max Sites per grid cell'>&#9432;</span>",
-        layer.feature.properties.weightedSites
+        layer.feature.properties.weightedSites,
       ) +
       strongHeader(
         "Wtd Richness per grid cell <span style='fontSize:16px' title='Wtd Richness per grid cell = Std Richness per grid cell / Max Std Richness per grid cell'>&#9432;</span>",
-        layer.feature.properties.weightedRichness
+        layer.feature.properties.weightedRichness,
       ) +
       strongHeader(
         "Wtd Abundance per grid cell <span style='fontSize:16px' title='Wtd Abundance per grid cell = Std Abundance per grid cell / Max Std Abundance per grid cell'>&#9432;</span>",
-        layer.feature.properties.weightedAbundance
+        layer.feature.properties.weightedAbundance,
       ) +
       '<br />' +
       strongHeader(
         'Longitude',
         layer.feature.properties.coordinates[0][0] +
           ' to ' +
-          layer.feature.properties.coordinates[2][0]
+          layer.feature.properties.coordinates[2][0],
       ) +
       strongHeader(
         'Latitude',
         layer.feature.properties.coordinates[0][1] +
           ' to ' +
-          layer.feature.properties.coordinates[2][1]
+          layer.feature.properties.coordinates[2][1],
       ) +
       '<br />'
     //list all sites within the cell.properties

@@ -11,14 +11,7 @@ import { selectEnvironment } from '../../reducers/contextual'
 
 const PieChartEnvironment = (props) => {
   const dispatch = useAppDispatch()
-  const {
-    filter,
-    contextualGraphdata,
-    width,
-    height,
-    selectToScroll,
-    selectTab,
-  } = props
+  const { filter, contextualGraphdata, width, height, selectToScroll, selectTab } = props
   const options = useAppSelector((state: RootState) => state.contextualDataDefinitions.environment)
 
   const graphData = contextualGraphdata[filter]

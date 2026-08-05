@@ -61,12 +61,7 @@ export const TutorialBadge = ({ id, onClick, tooltip = '' }) => {
 
   return (
     <>
-      <Button
-        id={id}
-        className='rounded-pill'
-        style={tutorialButtonStyle}
-        onClick={onClick}
-      >
+      <Button id={id} className="rounded-pill" style={tutorialButtonStyle} onClick={onClick}>
         <Octicon name="book" />
         <span style={{ marginLeft: 6 }}>Tutorial</span>
       </Button>

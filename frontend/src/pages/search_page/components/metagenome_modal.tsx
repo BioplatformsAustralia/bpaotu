@@ -126,7 +126,7 @@ const MetagenomeModal = (props) => {
     // → 1 (submit request)
     // → 2 (waiting for response)
     setRequestState((prevRequestState) =>
-      prevRequestState < 2 ? prevRequestState + 1 : prevRequestState
+      prevRequestState < 2 ? prevRequestState + 1 : prevRequestState,
     )
   }
 
@@ -228,7 +228,13 @@ const MetagenomeModal = (props) => {
               for{' '}
               {props.sample_ids.length !== 1 ? `${props.sample_ids.length} samples:` : 'sample:'}
             </p>
-            <p style={{ marginLeft: '2em', padding: '1em', border: '1px solid #ccc' }}>
+            <p
+              style={{
+                marginLeft: '2em',
+                padding: '1em',
+                border: '1px solid #ccc',
+              }}
+            >
               {join(props.sample_ids, ', ')}
             </p>
           </div>
@@ -323,7 +329,13 @@ const MetagenomeModal = (props) => {
       >
         Metagenome data request
       </ModalHeader>
-      <ModalBody style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <ModalBody
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
         {modalBody()}
       </ModalBody>
       <ModalFooter>{modalFooter()}</ModalFooter>

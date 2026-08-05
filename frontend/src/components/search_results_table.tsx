@@ -14,8 +14,7 @@ export interface SearchResultsTablePresentationProps {
   contextual?: boolean
 }
 
-export interface SearchResultsTableProps
-  extends SearchResultsTablePresentationProps {
+export interface SearchResultsTableProps extends SearchResultsTablePresentationProps {
   extraColumns?: any[]
   results: any
   changeTableProperties: (payload: any) => void
@@ -57,7 +56,7 @@ const mapDefinitions = (fields) => {
     (c) => ({
       name: c.name,
       displayName: c.displayName,
-    })
+    }),
   )
 }
 
@@ -112,7 +111,7 @@ export const SearchResultsTable = (props: SearchResultsTableProps) => {
         accessor: 'environment',
       },
     ],
-    [cell_func]
+    [cell_func],
   )
 
   const kronaColumn = useMemo(
@@ -132,7 +131,7 @@ export const SearchResultsTable = (props: SearchResultsTableProps) => {
       sortable: true,
       Cell: krona_func,
     }),
-    [krona_func]
+    [krona_func],
   )
 
   const runIdColumn = useMemo(
@@ -159,7 +158,7 @@ export const SearchResultsTable = (props: SearchResultsTableProps) => {
       sortable: true,
       Cell: cell_func_run_id,
     }),
-    [cell_func_run_id]
+    [cell_func_run_id],
   )
 
   const columns = useMemo(() => {

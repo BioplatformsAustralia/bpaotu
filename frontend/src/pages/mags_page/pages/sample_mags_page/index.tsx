@@ -31,7 +31,7 @@ const SampleInformation = ({ record }) => {
 const SampleMagsInformation = ({ sampleId, omdbResult }) => {
   const dispatch = useDispatch()
   const { isLoading, hasLoaded, sample_mags_count } = useSelector(
-    (state: any) => state.magsPage.samples.sampleMagsCount
+    (state: any) => state.magsPage.samples.sampleMagsCount,
   )
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export const SampleMagsPage = (props) => {
         changeTablePropertiesMags({
           ...results,
           filtered: updatedFiltered,
-        })
+        }),
       )
     }
   }, [dispatch, results, sampleId])

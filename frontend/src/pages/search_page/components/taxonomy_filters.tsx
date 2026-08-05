@@ -29,8 +29,15 @@ const TaxonomySourceSelector = (props) => {
 const TaxonomyFilter = ({ rank, label = '' }) => {
   const dispatch = useAppDispatch()
   const rankState = useAppSelector((state: any) => state.searchPage.filters.taxonomy[rank] || {})
-  const rankLabel = useAppSelector((state: any) => state.referenceData.ranks.rankLabels[rank] || null)
-  const { options = [], isDisabled = false, isLoading = false, selected = { value: '', operator: 'is' } } = rankState as any
+  const rankLabel = useAppSelector(
+    (state: any) => state.referenceData.ranks.rankLabels[rank] || null,
+  )
+  const {
+    options = [],
+    isDisabled = false,
+    isLoading = false,
+    selected = { value: '', operator: 'is' },
+  } = rankState as any
   const selectValue = (value: string) =>
     dispatch(createAction('SELECT_' + rank.toUpperCase())(value))
   const selectOperator = (value: string) =>
@@ -53,13 +60,19 @@ const TaxonomyFilter = ({ rank, label = '' }) => {
 
 export const TaxonomySelector = ({ info }: { info: string }) => {
   const dispatch = useAppDispatch()
-  const rankState = useAppSelector((state: any) => state.searchPage.filters.taxonomy.taxonomy_source || {})
-  const rankLabel = useAppSelector(
-    (state: any) => state.referenceData.ranks.rankLabels.taxonomy_source || null
+  const rankState = useAppSelector(
+    (state: any) => state.searchPage.filters.taxonomy.taxonomy_source || {},
   )
-  const { options = [], isDisabled = false, isLoading = false, selected = { value: '', operator: 'is' } } = rankState as any
-  const selectValue = (value: string) =>
-    dispatch(createAction('SELECT_TAXONOMY_SOURCE')(value))
+  const rankLabel = useAppSelector(
+    (state: any) => state.referenceData.ranks.rankLabels.taxonomy_source || null,
+  )
+  const {
+    options = [],
+    isDisabled = false,
+    isLoading = false,
+    selected = { value: '', operator: 'is' },
+  } = rankState as any
+  const selectValue = (value: string) => dispatch(createAction('SELECT_TAXONOMY_SOURCE')(value))
   const selectOperator = (value: string) =>
     dispatch(createAction('SELECT_TAXONOMY_SOURCE_OPERATOR')(value))
   const onChange = () => dispatch(updateTaxonomyDropDowns('taxonomy_source'))

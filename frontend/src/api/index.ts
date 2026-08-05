@@ -71,7 +71,9 @@ export function getTaxonomyDataForGraph(filters, options) {
 }
 
 export function getTaxonomy(selectedAmplicon = { value: '' }, selectedTaxonomies, selectedTrait) {
-  const taxonomies = completeArray(selectedTaxonomies, taxonomy_keys.length, { value: '' })
+  const taxonomies = completeArray(selectedTaxonomies, taxonomy_keys.length, {
+    value: '',
+  })
 
   return axios.get(window.otu_search_config.taxonomy_endpoint, {
     params: {
@@ -131,13 +133,13 @@ export function executeKronaRequest(sample_id) {
 export const executeSearch = partial(doSearch, window.otu_search_config.search_endpoint)
 export const executeContextualSearch = partial(
   doSearch,
-  window.otu_search_config.required_table_headers_endpoint
+  window.otu_search_config.required_table_headers_endpoint,
 )
 
 function executeOtuSearch(
   url,
   filters,
-  extraParams: Record<string, string | number | boolean> = {}
+  extraParams: Record<string, string | number | boolean> = {},
 ) {
   const formData = new FormData()
   formData.append('otu_query', JSON.stringify(filters))
@@ -158,12 +160,12 @@ function executeOtuSearch(
 
 export const executeBlastOtuSearch = partial(
   executeOtuSearch,
-  window.otu_search_config.search_blast_otus_endpoint
+  window.otu_search_config.search_blast_otus_endpoint,
 )
 
 export const executeSampleSitesSearch = partial(
   executeOtuSearch,
-  window.otu_search_config.search_sample_sites_endpoint
+  window.otu_search_config.search_sample_sites_endpoint,
 )
 
 export const executeMagsSearch = (options, magId = null) => {
@@ -193,7 +195,7 @@ export const executeSampleMagsCount = (sampleId) => {
 
 export const executeMetagenomeSearch = partial(
   executeOtuSearch,
-  join([window.otu_search_config.base_url, 'private/metagenome-search'], '/')
+  join([window.otu_search_config.base_url, 'private/metagenome-search'], '/'),
 )
 
 export const executeTaxonomySearch = (selectedAmplicon, searchString) => {

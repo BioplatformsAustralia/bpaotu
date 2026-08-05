@@ -27,10 +27,18 @@ import { clearSearchResults } from './reducers/search'
 const SearchPage = (props) => {
   const dispatch = useAppDispatch()
   const isSearchInProgress = useAppSelector((state) => state.searchPage.results.isLoading)
-  const isBlastSearchRunning = useAppSelector((state) => state.searchPage.blastSearchModal.isSubmitting)
-  const isBlastSearchFinished = useAppSelector((state) => state.searchPage.blastSearchModal.isFinished)
-  const isComparisonRunning = useAppSelector((state) => state.searchPage.samplesComparisonModal.isLoading)
-  const isComparisonFinished = useAppSelector((state) => state.searchPage.samplesComparisonModal.isFinished)
+  const isBlastSearchRunning = useAppSelector(
+    (state) => state.searchPage.blastSearchModal.isSubmitting,
+  )
+  const isBlastSearchFinished = useAppSelector(
+    (state) => state.searchPage.blastSearchModal.isFinished,
+  )
+  const isComparisonRunning = useAppSelector(
+    (state) => state.searchPage.samplesComparisonModal.isLoading,
+  )
+  const isComparisonFinished = useAppSelector(
+    (state) => state.searchPage.samplesComparisonModal.isFinished,
+  )
   const errors = useAppSelector((state) => state.searchPage.results.errors)
   const auth = useAppSelector((state) => state.auth)
   const { page, track, identify } = useAnalytics()

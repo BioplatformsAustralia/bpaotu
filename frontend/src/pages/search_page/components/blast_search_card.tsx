@@ -54,9 +54,7 @@ const BlastSearchCard = () => {
     sequenceValue,
   } = useAppSelector((state) => state.searchPage.blastSearchModal)
 
-  const searchChanged = useAppSelector((state) =>
-    hasSearchChanged(state)
-  )
+  const searchChanged = useAppSelector((state) => hasSearchChanged(state))
 
   useEffect(() => {
     if (searchChanged) {
@@ -64,28 +62,18 @@ const BlastSearchCard = () => {
     }
   }, [dispatch, searchChanged])
 
-  const isAmpliconSelected = useAppSelector(
-    (state) => getAmpliconFilter(state).value
-  )
+  const isAmpliconSelected = useAppSelector((state) => getAmpliconFilter(state).value)
 
   const isSearchDisabled = useAppSelector((state) => {
     const blast = state.searchPage.blastSearchModal
 
-    return (
-      getAmpliconFilter(state).value === '' ||
-      blast.sequenceValue === '' ||
-      blast.isSubmitting
-    )
+    return getAmpliconFilter(state).value === '' || blast.sequenceValue === '' || blast.isSubmitting
   })
 
-  const isLoading = useAppSelector(
-    (state) => state.searchPage.results.isLoading
-  )
+  const isLoading = useAppSelector((state) => state.searchPage.results.isLoading)
 
-  const rowsCount = useAppSelector(
-    (state) => state.searchPage.results.rowsCount
-  )
-  
+  const rowsCount = useAppSelector((state) => state.searchPage.results.rowsCount)
+
   const wrapText = (text) => ({ __html: text })
 
   const handleParameterChange = (param: string, value: string) => {
@@ -93,10 +81,10 @@ const BlastSearchCard = () => {
       handleBlastParameters({
         param,
         value,
-      })
+      }),
     )
   }
-  
+
   const parentContainerStyle = {
     display: 'flex',
     justifyContent: 'center',
@@ -145,7 +133,7 @@ const BlastSearchCard = () => {
                   handleBlastParameters({
                     param: 'qcov_hsp_perc',
                     value: evt.target.value,
-                  })
+                  }),
                 )
               }
             >
@@ -181,7 +169,7 @@ const BlastSearchCard = () => {
                   handleBlastParameters({
                     param: 'perc_identity',
                     value: evt.target.value,
-                  })
+                  }),
                 )
               }
             >
@@ -248,7 +236,11 @@ const BlastSearchCard = () => {
           <div>No Sample OTUs found for these search parameters</div>
         ) : (
           <>
-            <Button color="warning" disabled={isSearchDisabled} onClick={() => dispatch(runBlast())}>
+            <Button
+              color="warning"
+              disabled={isSearchDisabled}
+              onClick={() => dispatch(runBlast())}
+            >
               Run BLAST
             </Button>
             {isSubmitting && (

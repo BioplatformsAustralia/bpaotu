@@ -61,9 +61,7 @@ const TaxonomyFilterCard = ({ metagenomeMode }: { metagenomeMode: boolean }) => 
 
   const prevAmplicon = useRef<OperatorAndValue>({ ...EmptyOperatorAndValue })
 
-  const amplicons = useAppSelector(
-    (state) => state.referenceData.amplicons
-  )
+  const amplicons = useAppSelector((state) => state.referenceData.amplicons)
 
   console.log('metagenomeMode', metagenomeMode)
 
@@ -79,12 +77,10 @@ const TaxonomyFilterCard = ({ metagenomeMode }: { metagenomeMode: boolean }) => 
       const optionsAmplicons = state.referenceData.amplicons.values
       const optionsTaxonomyR1 = state.searchPage.filters.taxonomy.r1
 
-      const textAmplicon = optionsAmplicons.find(
-        (x) => x.id === selectedAmplicon.value
-      )
+      const textAmplicon = optionsAmplicons.find((x) => x.id === selectedAmplicon.value)
 
       const textR1 = optionsTaxonomyR1.options.find(
-        (x) => x.id === optionsTaxonomyR1.selected.value
+        (x) => x.id === optionsTaxonomyR1.selected.value,
       )
 
       if (textAmplicon && textR1) {
@@ -92,14 +88,9 @@ const TaxonomyFilterCard = ({ metagenomeMode }: { metagenomeMode: boolean }) => 
         valueR1 = textR1.value
         nameR1 = state.referenceData.ranks.rankLabels.r1
 
-        const matchAmplicon = valueAmplicon
-          .split('_')
-          .map((x) => x.toLowerCase().substring(0, 4))
+        const matchAmplicon = valueAmplicon.split('_').map((x) => x.toLowerCase().substring(0, 4))
 
-        const matchR1 = valueR1
-          .split('__')[1]
-          .toLowerCase()
-          .substring(0, 4)
+        const matchR1 = valueR1.split('__')[1].toLowerCase().substring(0, 4)
 
         mismatch = matchAmplicon.indexOf(matchR1) === -1
       }
@@ -128,10 +119,8 @@ const TaxonomyFilterCard = ({ metagenomeMode }: { metagenomeMode: boolean }) => 
     if (
       amplicons.values.length > 0 &&
       selectedAmplicon.value !== '' &&
-      (
-        prevAmplicon.current.value !== selectedAmplicon.value ||
-        prevAmplicon.current.operator !== selectedAmplicon.operator
-      )
+      (prevAmplicon.current.value !== selectedAmplicon.value ||
+        prevAmplicon.current.operator !== selectedAmplicon.operator)
     ) {
       prevAmplicon.current = { ...selectedAmplicon }
 
@@ -181,7 +170,8 @@ const TaxonomyFilterCard = ({ metagenomeMode }: { metagenomeMode: boolean }) => 
             </p>
             {mismatchState.mismatch && (
               <p className="text-center" style={{ fontSize: '13px' }}>
-                Note: potential mismatch between Amplicon ({mismatchState.valueAmplicon}) and {mismatchState.nameR1} ({mismatchState.valueR1})
+                Note: potential mismatch between Amplicon ({mismatchState.valueAmplicon}) and{' '}
+                {mismatchState.nameR1} ({mismatchState.valueR1})
               </p>
             )}
           </Col>
@@ -189,8 +179,7 @@ const TaxonomyFilterCard = ({ metagenomeMode }: { metagenomeMode: boolean }) => 
 
         {selectedAmplicon.value !== '' && (
           <>
-            <TaxonomySelector info={TaxonomySourceInfo}
-            />
+            <TaxonomySelector info={TaxonomySourceInfo} />
             {TaxonomyDropDowns}
             <hr />
             <TraitFilter info={TraitFilterInfo} />

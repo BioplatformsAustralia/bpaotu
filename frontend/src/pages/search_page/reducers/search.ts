@@ -18,7 +18,7 @@ type SearchResultsState = SearchPageState['results']
 export const { changeTableProperties, searchStarted, searchEnded } = createActions(
   'CHANGE_TABLE_PROPERTIES',
   'SEARCH_STARTED',
-  'SEARCH_ENDED'
+  'SEARCH_ENDED',
 )
 export const clearSearchResults = createAction('CLEAR_SEARCH_RESULTS')
 
@@ -52,7 +52,7 @@ function marshallContextualFilters(filtersState, dataDefinitions) {
         operator: filter.operator,
         ...values,
       }
-    }
+    },
   )
 
   return filters
@@ -75,7 +75,7 @@ export const describeSearch = (state) => {
   const haveAmplicon = selectedAmplicon.value !== ''
   const selectedTrait = haveAmplicon ? stateFilters.selectedTrait : EmptyOperatorAndValue
   const selectedTaxonomies = map(taxonomy_keys, (taxonomy) =>
-    haveAmplicon ? stateFilters.taxonomy[taxonomy].selected : EmptyOperatorAndValue
+    haveAmplicon ? stateFilters.taxonomy[taxonomy].selected : EmptyOperatorAndValue,
   )
 
   return {
@@ -85,14 +85,13 @@ export const describeSearch = (state) => {
     contextual_filters: marshallContextual(stateFilters.contextual, contextualDataDefinitions),
     sample_integrity_warnings_filter: marshallContextual(
       stateFilters.sampleIntegrityWarning,
-      contextualDataDefinitions
+      contextualDataDefinitions,
     ),
     metagenome_only: isMetagenomeSearch(state),
   }
 }
 
-export const getSearchHash = (state) =>
-  createSearchHash(describeSearch(state))
+export const getSearchHash = (state) => createSearchHash(describeSearch(state))
 
 export const hasSearchChanged = (state) => {
   const curr = getSearchHash(state)
@@ -110,11 +109,11 @@ export const search = (track) => (dispatch, getState) => {
 
   const contextualColumns = reject(
     map(filters.contextual_filters.filters, (f) => f.field),
-    (name) => isEmpty(name)
+    (name) => isEmpty(name),
   )
   const sampleIntegrityWarningsColumns = reject(
     map(filters.sample_integrity_warnings_filter.filters, (f) => f.field),
-    (name) => isEmpty(name)
+    (name) => isEmpty(name),
   )
 
   const options = {
@@ -131,8 +130,8 @@ export const search = (track) => (dispatch, getState) => {
       dispatch(
         searchEnded({
           ...data,
-          lastSearchParams: searchHash
-        })
+          lastSearchParams: searchHash,
+        }),
       )
     })
     .catch((error) => {
@@ -140,8 +139,10 @@ export const search = (track) => (dispatch, getState) => {
     })
 }
 
-const searchResultsReducer: Reducer<SearchResultsState, AnyAction> =
-  handleActions<SearchResultsState, any>(
+const searchResultsReducer: Reducer<SearchResultsState, AnyAction> = handleActions<
+  SearchResultsState,
+  any
+>(
   {
     [changeTableProperties as any]: (state, action: any) => {
       const { page, pageSize, sorted } = action.payload
@@ -197,7 +198,7 @@ const searchResultsReducer: Reducer<SearchResultsState, AnyAction> =
       }),
     },
   },
-  searchPageInitialState.results
+  searchPageInitialState.results,
 )
 
 export default searchResultsReducer

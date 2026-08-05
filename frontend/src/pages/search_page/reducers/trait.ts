@@ -4,7 +4,7 @@ import { EmptyOperatorAndValue } from './types'
 
 export const { selectTrait, selectTraitOperator } = createActions(
   'SELECT_TRAIT',
-  'SELECT_TRAIT_OPERATOR'
+  'SELECT_TRAIT_OPERATOR',
 )
 
 export default handleActions(
@@ -18,5 +18,5 @@ export default handleActions(
       operator: action.payload,
     }),
   },
-  EmptyOperatorAndValue
+  EmptyOperatorAndValue,
 )

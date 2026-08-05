@@ -10,7 +10,7 @@ type MagsResultsState = MagsPageState['results']
 export const { changeTablePropertiesMags, searchMagsStarted, searchMagsEnded } = createActions(
   'CHANGE_TABLE_PROPERTIES_MAGS',
   'SEARCH_MAGS_STARTED',
-  'SEARCH_MAGS_ENDED'
+  'SEARCH_MAGS_ENDED',
 )
 
 export const searchMags =
@@ -35,10 +35,7 @@ export const searchMags =
       })
   }
 
-
-
-const magsReducer: Reducer<MagsResultsState, AnyAction> =
-  handleActions<MagsResultsState, any>(
+const magsReducer: Reducer<MagsResultsState, AnyAction> = handleActions<MagsResultsState, any>(
   {
     [changeTablePropertiesMags as any]: (state, action: any) => {
       const { page, pageSize, filtered, sorted } = action.payload
@@ -80,7 +77,7 @@ const magsReducer: Reducer<MagsResultsState, AnyAction> =
       }),
     },
   },
-  magsPageInitialState.results
+  magsPageInitialState.results,
 )
 
 export default magsReducer

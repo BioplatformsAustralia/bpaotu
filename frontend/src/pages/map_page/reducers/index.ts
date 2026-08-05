@@ -10,7 +10,7 @@ import { mapPageInitialState, type MapPageState } from './types'
 
 export const { samplesMapFetchSamplesStarted, samplesMapFetchSamplesEnded } = createActions(
   'SAMPLES_MAP_FETCH_SAMPLES_STARTED',
-  'SAMPLES_MAP_FETCH_SAMPLES_ENDED'
+  'SAMPLES_MAP_FETCH_SAMPLES_ENDED',
 )
 
 export const fetchSampleMapSamples = () => (dispatch) => {
@@ -21,36 +21,34 @@ export const fetchSampleMapSamples = () => (dispatch) => {
     // can't filter on taxonomy source either. This means richness and abundance
     // will probably be meaningless.
     // See https://github.com/BioplatformsAustralia/bpaotu/issues/214
-    EmptyOTUQuery
+    EmptyOTUQuery,
   )
 
   dispatch(samplesMapFetchSamplesStarted())
   handleSimpleAPIResponse(dispatch, fetchAllSamples, samplesMapFetchSamplesEnded)
 }
 
-
-const samplesMapReducer: Reducer<MapPageState, AnyAction> =
-  handleActions<MapPageState, any>(
-    {
-      [samplesMapFetchSamplesStarted as any]: (state, action) => ({
-        ...state,
-        isLoading: true,
-        samples: [],
-      }),
-      [samplesMapFetchSamplesEnded as any]: (state, action: any) => ({
-        ...state,
-        isLoading: false,
-        samples: map(action.payload.data.data, (sample) => ({
-          bpadata: sample.bpa_data,
-          abundance: sample.sample_otus_abundance,
-          lat: sample.latitude,
-          lng: sample.longitude,
-          site_images: sample.site_images,
-        })),
-        sample_otus: action.payload.data.sample_otus,
-      }),
-    },
-    mapPageInitialState
-  )
+const samplesMapReducer: Reducer<MapPageState, AnyAction> = handleActions<MapPageState, any>(
+  {
+    [samplesMapFetchSamplesStarted as any]: (state, action) => ({
+      ...state,
+      isLoading: true,
+      samples: [],
+    }),
+    [samplesMapFetchSamplesEnded as any]: (state, action: any) => ({
+      ...state,
+      isLoading: false,
+      samples: map(action.payload.data.data, (sample) => ({
+        bpadata: sample.bpa_data,
+        abundance: sample.sample_otus_abundance,
+        lat: sample.latitude,
+        lng: sample.longitude,
+        site_images: sample.site_images,
+      })),
+      sample_otus: action.payload.data.sample_otus,
+    }),
+  },
+  mapPageInitialState,
+)
 
 export default samplesMapReducer

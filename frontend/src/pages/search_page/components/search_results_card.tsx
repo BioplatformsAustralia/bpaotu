@@ -130,14 +130,14 @@ const OtuExportBox = ({ state, clear }) => {
 
 const _SearchResultsCard = (props) => {
   const dispatch = useAppDispatch()
-  const galaxy = useAppSelector(state => state.searchPage.galaxy)
-  const tips = useAppSelector(state => state.searchPage.tips)
-  const otuExport = useAppSelector(state => state.searchPage.otuExport)
-  const describeSearchValue = useAppSelector(state => describeSearch(state))
-  const metaxaAmpliconSelected = useAppSelector(state => {
+  const galaxy = useAppSelector((state) => state.searchPage.galaxy)
+  const tips = useAppSelector((state) => state.searchPage.tips)
+  const otuExport = useAppSelector((state) => state.searchPage.otuExport)
+  const describeSearchValue = useAppSelector((state) => describeSearch(state))
+  const metaxaAmpliconSelected = useAppSelector((state) => {
     const selectedAmpliconId = state.searchPage.filters.selectedAmplicon.value
     const metaxaOption = state.referenceData.amplicons.values.find((x) =>
-      x.value.startsWith(metaxaAmpliconStringMatch)
+      x.value.startsWith(metaxaAmpliconStringMatch),
     )
     const metaxaOptionId = !!metaxaOption ? metaxaOption.id : undefined
     return metaxaOptionId === selectedAmpliconId
@@ -191,9 +191,13 @@ const _SearchResultsCard = (props) => {
   }
 
   const exportCSVOnlyContextual = () => {
-    download(window.otu_search_config.export_endpoint, {
-      describeSearch: () => describeSearchValue,
-    }, true)
+    download(
+      window.otu_search_config.export_endpoint,
+      {
+        describeSearch: () => describeSearchValue,
+      },
+      true,
+    )
   }
 
   const Popup = ({ children, onClose }) => {
@@ -359,8 +363,8 @@ export const SearchResultsCard = _SearchResultsCard
 
 const _MetagenomeSearchResultsCard = (props) => {
   const dispatch = useAppDispatch()
-  const describeSearchValue = useAppSelector(state => describeSearch(state))
-  const tips = useAppSelector(state => state.searchPage.tips)
+  const describeSearchValue = useAppSelector((state) => describeSearch(state))
+  const tips = useAppSelector((state) => state.searchPage.tips)
   const clearTipsAction = (idx) => dispatch(clearTips())
   // const showPhinchTipAction = () => dispatch(showPhinchTip())
   const openMetagenomeModalSearchAction = () => dispatch(openMetagenomeModalSearch())
@@ -369,9 +373,13 @@ const _MetagenomeSearchResultsCard = (props) => {
   // const runOtuExportAction = () => dispatch(runOtuExport())
 
   const exportCSVOnlyContextualMetagenome = () => {
-    download(window.otu_search_config.export_endpoint, {
-      describeSearch: describeSearchValue,
-    }, true)
+    download(
+      window.otu_search_config.export_endpoint,
+      {
+        describeSearch: describeSearchValue,
+      },
+      true,
+    )
   }
 
   return (

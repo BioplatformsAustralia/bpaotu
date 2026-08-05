@@ -12,14 +12,7 @@ import { updateTaxonomyDropDowns } from '../../reducers/taxonomy'
 
 const PieChartTraits = (props: any) => {
   const dispatch = useAppDispatch()
-  const {
-    taxonomyGraphdata,
-    filter,
-    width,
-    height,
-    selectToScroll,
-    selectTab,
-  } = props
+  const { taxonomyGraphdata, filter, width, height, selectToScroll, selectTab } = props
 
   const title = startCase(filter) + ' Plot'
 

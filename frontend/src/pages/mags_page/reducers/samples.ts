@@ -1,6 +1,6 @@
 import { map, partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import {  executeMagsSitesMetadata, executeSampleMagsCount } from 'api'
+import { executeMagsSitesMetadata, executeSampleMagsCount } from 'api'
 import { handleSimpleAPIResponse } from 'reducers/utils'
 import { EmptyOTUQuery } from 'search'
 
@@ -18,7 +18,7 @@ export const {
   'MAGS_FETCH_SAMPLES_STARTED',
   'MAGS_FETCH_SAMPLES_ENDED',
   'MAGS_FETCH_SAMPLE_MAGS_COUNT_STARTED',
-  'MAGS_FETCH_SAMPLE_MAGS_COUNT_ENDED'
+  'MAGS_FETCH_SAMPLE_MAGS_COUNT_ENDED',
 )
 
 export const fetchMagsSamples = () => (dispatch) => {
@@ -29,7 +29,7 @@ export const fetchMagsSamples = () => (dispatch) => {
     // can't filter on taxonomy source either. This means richness and abundance
     // will probably be meaningless.
     // See https://github.com/BioplatformsAustralia/bpaotu/issues/214
-    EmptyOTUQuery
+    EmptyOTUQuery,
   )
 
   dispatch(magsFetchSamplesStarted())
@@ -41,12 +41,14 @@ export const fetchSampleMagsCount = (sampleId) => (dispatch) => {
   handleSimpleAPIResponse(
     dispatch,
     partial(executeSampleMagsCount, sampleId),
-    magsFetchSampleMagsCountEnded
+    magsFetchSampleMagsCountEnded,
   )
 }
 
-const magsSamplesReducer: Reducer<MagsSamplesState, AnyAction> =
-  handleActions<MagsSamplesState, any>(
+const magsSamplesReducer: Reducer<MagsSamplesState, AnyAction> = handleActions<
+  MagsSamplesState,
+  any
+>(
   {
     [magsFetchSamplesStarted as any]: (state, action) => ({
       ...state,
@@ -80,7 +82,7 @@ const magsSamplesReducer: Reducer<MagsSamplesState, AnyAction> =
       },
     }),
   },
-  magsPageInitialState.samples
+  magsPageInitialState.samples,
 )
 
 export default magsSamplesReducer

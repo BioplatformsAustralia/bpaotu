@@ -42,7 +42,7 @@ const ErrorOverlay = ({ errors }) => {
 const KronaModal = (props) => {
   const dispatch = useAppDispatch()
   const { isOpen, isLoading, sample_id, html, error } = useAppSelector(
-    (state) => state.searchPage.kronaModal
+    (state) => state.searchPage.kronaModal,
   )
 
   useEffect(() => {
@@ -115,11 +115,23 @@ const KronaModal = (props) => {
         {isLoading || error ? (
           <div></div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'row' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              flexDirection: 'row',
+            }}
+          >
             <div style={{ marginRight: '10px' }}>
               <Button onClick={downloadHtmlFile}>Download</Button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                flexDirection: 'column',
+              }}
+            >
               <p style={{ margin: '0', fontSize: '0.8rem' }}>
                 <em>How to cite:</em>
               </p>
@@ -168,7 +180,13 @@ const KronaModal = (props) => {
       >
         Krona Plot (Sample ID: {sample_id})
       </ModalHeader>
-      <ModalBody style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <ModalBody
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
         {modalBody()}
       </ModalBody>
       <ModalFooter>{modalFooter()}</ModalFooter>

@@ -19,7 +19,7 @@ const PieChartAmplicon = (props) => {
   const ampliconsById = fromPairs(options.map((kv) => [kv.id, kv.value]))
 
   const [labels, values] = unzip(
-    Object.entries(taxonomyGraphdata).map(([id, sum]) => [ampliconsById[id], sum])
+    Object.entries(taxonomyGraphdata).map(([id, sum]) => [ampliconsById[id], sum]),
   )
 
   const chart_data = [

@@ -102,9 +102,13 @@ const stickyStyle = {
 const TaxonomySearchModal = (props) => {
   const dispatch = useAppDispatch()
   const modalState = useAppSelector((state: RootState) => state.searchPage.taxonomySearchModal)
-  const selectedAmplicon = useAppSelector((state: RootState) => state.searchPage.filters.selectedAmplicon)
+  const selectedAmplicon = useAppSelector(
+    (state: RootState) => state.searchPage.filters.selectedAmplicon,
+  )
   const amplicons = useAppSelector((state: RootState) => state.referenceData.amplicons)
-  const rankLabelsLookup = useAppSelector((state: RootState) => state.referenceData.ranks.rankLabelsLookup)
+  const rankLabelsLookup = useAppSelector(
+    (state: RootState) => state.referenceData.ranks.rankLabelsLookup,
+  )
   const taxonomy = useAppSelector((state: RootState) => state.searchPage.filters.taxonomy)
   const handleSetSelectIndexAction = (index: number) => dispatch(handleSetSelectIndex(index))
   const selectAmpliconAction = (value: string) => dispatch(selectAmplicon(value))
@@ -112,7 +116,8 @@ const TaxonomySearchModal = (props) => {
     dispatch(createAction('SELECT_' + taxa.toUpperCase())(id))
   const updateTaxonomyDropDownAction = (taxa: string) => dispatch(updateTaxonomyDropDowns(taxa))
   const closeTaxonomySearchModalAction = () => dispatch(closeTaxonomySearchModal())
-  const handleTaxonomySearchStringAction = (value: string) => dispatch(handleTaxonomySearchString(value))
+  const handleTaxonomySearchStringAction = (value: string) =>
+    dispatch(handleTaxonomySearchString(value))
   const handleClearAction = () => dispatch(handleClear())
   const runTaxonomySearchAction = () => dispatch(runTaxonomySearch())
 
@@ -161,7 +166,7 @@ const TaxonomySearchModal = (props) => {
       ]
 
       let index = keyArray.findIndex((level) =>
-        level.toLowerCase().includes(searchString.toLowerCase())
+        level.toLowerCase().includes(searchString.toLowerCase()),
       )
       if (index !== -1) {
         let group = keyArray.slice(0, index + 1).join(',')
@@ -190,7 +195,7 @@ const TaxonomySearchModal = (props) => {
 
       // start with the groupTaxonomy as keys up to the first sighting of the searchString
       let groupTaxonomy = Object.fromEntries(
-        Object.entries(firstTaxonomy).filter(([key]) => allowedKeys.includes(key))
+        Object.entries(firstTaxonomy).filter(([key]) => allowedKeys.includes(key)),
       )
 
       // if all members share the same next rank, absorb that too, process recursively
@@ -427,7 +432,12 @@ const TaxonomySearchModal = (props) => {
         <Row style={{ margin: 4 }}>
           <Col>
             <div
-              style={{ display: 'flex', width: '400px', alignItems: 'center', marginBottom: '8px' }}
+              style={{
+                display: 'flex',
+                width: '400px',
+                alignItems: 'center',
+                marginBottom: '8px',
+              }}
             >
               <div style={{ width: '100px' }}>
                 <strong>Amplicon:</strong>

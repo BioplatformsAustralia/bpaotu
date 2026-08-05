@@ -12,15 +12,17 @@ const StackChartTraits = (props: any) => {
   const { width, height, filter } = props
   const taxonomy = useAppSelector((state: RootState) => state.searchPage.filters.taxonomy)
   const contextualFilters = useAppSelector(
-    (state: RootState) => state.searchPage.filters.contextual.filters
+    (state: RootState) => state.searchPage.filters.contextual.filters,
   )
-  const environment = useAppSelector((state: RootState) => state.contextualDataDefinitions.environment)
+  const environment = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.environment,
+  )
 
   const loadChartData = (
     environment: any,
     taxonomy: any,
     taxonomyGraphdata: any,
-    contextualFilters: any[]
+    contextualFilters: any[],
   ) => {
     let chart_data: any[] = []
     if (taxonomyGraphdata && taxonomyGraphdata.traits_am_environment) {
@@ -30,7 +32,7 @@ const StackChartTraits = (props: any) => {
         if (environment) {
           const env_text = find(
             environment,
-            (option) => option.id === parseInt(traits_am_environment)
+            (option) => option.id === parseInt(traits_am_environment),
           )
           if (env_text) traits_am_environments.push('All ' + env_text.name)
         }
@@ -38,7 +40,7 @@ const StackChartTraits = (props: any) => {
 
       if (contextualFilters.length !== 0) {
         for (const traits_am_environment of Object.keys(
-          taxonomyGraphdata.traits_am_environment_selected || {}
+          taxonomyGraphdata.traits_am_environment_selected || {},
         )) {
           const env = find(environment, (option) => option.id === parseInt(traits_am_environment))
           if (env) {
@@ -46,7 +48,7 @@ const StackChartTraits = (props: any) => {
           }
         }
         for (const traits_am_environment of Object.keys(
-          taxonomyGraphdata.traits_am_environment_non_selected || {}
+          taxonomyGraphdata.traits_am_environment_non_selected || {},
         )) {
           const env = find(environment, (option) => option.id === parseInt(traits_am_environment))
           if (env) {
@@ -80,7 +82,7 @@ const StackChartTraits = (props: any) => {
             })
           }
           for (const key of Object.keys(
-            taxonomyGraphdata.traits_am_environment_non_selected || {}
+            taxonomyGraphdata.traits_am_environment_non_selected || {},
           )) {
             taxonomyGraphdata.traits_am_environment_non_selected[key].forEach((value: any) => {
               if (value[0] === taxa_id) {
@@ -118,7 +120,7 @@ const StackChartTraits = (props: any) => {
 
   const data = useMemo(
     () => loadChartData(environment, taxonomy, props.taxonomyGraphdata, contextualFilters),
-    [environment, taxonomy, props.taxonomyGraphdata, contextualFilters]
+    [environment, taxonomy, props.taxonomyGraphdata, contextualFilters],
   )
 
   const default_category_order = [

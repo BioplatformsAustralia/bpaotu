@@ -8,7 +8,8 @@ export default (props) => {
         <h4 className="alert-heading">Login Required</h4>
         <p>
           Please stand by while we're checking your permissions to the Bioplatforms Data Portal. If
-          you cannot access the application, please contact <a href="mailto:help@bioplatforms.com">help@bioplatforms.com</a> for additional support.
+          you cannot access the application, please contact{' '}
+          <a href="mailto:help@bioplatforms.com">help@bioplatforms.com</a> for additional support.
         </p>
       </Alert>
     </Container>

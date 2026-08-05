@@ -19,25 +19,15 @@ const AmpliconFilter = ({ selectBoxOnly = false, keepExistingValue = false }) =>
 
   const [defaultAmplicon, setDefaultAmplicon] = useState(null)
 
-  const options = useAppSelector(
-    (state) => state.referenceData.amplicons.values
-  )
+  const options = useAppSelector((state) => state.referenceData.amplicons.values)
 
-  const optionsLoadingError = useAppSelector(
-    (state) => state.referenceData.amplicons.error
-  )
+  const optionsLoadingError = useAppSelector((state) => state.referenceData.amplicons.error)
 
-  const optionsLoading = useAppSelector(
-    (state) => state.referenceData.amplicons.isLoading
-  )
+  const optionsLoading = useAppSelector((state) => state.referenceData.amplicons.isLoading)
 
-  const metagenomeMode = useAppSelector(
-    (state) => state.searchPage.filters.metagenomeMode
-  )
+  const metagenomeMode = useAppSelector((state) => state.searchPage.filters.metagenomeMode)
 
-  const selected = useAppSelector(
-    (state) => state.searchPage.filters.selectedAmplicon
-  )
+  const selected = useAppSelector((state) => state.searchPage.filters.selectedAmplicon)
 
   const isDisabled = _get(options, 'length', 0) === 0
 
@@ -45,14 +35,14 @@ const AmpliconFilter = ({ selectBoxOnly = false, keepExistingValue = false }) =>
     (value) => {
       dispatch(selectAmplicon(value))
     },
-    [dispatch]
+    [dispatch],
   )
 
   const selectOperator = useCallback(
     (value) => {
       dispatch(selectAmpliconOperator(value))
     },
-    [dispatch]
+    [dispatch],
   )
 
   const calculateDefaultAmplicon = useCallback(() => {
@@ -60,9 +50,7 @@ const AmpliconFilter = ({ selectBoxOnly = false, keepExistingValue = false }) =>
       return
     }
 
-    const ampliconFunction = metagenomeMode
-      ? getDefaultMetagenomeAmplicon
-      : getDefaultAmplicon
+    const ampliconFunction = metagenomeMode ? getDefaultMetagenomeAmplicon : getDefaultAmplicon
 
     const amplicon = ampliconFunction(options)
 
@@ -70,12 +58,7 @@ const AmpliconFilter = ({ selectBoxOnly = false, keepExistingValue = false }) =>
       setDefaultAmplicon(amplicon)
       selectValue(amplicon.id)
     }
-  }, [
-    defaultAmplicon,
-    options,
-    metagenomeMode,
-    selectValue,
-  ])
+  }, [defaultAmplicon, options, metagenomeMode, selectValue])
 
   useEffect(() => {
     if (!keepExistingValue) {
@@ -84,21 +67,10 @@ const AmpliconFilter = ({ selectBoxOnly = false, keepExistingValue = false }) =>
   }, [calculateDefaultAmplicon, keepExistingValue])
 
   useEffect(() => {
-    if (
-      !keepExistingValue &&
-      selected.value === '' &&
-      !metagenomeMode &&
-      defaultAmplicon
-    ) {
+    if (!keepExistingValue && selected.value === '' && !metagenomeMode && defaultAmplicon) {
       selectValue(defaultAmplicon.id)
     }
-  }, [
-    selected.value,
-    metagenomeMode,
-    defaultAmplicon,
-    keepExistingValue,
-    selectValue,
-  ])
+  }, [selected.value, metagenomeMode, defaultAmplicon, keepExistingValue, selectValue])
 
   return (
     <DropDownFilter

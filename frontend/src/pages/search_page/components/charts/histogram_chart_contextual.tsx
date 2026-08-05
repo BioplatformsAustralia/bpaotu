@@ -29,7 +29,7 @@ const HistogramChartContextual = (props: any) => {
   const { filter, contextualGraphdata, width, height, selectToScroll, selectTab } = props
   const filters = useAppSelector((state: RootState) => state.searchPage.filters)
   const contextualDataDefinitions = useAppSelector(
-    (state: RootState) => state.contextualDataDefinitions.filters
+    (state: RootState) => state.contextualDataDefinitions.filters,
   )
   const dataDefinitions = props.dataDefinitions ?? contextualDataDefinitions
 
@@ -107,7 +107,11 @@ const HistogramChartContextual = (props: any) => {
           title: { text: title, font: { size: 20 } },
           hovermode: 'closest',
           yaxis: { title: 'Frequency', exponentformat: 'e' },
-          xaxis: { title: xaxisTitle, type: xaxisCategory, exponentformat: 'e' },
+          xaxis: {
+            title: xaxisTitle,
+            type: xaxisCategory,
+            exponentformat: 'e',
+          },
         }}
         config={plotly_chart_config(title)}
         onSelected={handleSelected}

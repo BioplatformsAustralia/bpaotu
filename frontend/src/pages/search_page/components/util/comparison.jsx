@@ -124,7 +124,11 @@ export const filterOptionsSubset = (contextualData, contextualFilters) => {
       if (filter) {
         const disabled = keysWithAllNullValues.includes(filter.name)
         if (filter.type !== 'sample_id') {
-          return { value: filter.name, text: filter.display_name, disabled: disabled }
+          return {
+            value: filter.name,
+            text: filter.display_name,
+            disabled: disabled,
+          }
         } else {
           return null
         }
@@ -226,7 +230,7 @@ export const processDiscrete = (
   selectedFilter,
   selectedFilterObject,
   selectedFilterExtra,
-  markerSize
+  markerSize,
 ) => {
   const { isOntology, isString, isDiscrete, isDate } = filterDataType({
     selectedFilter,
@@ -330,7 +334,7 @@ export const processDiscrete = (
     if (continuousSchemes[schemeName]) {
       const interpolator = continuousSchemes[schemeName]
       return Array.from({ length: numColours }, (_, i) =>
-        d3.rgb(interpolator(i / (numColours - 1))).toString()
+        d3.rgb(interpolator(i / (numColours - 1))).toString(),
       )
     }
 

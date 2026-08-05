@@ -503,7 +503,9 @@ const ComparisonTutorial = (props) => {
           if (comparisonTourStep === lastStep) {
             track('otu_tutorial_comparison_complete')
           } else {
-            track('otu_tutorial_comparison_incomplete', { step: comparisonTourStep })
+            track('otu_tutorial_comparison_incomplete', {
+              step: comparisonTourStep,
+            })
           }
 
           if (tourMode) {

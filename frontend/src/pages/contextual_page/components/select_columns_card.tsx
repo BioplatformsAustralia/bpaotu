@@ -18,7 +18,7 @@ const SelectColumnsCard = () => {
     dataDefinitions: state.contextualDataDefinitions.values,
     optionsLoading: state.contextualDataDefinitions.isLoading,
   }))
-  
+
   // Fetch data definitions on mount
   useEffect(() => {
     dispatch(fetchContextualDataDefinitions())
@@ -29,7 +29,7 @@ const SelectColumnsCard = () => {
       dispatch(removeColumn(...args))
       dispatch(search())
     },
-    [dispatch]
+    [dispatch],
   )
 
   const onSelectColumn = useCallback(
@@ -37,7 +37,7 @@ const SelectColumnsCard = () => {
       dispatch(selectColumn(...args))
       dispatch(search())
     },
-    [dispatch]
+    [dispatch],
   )
 
   const onClearColumns = useCallback(() => {

@@ -22,24 +22,22 @@ const chartEnabled = (state) => {
 
 const GraphDashboard = (props) => {
   const dispatch = useAppDispatch()
-  const {
-    showTabbedGraph,
-    selectedTab,
-    selectTab,
-    scrollToSelected,
-    selectToScroll,
-  } = props
+  const { showTabbedGraph, selectedTab, selectTab, scrollToSelected, selectToScroll } = props
   const selectedEnvironment = useAppSelector(
-    (state: RootState) => state.searchPage.filters.contextual.selectedEnvironment
+    (state: RootState) => state.searchPage.filters.contextual.selectedEnvironment,
   )
-  const optionsEnvironment = useAppSelector((state: RootState) => state.contextualDataDefinitions.environment)
+  const optionsEnvironment = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.environment,
+  )
   const optionscontextualFilter = useAppSelector(
-    (state: RootState) => state.contextualDataDefinitions.filters
+    (state: RootState) => state.contextualDataDefinitions.filters,
   )
   const contextualGraphdata = useAppSelector(
-    (state: RootState) => state.contextualDataForGraph.graphdata
+    (state: RootState) => state.contextualDataForGraph.graphdata,
   )
-  const taxonomyGraphdata = useAppSelector((state: RootState) => state.taxonomyDataForGraph.graphdata)
+  const taxonomyGraphdata = useAppSelector(
+    (state: RootState) => state.taxonomyDataForGraph.graphdata,
+  )
   const chartEnabled = useAppSelector((state: RootState) => {
     return (
       !isEmpty(state.taxonomyDataForGraph.graphdata) &&
@@ -66,7 +64,9 @@ const GraphDashboard = (props) => {
       {chartEnabled ? (
         <div>
           {isEmpty(contextualGraphdata) ? (
-            <Alert color="warning" fade={false}>No matching samples</Alert>
+            <Alert color="warning" fade={false}>
+              No matching samples
+            </Alert>
           ) : showTabbedGraph ? (
             <GraphTabbed
               selectedEnvironment={selectedEnvironment}

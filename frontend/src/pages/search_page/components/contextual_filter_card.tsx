@@ -66,7 +66,7 @@ const ContextualFilterLinkButton = ({ title, url, tooltip }) => {
           cursor: 'pointer',
           margin: '0px 2px',
           paddingTop: '3px',
-          paddingBottom: '0px'
+          paddingBottom: '0px',
         }}
         href={url}
         target="_blank"
@@ -87,35 +87,41 @@ const ContextualFilterLinkButton = ({ title, url, tooltip }) => {
 const ContextualFilterCard = () => {
   const dispatch = useAppDispatch()
   const contextualFilters = useAppSelector(
-    (state: RootState) => state.searchPage.filters.contextual.filters
+    (state: RootState) => state.searchPage.filters.contextual.filters,
   )
   const contextualFiltersMode = useAppSelector(
-    (state: RootState) => state.searchPage.filters.contextual.filtersMode
+    (state: RootState) => state.searchPage.filters.contextual.filtersMode,
   )
   const sampleIntegrityWarningFilters = useAppSelector(
-    (state: RootState) => state.searchPage.filters.sampleIntegrityWarning.filters
+    (state: RootState) => state.searchPage.filters.sampleIntegrityWarning.filters,
   )
-  const dataDefinitions = useAppSelector((state: RootState) => state.contextualDataDefinitions.filters)
-  const optionsLoading = useAppSelector((state: RootState) => state.contextualDataDefinitions.isLoading)
+  const dataDefinitions = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.filters,
+  )
+  const optionsLoading = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.isLoading,
+  )
   const definitions_url = useAppSelector(
-    (state: RootState) => state.contextualDataDefinitions.definitions_url
+    (state: RootState) => state.contextualDataDefinitions.definitions_url,
   )
   const scientific_manual_url = useAppSelector(
-    (state: RootState) => state.contextualDataDefinitions.scientific_manual_url
+    (state: RootState) => state.contextualDataDefinitions.scientific_manual_url,
   )
   const contextualFilterOptions = useAppSelector((state: RootState) =>
     getFilterOptions(
-      state.contextualDataDefinitions.filters.filter((x) => x.name !== 'sample_integrity_warnings_id'),
-      state.searchPage.filters.contextual.selectedEnvironment
-    )
+      state.contextualDataDefinitions.filters.filter(
+        (x) => x.name !== 'sample_integrity_warnings_id',
+      ),
+      state.searchPage.filters.contextual.selectedEnvironment,
+    ),
   )
   const sampleIntegrityWarningFilterOptions = useAppSelector((state: RootState) =>
     getFilterOptions(
       state.contextualDataDefinitions.filters.filter(
-        (x) => x.name === 'sample_integrity_warnings_id'
+        (x) => x.name === 'sample_integrity_warnings_id',
       ),
-      state.searchPage.filters.contextual.selectedEnvironment
-    )
+      state.searchPage.filters.contextual.selectedEnvironment,
+    ),
   )
 
   const selectContextualFilterAction = (index: number, filterName: string) =>
@@ -137,10 +143,13 @@ const ContextualFilterCard = () => {
     dispatch(changeSampleIntegrityWarningFilterValue2(index, value2))
   const changeSampleIntegrityWarningFilterValuesAction = (index: number, values: any[]) =>
     dispatch(changeSampleIntegrityWarningFilterValues(index, values))
-  const checkSampleIntegrityWarningFilterAction = () => dispatch(checkSampleIntegrityWarningFilter())
-  const uncheckSampleIntegrityWarningFilterAction = () => dispatch(uncheckSampleIntegrityWarningFilter())
+  const checkSampleIntegrityWarningFilterAction = () =>
+    dispatch(checkSampleIntegrityWarningFilter())
+  const uncheckSampleIntegrityWarningFilterAction = () =>
+    dispatch(uncheckSampleIntegrityWarningFilter())
   const clearContextualFiltersAction = () => dispatch(clearContextualFilters())
-  const clearSampleIntegrityWarningFiltersAction = () => dispatch(clearSampleIntegrityWarningFilters())
+  const clearSampleIntegrityWarningFiltersAction = () =>
+    dispatch(clearSampleIntegrityWarningFilters())
   const selectContextualFiltersModeAction = (mode: string) =>
     dispatch(selectContextualFiltersMode(mode))
   const selectSampleIntegrityWarningFilterAction = (index: number, filterName: string) =>
@@ -203,7 +212,7 @@ const ContextualFilterCard = () => {
                     type="checkbox"
                     checked={
                       sampleIntegrityWarningFilters.find(
-                        (fltr) => fltr.name === 'sample_integrity_warnings_id'
+                        (fltr) => fltr.name === 'sample_integrity_warnings_id',
                       )
                         ? false
                         : true
@@ -215,7 +224,7 @@ const ContextualFilterCard = () => {
                     }
                   />
                   {sampleIntegrityWarningFilters.find(
-                    (fltr) => fltr.name === 'sample_integrity_warnings_id'
+                    (fltr) => fltr.name === 'sample_integrity_warnings_id',
                   )
                     ? 'Check to show all data including samples with integrity warnings'
                     : 'Uncheck to remove samples with integrity warnings'}

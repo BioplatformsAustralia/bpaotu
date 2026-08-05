@@ -179,8 +179,14 @@ export interface SampleMarker {
   lng: number
 }
 
-export const EmptyOperatorAndValue: OperatorAndValue = { value: '', operator: 'is' }
-export const EmptyLoadableValues: LoadableValues = { isLoading: null, options: [] }
+export const EmptyOperatorAndValue: OperatorAndValue = {
+  value: '',
+  operator: 'is',
+}
+export const EmptyLoadableValues: LoadableValues = {
+  isLoading: null,
+  options: [],
+}
 export const EmptySelectableLoadableValues: SelectableLoadableValues = {
   selected: EmptyOperatorAndValue,
   isDisabled: true,

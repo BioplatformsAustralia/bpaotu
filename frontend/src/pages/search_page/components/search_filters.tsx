@@ -89,13 +89,13 @@ const SearchFilters = (props) => {
   const rankLabels = useAppSelector((state: any) => state.referenceData.ranks.rankLabels)
   const filters = useAppSelector((state: any) => state.searchPage.filters)
   const contextualFilterDefinitions = useAppSelector(
-    (state: any) => state.contextualDataDefinitions.filters
+    (state: any) => state.contextualDataDefinitions.filters,
   )
   const contextualFiltersMode = useAppSelector(
-    (state: any) => state.searchPage.filters.contextual.filtersMode
+    (state: any) => state.searchPage.filters.contextual.filtersMode,
   )
   const selectedContextualFilters = useAppSelector(
-    (state: any) => state.searchPage.filters.contextual.filters
+    (state: any) => state.searchPage.filters.contextual.filters,
   )
   const environment = useAppSelector((state: any) => state.contextualDataDefinitions.environment)
   const { static: staticFilter, handleSearchFilterClick } = props as any
@@ -140,7 +140,7 @@ const SearchFilters = (props) => {
         let filterValues = filter['values']
         const selectedValue = find(
           filterValues,
-          (option) => String(option[0]) === String(selectedFilterValue)
+          (option) => String(option[0]) === String(selectedFilterValue),
         )
         if (selectedValue) {
           return selectedValue[1]
@@ -164,7 +164,7 @@ const SearchFilters = (props) => {
       updateTaxonomyDropDownAction(taxa)
       handleSearchFilterClick('taxonomy_id')
     },
-    [handleSearchFilterClick]
+    [handleSearchFilterClick],
   )
 
   const onSelectEnvironment = useCallback(() => {
@@ -183,7 +183,7 @@ const SearchFilters = (props) => {
 
       handleSearchFilterClick(filter)
     },
-    [handleSearchFilterClick]
+    [handleSearchFilterClick],
   )
 
   const onSelectFilterType = useCallback(
@@ -191,7 +191,7 @@ const SearchFilters = (props) => {
       selectContextualFiltersModeAction(mode)
       handleSearchFilterClick('')
     },
-    [handleSearchFilterClick]
+    [handleSearchFilterClick],
   )
 
   const renderSelectedAmplicon = (value) => {
@@ -226,7 +226,7 @@ const SearchFilters = (props) => {
       const text = `${rankLabels[taxoType]} <${selected.operator}> ${getSelectedFilter(
         taxoValue.options,
         selected.value,
-        'value'
+        'value',
       )}`
 
       if (taxonomy_ranks.indexOf(taxoType) < 0) {
@@ -248,20 +248,19 @@ const SearchFilters = (props) => {
   const renderContextualFilter = (value) => {
     const selectedEnvironment = value.selectedEnvironment
 
-    const environmentFilter =
-      selectedEnvironment?.value ? (
-        <SearchFilterButton
-          key="selectedEnvironment"
-          color="info"
-          octicon={staticFilter ? '' : 'x'}
-          onClick={onSelectEnvironment}
-          text={`AM Environment <${selectedEnvironment.operator}> ${getSelectedFilter(
-            environment,
-            selectedEnvironment.value,
-            'name'
-          )}`}
-        />
-      ) : null
+    const environmentFilter = selectedEnvironment?.value ? (
+      <SearchFilterButton
+        key="selectedEnvironment"
+        color="info"
+        octicon={staticFilter ? '' : 'x'}
+        onClick={onSelectEnvironment}
+        text={`AM Environment <${selectedEnvironment.operator}> ${getSelectedFilter(
+          environment,
+          selectedEnvironment.value,
+          'name',
+        )}`}
+      />
+    ) : null
 
     const contextualFilters = value.filters.flatMap((filter, index) => {
       if (!filter?.name) return []
@@ -270,7 +269,7 @@ const SearchFilters = (props) => {
       const selectedValue = getSelectedFilterValue(
         contextualFilterDefinitions,
         filter.name,
-        filter.value
+        filter.value,
       )
 
       if (filter.values.length > 0) {
@@ -293,10 +292,7 @@ const SearchFilters = (props) => {
       ]
     })
 
-    return [
-      environmentFilter,
-      ...contextualFilters,
-    ].filter(Boolean)
+    return [environmentFilter, ...contextualFilters].filter(Boolean)
   }
 
   const renderSampleIntegrityFilters = (value) =>
@@ -307,7 +303,7 @@ const SearchFilters = (props) => {
       const selectedValue = getSelectedFilterValue(
         contextualFilterDefinitions,
         filter.name,
-        filter.value
+        filter.value,
       )
 
       if (filter.values.length > 0) {

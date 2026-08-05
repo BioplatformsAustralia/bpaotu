@@ -218,7 +218,7 @@ const GraphListed = (props) => {
                   applyEnvironmentFilter(selectedEnvironment, graphName) ? (
                     find(
                       optionscontextualFilter,
-                      (dd) => dd.name === graphName && dd.type === 'ontology'
+                      (dd) => dd.name === graphName && dd.type === 'ontology',
                     ) ? (
                       <PieChartContextual
                         key={'pie' + graphName}
@@ -250,7 +250,7 @@ const GraphListed = (props) => {
                     )
                   ) : (
                     ''
-                  )
+                  ),
                 )}
               </CardBody>
             </Card>

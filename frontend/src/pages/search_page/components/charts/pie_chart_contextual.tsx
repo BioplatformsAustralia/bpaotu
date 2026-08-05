@@ -17,16 +17,11 @@ import {
 
 const PieChartContextual = (props) => {
   const dispatch = useAppDispatch()
-  const {
-    filter,
-    contextualGraphdata,
-    width,
-    height,
-    selectToScroll,
-    selectTab,
-  } = props
+  const { filter, contextualGraphdata, width, height, selectToScroll, selectTab } = props
   const filters = useAppSelector((state: RootState) => state.searchPage.filters)
-  const dataDefinitions = useAppSelector((state: RootState) => state.contextualDataDefinitions.filters)
+  const dataDefinitions = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.filters,
+  )
 
   const findFilterIndex = useCallback((data, selected) => {
     for (let i = 0; i < data.length; i++) {

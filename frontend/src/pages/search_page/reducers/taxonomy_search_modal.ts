@@ -1,6 +1,6 @@
 import { get as _get } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import { type Reducer, type AnyAction} from 'redux'
+import { type Reducer, type AnyAction } from 'redux'
 
 import { executeTaxonomySearch } from 'api'
 
@@ -25,7 +25,7 @@ export const {
   'RUN_TAXONOMY_SEARCH_ENDED',
   'HANDLE_SET_SELECT_INDEX',
   'HANDLE_CLEAR',
-  'MARK_TAXONOMY_SEARCH_ATTEMPTED'
+  'MARK_TAXONOMY_SEARCH_ATTEMPTED',
 )
 
 const MIN_SEARCH_LENGTH = 4
@@ -73,8 +73,10 @@ export const runTaxonomySearch = () => (dispatch, getState) => {
     })
 }
 
-const taxonomySearchModalReducer: Reducer<TaxonomySearchModalState, AnyAction> =
-  handleActions<TaxonomySearchModalState, any>(
+const taxonomySearchModalReducer: Reducer<TaxonomySearchModalState, AnyAction> = handleActions<
+  TaxonomySearchModalState,
+  any
+>(
   {
     [openTaxonomySearchModal as any]: (state, action) => ({
       ...state,
@@ -137,7 +139,7 @@ const taxonomySearchModalReducer: Reducer<TaxonomySearchModalState, AnyAction> =
       hasAttemptedSearch: true,
     }),
   },
-  searchPageInitialState.taxonomySearchModal
+  searchPageInitialState.taxonomySearchModal,
 )
 
 export default taxonomySearchModalReducer

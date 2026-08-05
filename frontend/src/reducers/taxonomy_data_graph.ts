@@ -13,7 +13,7 @@ export interface TaxonomyDataForGraphState {
 
 const { fetchTaxonomyDataForGraphStarted, fetchTaxonomyDataForGraphEnded } = createActions(
   'FETCH_TAXONOMY_DATA_FOR_GRAPH_STARTED',
-  'FETCH_TAXONOMY_DATA_FOR_GRAPH_ENDED'
+  'FETCH_TAXONOMY_DATA_FOR_GRAPH_ENDED',
 )
 
 export const fetchTaxonomyDataForGraph = () => (dispatch, getState) => {
@@ -23,14 +23,14 @@ export const fetchTaxonomyDataForGraph = () => (dispatch, getState) => {
     ...state.contextualPage.results,
     columns: reject(
       map(state.contextualPage.selectColumns.columns, (c) => c.name),
-      (name) => isEmpty(name)
+      (name) => isEmpty(name),
     ),
   }
   dispatch(fetchTaxonomyDataForGraphStarted())
   handleSimpleAPIResponse(
     dispatch,
     partial(getTaxonomyDataForGraph, filters, options),
-    fetchTaxonomyDataForGraphEnded
+    fetchTaxonomyDataForGraphEnded,
   )
 }
 
@@ -39,10 +39,10 @@ const initialState: TaxonomyDataForGraphState = {
   graphdata: {},
 }
 
-const taxonomyDataForGraphReducer: Reducer<
+const taxonomyDataForGraphReducer: Reducer<TaxonomyDataForGraphState, AnyAction> = handleActions<
   TaxonomyDataForGraphState,
-  AnyAction
-> = handleActions<TaxonomyDataForGraphState, any>(
+  any
+>(
   {
     [fetchTaxonomyDataForGraphStarted as any]: (state, action) => ({
       ...initialState,
@@ -55,7 +55,7 @@ const taxonomyDataForGraphReducer: Reducer<
       }
     },
   },
-  initialState
+  initialState,
 )
 
 export default taxonomyDataForGraphReducer

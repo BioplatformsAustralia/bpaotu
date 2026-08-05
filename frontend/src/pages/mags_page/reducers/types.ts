@@ -1,4 +1,3 @@
-
 interface MagRecord {
   id: number
   sample_id: number
@@ -19,7 +18,6 @@ interface MagRecord {
   quality: number
 }
 
-
 export interface MagsPageState {
   // selected: string | null
   results: {
@@ -36,14 +34,14 @@ export interface MagsPageState {
     sorted: any[]
   }
   samples: {
-    isLoading: false,
-    hasLoaded: false,
-    data: [],
-    otus: [],
+    isLoading: false
+    hasLoaded: false
+    data: []
+    otus: []
     sampleMagsCount: {
-      isLoading: false,
-      hasLoaded: false,
-    },
+      isLoading: false
+      hasLoaded: false
+    }
   }
 }
 
@@ -70,5 +68,5 @@ export const magsPageInitialState: MagsPageState = {
       isLoading: false,
       hasLoaded: false,
     },
-  }
+  },
 }
