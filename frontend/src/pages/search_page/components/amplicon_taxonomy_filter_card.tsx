@@ -63,8 +63,6 @@ const TaxonomyFilterCard = ({ metagenomeMode }: { metagenomeMode: boolean }) => 
 
   const amplicons = useAppSelector((state) => state.referenceData.amplicons)
 
-  console.log('metagenomeMode', metagenomeMode)
-
   const selectedAmplicon = useAppSelector(getAmpliconFilter)
 
   const mismatchState = useAppSelector((state) => {
