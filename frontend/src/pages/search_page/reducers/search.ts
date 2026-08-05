@@ -11,9 +11,9 @@ import { submitToGalaxyEnded, submitToGalaxyStarted } from './submit_to_galaxy'
 import { ErrorList, searchPageInitialState, EmptyOperatorAndValue } from './types'
 import type { Reducer } from 'redux'
 import type { AnyAction } from 'redux'
-import type { PageState } from './types'
+import type { SearchPageState } from './types'
 
-type SearchResultsState = PageState['results']
+type SearchResultsState = SearchPageState['results']
 
 export const { changeTableProperties, searchStarted, searchEnded } = createActions(
   'CHANGE_TABLE_PROPERTIES',

@@ -1,11 +1,14 @@
 import { partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
+import { type Reducer, type AnyAction} from 'redux'
 
 import { executeMetagenomeSearch } from 'api'
 import { handleSimpleAPIResponse } from 'reducers/utils'
 
-import { searchPageInitialState } from './types'
+import { searchPageInitialState, type SearchPageState } from './types'
 import { describeSearch } from './search'
+
+type MetagenomeModalState = SearchPageState['metagenomeModal']
 
 export const {
   openMetagenomeModal,
@@ -26,7 +29,8 @@ export const openMetagenomeModalSearch = () => (dispatch, getState) => {
   handleSimpleAPIResponse(dispatch, partial(executeMetagenomeSearch, filters), fetchMetagenomeEnded)
 }
 
-export default handleActions(
+const metagenomeModalReducer: Reducer<MetagenomeModalState, AnyAction> =
+  handleActions<MetagenomeModalState, any>(
   {
     [fetchMetagenomeStarted as any]: (state, action) => ({
       ...state,
@@ -80,3 +84,5 @@ export default handleActions(
   },
   searchPageInitialState.metagenomeModal
 )
+
+export default metagenomeModalReducer

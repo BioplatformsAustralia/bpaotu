@@ -1,15 +1,13 @@
 import { get as _get } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import type { Reducer } from 'redux'
-import type { AnyAction } from 'redux'
+import { type Reducer, type AnyAction} from 'redux'
 
 import { executeKrona } from 'api'
 
-import { searchPageInitialState, ErrorList } from './types'
+import { searchPageInitialState, ErrorList, type SearchPageState } from './types'
 import { describeSearch } from './search'
-import type { PageState } from './types'
 
-type KronaModalState = PageState['kronaModal']
+type KronaModalState = SearchPageState['kronaModal']
 
 export const { openKronaModal, closeKronaModal, runKronaStarted, runKronaEnded } = createActions(
   'OPEN_KRONA_MODAL',

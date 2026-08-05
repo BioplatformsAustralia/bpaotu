@@ -14,7 +14,7 @@ import {
 } from '../reducers/amplicon'
 import { AmpliconFilterInfo } from './amplicon_taxonomy_filter_card'
 
-const AmpliconFilter = ({ keepExistingValue = false }) => {
+const AmpliconFilter = ({ selectBoxOnly = false, keepExistingValue = false }) => {
   const dispatch = useAppDispatch()
 
   const [defaultAmplicon, setDefaultAmplicon] = useState(null)
@@ -108,6 +108,7 @@ const AmpliconFilter = ({ keepExistingValue = false }) => {
       optionsLoadingError={optionsLoadingError}
       isDisabled={isDisabled}
       optionsLoading={optionsLoading}
+      selectBoxOnly={selectBoxOnly}
       selected={selected}
       selectValue={selectValue}
       selectOperator={selectOperator}

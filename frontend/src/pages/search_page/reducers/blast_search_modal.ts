@@ -6,9 +6,9 @@ import { executeBlastOtuSearch, executeBlast, executeCancelBlast, getBlastSubmis
 import { handleSimpleAPIResponse, changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
 import { BlastSubmission, ErrorList, searchPageInitialState } from './types'
-import type { PageState } from 'pages/search_page/reducers/types'
+import type { SearchPageState } from 'pages/search_page/reducers/types'
 
-type BlastSearchCardState = PageState['blastSearchModal']
+type BlastSearchCardState = SearchPageState['blastSearchModal']
 
 import {
   filter,

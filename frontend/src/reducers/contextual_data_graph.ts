@@ -1,8 +1,15 @@
 import { map, reject, isEmpty, partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
+import { type Reducer, type AnyAction } from 'redux'
+
 import { getContextualDataForGraph } from 'api'
 import { handleSimpleAPIResponse } from 'reducers/utils'
 import { describeSearch } from 'pages/search_page/reducers/search'
+
+export interface ContextualDataForGraphState {
+  isLoading: boolean
+  graphdata: Record<string, unknown>
+}
 
 const { fetchContextualDataForGraphStarted, fetchContextualDataForGraphEnded } = createActions(
   'FETCH_CONTEXTUAL_DATA_FOR_GRAPH_STARTED',
@@ -27,12 +34,15 @@ export const fetchContextualDataForGraph = () => (dispatch, getState) => {
   )
 }
 
-const initialState = {
+const initialState: ContextualDataForGraphState = {
   isLoading: false,
   graphdata: {},
 }
 
-export default handleActions(
+const contextualDataForGraphReducer: Reducer<
+  ContextualDataForGraphState,
+  AnyAction
+> = handleActions<ContextualDataForGraphState, any>(
   {
     [fetchContextualDataForGraphStarted as any]: (state, action) => ({
       ...initialState,
@@ -47,3 +57,5 @@ export default handleActions(
   },
   initialState
 )
+
+export default contextualDataForGraphReducer

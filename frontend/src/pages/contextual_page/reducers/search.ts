@@ -1,13 +1,13 @@
 import { get as _get, isEmpty, map, reject } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
-import type { PageState } from 'pages/search_page/reducers/types'
+import type { SearchPageState } from 'pages/search_page/reducers/types'
 import type { Reducer, AnyAction } from 'redux'
 
 import { executeContextualSearch } from 'api'
 import { ErrorList } from 'pages/search_page/reducers/types'
 import { EmptyOTUQuery } from 'search'
 
-type SearchResultsState = PageState['results']
+type SearchResultsState = SearchPageState['results']
 
 export const { changeTableProperties, searchStarted, searchEnded } = createActions({
   CONTEXTUAL_PAGE: {

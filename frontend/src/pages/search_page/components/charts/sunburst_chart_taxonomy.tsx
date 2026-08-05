@@ -10,7 +10,6 @@ import { taxonomy_ranks } from 'app/constants'
 import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
 
-import { selectEnvironment } from '../../reducers/contextual'
 import { updateTaxonomyDropDowns } from '../../reducers/taxonomy'
 
 const make_id = (name: string, tx_id: string | number) => `${name}_${tx_id}`
@@ -59,7 +58,7 @@ const SunBurstChartTaxonomy = (props: any) => {
       const found = find(taxonomy[taxa].options, (obj) => String(obj.value) === String(value))
       if (found && found.id !== undefined) {
         dispatch(createAction('SELECT_' + taxa.toUpperCase())(found.id))
-        dispatch(updateTaxonomyDropDowns(taxa)())
+        dispatch(updateTaxonomyDropDowns(taxa))
         dispatch(fetchContextualDataForGraph())
         dispatch(fetchTaxonomyDataForGraph())
       }

@@ -6,6 +6,22 @@ import 'react-table/react-table.css'
 
 import Octicon from 'components/octicon'
 
+export interface SearchResultsTablePresentationProps {
+  cell_func?: (cellProps: any) => React.ReactNode
+  cell_func_run_id?: (cellProps: any) => React.ReactNode
+  krona_func?: ((cellProps: any) => React.ReactNode) | null
+  metagenome?: boolean
+  contextual?: boolean
+}
+
+export interface SearchResultsTableProps
+  extends SearchResultsTablePresentationProps {
+  extraColumns?: any[]
+  results: any
+  changeTableProperties: (payload: any) => void
+  search: (payload?: any) => void
+}
+
 const sample_link = (props) => (
   <div>
     <a href={bpaIDToCKANURL(props.value)} target="_blank" rel="noopener noreferrer">
@@ -68,7 +84,7 @@ export const fieldsToColumns = (fields, contextualDataDefinitions) => {
   }
 }
 
-export const SearchResultsTable = (props) => {
+export const SearchResultsTable = (props: SearchResultsTableProps) => {
   const {
     cell_func = sample_link,
     cell_func_run_id = sample_link_run_id,

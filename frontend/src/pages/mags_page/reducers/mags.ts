@@ -2,86 +2,16 @@ import { get as _get } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
 import { executeMagsSearch } from 'api'
 import { ErrorList } from 'pages/search_page/reducers/types'
+import { type MagsPageState, magsPageInitialState } from './types'
+import { AnyAction, Reducer } from 'redux'
+
+type MagsResultsState = MagsPageState['results']
 
 export const { changeTablePropertiesMags, searchMagsStarted, searchMagsEnded } = createActions(
   'CHANGE_TABLE_PROPERTIES_MAGS',
   'SEARCH_MAGS_STARTED',
   'SEARCH_MAGS_ENDED'
 )
-
-interface MagsPageState {
-  // selected: string | null
-  results: {
-    cleared: boolean
-    isLoading: boolean
-    errors: string[]
-    data: MagRecord[]
-    page: number
-    pages: number
-    pageSize: number
-    rowsCount: number
-    filtered: any[]
-    sorted: any[]
-  }
-  // samples: {
-  //   isLoading: boolean
-  //   data: any[]
-  //   otus: string[]
-  // }
-}
-
-interface MagRecord {
-  id: number
-  sample_id: number
-  bin_id: string
-  method: string
-  tax: string
-  tax_16s: string
-  tax_gtdb: string
-  length: number
-  gc_perc: number
-  num_contigs: number
-  disparity: number
-  completeness: number
-  contamination: number
-  strain_het: number
-  coverage: number
-  tpm: number
-  quality: number
-}
-
-// const initialState: MagsPageState = {
-//   results: {
-//     cleared: true,
-//     isLoading: true,
-//     errors: [],
-//     data: [],
-//     page: 0,
-//     pages: 0,
-//     pageSize: 10,
-//     rowsCount: 0,
-//     filtered: [],
-//     sorted: [],
-//   },
-//   // samples: {
-//   //   isLoading: false,
-//   //   data: [],
-//   //   otus: [],
-//   // },
-// }
-
-const resultsInitialState = {
-  cleared: false,
-  isLoading: false,
-  hasLoaded: false,
-  errors: [],
-  data: [],
-  page: 0,
-  pageSize: 100,
-  rowsCount: 0,
-  filtered: [],
-  sorted: [],
-}
 
 export const searchMags =
   (magId = null) =>
@@ -105,7 +35,10 @@ export const searchMags =
       })
   }
 
-export default handleActions(
+
+
+const magsReducer: Reducer<MagsResultsState, AnyAction> =
+  handleActions<MagsResultsState, any>(
   {
     [changeTablePropertiesMags as any]: (state, action: any) => {
       const { page, pageSize, filtered, sorted } = action.payload
@@ -147,5 +80,7 @@ export default handleActions(
       }),
     },
   },
-  resultsInitialState
+  magsPageInitialState.results
 )
+
+export default magsReducer

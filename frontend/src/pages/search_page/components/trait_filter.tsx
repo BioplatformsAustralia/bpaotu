@@ -8,7 +8,7 @@ import DropDownFilter from 'components/drop_down_filter'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import { selectTrait, selectTraitOperator } from '../reducers/trait'
 
-const TraitFilter = () => {
+const TraitFilter = ({ info }: { info: string }) => {
   const dispatch = useAppDispatch()
   const options = useAppSelector((state: RootState) => state.referenceData.traits.values)
   const optionsLoadingError = useAppSelector((state: RootState) => state.referenceData.traits.error)
@@ -19,6 +19,7 @@ const TraitFilter = () => {
   return (
     <DropDownFilter
       label="Trait"
+      info={info}
       options={options}
       optionsLoadingError={optionsLoadingError}
       isDisabled={isDisabled}
@@ -26,7 +27,7 @@ const TraitFilter = () => {
       selected={selected}
       selectValue={(id) => dispatch(selectTrait(id))}
       selectOperator={(id) => dispatch(selectTraitOperator(id))}
-      onChange={() => dispatch(updateTaxonomyDropDowns('')())}
+      onChange={() => dispatch(updateTaxonomyDropDowns(''))}
     />
   )
 }

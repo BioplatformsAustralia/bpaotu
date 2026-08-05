@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 import { isEmpty, noop } from 'lodash'
-import { useDispatch, useSelector } from 'react-redux'
+
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
 
 import { useAnalytics } from 'use-analytics'
 import type { RootState } from 'app/store'
@@ -9,8 +10,8 @@ import { fetchSampleMapSamples } from './reducers'
 
 const MapPage = () => {
   const { page } = useAnalytics()
-  const dispatch = useDispatch()
-  const { isLoading, markers, sample_otus, abundance_matrix } = useSelector(
+  const dispatch = useAppDispatch()
+  const { isLoading, markers, sample_otus, abundance_matrix } = useAppSelector(
     (state: RootState) => ({
       isLoading: state.mapPage.isLoading,
       markers: state.mapPage.samples,

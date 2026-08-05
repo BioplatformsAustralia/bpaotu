@@ -1,4 +1,5 @@
 import { createActions, handleActions } from 'redux-actions'
+import { type Reducer, type AnyAction} from 'redux'
 import {
   executeComparison,
   executeCancelComparison,
@@ -8,7 +9,10 @@ import {
 } from 'api'
 import { changeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
-import { ComparisonSubmission, ErrorList, searchPageInitialState } from './types'
+
+import { ComparisonSubmission, ErrorList, searchPageInitialState, type SearchPageState } from './types'
+
+type SampleComparisonModalState = SearchPageState['samplesComparisonModal']
 
 import { get as _get, last } from 'lodash'
 
@@ -229,7 +233,9 @@ export const downloadDistanceMatrices = () => (dispatch, getState) => {
   return state
 }
 
-export default handleActions(
+
+const samplesComparisonModalReducer: Reducer<SampleComparisonModalState, AnyAction> =
+  handleActions<SampleComparisonModalState, any>(
   {
     [openSamplesComparisonModal as any]: (state, action) => ({
       ...state,
@@ -456,3 +462,5 @@ export default handleActions(
   },
   searchPageInitialState.samplesComparisonModal
 )
+
+export default samplesComparisonModalReducer

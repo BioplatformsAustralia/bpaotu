@@ -1,9 +1,13 @@
 import { find, isNull, filter, negate, toNumber } from 'lodash'
 import reduceReducers from 'reduce-reducers'
+import type { Reducer, AnyAction } from 'redux'
 import { combineActions, createActions, handleAction, handleActions } from 'redux-actions'
 
 import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
-import { searchPageInitialState } from './types'
+import { searchPageInitialState, type SearchPageState } from './types'
+
+type SampleIntegrityWarningState =
+  SearchPageState['filters']['sampleIntegrityWarning']
 
 export const {
   selectEnvironment,
@@ -15,7 +19,10 @@ export const {
   'SELECT_SAMPLE_INTEGRITY_WARNING_FILTERS_MODE'
 )
 
-const selectedEnvironmentReducer = handleActions(
+const selectedEnvironmentReducer: Reducer<
+  SampleIntegrityWarningState['selectedEnvironment'],
+  AnyAction
+> = handleActions<SampleIntegrityWarningState['selectedEnvironment'], any>(
   {
     [selectEnvironment as any]: (state, action: any) => ({
       ...state,
@@ -31,9 +38,12 @@ const selectedEnvironmentReducer = handleActions(
 
 // unclear as to why selectSampleIntegrityWarningsMode does not work here
 // when selectContextualFiltersMode works in contextual.ts
-const sampleIntegrityWarningFiltersModeReducer = handleAction(
+const sampleIntegrityWarningFiltersModeReducer: Reducer<
+  SampleIntegrityWarningState['filtersMode'],
+  AnyAction
+> = handleAction<SampleIntegrityWarningState['filtersMode'], any>(
   selectSampleIntegrityWarningFiltersMode,
-  (state, action: any) => action.payload,
+  (_state, action) => action.payload,
   searchPageInitialState.filters.sampleIntegrityWarning.filtersMode
 )
 
@@ -88,7 +98,10 @@ export const doesFilterMatchEnvironment = (environment) => (filter) => {
   return isNull(filter.environment) || op(filter)
 }
 
-const sampleIntegrityWarningFiltersReducer = handleActions(
+const sampleIntegrityWarningFiltersReducer: Reducer<
+  SampleIntegrityWarningState,
+  AnyAction
+> = handleActions<SampleIntegrityWarningState, any>(
   {
     [checkSampleIntegrityWarningFilter as any]: (state: any, action) => ({
       ...state,
@@ -160,10 +173,13 @@ const sampleIntegrityWarningFiltersReducer = handleActions(
       })),
     }),
   },
-  searchPageInitialState.filters.sampleIntegrityWarning.filters
+  searchPageInitialState.filters.sampleIntegrityWarning
 )
 
-const combinedSampleIntegrityWarningReducers = (
+const combinedSampleIntegrityWarningReducers: Reducer<
+  SampleIntegrityWarningState,
+  AnyAction
+> = (
   state = searchPageInitialState.filters.sampleIntegrityWarning,
   action
 ) => ({
@@ -175,7 +191,10 @@ const combinedSampleIntegrityWarningReducers = (
 
 // This reducer is using reduceReducers because it needs access to both the dataDefinitions and the filters.
 // Otherwise we could just use combineReducers just like for the other reducers in the app.
-const sampleIntegrityWarningReducer = reduceReducers(
+const sampleIntegrityWarningReducer: Reducer<
+  SampleIntegrityWarningState,
+  AnyAction
+> = reduceReducers(
   combinedSampleIntegrityWarningReducers,
   sampleIntegrityWarningFiltersReducer
 )

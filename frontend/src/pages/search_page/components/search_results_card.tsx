@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { last } from 'lodash'
 import { useAppDispatch, useAppSelector } from 'hooks/redux'
-import type { RootState } from 'app/store'
 import { Alert, Button, Card, CardBody, CardHeader } from 'reactstrap'
 
 import { ExportDataButton } from 'components/export_data_button'
@@ -23,7 +22,7 @@ import SamplesGraphModal from './samples_graph_modal'
 import SamplesComparisonModal from './samples_comparison_modal'
 import MetagenomeModal from './metagenome_modal'
 import KronaModal from './krona_modal'
-import SearchResultsTable from './search_results_table'
+import ConnectedSearchResultsTable from './search_results_table'
 
 const wrapText = (text) => ({ __html: text })
 
@@ -131,11 +130,11 @@ const OtuExportBox = ({ state, clear }) => {
 
 const _SearchResultsCard = (props) => {
   const dispatch = useAppDispatch()
-  const galaxy = useAppSelector((state: RootState) => state.searchPage.galaxy)
-  const tips = useAppSelector((state: RootState) => state.searchPage.tips)
-  const otuExport = useAppSelector((state: RootState) => state.searchPage.otuExport)
-  const describeSearchValue = useAppSelector((state: RootState) => describeSearch(state))
-  const metaxaAmpliconSelected = useAppSelector((state: RootState) => {
+  const galaxy = useAppSelector(state => state.searchPage.galaxy)
+  const tips = useAppSelector(state => state.searchPage.tips)
+  const otuExport = useAppSelector(state => state.searchPage.otuExport)
+  const describeSearchValue = useAppSelector(state => describeSearch(state))
+  const metaxaAmpliconSelected = useAppSelector(state => {
     const selectedAmpliconId = state.searchPage.filters.selectedAmplicon.value
     const metaxaOption = state.referenceData.amplicons.values.find((x) =>
       x.value.startsWith(metaxaAmpliconStringMatch)
@@ -146,7 +145,7 @@ const _SearchResultsCard = (props) => {
   const submitToGalaxyAction = () => dispatch(submitToGalaxy())
   const workflowOnGalaxyAction = () => dispatch(workflowOnGalaxy())
   const clearGalaxyAlertAction = (idx) => dispatch(clearGalaxyAlert(idx))
-  const clearTipsAction = (idx) => dispatch(clearTips(idx))
+  const clearTipsAction = () => dispatch(clearTips())
   const showPhinchTipAction = () => dispatch(showPhinchTip())
   const openKronaModalAction = (sampleId) => dispatch(openKronaModal(sampleId))
   const runOtuExportAction = () => dispatch(runOtuExport())
@@ -340,9 +339,9 @@ const _SearchResultsCard = (props) => {
         <CardBody>
           <AlertBoxes alerts={galaxy.alerts} clearAlerts={clearGalaxyAlertAction} />
           <AlertBoxes alerts={tips.alerts} clearAlerts={clearTipsAction} />
-          <SearchResultsTable
-            metagenome={metaxaAmpliconSelected}
+          <ConnectedSearchResultsTable
             krona_func={(cell_props) => krona_button(cell_props, openKronaModalAction)}
+            metagenome={metaxaAmpliconSelected}
           />
         </CardBody>
       </Card>
@@ -360,16 +359,18 @@ export const SearchResultsCard = _SearchResultsCard
 
 const _MetagenomeSearchResultsCard = (props) => {
   const dispatch = useAppDispatch()
-  const tips = useAppSelector((state: RootState) => state.searchPage.tips)
-  const clearTipsAction = (idx) => dispatch(clearTips(idx))
-  const showPhinchTipAction = () => dispatch(showPhinchTip())
+  const describeSearchValue = useAppSelector(state => describeSearch(state))
+  const tips = useAppSelector(state => state.searchPage.tips)
+  const clearTipsAction = (idx) => dispatch(clearTips())
+  // const showPhinchTipAction = () => dispatch(showPhinchTip())
   const openMetagenomeModalSearchAction = () => dispatch(openMetagenomeModalSearch())
   const openMetagenomeModalAction = (sampleId) => dispatch(openMetagenomeModal(sampleId))
-  const runOtuExportAction = () => dispatch(runOtuExport())
+  const openKronaModalAction = (sampleId) => dispatch(openKronaModal(sampleId))
+  // const runOtuExportAction = () => dispatch(runOtuExport())
 
   const exportCSVOnlyContextualMetagenome = () => {
     download(window.otu_search_config.export_endpoint, {
-      describeSearch: () => describeSearch(state),
+      describeSearch: describeSearchValue,
     }, true)
   }
 
@@ -394,7 +395,7 @@ const _MetagenomeSearchResultsCard = (props) => {
         </CardHeader>
         <CardBody>
           <AlertBoxes alerts={tips.alerts} clearAlerts={clearTipsAction} />
-          <SearchResultsTable
+          <ConnectedSearchResultsTable
             cell_func={(cell_props) => cell_button(cell_props, openMetagenomeModalAction)}
             krona_func={(cell_props) => krona_button(cell_props, openKronaModalAction)}
             metagenome

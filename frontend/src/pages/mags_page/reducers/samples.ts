@@ -4,6 +4,11 @@ import {  executeMagsSitesMetadata, executeSampleMagsCount } from 'api'
 import { handleSimpleAPIResponse } from 'reducers/utils'
 import { EmptyOTUQuery } from 'search'
 
+import { type MagsPageState, magsPageInitialState } from './types'
+import { AnyAction, Reducer } from 'redux'
+
+type MagsSamplesState = MagsPageState['samples']
+
 export const {
   magsFetchSamplesStarted,
   magsFetchSamplesEnded,
@@ -15,17 +20,6 @@ export const {
   'MAGS_FETCH_SAMPLE_MAGS_COUNT_STARTED',
   'MAGS_FETCH_SAMPLE_MAGS_COUNT_ENDED'
 )
-
-const resultsInitialState = {
-  isLoading: false,
-  hasLoaded: false,
-  data: [],
-  otus: [],
-  sampleMagsCount: {
-    isLoading: false,
-    hasLoaded: false,
-  },
-}
 
 export const fetchMagsSamples = () => (dispatch) => {
   const fetchAllSamples = partial(
@@ -51,7 +45,8 @@ export const fetchSampleMagsCount = (sampleId) => (dispatch) => {
   )
 }
 
-export default handleActions(
+const magsSamplesReducer: Reducer<MagsSamplesState, AnyAction> =
+  handleActions<MagsSamplesState, any>(
   {
     [magsFetchSamplesStarted as any]: (state, action) => ({
       ...state,
@@ -85,5 +80,7 @@ export default handleActions(
       },
     }),
   },
-  resultsInitialState
+  magsPageInitialState.samples
 )
+
+export default magsSamplesReducer

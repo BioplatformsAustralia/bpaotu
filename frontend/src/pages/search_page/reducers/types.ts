@@ -46,7 +46,7 @@ export interface Alert {
   text: string
 }
 
-export interface PageState {
+export interface SearchPageState {
   filters: {
     selectedAmplicon: OperatorAndValue
     taxonomy: {
@@ -188,7 +188,7 @@ export const EmptySelectableLoadableValues: SelectableLoadableValues = {
   options: [],
 }
 
-export const searchPageInitialState: PageState = {
+export const searchPageInitialState: SearchPageState = {
   filters: {
     selectedAmplicon: EmptyOperatorAndValue,
     taxonomy: Object.fromEntries(taxonomy_keys.map((k) => [k, EmptySelectableLoadableValues])),

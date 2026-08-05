@@ -56,7 +56,7 @@ const TaxonomySourceInfo =
   'wang=rdp_bayesian. Further information on taxonomy assignment can be found ' +
   'at: https://github.com/AusMicrobiome/amplicon/tree/master/docs'
 
-const TaxonomyFilterCard = () => {
+const TaxonomyFilterCard = ({ metagenomeMode }: { metagenomeMode: boolean }) => {
   const dispatch = useAppDispatch()
 
   const prevAmplicon = useRef<OperatorAndValue>({ ...EmptyOperatorAndValue })
@@ -65,9 +65,7 @@ const TaxonomyFilterCard = () => {
     (state) => state.referenceData.amplicons
   )
 
-  const metagenomeMode = useAppSelector(
-    (state) => state.searchPage.filters.metagenomeMode
-  )
+  console.log('metagenomeMode', metagenomeMode)
 
   const selectedAmplicon = useAppSelector(getAmpliconFilter)
 
@@ -191,9 +189,7 @@ const TaxonomyFilterCard = () => {
 
         {selectedAmplicon.value !== '' && (
           <>
-            <TaxonomySelector
-              info={TaxonomySourceInfo}
-              placeholder="Select database and method&hellip;"
+            <TaxonomySelector info={TaxonomySourceInfo}
             />
             {TaxonomyDropDowns}
             <hr />

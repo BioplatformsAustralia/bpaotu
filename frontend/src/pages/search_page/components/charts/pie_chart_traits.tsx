@@ -1,8 +1,7 @@
 import React from 'react'
 import Plot from './plot'
 import { plotly_chart_config } from './plotly_chart'
-import { useAppDispatch, useAppSelector } from 'hooks/redux'
-import type { RootState } from 'app/store'
+import { useAppDispatch } from 'hooks/redux'
 import { startCase } from 'lodash'
 
 import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
@@ -63,7 +62,7 @@ const PieChartTraits = (props: any) => {
       let textData = chart_data[0].text
       if (!textData.includes(env_val)) env_val = ''
       dispatch(selectTrait(env_val))
-      dispatch(updateTaxonomyDropDowns('')())
+      dispatch(updateTaxonomyDropDowns(''))
       dispatch(fetchContextualDataForGraph())
       dispatch(fetchTaxonomyDataForGraph())
       selectToScroll(filter)

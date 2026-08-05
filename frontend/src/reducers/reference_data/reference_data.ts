@@ -1,9 +1,14 @@
 import { map, zipObject } from 'lodash'
 import { createActions, handleAction, handleActions } from 'redux-actions'
+import { type Reducer, type AnyAction} from 'redux'
 
 import { getReferenceData } from 'api'
 import { taxonomy_keys } from 'app/constants'
 import { handleSimpleAPIResponse } from 'reducers/utils'
+import { referenceDataInitialState, ReferenceDataState } from './types'
+
+type RanksState = ReferenceDataState['ranks']
+type AmpliconsState = ReferenceDataState['amplicons']
 
 export const { fetchReferenceDataEnded, selectTaxonomySource } = createActions(
   'FETCH_REFERENCE_DATA_ENDED',
@@ -16,18 +21,8 @@ export function fetchReferenceData() {
   }
 }
 
-const initialAmpliconsState = {
-  isLoading: true,
-  values: [],
-  error: false,
-}
-
-const initialRanksState = {
-  rankLabelsLookup: {},
-  rankLabels: {},
-}
-
-export const ranksReducer = handleActions(
+export const ranksReducer: Reducer<RanksState, AnyAction> =
+  handleActions<RanksState, any>(
   {
     [fetchReferenceDataEnded as any]: {
       next: (state, action: any) => ({
@@ -53,29 +48,31 @@ export const ranksReducer = handleActions(
       }
     },
   },
-  initialRanksState
+  referenceDataInitialState.ranks
 )
 
-export const ampliconsReducer = handleAction(
-  fetchReferenceDataEnded,
-  {
-    next: (state, action: any) => ({
-      isLoading: false,
-      error: false,
-      values: map(action.payload.data.amplicons, (option: any) => ({
-        id: option[0],
-        value: option[1],
-      })),
-    }),
-    throw: (state, action: any) => {
-      // tslint:disable-next-line:no-console
-      console.error('Error while loading amplicons: ', action.payload)
-      return {
+
+export const ampliconsReducer: Reducer<AmpliconsState, AnyAction> =
+  handleAction<AmpliconsState, any>(
+    fetchReferenceDataEnded,
+    {
+      next: (state, action: any) => ({
         isLoading: false,
-        error: true,
-        values: [],
-      }
+        error: false,
+        values: map(action.payload.data.amplicons, (option: any) => ({
+          id: option[0],
+          value: option[1],
+        })),
+      }),
+      throw: (state, action: any) => {
+        // tslint:disable-next-line:no-console
+        console.error('Error while loading amplicons: ', action.payload)
+        return {
+          isLoading: false,
+          error: true,
+          values: [],
+        }
+      },
     },
-  },
-  initialAmpliconsState
-)
+    referenceDataInitialState.amplicons
+  )

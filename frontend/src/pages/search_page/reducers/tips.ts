@@ -1,6 +1,9 @@
-import { searchPageInitialState } from './types'
-
 import { createActions, handleActions } from 'redux-actions'
+import type { Reducer, AnyAction } from 'redux'
+
+import { searchPageInitialState, type SearchPageState } from './types'
+
+type TipsState = SearchPageState['tips']
 
 export const { showPhinchTipAction, clearTipsAction } = createActions(
   'SHOW_PHINCH_TIP_ACTION',
@@ -24,7 +27,9 @@ const TIP_PHINCH = alert(
   'success'
 )
 
-export default handleActions(
+
+const tipsReducer: Reducer<TipsState, AnyAction> =
+  handleActions<TipsState, any>(
   {
     [clearTipsAction as any]: (state, action) => ({
       ...state,
@@ -45,3 +50,5 @@ export default handleActions(
   },
   searchPageInitialState.tips
 )
+
+export default tipsReducer

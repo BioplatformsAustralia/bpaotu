@@ -20,8 +20,7 @@ const ContextualSearchResultsTable = () => {
   // search once on initial mount
   useEffect(() => {
     dispatch(search())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [dispatch])
 
   return (
     <SearchResultsTable

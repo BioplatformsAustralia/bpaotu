@@ -51,7 +51,7 @@ const TaxonomyFilter = ({ rank, label = '' }) => {
   )
 }
 
-export const TaxonomySelector = () => {
+export const TaxonomySelector = ({ info }: { info: string }) => {
   const dispatch = useAppDispatch()
   const rankState = useAppSelector((state: any) => state.searchPage.filters.taxonomy.taxonomy_source || {})
   const rankLabel = useAppSelector(
@@ -67,6 +67,8 @@ export const TaxonomySelector = () => {
   return (
     <TaxonomySourceSelector
       label="Taxonomy"
+      info={info}
+      placeholder="Select database and method&hellip;"
       options={options}
       selected={selected}
       optionsLoading={isLoading}

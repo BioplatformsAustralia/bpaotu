@@ -1,10 +1,14 @@
 import { get as _get, isNumber, join, last, reject } from 'lodash'
 import { executeSubmitToGalaxy, executeWorkflowOnGalaxy, getGalaxySubmission } from 'api'
-import { ErrorList, GalaxySubmission, searchPageInitialState } from './types'
+import { ErrorList, GalaxySubmission, searchPageInitialState, type SearchPageState } from './types'
 
 import { createActions, handleActions } from 'redux-actions'
+import type { Reducer, AnyAction } from 'redux'
+
 import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
+
+type GalaxyState = SearchPageState['galaxy']
 
 const GALAXY_SUBMISSION_POLL_FREQUENCY_MS = 5000
 
@@ -131,7 +135,10 @@ function gettingStartedAlert(showWorkflowGuide) {
   )
 }
 
-export default handleActions(
+const submitToGalaxyReducer: Reducer<
+  GalaxyState,
+  AnyAction
+> = handleActions<GalaxyState, any>(
   {
     [submitToGalaxyStarted as any]: (state, action) => ({
       ...state,
@@ -238,3 +245,5 @@ export default handleActions(
   },
   searchPageInitialState.galaxy
 )
+
+export default submitToGalaxyReducer
