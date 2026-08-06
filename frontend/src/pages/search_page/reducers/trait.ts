@@ -1,13 +1,20 @@
 import { createActions, handleActions } from 'redux-actions'
+import { type Reducer, type AnyAction } from 'redux'
 
 import { EmptyOperatorAndValue } from './types'
+import { OperatorAndValue } from 'search'
+
+type SelectedTraitState = OperatorAndValue
 
 export const { selectTrait, selectTraitOperator } = createActions(
   'SELECT_TRAIT',
   'SELECT_TRAIT_OPERATOR',
 )
 
-export default handleActions(
+const selectedTraitReducer: Reducer<SelectedTraitState, AnyAction> = handleActions<
+  SelectedTraitState,
+  any
+>(
   {
     [selectTrait as any]: (state, action: any) => ({
       ...state,
@@ -20,3 +27,5 @@ export default handleActions(
   },
   EmptyOperatorAndValue,
 )
+
+export default selectedTraitReducer

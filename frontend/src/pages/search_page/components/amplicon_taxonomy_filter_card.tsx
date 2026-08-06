@@ -28,7 +28,7 @@ import TraitFilter from './trait_filter'
 import AmpliconFilter from './amplicon_filter'
 import TaxonomySearchModal from './taxonomy_search_modal'
 import { TaxonomySelector, TaxonomyDropDowns } from './taxonomy_filters'
-import { type OperatorAndValue } from '../reducers/amplicon'
+import { type OperatorAndValue } from 'search'
 
 export const AmpliconFilterInfo =
   'Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, ' +

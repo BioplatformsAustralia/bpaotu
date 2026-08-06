@@ -6,6 +6,7 @@ import { EmptyOperatorAndValue } from './types'
 import { RootState } from 'app/store'
 import type { Reducer } from 'redux'
 import type { AnyAction } from 'redux'
+import type { OperatorAndValue } from 'search'
 
 export const { setMetagenomeMode, selectAmplicon, selectAmpliconOperator } = createActions(
   'SET_METAGENOME_MODE',
@@ -25,11 +26,6 @@ export const getDefaultMetagenomeAmplicon = (values) =>
   lookupAmplicon(values, window.otu_search_config.metaxa_amplicon)
 
 export const getAmpliconFilter = (state: RootState) => state.searchPage.filters.selectedAmplicon
-
-export type OperatorAndValue = {
-  operator: string
-  value: string
-}
 
 export function isMetagenomeSearch(state) {
   return Boolean(state.searchPage.filters.metagenomeMode)

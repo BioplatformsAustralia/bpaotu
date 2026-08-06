@@ -26,15 +26,26 @@ import ConnectedSearchResultsTable from './search_results_table'
 
 const wrapText = (text) => ({ __html: text })
 
-const AlertBoxes = (props) => (
+type AlertBox = {
+  color: string
+  text: string
+}
+
+const AlertBoxes = ({
+  alerts,
+  clearAlerts,
+}: {
+  alerts: AlertBox[]
+  clearAlerts: (index: number) => void
+}) => (
   <div>
-    {props.alerts.map((alert, idx) => (
+    {alerts.map((alert, idx) => (
       <Alert
         key={idx}
         color={alert.color}
         fade={false}
         className="text-center"
-        toggle={() => props.clearAlerts(idx)}
+        toggle={() => clearAlerts(idx)}
       >
         <div dangerouslySetInnerHTML={wrapText(alert.text)} />
       </Alert>

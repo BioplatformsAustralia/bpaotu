@@ -50,6 +50,7 @@ const TaxonomyFilter = ({ rank, label = '' }) => {
       options={options}
       selected={selected}
       optionsLoading={isLoading}
+      optionsLoadingError={false}
       isDisabled={isDisabled}
       selectValue={selectValue}
       selectOperator={selectOperator}

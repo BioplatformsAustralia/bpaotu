@@ -37,8 +37,8 @@ const GraphTabButton = ({
     >
       {label}{' '}
       {tooltip && (
-        <span id={`${id}-tooltip`}>
-          <Octicon name="info" align="top" />
+        <span id={`${id}-tooltip`} className="graph-tab-tooltip">
+          <Octicon name="info" />
         </span>
       )}
     </button>

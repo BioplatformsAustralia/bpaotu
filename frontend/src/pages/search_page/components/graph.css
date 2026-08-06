@@ -5,6 +5,8 @@
 }
 
 .graph-tab {
+  display: inline-flex;
+  align-items: center;
   border: 1px solid transparent;
   border-bottom: 1px solid #dee2e6;
   background: transparent;
@@ -13,6 +15,13 @@
   margin-bottom: -1px;
   color: inherit;
   border-radius: 0.25rem 0.25rem 0 0;
+}
+
+.graph-tab-tooltip {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .graph-tab:hover {
