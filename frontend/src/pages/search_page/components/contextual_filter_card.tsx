@@ -40,15 +40,11 @@ import {
 import {
   checkSampleIntegrityWarningFilter,
   uncheckSampleIntegrityWarningFilter,
-  addSampleIntegrityWarningFilter,
-  removeSampleIntegrityWarningFilter,
   changeSampleIntegrityWarningFilterOperator,
   changeSampleIntegrityWarningFilterValue,
   changeSampleIntegrityWarningFilterValue2,
   changeSampleIntegrityWarningFilterValues,
-  clearSampleIntegrityWarningFilters,
   selectSampleIntegrityWarningFilter,
-  selectSampleIntegrityWarningFiltersMode,
 } from '../reducers/sample_integrity_warning'
 
 export const ContextualFilterInfo =
@@ -58,29 +54,34 @@ const ContextualFilterLinkButton = ({ title, url, tooltip }) => {
   const id = `id-${uuid()}`
 
   return (
-    <>
-      <Button
-        size="sm"
-        color="secondary"
+    <Button
+      size="sm"
+      color="secondary"
+      style={{
+        cursor: 'pointer',
+        margin: '0px 2px',
+        paddingTop: '3px',
+        paddingBottom: '0px',
+      }}
+      href={url}
+      target="_blank"
+    >
+      <Octicon name="link" />
+      <span
         style={{
-          cursor: 'pointer',
-          margin: '0px 2px',
-          paddingTop: '3px',
-          paddingBottom: '0px',
+          paddingLeft: 4,
+          paddingRight: 4,
         }}
-        href={url}
-        target="_blank"
       >
-        <Octicon name="link" />
-        <span style={{ paddingLeft: 4, paddingRight: 4 }}>{title}</span>
-        <Badge color="secondary" id={id}>
-          <Octicon name="info" />
-        </Badge>
-        <UncontrolledTooltip target={id} placement="auto">
-          {tooltip}
-        </UncontrolledTooltip>
-      </Button>
-    </>
+        {title}
+      </span>
+      <Badge color="secondary" id={id}>
+        <Octicon name="info" />
+      </Badge>
+      <UncontrolledTooltip target={id} placement="auto">
+        {tooltip}
+      </UncontrolledTooltip>
+    </Button>
   )
 }
 
@@ -148,10 +149,6 @@ const ContextualFilterCard = () => {
   const uncheckSampleIntegrityWarningFilterAction = () =>
     dispatch(uncheckSampleIntegrityWarningFilter())
   const clearContextualFiltersAction = () => dispatch(clearContextualFilters())
-  const clearSampleIntegrityWarningFiltersAction = () =>
-    dispatch(clearSampleIntegrityWarningFilters())
-  const selectContextualFiltersModeAction = (mode: string) =>
-    dispatch(selectContextualFiltersMode(mode))
   const selectSampleIntegrityWarningFilterAction = (index: number, filterName: string) =>
     dispatch(selectSampleIntegrityWarningFilter(index, filterName))
   const addContextualFilterAction = () => dispatch(addContextualFilter())
@@ -164,7 +161,9 @@ const ContextualFilterCard = () => {
     <Card>
       <CardHeader tag="h5">
         <Row>
-          <Col>Contextual Filters</Col>
+          <Col>
+            <span style={{ lineHeight: '2rem' }}>Contextual Filters</span>
+          </Col>
           <Col className="text-right" xs="auto">
             <ContextualFilterLinkButton
               title="Download metadata description"

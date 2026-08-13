@@ -3,7 +3,6 @@ import { Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
 
 import { useAppDispatch, useAppSelector } from 'hooks/redux'
 
-// import { Tutorial, AMBLink, stepsStyle } from 'components/tutorial'
 import { TourContext } from 'providers/tour_provider'
 import BlastSearchCard from './blast_search_card'
 
@@ -108,9 +107,11 @@ const BlastModal = () => {
           map showing hit locations and sequence similarities.
         </p>
         <p>
-          Note that the figure is sorted to plot the highest scoring points last, so any symbols
-          occurring at the same location will only be visible as the highest scoring alignment
-          value.
+          The figure is sorted to plot the highest scoring points last, so any symbols occurring at
+          the same location will only be visible as the highest scoring alignment value.
+        </p>
+        <p className="text-muted small pb-2">
+          Note: characters not matching AGCT will be stripped from the search query
         </p>
         <BlastSearchCard />
       </ModalBody>

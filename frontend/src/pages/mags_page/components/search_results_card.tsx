@@ -3,7 +3,7 @@ import { Card, CardBody, CardHeader } from 'reactstrap'
 
 import { SearchResultsTable } from 'pages/mags_page/components'
 
-const SearchResultsCard = (props) => {
+const SearchResultsCard = () => {
   return (
     <div>
       <Card>

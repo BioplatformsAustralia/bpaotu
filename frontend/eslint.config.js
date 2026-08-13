@@ -6,13 +6,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 
 export default [
   {
-    ignores: [
-      'node_modules/',
-      "public/",
-      'dist/',
-      'build/',
-      'coverage/',
-    ],
+    ignores: ['node_modules/', 'public/', 'dist/', 'build/', 'coverage/'],
   },
 
   js.configs.recommended,
@@ -50,10 +44,24 @@ export default [
       ...react.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
 
-      'react/react-in-jsx-scope': 'off',
-      'react/prop-types': 'off',
+      // temporary disable rules to use as filter
+      '@typescript-eslint/no-explicit-any': 'off',
+      'prefer-const': 'off',
 
-      'no-unused-vars': [
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react/jsx-no-undef': 'error',
+      'react/no-unknown-property': 'error',
+
+      // new rule from react v19
+      'react-hooks/set-state-in-effect': 'warn',
+
+      'react/no-unescaped-entities': 'off',
+      'react/prop-types': 'off',
+      'react/react-in-jsx-scope': 'off',
+
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
         'warn',
         {
           argsIgnorePattern: '^_',
@@ -62,5 +70,4 @@ export default [
       ],
     },
   },
-
 ]

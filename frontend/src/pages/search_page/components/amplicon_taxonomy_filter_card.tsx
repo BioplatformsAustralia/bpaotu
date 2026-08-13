@@ -126,7 +126,7 @@ const TaxonomyFilterCard = ({ metagenomeMode }: { metagenomeMode: boolean }) => 
       dispatch(selectTrait(''))
       dispatch(updateTaxonomyDropDowns(''))
     }
-  }, [dispatch, amplicons.values, selectedAmplicon.value, selectedAmplicon.operator])
+  }, [dispatch, amplicons.values, selectedAmplicon])
 
   const clearFilters = () => {
     dispatch(clearAllTaxonomyFilters())
@@ -135,7 +135,9 @@ const TaxonomyFilterCard = ({ metagenomeMode }: { metagenomeMode: boolean }) => 
 
   return (
     <Card>
-      <CardHeader tag="h5">Filter by amplicon, taxonomy and traits</CardHeader>
+      <CardHeader tag="h5">
+        <span style={{ lineHeight: '2rem' }}>Filter by amplicon, taxonomy and traits</span>
+      </CardHeader>
       <CardBody className="filters">
         <AmpliconFilter />
         <hr />

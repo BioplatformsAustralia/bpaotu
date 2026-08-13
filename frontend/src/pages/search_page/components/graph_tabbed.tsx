@@ -123,12 +123,8 @@ const ContextualTab = (props) => {
                 <HistogramChartContextual
                   width={chartWidth}
                   height={chartHeight}
-                  selectTab={(e) => {
-                    selectTab(e)
-                  }}
-                  selectToScroll={(e) => {
-                    selectToScroll(e)
-                  }}
+                  selectTab={(e) => selectTab(e)}
+                  selectToScroll={(e) => selectToScroll(e)}
                   filter={tab}
                   contextualGraphdata={contextualGraphdata}
                 />

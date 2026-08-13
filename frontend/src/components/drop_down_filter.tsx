@@ -49,8 +49,6 @@ const DropDownFilter = ({
       return [{ value: '', label: CouldNotLoadValues }]
     }
 
-    console.log('renderOptions', options)
-
     return [{ value: '', label: '---' }, ...options.map(renderOption)]
   }
 

@@ -187,7 +187,7 @@ const SamplesComparisonModal = () => {
 
   // data is either continuous or not (i.e. discrete)
   // if discrete, then different possibilities (ontology, string, date) are handled separately within
-  var plotDataTransformed
+  let plotDataTransformed
   if (isContinuous) {
     plotDataTransformed = processContinuous(plotData[selectedMethod], selectedFilter)
   } else {

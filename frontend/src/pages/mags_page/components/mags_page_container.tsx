@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { Container, Row, NavLink } from 'reactstrap'
 
 const MagsPageContainer = ({ children }) => {
-  6
   const navigate = useNavigate()
 
   return (

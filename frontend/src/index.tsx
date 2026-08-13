@@ -62,8 +62,9 @@ axios
     console.log('Error fetching app config')
 
     if (import.meta.env.NODE_ENV === 'development') {
+      console.error(error)
       const message =
-        '<h1>NODE_ENV === development only message</h1><p>perhaps taxonomy or spatial cache is still warming</p>'
+        '<h1>NODE_ENV === development only message</h1><p>Error fetching app config</p><p>Perhaps taxonomy or spatial cache is still warming</p>'
       document.write(message)
     }
   })

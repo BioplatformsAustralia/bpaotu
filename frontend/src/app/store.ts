@@ -2,7 +2,7 @@ import { createStore, applyMiddleware, compose, type AnyAction } from 'redux'
 import thunk, { ThunkDispatch } from 'redux-thunk'
 import rootReducer from 'reducers'
 
-const composeEnhancers = (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose
+const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose
 
 export const store = createStore(rootReducer, composeEnhancers(applyMiddleware(thunk)))
 

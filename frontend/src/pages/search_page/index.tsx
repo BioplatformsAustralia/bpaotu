@@ -41,7 +41,7 @@ const SearchPage = (props) => {
   )
   const errors = useAppSelector((state) => state.searchPage.results.errors)
   const auth = useAppSelector((state) => state.auth)
-  const { page, track, identify } = useAnalytics()
+  const { page, identify } = useAnalytics()
   const { setMainTourStep } = useContext(TourContext)
 
   // this correctly recognises whether this is the Amplicon or Metagenome page
@@ -56,7 +56,7 @@ const SearchPage = (props) => {
   }, [setMainTourStep])
 
   const clearSearchResultsAction = () => dispatch(clearSearchResults())
-  const searchAction = (trackValue) => dispatch(search(trackValue))
+  const searchAction = () => dispatch(search())
   const openBlastModalAction = () => dispatch(openBlastModal())
   const openSamplesMapModalAction = () => dispatch(openSamplesMapModal())
   const openSamplesGraphModalAction = () => dispatch(openSamplesGraphModal())
@@ -64,7 +64,7 @@ const SearchPage = (props) => {
 
   const newSearch = () => {
     clearSearchResultsAction()
-    searchAction(track)
+    searchAction()
   }
   const openBlastModalClick = () => {
     openBlastModalAction()

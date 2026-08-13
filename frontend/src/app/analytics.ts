@@ -7,7 +7,7 @@ export const pluginsList = ['mixpanel']
 // we don't retain a record of this to examine for our own purposes since we don't care who the user is
 // just that their interactions are associated with them across different devices and sessions
 export const triggerHashedIdentify = async (identify, email) => {
-  let hashSalt = 'd260c5eb-055b-4640-966d-1f657aec34b4'
+  const hashSalt = 'd260c5eb-055b-4640-966d-1f657aec34b4'
 
   const hash = new Sha256()
   hash.update(email.toLowerCase() + hashSalt)

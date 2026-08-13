@@ -1,7 +1,6 @@
 import React from 'react'
 import { find } from 'lodash'
 import { useAppDispatch, useAppSelector } from 'hooks/redux'
-import type { RootState } from 'app/store'
 import { createAction } from 'redux-actions'
 
 import { taxonomy_ranks } from 'app/constants'
@@ -80,7 +79,7 @@ export const TaxonomySelector = ({ info }: { info: string }) => {
 
   return (
     <TaxonomySourceSelector
-      label="Taxonomy"
+      label={rankLabel || 'Taxonomy'}
       info={info}
       placeholder="Select database and method&hellip;"
       options={options}

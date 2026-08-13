@@ -61,19 +61,19 @@ export const {
 
 const COMPARISON_SUBMISSION_POLL_FREQUENCY_MS = 5000
 
-export const setSelectedMethod = (selectedMethod) => (dispatch, getState) => {
+export const setSelectedMethod = (selectedMethod) => (dispatch, _getState) => {
   dispatch(samplesComparisonModalSetSelectedMethod(selectedMethod))
 }
 
-export const setSelectedFilter = (selectedFilter) => (dispatch, getState) => {
+export const setSelectedFilter = (selectedFilter) => (dispatch, _getState) => {
   dispatch(samplesComparisonModalSetSelectedFilter(selectedFilter))
 }
 
-export const setSelectedFilterExtra = (selectedFilterExtra) => (dispatch, getState) => {
+export const setSelectedFilterExtra = (selectedFilterExtra) => (dispatch, _getState) => {
   dispatch(samplesComparisonModalSetSelectedFilterExtra(selectedFilterExtra))
 }
 
-export const clearPlotData = () => (dispatch, getState) => {
+export const clearPlotData = () => (dispatch, _getState) => {
   dispatch(samplesComparisonModalClearPlotData())
 }
 

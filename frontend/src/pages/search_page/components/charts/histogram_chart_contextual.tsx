@@ -15,7 +15,18 @@ import {
   selectContextualFilter,
 } from '../../reducers/contextual'
 
-const HistogramChartContextual = (props: any) => {
+type HistogramChartContextualProps = {
+  key?: string
+  width: number
+  height: number
+  dataDefinitions?: any
+  selectTab: (tab: string) => void
+  selectToScroll: (filter: string) => void
+  filter: string
+  contextualGraphdata: any
+}
+
+const HistogramChartContextual = (props: HistogramChartContextualProps) => {
   const dispatch = useAppDispatch()
   const markerLineWidth = []
 
@@ -40,7 +51,7 @@ const HistogramChartContextual = (props: any) => {
   let xaxisTitle = ''
 
   if (dataDefinition) {
-    title = dataDefinition.display_name + ' zz Plot'
+    title = dataDefinition.display_name + ' Plot'
     xaxisTitle =
       dataDefinition.display_name +
       (dataDefinition.units ? ' in (' + dataDefinition.units + ')' : '')
@@ -79,7 +90,7 @@ const HistogramChartContextual = (props: any) => {
     let value2 = points[0].label
 
     for (let i = 1; i < points.length; ++i) {
-      let point = points[i].label
+      const point = points[i].label
       value = point < value ? point : value
       value2 = point > value2 ? point : value2
     }

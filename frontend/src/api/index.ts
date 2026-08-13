@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { get as _get, map, partial, join } from 'lodash'
 
-import 'interfaces'
 import { taxonomy_keys } from 'app/constants'
 
 axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN'
@@ -381,13 +380,13 @@ export function getOtuExportSubmission(submissionId) {
 export function apiCookieConsentAccepted() {
   return axios
     .get(window.otu_search_config.cookie_consent_accepted_endpoint.toString())
-    .then((response) => {})
-    .catch((error) => {})
+    .then((_response) => {})
+    .catch((_error) => {})
 }
 
 export function apiCookieConsentDeclined() {
   return axios
     .get(window.otu_search_config.cookie_consent_declined_endpoint.toString())
-    .then((response) => {})
-    .catch((error) => {})
+    .then((_response) => {})
+    .catch((_error) => {})
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 
 import { get as _get } from 'lodash'
 
@@ -17,14 +17,9 @@ import { AmpliconFilterInfo } from './amplicon_taxonomy_filter_card'
 const AmpliconFilter = ({ selectBoxOnly = false, keepExistingValue = false }) => {
   const dispatch = useAppDispatch()
 
-  const [defaultAmplicon, setDefaultAmplicon] = useState(null)
-
   const options = useAppSelector((state) => state.referenceData.amplicons.values)
-
   const optionsLoadingError = useAppSelector((state) => state.referenceData.amplicons.error)
-
   const optionsLoading = useAppSelector((state) => state.referenceData.amplicons.isLoading)
-
   const metagenomeMode = useAppSelector((state) => state.searchPage.filters.metagenomeMode)
 
   const selected = useAppSelector((state) => state.searchPage.filters.selectedAmplicon)
@@ -45,32 +40,22 @@ const AmpliconFilter = ({ selectBoxOnly = false, keepExistingValue = false }) =>
     [dispatch],
   )
 
-  const calculateDefaultAmplicon = useCallback(() => {
-    if (defaultAmplicon || options.length === 0) {
-      return
+  // calculate defaultAmplicon
+  const defaultAmplicon = useMemo(() => {
+    if (options.length === 0) {
+      return null
     }
 
-    const ampliconFunction = metagenomeMode ? getDefaultMetagenomeAmplicon : getDefaultAmplicon
+    const fn = metagenomeMode ? getDefaultMetagenomeAmplicon : getDefaultAmplicon
 
-    const amplicon = ampliconFunction(options)
-
-    if (amplicon) {
-      setDefaultAmplicon(amplicon)
-      selectValue(amplicon.id)
-    }
-  }, [defaultAmplicon, options, metagenomeMode, selectValue])
+    return fn(options)
+  }, [options, metagenomeMode])
 
   useEffect(() => {
-    if (!keepExistingValue) {
-      calculateDefaultAmplicon()
-    }
-  }, [calculateDefaultAmplicon, keepExistingValue])
-
-  useEffect(() => {
-    if (!keepExistingValue && selected.value === '' && !metagenomeMode && defaultAmplicon) {
+    if (!keepExistingValue && defaultAmplicon) {
       selectValue(defaultAmplicon.id)
     }
-  }, [selected.value, metagenomeMode, defaultAmplicon, keepExistingValue, selectValue])
+  }, [defaultAmplicon, keepExistingValue, selectValue])
 
   return (
     <DropDownFilter

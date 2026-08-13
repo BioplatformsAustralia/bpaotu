@@ -245,7 +245,7 @@ export const SearchResultsTable = (props: SearchResultsTableProps) => {
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
         noDataText={results.cleared ? 'No search performed yet' : 'No rows found'}
-        getTheadProps={(thead) => ({
+        getTheadProps={() => ({
           // fix the header not aligning with cells, including the column separators
           style: {
             paddingLeft: 0,
@@ -254,7 +254,7 @@ export const SearchResultsTable = (props: SearchResultsTableProps) => {
             paddingBottom: '8px',
           },
         })}
-        getTdProps={(cellInfo) => ({
+        getTdProps={() => ({
           style: {
             textAlign: 'center',
           },

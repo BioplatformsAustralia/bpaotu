@@ -5,8 +5,6 @@ import { useAppSelector } from 'hooks/redux'
 import type { RootState } from 'app/store'
 import { startCase, fromPairs, unzip } from 'lodash'
 
-import { getAmpliconFilter } from '../../reducers/amplicon'
-
 const PieChartAmplicon = (props) => {
   const options = useAppSelector((state: RootState) => state.referenceData.amplicons.values)
   const { taxonomyGraphdata, filter, width, height } = props

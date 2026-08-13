@@ -238,12 +238,8 @@ const GraphListed = (props) => {
                         key={'hist' + graphName}
                         width={chartWidth}
                         height={chartHeight}
-                        selectTab={(e) => {
-                          selectTab(e)
-                        }}
-                        selectToScroll={(e) => {
-                          selectToScroll(e)
-                        }}
+                        selectTab={(e) => selectTab(e)}
+                        selectToScroll={(e) => selectToScroll(e)}
                         filter={graphName}
                         contextualGraphdata={contextualGraphdata}
                       />

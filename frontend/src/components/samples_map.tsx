@@ -314,7 +314,7 @@ class SamplesMap extends React.Component<any> {
 
   public findFilterIndex = (data, name) => {
     let index = 0
-    for (var i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
       index = data[i].name === name ? i : data.length
     }
     return index
@@ -322,7 +322,7 @@ class SamplesMap extends React.Component<any> {
 
   public findFilterValueIndex = (data, name, value, value2) => {
     let index = -1
-    for (var i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
       if (data[i].name === name && data[i].value === value && data[i].value2 === value2) {
         return i
       }
@@ -357,7 +357,7 @@ class SamplesMap extends React.Component<any> {
     }
 
     // Add rectangle for selected latitude/longitude filter
-    var rectangle: [number, number][] = []
+    let rectangle: [number, number][] = []
     const lat = find(
       this.props.filters.contextual.filters,
       (latlng) => latlng.name === this.lat_filter,
@@ -678,7 +678,7 @@ class SamplesMap extends React.Component<any> {
     new MiniMap(layer, { toggleDisplay: true }).addTo(this.leafletMap.leafletElement)
   }
 
-  public handleClick = (e) => {
+  public handleClick = () => {
     // const { lat, lng } = e.latlng;
     // const maxZoom = e.sourceTarget._layersMaxZoom
     // const minZoom = e.sourceTarget._layersMinZoom
@@ -701,7 +701,7 @@ class SamplesMap extends React.Component<any> {
    * @param {*} e
    */
   public handleGridLayerClick = (e) => {
-    var layer = e.target
+    let layer = e.target
     let popup = layer.getPopup()
     let popupContent =
       strongHeader('Sites per grid cell', layer.feature.properties.sites.length) +

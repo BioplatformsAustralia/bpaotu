@@ -7,7 +7,7 @@ import { changeTablePropertiesMags, searchMags } from 'pages/mags_page/reducers/
 
 import { SearchResultsTable } from 'pages/mags_page/components/'
 
-export const MagsPage = (props) => {
+export const MagsPage = () => {
   const { page } = useAnalytics()
   const dispatch = useDispatch()
 

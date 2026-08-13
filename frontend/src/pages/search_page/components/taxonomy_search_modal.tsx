@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react'
 import { useAppDispatch, useAppSelector } from 'hooks/redux'
-import type { RootState } from 'app/store'
 import { createAction } from 'redux-actions'
 
 import {
@@ -99,17 +98,12 @@ const stickyStyle = {
   backgroundColor: '#eee',
 } as React.CSSProperties
 
-const TaxonomySearchModal = (props) => {
+const TaxonomySearchModal = () => {
   const dispatch = useAppDispatch()
-  const modalState = useAppSelector((state: RootState) => state.searchPage.taxonomySearchModal)
-  const selectedAmplicon = useAppSelector(
-    (state: RootState) => state.searchPage.filters.selectedAmplicon,
-  )
-  const amplicons = useAppSelector((state: RootState) => state.referenceData.amplicons)
-  const rankLabelsLookup = useAppSelector(
-    (state: RootState) => state.referenceData.ranks.rankLabelsLookup,
-  )
-  const taxonomy = useAppSelector((state: RootState) => state.searchPage.filters.taxonomy)
+  const modalState = useAppSelector((state) => state.searchPage.taxonomySearchModal)
+  const selectedAmplicon = useAppSelector((state) => state.searchPage.filters.selectedAmplicon)
+  const amplicons = useAppSelector((state) => state.referenceData.amplicons)
+  const rankLabelsLookup = useAppSelector((state) => state.referenceData.ranks.rankLabelsLookup)
   const handleSetSelectIndexAction = (index: number) => dispatch(handleSetSelectIndex(index))
   const selectAmpliconAction = (value: string) => dispatch(selectAmplicon(value))
   const selectTaxonomyValueAction = (taxa: string, id: string) =>
@@ -510,7 +504,7 @@ const TaxonomySearchModal = (props) => {
                 <thead>
                   <tr>
                     <th scope="row" style={stickyStyle}></th>
-                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                    {resultsAdjusted.map(({ taxonomy }, index) => (
                       <th key={index}>
                         <Button
                           onClick={() => setTaxonomy(taxonomy, index)}
@@ -528,7 +522,7 @@ const TaxonomySearchModal = (props) => {
                     <th scope="row" style={stickyStyle}>
                       Amplicon
                     </th>
-                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                    {resultsAdjusted.map(({ taxonomy }, index) => (
                       <td key={index}>{taxonomy.amplicon && taxonomy.amplicon.value}</td>
                     ))}
                   </tr>
@@ -536,7 +530,7 @@ const TaxonomySearchModal = (props) => {
                     <th scope="row" style={stickyStyle}>
                       Taxonomy Source
                     </th>
-                    {resultsAdjusted.map(({ taxonomy, list, maxIndex }, index) => (
+                    {resultsAdjusted.map(({ taxonomy }, index) => (
                       <td key={index}>
                         {taxonomy.taxonomy_source && taxonomy.taxonomy_source.value}
                       </td>

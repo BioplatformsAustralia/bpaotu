@@ -73,7 +73,7 @@ const makeTaxonomyFetcher = (config) => (dispatch, getState) => {
     })
 }
 
-export const updateTaxonomyDropDownsInner = (taxonomy) => (dispatch, getState) => {
+export const updateTaxonomyDropDownsInner = (taxonomy) => (dispatch, _getState) => {
   const rest = taxonomy === '' ? taxonomy_keys : taxonomiesAfter(taxonomy)
   if (isEmpty(rest)) {
     dispatch(taxonomyOptionsLoading(false))
@@ -85,7 +85,7 @@ export const updateTaxonomyDropDownsInner = (taxonomy) => (dispatch, getState) =
   })
 }
 
-export const updateTaxonomyDropDowns = (taxonomy) => (dispatch, getState) => {
+export const updateTaxonomyDropDowns = (taxonomy) => (dispatch, _getState) => {
   const rest = taxonomy === '' ? taxonomy_keys : taxonomiesAfter(taxonomy)
 
   if (isEmpty(rest)) {
@@ -134,11 +134,11 @@ function makeTaxonomyReducer(taxonomyName) {
           isLoading: true,
         }
 
-      case actionTypes.fetchEnded:
-        const possibilites = action.payload.data
+      case actionTypes.fetchEnded: {
+        const possibilities = action.payload.data
           ? action.payload.data.possibilities.new_options.possibilities
           : []
-        const options = map(possibilites, (option: any) => ({
+        const options = map(possibilities, (option: any) => ({
           id: option[0],
           value: option[1],
         }))
@@ -188,6 +188,7 @@ function makeTaxonomyReducer(taxonomyName) {
           options,
           selected,
         }
+      }
 
       case actionTypes.select:
         return {

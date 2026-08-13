@@ -6,7 +6,6 @@ import { Button, Input, UncontrolledTooltip } from 'reactstrap'
 
 import { taxonomy_ranks } from 'app/constants'
 import Octicon from 'components/octicon'
-import { fetchTraits } from 'reducers/reference_data/traits'
 
 import {
   selectEnvironment,
@@ -14,8 +13,6 @@ import {
   selectContextualFiltersMode,
 } from '../reducers/contextual'
 import { removeSampleIntegrityWarningFilter } from '../reducers/sample_integrity_warning'
-import { isMetagenomeSearch } from '../reducers/amplicon'
-import { clearAllTaxonomyFilters } from '../reducers/taxonomy'
 import { selectTrait } from '../reducers/trait'
 import { updateTaxonomyDropDowns } from '../reducers/taxonomy'
 import { RootState } from 'app/store'
@@ -99,19 +96,6 @@ const SearchFilters = (props) => {
   )
   const environment = useAppSelector((state: any) => state.contextualDataDefinitions.environment)
   const { static: staticFilter, handleSearchFilterClick } = props as any
-  const selectTraitAction = (value: string) => dispatch(selectTrait(value))
-  const fetchTraitsAction = () => dispatch(fetchTraits())
-  const clearAllTaxonomyFiltersAction = () => dispatch(clearAllTaxonomyFilters())
-  const clearTaxonomyValueAction = (taxonomy: string) =>
-    dispatch(createAction('SELECT_' + taxonomy.toUpperCase())(''))
-  const updateTaxonomyDropDownAction = (taxonomy: string) =>
-    dispatch(updateTaxonomyDropDowns(taxonomy))
-  const selectEnvironmentAction = (value: string) => dispatch(selectEnvironment(value))
-  const removeContextualFilterAction = (index: number) => dispatch(removeContextualFilter(index))
-  const selectContextualFiltersModeAction = (mode: string) =>
-    dispatch(selectContextualFiltersMode(mode))
-  const removeSampleIntegrityWarningFilterAction = (index: number) =>
-    dispatch(removeSampleIntegrityWarningFilter(index))
 
   const getSelectedFilter = useCallback((filters, filter_id, filter_name) => {
     for (let i in filters) {
@@ -153,45 +137,45 @@ const SearchFilters = (props) => {
   }, [])
 
   const onSelectTrait = useCallback(() => {
-    selectTraitAction('')
-    updateTaxonomyDropDownAction('')
+    dispatch(selectTrait(''))
+    dispatch(updateTaxonomyDropDowns(''))
     handleSearchFilterClick('amplicon_id')
-  }, [handleSearchFilterClick])
+  }, [dispatch, handleSearchFilterClick])
 
   const onSelectTaxonomy = useCallback(
     (taxa) => {
-      clearTaxonomyValueAction(taxa)
-      updateTaxonomyDropDownAction(taxa)
+      dispatch(createAction('SELECT_' + taxa.toUpperCase())(''))
+      dispatch(updateTaxonomyDropDowns(taxa))
       handleSearchFilterClick('taxonomy_id')
     },
-    [handleSearchFilterClick],
+    [dispatch, handleSearchFilterClick],
   )
 
   const onSelectEnvironment = useCallback(() => {
-    selectEnvironmentAction('')
+    dispatch(selectEnvironment(''))
     handleSearchFilterClick('am_environment_id')
-  }, [handleSearchFilterClick])
+  }, [dispatch, handleSearchFilterClick])
 
   const onSelectFilter = useCallback(
     (index, filter, key) => {
       if (key === 'contextual') {
-        removeContextualFilterAction(index)
+        dispatch(removeContextualFilter(index))
       }
       if (key === 'sampleIntegrityWarning') {
-        removeSampleIntegrityWarningFilterAction(index)
+        dispatch(removeSampleIntegrityWarningFilter(index))
       }
 
       handleSearchFilterClick(filter)
     },
-    [handleSearchFilterClick],
+    [dispatch, handleSearchFilterClick],
   )
 
   const onSelectFilterType = useCallback(
     (mode) => {
-      selectContextualFiltersModeAction(mode)
+      dispatch(selectContextualFiltersMode(mode))
       handleSearchFilterClick('')
     },
-    [handleSearchFilterClick],
+    [dispatch, handleSearchFilterClick],
   )
 
   const renderSelectedAmplicon = (value) => {

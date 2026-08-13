@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Alert, Container } from 'reactstrap'
 
-export default (props) => {
+const LoginInProgressPage = () => {
   return (
     <Container fluid={true}>
       <Alert color="warning" className="text-center" fade={false}>
@@ -15,3 +15,5 @@ export default (props) => {
     </Container>
   )
 }
+
+export default LoginInProgressPage

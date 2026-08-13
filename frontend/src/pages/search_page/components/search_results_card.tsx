@@ -82,6 +82,60 @@ const download = (baseURL, props, onlyContextual = false) => {
   window.open(url)
 }
 
+type PopupProps = {
+  children: React.ReactNode
+  onClose: () => void
+}
+
+const Popup = ({ children, onClose }: PopupProps) => {
+  const popupRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+        onClose() // close on click outside
+      }
+    }
+
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [onClose])
+
+  return (
+    <div
+      ref={popupRef}
+      style={{
+        position: 'absolute',
+        top: '100%',
+        left: '50%',
+        transform: 'translateX(-50%)', // center align (with left: 50%)
+        marginTop: '8px',
+        background: 'white',
+        borderRadius: '12px',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+        padding: '12px 0px',
+        zIndex: 10,
+        minWidth: '250px', // so buttons are side by side
+      }}
+    >
+      {children}
+      <div style={{ marginTop: 8, paddingLeft: 8, paddingRight: 8 }}>
+        <p>
+          <small>
+            <em>Stream</em> will download directly through your browser. Use for small datasets.
+          </small>
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          <small>
+            <em>Packet</em> will generate a download packet and provide a link below and via email.
+            Use for large datasets.
+          </small>
+        </p>
+      </div>
+    </div>
+  )
+}
+
 const OtuExportBox = ({ state, clear }) => {
   const { isLoading, isFinished, status, resultUrl } = state
 
@@ -139,7 +193,7 @@ const OtuExportBox = ({ state, clear }) => {
   )
 }
 
-const _SearchResultsCard = (props) => {
+export const SearchResultsCard = () => {
   const dispatch = useAppDispatch()
   const galaxy = useAppSelector((state) => state.searchPage.galaxy)
   const tips = useAppSelector((state) => state.searchPage.tips)
@@ -150,7 +204,7 @@ const _SearchResultsCard = (props) => {
     const metaxaOption = state.referenceData.amplicons.values.find((x) =>
       x.value.startsWith(metaxaAmpliconStringMatch),
     )
-    const metaxaOptionId = !!metaxaOption ? metaxaOption.id : undefined
+    const metaxaOptionId = metaxaOption ? metaxaOption.id : undefined
     return metaxaOptionId === selectedAmpliconId
   })
   const submitToGalaxyAction = () => dispatch(submitToGalaxy())
@@ -161,8 +215,6 @@ const _SearchResultsCard = (props) => {
   const openKronaModalAction = (sampleId) => dispatch(openKronaModal(sampleId))
   const runOtuExportAction = () => dispatch(runOtuExport())
   const clearOtuExportAction = () => dispatch(clearOtuExportAlert())
-  const openMetagenomeModalAction = (sampleId) => dispatch(openMetagenomeModal(sampleId))
-  const openMetagenomeModalSearchAction = () => dispatch(openMetagenomeModalSearch())
 
   const [showExportTypeStandard, setShowExportTypeStandard] = useState(false)
   const [showExportTypeBIOM, setShowExportTypeBIOM] = useState(false)
@@ -208,55 +260,6 @@ const _SearchResultsCard = (props) => {
         describeSearch: () => describeSearchValue,
       },
       true,
-    )
-  }
-
-  const Popup = ({ children, onClose }) => {
-    const popupRef = useRef(null)
-
-    useEffect(() => {
-      const handleClick = (event) => {
-        if (popupRef.current && !popupRef.current.contains(event.target)) {
-          onClose() // close on click outside
-        }
-      }
-
-      document.addEventListener('mousedown', handleClick)
-      return () => document.removeEventListener('mousedown', handleClick)
-    }, [onClose])
-
-    return (
-      <div
-        ref={popupRef}
-        style={{
-          position: 'absolute',
-          top: '100%',
-          left: '50%',
-          transform: 'translateX(-50%)', // center align (with left: 50%)
-          marginTop: '8px',
-          background: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
-          padding: '12px 0px',
-          zIndex: 10,
-          minWidth: '250px', // so buttons are side by side
-        }}
-      >
-        {children}
-        <div style={{ marginTop: 8, paddingLeft: 8, paddingRight: 8 }}>
-          <p>
-            <small>
-              <em>Stream</em> will download directly through your browser. Use for small datasets.
-            </small>
-          </p>
-          <p style={{ marginBottom: 0 }}>
-            <small>
-              <em>Packet</em> will generate a download packet and provide a link below and via
-              email. Use for large datasets.
-            </small>
-          </p>
-        </div>
-      </div>
     )
   }
 
@@ -370,16 +373,14 @@ const _SearchResultsCard = (props) => {
   )
 }
 
-export const SearchResultsCard = _SearchResultsCard
-
-const _MetagenomeSearchResultsCard = (props) => {
+export const MetagenomeSearchResultsCard = () => {
   const dispatch = useAppDispatch()
   const describeSearchValue = useAppSelector((state) => describeSearch(state))
   const tips = useAppSelector((state) => state.searchPage.tips)
-  const clearTipsAction = (idx) => dispatch(clearTips())
+  const clearTipsAction = () => dispatch(clearTips())
   // const showPhinchTipAction = () => dispatch(showPhinchTip())
-  const openMetagenomeModalSearchAction = () => dispatch(openMetagenomeModalSearch())
   const openMetagenomeModalAction = (sampleId) => dispatch(openMetagenomeModal(sampleId))
+  const openMetagenomeModalSearchAction = () => dispatch(openMetagenomeModalSearch())
   const openKronaModalAction = (sampleId) => dispatch(openKronaModal(sampleId))
   // const runOtuExportAction = () => dispatch(runOtuExport())
 
@@ -431,5 +432,3 @@ const _MetagenomeSearchResultsCard = (props) => {
     </div>
   )
 }
-
-export const MetagenomeSearchResultsCard = _MetagenomeSearchResultsCard

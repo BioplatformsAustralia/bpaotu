@@ -19,9 +19,11 @@ type OcticonProps = {
   name: keyof typeof octicons
 }
 
-export default ({ size = 'default', name }: OcticonProps) => {
+const Octicon = ({ size = 'default', name }: OcticonProps) => {
   const width = Sizes[size]
 
   const options = { width, height: width }
   return <div style={style} dangerouslySetInnerHTML={{ __html: octicons[name].toSVG(options) }} />
 }
+
+export default Octicon

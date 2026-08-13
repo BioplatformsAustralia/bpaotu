@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { join } from 'lodash'
 
-import { useSelector } from 'react-redux'
 import {
   Collapse,
   Nav,
@@ -13,11 +12,12 @@ import {
 } from 'reactstrap'
 import { NavLink } from 'react-router-dom'
 
+import { useAppSelector } from 'hooks/redux'
 import MainTutorial from 'components/tutorials/main_tutorial'
 import UserProfile from 'components/user_profile'
 
 const Header = () => {
-  const { auth } = useSelector((state: any) => ({
+  const { auth } = useAppSelector((state) => ({
     auth: state.auth,
   }))
 

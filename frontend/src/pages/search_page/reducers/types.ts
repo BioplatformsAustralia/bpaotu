@@ -1,6 +1,8 @@
 import { taxonomy_keys } from 'app/constants'
 import { OperatorAndValue } from 'search'
 
+export type Error = string
+
 export interface LoadableValues {
   isLoading: boolean
   options: any[]

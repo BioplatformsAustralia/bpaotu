@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Alert, Container } from 'reactstrap'
 
-export default () => {
+const AustralianMicrobiomeAccessRequiredPage = () => {
   return (
     <Container fluid={true}>
       <Alert color="danger" className="text-center" fade={false}>
@@ -19,3 +19,5 @@ export default () => {
     </Container>
   )
 }
+
+export default AustralianMicrobiomeAccessRequiredPage

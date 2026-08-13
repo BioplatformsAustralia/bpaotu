@@ -198,7 +198,7 @@ const SearchResultsTable = (props) => {
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
         noDataText={results.cleared ? 'No search performed yet' : 'No rows found'}
-        getTdProps={(cellInfo) => ({
+        getTdProps={() => ({
           style: {
             display: 'flex',
             alignItems: 'center',

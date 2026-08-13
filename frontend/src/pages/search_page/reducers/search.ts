@@ -1,4 +1,4 @@
-import { find, get as _get, isEmpty, map, reject, uniq, last } from 'lodash'
+import { find, get as _get, isEmpty, map, reject, uniq } from 'lodash'
 import { createActions, handleActions, createAction } from 'redux-actions'
 
 import { createSearchHash } from './utils'
@@ -99,7 +99,7 @@ export const hasSearchChanged = (state) => {
   return curr !== prev
 }
 
-export const search = (track) => (dispatch, getState) => {
+export const search = () => (dispatch, getState) => {
   const state = getState()
 
   dispatch(searchStarted())

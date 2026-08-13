@@ -142,7 +142,7 @@ const SamplesGraphModal = () => {
           <Button
             id="reactour__graph_menu_tabbed"
             size="sm"
-            onClick={(e) => setShowTabbedGraph(true)}
+            onClick={() => setShowTabbedGraph(true)}
             active={showTabbedGraph}
           >
             <TabIcon
@@ -155,7 +155,7 @@ const SamplesGraphModal = () => {
           <Button
             id="reactour__graph_menu_listed"
             size="sm"
-            onClick={(e) => setShowTabbedGraph(false)}
+            onClick={() => setShowTabbedGraph(false)}
             active={!showTabbedGraph}
           >
             <TabIcon
@@ -167,12 +167,7 @@ const SamplesGraphModal = () => {
           </Button>
         </ButtonGroup>
         <ButtonGroup size="sm" style={{ marginTop: 8 }}>
-          <GraphTutorial
-            tourStep={tourStep}
-            setTourStep={(val) => {
-              setTourStep(val)
-            }}
-          />
+          <GraphTutorial tourStep={tourStep} setTourStep={(val: number) => setTourStep(val)} />
         </ButtonGroup>
       </ModalHeader>
       <ModalBody data-tut="reactour__graph_view" id="reactour__graph_view">

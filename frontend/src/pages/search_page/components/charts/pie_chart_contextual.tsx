@@ -30,8 +30,8 @@ const PieChartContextual = (props) => {
     return data.length
   }, [])
 
-  let graphData = contextualGraphdata[filter]
-  let dataDefinition = find(dataDefinitions, (dd) => dd.name === filter)
+  const graphData = contextualGraphdata[filter]
+  const dataDefinition = find(dataDefinitions, (dd) => dd.name === filter)
 
   let title = ''
   let labels = []
@@ -52,7 +52,7 @@ const PieChartContextual = (props) => {
     }
   }
 
-  let chart_data = [
+  const chart_data = [
     {
       labels: labels,
       values: values,
@@ -75,7 +75,7 @@ const PieChartContextual = (props) => {
   const handleClick = (e) => {
     const { points } = e
     let env_val = points[0].text
-    let textData = chart_data[0].text
+    const textData = chart_data[0].text
     if (!textData.includes(env_val)) env_val = ''
     let index = findFilterIndex(filters.contextual.filters, filter)
     dispatch(selectContextualFilter(index, filter))

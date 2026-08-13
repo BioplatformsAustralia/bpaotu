@@ -58,7 +58,7 @@ const BlastSearchCard = () => {
 
   useEffect(() => {
     if (searchChanged) {
-      dispatch(search(null))
+      dispatch(search())
     }
   }, [dispatch, searchChanged])
 
@@ -128,14 +128,7 @@ const BlastSearchCard = () => {
               type="select"
               name="qcov_hsp_perc"
               value={blastParams['qcov_hsp_perc']}
-              onChange={(evt) =>
-                dispatch(
-                  handleBlastParameters({
-                    param: 'qcov_hsp_perc',
-                    value: evt.target.value,
-                  }),
-                )
-              }
+              onChange={(evt) => handleParameterChange('qcov_hsp_perc', evt.target.value)}
             >
               <option value="10">10</option>
               <option value="20">20</option>
@@ -164,14 +157,7 @@ const BlastSearchCard = () => {
               type="select"
               name="perc_identity"
               value={blastParams['perc_identity']}
-              onChange={(evt) =>
-                dispatch(
-                  handleBlastParameters({
-                    param: 'perc_identity',
-                    value: evt.target.value,
-                  }),
-                )
-              }
+              onChange={(evt) => handleParameterChange('perc_identity', evt.target.value)}
             >
               <option value="90">90</option>
               <option value="91">91</option>
