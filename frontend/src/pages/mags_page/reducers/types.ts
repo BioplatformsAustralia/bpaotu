@@ -32,6 +32,7 @@ export interface MagsPageState {
     rowsCount: number
     filtered: any[]
     sorted: any[]
+    searchRequestId: number | null
   }
   samples: {
     isLoading: false
@@ -58,6 +59,7 @@ export const magsPageInitialState: MagsPageState = {
     rowsCount: 0,
     filtered: [],
     sorted: [],
+    searchRequestId: null,
   },
   samples: {
     isLoading: false,

@@ -17,21 +17,54 @@ export const searchMags =
   (magId = null) =>
   (dispatch, getState) => {
     const state = getState()
+    const requestId = Date.now() + Math.random()
 
-    dispatch(searchMagsStarted())
+    // console.log('[searchMags] starting', {
+    //   requestId,
+    //   magId,
+    //   filtered: state.magsPage.results.filtered,
+    //   page: state.magsPage.results.page,
+    // })
+
+    dispatch(searchMagsStarted({ requestId }))
 
     const options = state.magsPage.results
 
     executeMagsSearch(options, magId)
       .then((data) => {
-        if (_get(data, 'data.errors', []).length > 0) {
-          dispatch(searchMagsEnded(new ErrorList(...data.data.errors)))
+        const latestRequestId = getState().magsPage.results.searchRequestId
+        // console.log('[searchMags] resolved', {
+        //   requestId,
+        //   latestRequestId,
+        //   matches: latestRequestId === requestId,
+        //   dataRows: _get(data, 'data.data.length', 0),
+        //   filtered: getState().magsPage.results.filtered,
+        // })
+
+        if (latestRequestId !== requestId) {
           return
         }
-        dispatch(searchMagsEnded(data))
+
+        if (_get(data, 'data.errors', []).length > 0) {
+          dispatch(searchMagsEnded({ requestId, payload: new ErrorList(...data.data.errors) }))
+          return
+        }
+        dispatch(searchMagsEnded({ requestId, payload: data }))
       })
       .catch((error) => {
-        dispatch(searchMagsEnded(new ErrorList('Unhandled server-side error!')))
+        const latestRequestId = getState().magsPage.results.searchRequestId
+        // console.log('[searchMags] rejected', {
+        //   requestId,
+        //   latestRequestId,
+        //   matches: latestRequestId === requestId,
+        //   error,
+        // })
+        if (latestRequestId !== requestId) {
+          return
+        }
+        dispatch(
+          searchMagsEnded({ requestId, payload: new ErrorList('Unhandled server-side error!') }),
+        )
       })
   }
 
@@ -52,29 +85,48 @@ const magsReducer: Reducer<MagsResultsState, AnyAction> = handleActions<MagsResu
         ...state,
         errors: [],
         isLoading: true,
+        searchRequestId: action.payload?.requestId ?? state.searchRequestId,
       }
     },
     [searchMagsEnded as any]: {
       next: (state, action: any) => {
-        const rowsCount = action.payload.data.rowsCount
+        const payload = action.payload?.payload ?? action.payload
+        if (
+          action.payload?.requestId != null &&
+          state.searchRequestId !== action.payload.requestId
+        ) {
+          return state
+        }
+        const rowsCount = payload.data.rowsCount
         const pages = Math.ceil(rowsCount / state.pageSize)
         const newPage = Math.min(pages - 1 < 0 ? 0 : pages - 1, state.page)
         return {
           ...state,
           isLoading: false,
           hasLoaded: true,
-          data: action.payload.data.data,
+          data: payload.data.data,
           rowsCount,
           pages,
           page: newPage,
+          searchRequestId: null,
         }
       },
-      throw: (state, action: any) => ({
-        ...state,
-        isLoading: false,
-        hasLoaded: true,
-        errors: action.payload.msgs,
-      }),
+      throw: (state, action: any) => {
+        const payload = action.payload?.payload ?? action.payload
+        if (
+          action.payload?.requestId != null &&
+          state.searchRequestId !== action.payload.requestId
+        ) {
+          return state
+        }
+        return {
+          ...state,
+          isLoading: false,
+          hasLoaded: true,
+          errors: payload.msgs,
+          searchRequestId: null,
+        }
+      },
     },
   },
   magsPageInitialState.results,

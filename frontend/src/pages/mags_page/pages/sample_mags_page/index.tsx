@@ -85,32 +85,24 @@ export const SampleMagsPage = () => {
     }
   })
 
-  // Keep a ref to the current Redux results, but do not use it as the cleanup
-  // authority: the cleanup must restore the filters that existed when this
-  // sample page was entered, not a stale Redux snapshot from some later render.
-  const resultsRef = React.useRef(results)
-  const previousFilteredRef = React.useRef<any[]>([])
+  // Capture the filter snapshot from the render that mounted this sample route.
+  // This is the "previous filters before the sample_id filter was added" state,
+  // and it is the value that must be restored on cleanup.
+  const originalFiltered = (results.filtered || []).filter((f) => f.id !== 'sample_id')
 
   useEffect(() => {
-    resultsRef.current = results
-    previousFilteredRef.current = (results.filtered || []).filter((f) => f.id !== 'sample_id')
-  }, [results])
+    const filtered = [...originalFiltered, { id: 'sample_id', value: sampleId }]
 
-  useEffect(() => {
-    const latestResults = resultsRef.current || {}
-    const baseFiltered = previousFilteredRef.current || []
-    const filtered = [...baseFiltered, { id: 'sample_id', value: sampleId }]
-
-    console.log('[SampleMagsPage] EFFECT mount/update', {
-      sampleId,
-      beforeFiltered: baseFiltered,
-      afterFiltered: filtered,
-      results: latestResults,
-    })
+    // console.log('[SampleMagsPage] EFFECT mount/update', {
+    //   sampleId,
+    //   beforeFiltered: originalFiltered,
+    //   afterFiltered: filtered,
+    //   results,
+    // })
 
     dispatch(
       changeTablePropertiesMags({
-        ...latestResults,
+        ...results,
         filtered,
         page: 0,
       }),
@@ -118,20 +110,20 @@ export const SampleMagsPage = () => {
     dispatch(searchMags())
 
     return () => {
-      const currentResults = resultsRef.current || {}
-      const restoredFiltered = previousFilteredRef.current || []
+      // console.log('[SampleMagsPage] CLEANUP', {
+      //   sampleId,
+      //   beforeFiltered: results.filtered,
+      //   afterFiltered: originalFiltered,
+      //   results,
+      // })
 
-      console.log('[SampleMagsPage] CLEANUP', {
-        sampleId,
-        beforeFiltered: currentResults.filtered,
-        afterFiltered: restoredFiltered,
-        results: currentResults,
-      })
-
+      // Restore the filters that existed before entering the sample route, and do
+      // not trigger another search here. The main MAG page mount effect is the
+      // correct place to refresh the page once it has been re-entered.
       dispatch(
         changeTablePropertiesMags({
-          ...currentResults,
-          filtered: restoredFiltered,
+          ...results,
+          filtered: originalFiltered,
           page: 0,
         }),
       )
