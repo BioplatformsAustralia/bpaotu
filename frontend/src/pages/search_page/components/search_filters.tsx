@@ -19,13 +19,35 @@ import { RootState } from 'app/store'
 
 type TaxonomyFilters = RootState['searchPage']['filters']['taxonomy']
 
-const InfoBox = (props) => (
+type InfoBoxProps = {
+  children: React.ReactNode
+}
+
+const InfoBox = ({ children }: InfoBoxProps) => (
   <div className="alert alert-secondary py-1 px-2 mb-1" style={{ borderWidth: '1px' }}>
-    {props.children}
+    {children}
   </div>
 )
 
-const SearchFilterButton = (props) => {
+type SearchFilterButtonProps = {
+  id?: string
+  color: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'light' | 'dark'
+  disabled?: boolean
+  text: string
+  index?: number
+  octicon?: string
+  onClick?: () => void
+}
+
+const SearchFilterButton = ({
+  id,
+  color,
+  disabled = false,
+  text,
+  index,
+  octicon,
+  onClick,
+}: SearchFilterButtonProps) => {
   const mytooltip: CSSProperties = {
     maxHeight: window.innerHeight * 0.5,
     maxWidth: window.innerWidth * 0.5,
@@ -33,23 +55,17 @@ const SearchFilterButton = (props) => {
   }
 
   return (
-    <Button
-      size="md"
-      className="me-1 mb-1 px-2 py-1"
-      outline
-      color={props.color}
-      disabled={props.disabled}
-    >
-      {props.text.length > 75 ? (
+    <Button size="md" className="me-1 mb-1 px-2 py-1" outline color={color} disabled={disabled}>
+      {text.length > 75 ? (
         <>
-          {props.text.substring(0, 75)}
-          <span id={'context_filter_' + props.index}>
+          {text.substring(0, 75)}
+          <span id={'context_filter_' + index}>
             &nbsp;
             <Octicon name="kebab-horizontal" />
           </span>
-          {props.octicon ? (
-            <span onClick={props.onClick} className="ms-1">
-              <Octicon name={props.octicon} />
+          {octicon ? (
+            <span onClick={onClick} className="ms-1">
+              <Octicon name={octicon} />
             </span>
           ) : (
             ''
@@ -57,18 +73,18 @@ const SearchFilterButton = (props) => {
           <UncontrolledTooltip
             style={mytooltip}
             trigger="click"
-            target={'context_filter_' + props.index}
+            target={'context_filter_' + index}
             placement="auto"
           >
-            {props.text}
+            {text}
           </UncontrolledTooltip>
         </>
       ) : (
         <>
-          {props.text}
-          {props.octicon ? (
-            <span onClick={props.onClick} className="ms-1">
-              <Octicon name={props.octicon} />
+          {text}
+          {octicon ? (
+            <span onClick={onClick} className="ms-1">
+              <Octicon name={octicon} />
             </span>
           ) : (
             ''

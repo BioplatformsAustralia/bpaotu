@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useParams } from 'react-router-dom'
 
 import { Card, CardBody, CardHeader, Col, Row } from 'reactstrap'
 
@@ -73,9 +74,8 @@ const SampleMagsInformation = ({ sampleId, omdbResult }) => {
   )
 }
 
-export const SampleMagsPage = (props) => {
-  // from router
-  const { sample_id: sampleId } = props.match.params
+export const SampleMagsPage = () => {
+  const { sample_id: sampleId } = useParams<{ sample_id: string }>()
 
   const dispatch = useDispatch()
   const { results, samples } = useSelector((state: any) => {
@@ -85,43 +85,62 @@ export const SampleMagsPage = (props) => {
     }
   })
 
-  // this sample_id filter will also be applied if the page is refreshed / loaded with url params
-  // so there's no need to worry about results not being present as for refreshing inspect page
-  // (other filters will be lost though)
+  // Keep a ref to the current Redux results, but do not use it as the cleanup
+  // authority: the cleanup must restore the filters that existed when this
+  // sample page was entered, not a stale Redux snapshot from some later render.
+  const resultsRef = React.useRef(results)
+  const previousFilteredRef = React.useRef<any[]>([])
+
   useEffect(() => {
-    const existingFiltered = results.filtered || []
-    const hasSampleIdFilter = existingFiltered.some((f) => f.id === 'sample_id')
+    resultsRef.current = results
+    previousFilteredRef.current = (results.filtered || []).filter((f) => f.id !== 'sample_id')
+  }, [results])
 
-    // if sample_id filter already present, do nothing
-    // TODO: or maybe not... what if there was a partial sample_id filter?!?
-    if (hasSampleIdFilter) return
+  useEffect(() => {
+    const latestResults = resultsRef.current || {}
+    const baseFiltered = previousFilteredRef.current || []
+    const filtered = [...baseFiltered, { id: 'sample_id', value: sampleId }]
 
-    // add sample_id filter
-    const sampleIdFilter = { id: 'sample_id', value: sampleId }
-    const filtered = [...existingFiltered, sampleIdFilter]
+    console.log('[SampleMagsPage] EFFECT mount/update', {
+      sampleId,
+      beforeFiltered: baseFiltered,
+      afterFiltered: filtered,
+      results: latestResults,
+    })
 
-    const args = {
-      ...results,
-      filtered,
-      page: 0,
-    }
-
-    dispatch(changeTablePropertiesMags(args))
+    dispatch(
+      changeTablePropertiesMags({
+        ...latestResults,
+        filtered,
+        page: 0,
+      }),
+    )
     dispatch(searchMags())
 
-    // cleanup:
-    // remove only the sample_id filter we added
     return () => {
-      const updatedFiltered = (results.filtered || []).filter((f) => f.id !== 'sample_id')
+      const currentResults = resultsRef.current || {}
+      const restoredFiltered = previousFilteredRef.current || []
+
+      console.log('[SampleMagsPage] CLEANUP', {
+        sampleId,
+        beforeFiltered: currentResults.filtered,
+        afterFiltered: restoredFiltered,
+        results: currentResults,
+      })
 
       dispatch(
         changeTablePropertiesMags({
-          ...results,
-          filtered: updatedFiltered,
+          ...currentResults,
+          filtered: restoredFiltered,
+          page: 0,
         }),
       )
     }
-  }, [dispatch, results, sampleId])
+    // Intentionally only run when the route sampleId changes; the effect itself
+    // updates Redux, so `results` is intentionally excluded from the dependency
+    // array to avoid a re-render / effect feedback loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, sampleId])
 
   // if loading this page directly or for the first then sample metadata won't be present
   // (we may get it to fetch sample data /mags)
@@ -129,10 +148,9 @@ export const SampleMagsPage = (props) => {
   // we want these to run on first mount, not when resultsData/samplesData change
   // (they will not change if fetchMagsRecords/fetchMagsSamples never run again)
 
-  useEffect(() => {
-    if (!results.data.length) dispatch(searchMags())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // Removed mount-time unconditional `searchMags()` to avoid duplicate
+  // searches: the sampleId effect above will perform the search when
+  // required (including when loading this page directly).
 
   useEffect(() => {
     if (!samples.data.length) dispatch(fetchMagsSamples())

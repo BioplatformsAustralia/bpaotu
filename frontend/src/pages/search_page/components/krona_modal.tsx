@@ -8,7 +8,11 @@ import AnimateHelix, { loadingstyle } from 'components/animate_helix'
 
 import { runKronaRequest, closeKronaModal } from '../reducers/krona_modal'
 
-const ErrorOverlay = ({ errors }) => {
+type ErrorOverlayProps = {
+  errors: string[]
+}
+
+const ErrorOverlay = ({ errors }: ErrorOverlayProps) => {
   const loadingstyle = {
     display: 'flex',
     height: '100%',
@@ -39,7 +43,7 @@ const ErrorOverlay = ({ errors }) => {
   )
 }
 
-const KronaModal = (props) => {
+const KronaModal = () => {
   const dispatch = useAppDispatch()
   const { isOpen, isLoading, sample_id, html, error } = useAppSelector(
     (state) => state.searchPage.kronaModal,
@@ -167,7 +171,7 @@ const KronaModal = (props) => {
 
   return (
     <Modal
-      isOpen={props.isOpen}
+      isOpen={isOpen}
       scrollable={true}
       fade={true}
       data-tut="reactour__KronaPlotModal"

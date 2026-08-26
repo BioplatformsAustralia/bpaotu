@@ -7,9 +7,9 @@ import 'react-table/react-table.css'
 import Octicon from 'components/octicon'
 
 export interface SearchResultsTablePresentationProps {
-  cell_func?: (cellProps: any) => React.ReactNode
-  cell_func_run_id?: (cellProps: any) => React.ReactNode
-  krona_func?: ((cellProps: any) => React.ReactNode) | null
+  cellFunc?: (cellProps: any) => React.ReactNode
+  cellFuncRunId?: (cellProps: any) => React.ReactNode
+  kronaFunc?: ((cellProps: any) => React.ReactNode) | null
   metagenome?: boolean
   contextual?: boolean
 }
@@ -18,26 +18,26 @@ export interface SearchResultsTableProps extends SearchResultsTablePresentationP
   extraColumns?: any[]
   results: any
   changeTableProperties: (payload: any) => void
-  search: (payload?: any) => void
+  search?: (payload?: any) => void
 }
 
-const sample_link = (props) => (
+const SampleLink = ({ value }: any) => (
   <div>
-    <a href={bpaIDToCKANURL(props.value)} target="_blank" rel="noopener noreferrer">
-      {props.value}
+    <a href={bpaIdToCkanUrl(value)} target="_blank" rel="noopener noreferrer">
+      {value}
     </a>
   </div>
 )
 
-const sample_link_run_id = (props) => (
+const SampleLinkRunId = ({ value }: any) => (
   <div>
-    <a href={runIDToSandpiperURL(props.value)} target="_blank" rel="noopener noreferrer">
-      {props.value}
+    <a href={runIdToSandpiperUrl(value)} target="_blank" rel="noopener noreferrer">
+      {value}
     </a>
   </div>
 )
 
-const bpaIDToCKANURL = (bpaId) => {
+const bpaIdToCkanUrl = (bpaId) => {
   if (bpaId.startsWith('SAMN')) {
     return `https://www.ncbi.nlm.nih.gov/biosample/?term=${bpaId}`
   } else {
@@ -45,7 +45,7 @@ const bpaIDToCKANURL = (bpaId) => {
   }
 }
 
-const runIDToSandpiperURL = (runId) => {
+const runIdToSandpiperUrl = (runId) => {
   const base_url = 'https://sandpiper.qut.edu.au/run'
   return `${base_url}/${runId}`
 }
@@ -85,9 +85,9 @@ export const fieldsToColumns = (fields, contextualDataDefinitions) => {
 
 export const SearchResultsTable = (props: SearchResultsTableProps) => {
   const {
-    cell_func = sample_link,
-    cell_func_run_id = sample_link_run_id,
-    krona_func = null,
+    cellFunc = SampleLink,
+    cellFuncRunId = SampleLinkRunId,
+    kronaFunc = null,
     metagenome = false,
     contextual = false,
     extraColumns = [],
@@ -103,7 +103,7 @@ export const SearchResultsTable = (props: SearchResultsTableProps) => {
         Header: () => <div>Sample ID</div>,
         accessor: 'sample_id',
         sortable: true,
-        Cell: cell_func,
+        Cell: cellFunc,
       },
       {
         Header: 'Environment',
@@ -111,7 +111,7 @@ export const SearchResultsTable = (props: SearchResultsTableProps) => {
         accessor: 'environment',
       },
     ],
-    [cell_func],
+    [cellFunc],
   )
 
   const kronaColumn = useMemo(
@@ -129,9 +129,9 @@ export const SearchResultsTable = (props: SearchResultsTableProps) => {
       ),
       accessor: 'sample_id',
       sortable: true,
-      Cell: krona_func,
+      Cell: kronaFunc,
     }),
-    [krona_func],
+    [kronaFunc],
   )
 
   const runIdColumn = useMemo(
@@ -156,9 +156,9 @@ export const SearchResultsTable = (props: SearchResultsTableProps) => {
       ),
       accessor: 'run_id',
       sortable: true,
-      Cell: cell_func_run_id,
+      Cell: cellFuncRunId,
     }),
-    [cell_func_run_id],
+    [cellFuncRunId],
   )
 
   const columns = useMemo(() => {

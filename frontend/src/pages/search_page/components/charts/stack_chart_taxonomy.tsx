@@ -5,10 +5,14 @@ import { find, filter as lodashFilter } from 'lodash'
 import { useAppSelector } from 'hooks/redux'
 import type { RootState } from 'app/store'
 
-import { selectEnvironment } from '../../reducers/contextual'
+type Props = {
+  taxonomyGraphdata: any
+  width: number
+  height: number
+  filter: string
+}
 
-const StackChartTaxonomy = (props) => {
-  const { taxonomyGraphdata, width, height, filter } = props
+const StackChartTaxonomy = ({ taxonomyGraphdata, width, height, filter }: Props) => {
   const taxonomy = useAppSelector((state: RootState) => state.searchPage.filters.taxonomy)
   const contextualFilters = useAppSelector(
     (state: RootState) => state.searchPage.filters.contextual.filters,

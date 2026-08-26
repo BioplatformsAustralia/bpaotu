@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useSelector } from 'react-redux'
 
 import { Map, Marker, Popup, TileLayer, LayersControl, CircleMarker } from 'react-leaflet'
@@ -31,24 +31,25 @@ interface RootStateLike {
 
 type Props = OwnProps
 
-const MagsMap: React.FC<Props> = ({ sampleId }) => {
+const MagsMap = ({ sampleId }: Props) => {
   const samples = useSelector((state: RootStateLike) => state.magsPage.samples)
   const sampleRecord = samples.data.find((x) => Object.keys(x.bpadata).includes(sampleId))
 
-  const [position, setPosition] = useState<[number, number]>([0, 0])
   const zoom = 8
-
-  useEffect(() => {
-    if (!sampleRecord) return
-
-    setPosition([sampleRecord.lat, sampleRecord.lng])
-  }, [sampleRecord, setPosition])
 
   const renderMap = () => {
     const loading = Boolean(samples.isLoading || !samples.hasLoaded)
+
     if (loading) {
       return <LoadingSpinner text="Loading Sample data" />
     }
+
+    if (!sampleRecord) {
+      return <div>Sample {sampleId} was not found</div>
+    }
+
+    // lat and lng are mandatory fields on the sample
+    const position: [number, number] = [sampleRecord.lat, sampleRecord.lng]
 
     return (
       <Map minZoom={2} center={position} zoom={zoom}>

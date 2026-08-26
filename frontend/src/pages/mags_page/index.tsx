@@ -50,7 +50,7 @@ export const MagsPage = () => {
         <Col sm={12}>
           <div>
             <Card>
-              <CardHeader>Metagenome-Assembled Genomes</CardHeader>
+              <CardHeader tag="h5">Metagenome-Assembled Genomes</CardHeader>
               <CardBody>
                 <SearchResultsTable />
               </CardBody>

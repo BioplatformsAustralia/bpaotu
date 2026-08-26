@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useParams } from 'react-router-dom'
 
 import { Card, CardBody, CardHeader, Col, Row } from 'reactstrap'
 
@@ -28,9 +29,8 @@ const GenomeInformation = ({ record }) => {
   )
 }
 
-export const InspectMagPage = (props) => {
-  // from router
-  const { mag_id: magId } = props.match.params
+export const InspectMagPage = () => {
+  const { mag_id: magId } = useParams<{ mag_id: string }>()
 
   const dispatch = useDispatch()
   const { results, samples } = useSelector((state: any) => {
@@ -45,14 +45,13 @@ export const InspectMagPage = (props) => {
   // we want these to run on first mount, not when resultsData/samplesData change
 
   useEffect(() => {
+    if (!magId) return
     if (!results.data.length) dispatch(searchMags(magId))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [dispatch, magId, results.data.length])
 
   useEffect(() => {
     if (!samples.data.length) dispatch(fetchMagsSamples())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [dispatch, samples.data.length])
 
   const loading = Boolean(results.isLoading || !results.hasLoaded)
   if (loading) {

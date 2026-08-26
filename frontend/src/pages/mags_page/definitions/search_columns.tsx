@@ -1,22 +1,18 @@
 import React, { useCallback } from 'react'
-import { NavLink as RRNavLink } from 'react-router-dom'
-import { NavLink } from 'reactstrap'
+import { NavLink } from 'react-router-dom'
+import { type CellInfo } from 'react-table'
 import md5 from 'blueimp-md5'
 
 import { UncontrolledTooltip } from 'reactstrap'
 import Octicon from 'components/octicon'
 
-const mag_inspect_link = (props) => (
-  <NavLink to={`/mags/mag/${props.value}`} tag={RRNavLink}>
-    {props.value}
-  </NavLink>
-)
+const MagInspectLink = ({ value }: CellInfo) => {
+  return <NavLink to={`/mags/mag/${value}`}>{value}</NavLink>
+}
 
-const sample_inspect_link = (props) => (
-  <NavLink to={`/mags/sample/${props.value}`} tag={RRNavLink}>
-    {props.value}
-  </NavLink>
-)
+const SampleInspectLink = ({ value }: CellInfo) => {
+  return <NavLink to={`/mags/sample/${value}`}>{value}</NavLink>
+}
 
 const InputSearch = ({ filter, onChange, width = 150 }) => {
   // Safe string value for controlled input: empty string if no filter yet.
@@ -264,7 +260,7 @@ const searchColumnsBase = [
   {
     accessor: 'mag_id',
     Header: <HeaderInfo accessor="mag_id" />,
-    Cell: mag_inspect_link,
+    Cell: MagInspectLink,
     filterable: true,
     sortable: true,
     minWidth: 210,
@@ -275,7 +271,7 @@ const searchColumnsBase = [
   {
     accessor: 'sample_id',
     Header: <HeaderInfo accessor="sample_id" />,
-    Cell: sample_inspect_link,
+    Cell: SampleInspectLink,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />

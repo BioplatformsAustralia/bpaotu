@@ -43,8 +43,14 @@ const shouldSearch = (filtered: any[]) => {
   })
 }
 
-const SearchResultsTable = (props) => {
-  const { sampleId } = props
+type SearchResultsTableProps = {
+  // Optional because this table is also used for searches across all samples.
+  // When provided, the table is being displayed for a specific sample and
+  // the sample_id column should be fixed rather than filterable/sortable.
+  sampleId?: string
+}
+
+const SearchResultsTable = ({ sampleId }: SearchResultsTableProps) => {
   const dispatch = useDispatch()
 
   // because this table can have data from different contexts
@@ -166,6 +172,8 @@ const SearchResultsTable = (props) => {
     prevEffectiveFilteredRef.current = effectiveFiltered
   }
 
+  const pageSize = sampleId ? Math.min(results.pageSize, results.rowsCount) : results.pageSize
+
   return (
     <>
       <Alert color="secondary" className="text-center" fade={false}>
@@ -190,7 +198,7 @@ const SearchResultsTable = (props) => {
         loading={results.isLoading}
         data={results.data}
         page={results.page}
-        pageSize={results.pageSize}
+        pageSize={pageSize}
         pages={results.pages}
         className="-striped -highlight"
         sorted={results.sorted}

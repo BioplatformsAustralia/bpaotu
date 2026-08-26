@@ -7,7 +7,7 @@ const SearchResultsCard = () => {
   return (
     <div>
       <Card>
-        <CardHeader>Metagenome-Assembled Genomes</CardHeader>
+        <CardHeader tag="h1">Metagenome-Assembled Genomes</CardHeader>
         <CardBody>
           <SearchResultsTable />
         </CardBody>
