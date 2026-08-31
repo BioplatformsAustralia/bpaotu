@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { filter as _filter, isArray, find } from 'lodash'
+import { filter as _filter, isArray, find, isEqual } from 'lodash'
 import { Col, Input, Row, UncontrolledTooltip } from 'reactstrap'
 import Octicon from 'components/octicon'
 
@@ -27,7 +27,10 @@ const ContextualFilter = (props) => {
     // the numeric index of the initial value. See EmptyContextualFilter
     // (contextual.ts)
     if (selectRef.current) {
-      changeValue(index, selectRef.current.props.value)
+      const selectedValue = selectRef.current.props.value
+      if (!isEqual(filter.value, selectedValue)) {
+        changeValue(index, selectedValue)
+      }
     }
   }, [changeValue, index])
 
