@@ -4,8 +4,12 @@ export const ArcGIS = {
     '&copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
 }
 
+const cartoKey = import.meta.env.VITE_CARTO_KEY
+const cartoUrl = 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
+// const cartoUrl = 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
+
 export const tileLayer = {
-  url: '//cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
+  url: `${cartoUrl}?key=${cartoKey}`,
   attribution:
     '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
   subdomains: 'abcd',

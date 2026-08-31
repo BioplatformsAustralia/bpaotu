@@ -94,7 +94,15 @@ const HeaderInfo = ({ accessor }) => {
         textAlign: 'center',
       }}
     >
-      <div>{label}</div>
+      <div
+        style={{
+          whiteSpace: 'normal',
+          overflowWrap: 'normal',
+          paddingRight: infoText ? 20 : 0,
+        }}
+      >
+        {label}
+      </div>
       <div style={{ fontSize: 13, fontWeight: 'normal', color: '#626267' }}>
         {units || <>&nbsp;</>}
       </div>
@@ -354,18 +362,18 @@ const searchColumnsBase = [
     accessor: 'completeness_checkm',
     Header: <HeaderInfo accessor="completeness_checkm" />,
     sortable: true,
-    minWidth: 180,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={180} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
     accessor: 'contamination_checkm',
     Header: <HeaderInfo accessor="contamination_checkm" />,
     sortable: true,
-    minWidth: 180,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={180} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
@@ -381,27 +389,27 @@ const searchColumnsBase = [
     accessor: 'completeness_checkm2',
     Header: <HeaderInfo accessor="completeness_checkm2" />,
     sortable: true,
-    minWidth: 250,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={250} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
     Header: <HeaderInfo accessor="contamination_checkm2" />,
     sortable: true,
     accessor: 'contamination_checkm2',
-    minWidth: 250,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={250} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
     accessor: 'contig_n50_checkm2',
     Header: <HeaderInfo accessor="contig_n50_checkm2" />,
     sortable: true,
-    minWidth: 240,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={240} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
@@ -444,27 +452,27 @@ const searchColumnsBase = [
     accessor: 'strain_het',
     Header: <HeaderInfo accessor="strain_het" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
     accessor: 'coverage',
     Header: <HeaderInfo accessor="coverage" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
     accessor: 'tpm',
     Header: <HeaderInfo accessor="tpm" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   // NOTE: last column needs a bit more minWidth than the width of the Input

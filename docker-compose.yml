@@ -66,6 +66,8 @@ services:
     build:
       context: ./frontend
       target: dev
+    environment:
+      VITE_CARTO_KEY: ${VITE_CARTO_KEY}
     ports:
       - "3000:3000"
     read_only: false
