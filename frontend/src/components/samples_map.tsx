@@ -615,11 +615,11 @@ class SamplesMap extends React.Component<any> {
             {selectedRectangleBounds}
           </FeatureGroup>
           <LayersControl>
-            <LayersControl.BaseLayer name="Base">
-              <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
-            </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="OSM" checked>
+            <LayersControl.BaseLayer name="Basemap" checked>
               <TileLayer url={tileLayer.url} attribution={tileLayer.attribution} />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Satellite">
+              <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
             </LayersControl.BaseLayer>
             <LayersControl.Overlay name="Sites" checked>
               <MarkerClusterGroup>
