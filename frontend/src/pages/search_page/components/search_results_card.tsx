@@ -358,7 +358,7 @@ export const SearchResultsCard = () => {
           <AlertBoxes alerts={galaxy.alerts} clearAlerts={clearGalaxyAlertAction} />
           <AlertBoxes alerts={tips.alerts} clearAlerts={clearTipsAction} />
           <ConnectedSearchResultsTable
-            krona_func={(cell_props) => krona_button(cell_props, openKronaModalAction)}
+            kronaFunc={(cell_props) => krona_button(cell_props, openKronaModalAction)}
             metagenome={metaxaAmpliconSelected}
           />
         </CardBody>
@@ -416,8 +416,8 @@ export const MetagenomeSearchResultsCard = () => {
         <CardBody>
           <AlertBoxes alerts={tips.alerts} clearAlerts={clearTipsAction} />
           <ConnectedSearchResultsTable
-            cell_func={(cell_props) => cell_button(cell_props, openMetagenomeModalAction)}
-            krona_func={(cell_props) => krona_button(cell_props, openKronaModalAction)}
+            cellFunc={(cell_props) => cell_button(cell_props, openMetagenomeModalAction)}
+            kronaFunc={(cell_props) => krona_button(cell_props, openKronaModalAction)}
             metagenome
           />
         </CardBody>

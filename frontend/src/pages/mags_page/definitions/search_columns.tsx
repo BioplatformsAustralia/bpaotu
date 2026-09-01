@@ -235,7 +235,7 @@ export const searchColumnsLookup = {
     infoText: 'GC percentage for the MAG',
   },
   num_contigs: {
-    label: '# Contigs',
+    label: 'Contigs',
     units: 'num',
     infoText: 'Number of contigs in the MAG ',
   },

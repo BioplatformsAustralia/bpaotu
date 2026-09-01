@@ -14,7 +14,7 @@ import { changeTableProperties, search } from '../reducers/search'
 import 'react-table/react-table.css'
 
 const ConnectedSearchResultsTable = (props: SearchResultsTablePresentationProps) => {
-  const { cell_func, cell_func_run_id, krona_func, metagenome = false, contextual = false } = props
+  const { cellFunc, cellFuncRunId, kronaFunc, metagenome = false, contextual = false } = props
 
   const dispatch = useAppDispatch()
   const results = useAppSelector((state: RootState) => state.searchPage.results)
@@ -38,16 +38,16 @@ const ConnectedSearchResultsTable = (props: SearchResultsTablePresentationProps)
 
   return (
     <SearchResultsTable
-      cell_func={cell_func}
-      cell_func_run_id={cell_func_run_id}
-      krona_func={krona_func}
+      cellFunc={cellFunc}
+      cellFuncRunId={cellFuncRunId}
+      kronaFunc={kronaFunc}
       metagenome={metagenome}
       contextual={contextual}
       //
       results={results}
       extraColumns={extraColumns}
       changeTableProperties={(payload) => dispatch(changeTableProperties(payload))}
-      search={(payload) => dispatch(search(payload))}
+      search={() => dispatch(search())}
     />
   )
 }

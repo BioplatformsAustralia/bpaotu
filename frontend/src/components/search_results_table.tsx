@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { get as _get, isEmpty, map, reject } from 'lodash'
-import { Alert, UncontrolledTooltip } from 'reactstrap'
+import { Alert, Button, UncontrolledTooltip } from 'reactstrap'
 import ReactTable from 'react-table'
 import 'react-table/react-table.css'
 
@@ -10,6 +10,10 @@ export interface SearchResultsTablePresentationProps {
   cellFunc?: (cellProps: any) => React.ReactNode
   cellFuncRunId?: (cellProps: any) => React.ReactNode
   kronaFunc?: ((cellProps: any) => React.ReactNode) | null
+  // Legacy snake_case aliases kept for compatibility with older callers.
+  cell_func?: (cellProps: any) => React.ReactNode
+  cell_func_run_id?: (cellProps: any) => React.ReactNode
+  krona_func?: ((cellProps: any) => React.ReactNode) | null
   metagenome?: boolean
   contextual?: boolean
 }
@@ -35,6 +39,18 @@ const SampleLinkRunId = ({ value }: any) => (
       {value}
     </a>
   </div>
+)
+
+const KronaButton = (cell_props: any, openKronaModal?: (sampleId: any) => void) => (
+  <Button
+    onClick={() => {
+      if (openKronaModal) {
+        openKronaModal(cell_props.row.sample_id)
+      }
+    }}
+  >
+    {cell_props.value}
+  </Button>
 )
 
 const bpaIdToCkanUrl = (bpaId) => {
@@ -85,9 +101,12 @@ export const fieldsToColumns = (fields, contextualDataDefinitions) => {
 
 export const SearchResultsTable = (props: SearchResultsTableProps) => {
   const {
-    cellFunc = SampleLink,
-    cellFuncRunId = SampleLinkRunId,
-    kronaFunc = null,
+    cellFunc: cellFuncProp = SampleLink,
+    cellFuncRunId: cellFuncRunIdProp = SampleLinkRunId,
+    kronaFunc: kronaFuncProp = KronaButton,
+    cell_func: legacyCellFunc,
+    cell_func_run_id: legacyCellFuncRunId,
+    krona_func: legacyKronaFunc,
     metagenome = false,
     contextual = false,
     extraColumns = [],
@@ -95,6 +114,10 @@ export const SearchResultsTable = (props: SearchResultsTableProps) => {
     changeTableProperties,
     search,
   } = props
+
+  const cellFunc = legacyCellFunc ?? cellFuncProp
+  const cellFuncRunId = legacyCellFuncRunId ?? cellFuncRunIdProp
+  const kronaFunc = legacyKronaFunc ?? kronaFuncProp
 
   const defaultColumns = useMemo(
     () => [
