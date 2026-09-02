@@ -46,7 +46,11 @@ USE_X_FORWARDED_HOST = env.get("use_x_forwarded_host", True)
 
 # Sessions
 
-SESSION_COOKIE_AGE = env.get("session_cookie_age", 60 * 60)
+SESSION_COOKIE_AGE = env.get("session_cookie_age", 4 * 7 * 24 * 60 * 60)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = env_bool(
+    env.get("session_expire_at_browser_close", False),
+    default=False,
+)
 SESSION_COOKIE_PATH = "/"
 SESSION_SAVE_EVERY_REQUEST = env.get("session_save_every_request", True)
 SESSION_COOKIE_HTTPONLY = env.get("session_cookie_httponly", True)
