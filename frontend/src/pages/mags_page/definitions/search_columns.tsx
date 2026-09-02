@@ -130,6 +130,16 @@ const HeaderInfo = ({ accessor }) => {
   )
 }
 
+const TaxGTDBRankCell = ({ value }: CellInfo) => {
+  const rank = typeof value === 'string' ? value : ''
+
+  if (rank.trim().endsWith('__')) {
+    return null
+  }
+
+  return <span>{rank}</span>
+}
+
 export const searchColumnsLookup = {
   mag_id: {
     label: 'MAG ID',
@@ -296,6 +306,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_domain',
     Header: <HeaderInfo accessor="tax_gtdb_domain" />,
+    Cell: TaxGTDBRankCell,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -304,6 +315,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_phylum',
     Header: <HeaderInfo accessor="tax_gtdb_phylum" />,
+    Cell: TaxGTDBRankCell,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -312,6 +324,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_class',
     Header: <HeaderInfo accessor="tax_gtdb_class" />,
+    Cell: TaxGTDBRankCell,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -320,6 +333,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_order',
     Header: <HeaderInfo accessor="tax_gtdb_order" />,
+    Cell: TaxGTDBRankCell,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -328,6 +342,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_family',
     Header: <HeaderInfo accessor="tax_gtdb_family" />,
+    Cell: TaxGTDBRankCell,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -336,6 +351,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_genus',
     Header: <HeaderInfo accessor="tax_gtdb_genus" />,
+    Cell: TaxGTDBRankCell,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -344,6 +360,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_species',
     Header: <HeaderInfo accessor="tax_gtdb_species" />,
+    Cell: TaxGTDBRankCell,
     minWidth: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
