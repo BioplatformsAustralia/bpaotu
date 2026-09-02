@@ -49,7 +49,6 @@ FROM base AS build
 # No build scripts required at this stage - just install dependencies for production
 ENV NODE_ENV=production
 ENV NODE_OPTIONS=--openssl-legacy-provider
-ARG VITE_CARTO_KEY
 
 # Copy application source required for build
 COPY src ./src

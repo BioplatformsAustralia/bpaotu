@@ -23,8 +23,6 @@ services:
     build:
       context: ./frontend
       target: prod
-      args:
-        VITE_CARTO_KEY: ${VITE_CARTO_KEY}
     image: bioplatformsaustralia/bpaotu:frontend
 
   frontend-dev:
