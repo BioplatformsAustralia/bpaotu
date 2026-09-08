@@ -1,16 +1,19 @@
 import * as React from 'react'
 import { Alert, Container } from 'reactstrap'
 
-export default (props) => {
+const LoginInProgressPage = () => {
   return (
     <Container fluid={true}>
-      <Alert color="warning" className="text-center">
+      <Alert color="warning" className="text-center" fade={false}>
         <h4 className="alert-heading">Login Required</h4>
         <p>
           Please stand by while we're checking your permissions to the Bioplatforms Data Portal. If
-          you cannot access the application, please contact <a href="mailto:help@bioplatforms.com">help@bioplatforms.com</a> for additional support.
+          you cannot access the application, please contact{' '}
+          <a href="mailto:help@bioplatforms.com">help@bioplatforms.com</a> for additional support.
         </p>
       </Alert>
     </Container>
   )
 }
+
+export default LoginInProgressPage

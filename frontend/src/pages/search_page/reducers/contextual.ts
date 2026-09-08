@@ -1,36 +1,41 @@
 import { find, isNull, filter, negate, toNumber } from 'lodash'
 import reduceReducers from 'reduce-reducers'
 import { combineActions, createActions, handleAction, handleActions } from 'redux-actions'
+import type { Reducer, AnyAction } from 'redux'
 
 import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
-import { searchPageInitialState } from './types'
+import { searchPageInitialState, type SearchPageState } from './types'
+
+type ContextualState = SearchPageState['filters']['contextual']
 
 export const { selectEnvironment, selectEnvironmentOperator, selectContextualFiltersMode } =
   createActions(
     'SELECT_ENVIRONMENT',
     'SELECT_ENVIRONMENT_OPERATOR',
-    'SELECT_CONTEXTUAL_FILTERS_MODE'
+    'SELECT_CONTEXTUAL_FILTERS_MODE',
   )
 
-const selectedEnvironmentReducer = handleActions(
-  {
-    [selectEnvironment as any]: (state, action: any) => ({
-      ...state,
-      value: action.payload,
-    }),
-    [selectEnvironmentOperator as any]: (state, action: any) => ({
-      ...state,
-      operator: action.payload,
-    }),
-  },
-  searchPageInitialState.filters.contextual.selectedEnvironment
-)
+const selectedEnvironmentReducer: Reducer<ContextualState['selectedEnvironment'], AnyAction> =
+  handleActions<ContextualState['selectedEnvironment'], any>(
+    {
+      [selectEnvironment as any]: (state, action: any) => ({
+        ...state,
+        value: action.payload,
+      }),
+      [selectEnvironmentOperator as any]: (state, action: any) => ({
+        ...state,
+        operator: action.payload,
+      }),
+    },
+    searchPageInitialState.filters.contextual.selectedEnvironment,
+  )
 
-const contextualFiltersModeReducer = handleAction(
-  selectContextualFiltersMode,
-  (state, action: any) => action.payload,
-  searchPageInitialState.filters.contextual.filtersMode
-)
+const contextualFiltersModeReducer: Reducer<ContextualState['filtersMode'], AnyAction> =
+  handleAction<ContextualState['filtersMode'], any>(
+    selectContextualFiltersMode,
+    (_state, action) => action.payload,
+    searchPageInitialState.filters.contextual.filtersMode,
+  )
 
 /*
 To keep things simple we don't use different object for different types. ex. String contextual filter would have a 
@@ -60,7 +65,10 @@ export const {
 } = createActions(
   {
     SELECT_CONTEXTUAL_FILTER: (index, value) => ({ index, value }),
-    CHANGE_CONTEXTUAL_FILTER_OPERATOR: (index, operator) => ({ index, operator }),
+    CHANGE_CONTEXTUAL_FILTER_OPERATOR: (index, operator) => ({
+      index,
+      operator,
+    }),
     CHANGE_CONTEXTUAL_FILTER_VALUE: (index, value) => ({ index, value }),
     CHANGE_CONTEXTUAL_FILTER_VALUE2: (index, value) => ({ index, value }),
     CHANGE_CONTEXTUAL_FILTER_VALUES: (index, values) => ({ index, values }),
@@ -69,7 +77,7 @@ export const {
   'REMOVE_WARNING_CONTEXTUAL_FILTER',
   'ADD_CONTEXTUAL_FILTER',
   'REMOVE_CONTEXTUAL_FILTER',
-  'CLEAR_CONTEXTUAL_FILTERS'
+  'CLEAR_CONTEXTUAL_FILTERS',
 )
 
 export const doesFilterMatchEnvironment = (environment) => (filter) => {
@@ -81,7 +89,10 @@ export const doesFilterMatchEnvironment = (environment) => (filter) => {
   return isNull(filter.environment) || op(filter)
 }
 
-const contextualFiltersReducer = handleActions(
+const contextualFiltersReducer: Reducer<ContextualState, AnyAction> = handleActions<
+  ContextualState,
+  any
+>(
   {
     [addContextualFilter as any]: (state: any, action) => ({
       ...state,
@@ -145,10 +156,13 @@ const contextualFiltersReducer = handleActions(
       })),
     }),
   },
-  searchPageInitialState.filters.contextual.filters
+  searchPageInitialState.filters.contextual,
 )
 
-const combinedContextualReducers = (state = searchPageInitialState.filters.contextual, action) => ({
+const combinedContextualReducers: Reducer<ContextualState, AnyAction> = (
+  state = searchPageInitialState.filters.contextual,
+  action,
+) => ({
   ...state,
   selectedEnvironment: selectedEnvironmentReducer(state.selectedEnvironment, action),
   filtersMode: contextualFiltersModeReducer(state.filtersMode, action),
@@ -157,6 +171,9 @@ const combinedContextualReducers = (state = searchPageInitialState.filters.conte
 
 // This reducer is using reduceReducers because it needs access to both the dataDefinitions and the filters.
 // Otherwise we could just use combineReducers just like for the other reducers in the app.
-const contextualReducer = reduceReducers(combinedContextualReducers, contextualFiltersReducer)
+const contextualReducer: Reducer<ContextualState, AnyAction> = reduceReducers(
+  combinedContextualReducers,
+  contextualFiltersReducer,
+)
 
 export default contextualReducer

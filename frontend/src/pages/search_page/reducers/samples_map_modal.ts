@@ -3,7 +3,11 @@ import { createActions, handleActions } from 'redux-actions'
 import { executeSampleSitesSearch } from 'api'
 import { handleSimpleAPIResponse } from 'reducers/utils'
 import { describeSearch } from './search'
-import { searchPageInitialState } from './types'
+
+import { SearchPageState, searchPageInitialState } from './types'
+import { AnyAction, Reducer } from 'redux'
+
+type SamplesMapModalState = SearchPageState['samplesMapModal']
 
 export const {
   openSamplesMapModal,
@@ -16,7 +20,7 @@ export const {
   'CLOSE_SAMPLES_MAP_MODAL',
 
   'SAMPLES_MAP_MODAL_FETCH_SAMPLES_STARTED',
-  'SAMPLES_MAP_MODAL_FETCH_SAMPLES_ENDED'
+  'SAMPLES_MAP_MODAL_FETCH_SAMPLES_ENDED',
 )
 
 export const fetchSampleMapModalSamples = () => (dispatch, getState) => {
@@ -27,11 +31,14 @@ export const fetchSampleMapModalSamples = () => (dispatch, getState) => {
   handleSimpleAPIResponse(
     dispatch,
     partial(executeSampleSitesSearch, filters),
-    samplesMapModalFetchSamplesEnded
+    samplesMapModalFetchSamplesEnded,
   )
 }
 
-export default handleActions(
+const samplesMapModalReducer: Reducer<SamplesMapModalState, AnyAction> = handleActions<
+  SamplesMapModalState,
+  any
+>(
   {
     [openSamplesMapModal as any]: (state, action) => ({
       ...state,
@@ -59,5 +66,7 @@ export default handleActions(
       sample_otus: action.payload.data.sample_otus,
     }),
   },
-  searchPageInitialState.samplesMapModal
+  searchPageInitialState.samplesMapModal,
 )
+
+export default samplesMapModalReducer

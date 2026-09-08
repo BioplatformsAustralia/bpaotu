@@ -1,27 +1,33 @@
 import React from 'react'
-import Plot from 'react-plotly.js'
-import { connect } from 'react-redux'
+import Plot from './plot'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import { plotly_chart_config } from './plotly_chart'
-import { bindActionCreators } from 'redux'
 
 import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
 
 import { selectEnvironment } from '../../reducers/contextual'
 
-const PieChartEnvironment = (props) => {
-  const {
-    filter,
-    contextualGraphdata,
-    options,
-    width,
-    height,
-    selectEnvironment,
-    fetchContextualDataForGraph,
-    fetchTaxonomyDataForGraph,
-    selectToScroll,
-    selectTab,
-  } = props
+type PieChartEnvironmentProps = {
+  filter: string
+  contextualGraphdata: Record<string, any>
+  width: number
+  height: number
+  selectToScroll: (filter: string) => void
+  selectTab: (tab: string) => void
+}
+
+const PieChartEnvironment = ({
+  filter,
+  contextualGraphdata,
+  width,
+  height,
+  selectToScroll,
+  selectTab,
+}: PieChartEnvironmentProps) => {
+  const dispatch = useAppDispatch()
+  const options = useAppSelector((state: RootState) => state.contextualDataDefinitions.environment)
 
   const graphData = contextualGraphdata[filter]
   const title = 'AM Environment Plot'
@@ -70,9 +76,9 @@ const PieChartEnvironment = (props) => {
       let env_val = points[0].text
       let textData = chart_data[0].text
       if (!textData.includes(env_val)) env_val = ''
-      selectEnvironment(env_val)
-      fetchContextualDataForGraph()
-      fetchTaxonomyDataForGraph()
+      dispatch(selectEnvironment(env_val))
+      dispatch(fetchContextualDataForGraph())
+      dispatch(fetchTaxonomyDataForGraph())
       selectToScroll(filter)
       selectTab('tab_' + filter)
     }
@@ -97,22 +103,4 @@ const PieChartEnvironment = (props) => {
   )
 }
 
-function mapStateToProps(state: any) {
-  return {
-    selected: state.searchPage.filters.contextual.selectedEnvironment,
-    options: state.contextualDataDefinitions.environment,
-  }
-}
-
-function mapDispatchToProps(dispatch: any) {
-  return bindActionCreators(
-    {
-      selectEnvironment,
-      fetchContextualDataForGraph,
-      fetchTaxonomyDataForGraph,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(PieChartEnvironment)
+export default PieChartEnvironment

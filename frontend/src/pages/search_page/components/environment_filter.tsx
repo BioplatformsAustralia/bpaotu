@@ -42,6 +42,7 @@ const EnvironmentFilter = () => {
         <Input
           type="select"
           name="operator"
+          className="form-control"
           value={selected.operator}
           onChange={(evt) => dispatch(selectEnvironmentOperator(evt.target.value))}
         >

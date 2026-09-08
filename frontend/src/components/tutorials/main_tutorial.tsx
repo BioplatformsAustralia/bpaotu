@@ -1,6 +1,4 @@
 import React, { useContext } from 'react'
-import { withRouter } from 'react-router-dom'
-import { connect } from 'react-redux'
 
 import { Tutorial, TutorialBadge, AMBLink, stepsStyle } from 'components/tutorial'
 import { TourContext } from 'providers/tour_provider'
@@ -9,7 +7,7 @@ import { NavLink as RRNavLink } from 'react-router-dom'
 
 import { useAnalytics } from 'use-analytics'
 
-const tourSteps = (props) => {
+const tourSteps = () => {
   const metagenome = window.location.pathname === '/metagenome'
 
   const commonSteps = [
@@ -441,7 +439,7 @@ const tourSteps = (props) => {
   return [...commonSteps, ...specificSteps, contactStep]
 }
 
-const MainTutorial = (props) => {
+const MainTutorial = () => {
   const { track } = useAnalytics()
   const {
     setTourMode,
@@ -452,7 +450,7 @@ const MainTutorial = (props) => {
     isGraphTourOpen,
   } = useContext(TourContext)
 
-  const steps = tourSteps(props)
+  const steps = tourSteps()
 
   // all steps are zero-indexed
   const lastStep = steps.length - 1
@@ -489,11 +487,4 @@ const MainTutorial = (props) => {
   )
 }
 
-const mapStateToProps = (state) => {
-  return {
-    definitions_url: state.contextualDataDefinitions.definitions_url,
-    scientific_manual_url: state.contextualDataDefinitions.scientific_manual_url,
-  }
-}
-
-export default connect(mapStateToProps, null)(withRouter(MainTutorial))
+export default MainTutorial

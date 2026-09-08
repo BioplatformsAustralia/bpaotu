@@ -1,9 +1,13 @@
 import { get as _get, isEmpty, map, reject } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
+import type { SearchPageState } from 'pages/search_page/reducers/types'
+import type { Reducer, AnyAction } from 'redux'
 
 import { executeContextualSearch } from 'api'
 import { ErrorList } from 'pages/search_page/reducers/types'
 import { EmptyOTUQuery } from 'search'
+
+type SearchResultsState = SearchPageState['results']
 
 export const { changeTableProperties, searchStarted, searchEnded } = createActions({
   CONTEXTUAL_PAGE: {
@@ -23,7 +27,7 @@ export const search = () => (dispatch, getState) => {
     ...state.contextualPage.results,
     columns: reject(
       map(state.contextualPage.selectColumns.columns, (c) => c.name),
-      (name) => isEmpty(name)
+      (name) => isEmpty(name),
     ),
   }
 
@@ -51,7 +55,10 @@ const resultsInitialState = {
   sorted: [],
 }
 
-export default handleActions(
+const searchResultsReducer: Reducer<SearchResultsState, AnyAction> = handleActions<
+  SearchResultsState,
+  any
+>(
   {
     [changeTableProperties as any]: (state, action: any) => {
       const { page, pageSize, sorted, filtered } = action.payload
@@ -89,5 +96,7 @@ export default handleActions(
       }),
     },
   },
-  resultsInitialState
+  resultsInitialState,
 )
+
+export default searchResultsReducer

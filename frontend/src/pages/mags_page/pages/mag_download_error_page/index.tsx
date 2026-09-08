@@ -10,7 +10,7 @@ const leftColumnStyle = {
   fontWeight: 'bold',
 } as React.CSSProperties
 
-export const MagDownloadErrorPage = (props) => {
+export const MagDownloadErrorPage = () => {
   const { search } = useLocation()
   const params = new URLSearchParams(search)
   const magId = params.get('magId')

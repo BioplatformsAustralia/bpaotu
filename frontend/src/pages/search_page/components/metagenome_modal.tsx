@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { isString, pickBy, keys, join, values, filter } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import {
   Modal,
   ModalBody,
@@ -25,7 +25,7 @@ import { describeSearch } from '../reducers/search'
 
 import { metagenome_rows } from './metagenome_rows'
 
-const InfoBox = (props) => (
+const InfoBox = ({ children }) => (
   <div
     className="alert-secondary btn-sm"
     style={{
@@ -35,7 +35,7 @@ const InfoBox = (props) => (
       borderStyle: 'solid',
     }}
   >
-    {props.children}
+    {children}
   </div>
 )
 
@@ -51,7 +51,13 @@ interface SubmissionResponseData {
   contact: string
 }
 
-const MetagenomeModal = (props) => {
+const MetagenomeModal = () => {
+  const dispatch = useAppDispatch()
+
+  const modalState = useAppSelector((state: RootState) => state.searchPage.metagenomeModal)
+  const isOpen = modalState?.isOpen ?? false
+  const sample_ids = modalState?.sample_ids ?? []
+
   const [selected, setSelected] = useState({})
   const [requestState, setRequestState] = useState(0)
   const [submissionResponse, setSubmissionResponse] = useState<SubmissionResponse>({})
@@ -66,7 +72,7 @@ const MetagenomeModal = (props) => {
   } = useContext(TourContext)
 
   useEffect(() => {
-    if (props.isOpen) {
+    if (isOpen) {
       if (isMainTourOpen) {
         setIsMainTourOpen(false)
         setIsRequestSubtourOpen(true)
@@ -82,7 +88,6 @@ const MetagenomeModal = (props) => {
       }
     }
   }, [
-    props,
     isMainTourOpen,
     isRequestSubtourOpen,
     setIsMainTourOpen,
@@ -106,7 +111,7 @@ const MetagenomeModal = (props) => {
     event.preventDefault()
 
     if (requestState === 1) {
-      metagenomeRequest(props.sample_ids, keys(pickBy(selected)))
+      metagenomeRequest(sample_ids, keys(pickBy(selected)))
         .then((response) => {
           setSubmissionResponse(response)
           setRequestState(3) // Request acknowledged
@@ -122,14 +127,14 @@ const MetagenomeModal = (props) => {
     // → 1 (submit request)
     // → 2 (waiting for response)
     setRequestState((prevRequestState) =>
-      prevRequestState < 2 ? prevRequestState + 1 : prevRequestState
+      prevRequestState < 2 ? prevRequestState + 1 : prevRequestState,
     )
   }
 
   const closeModal = () => {
     setSubmissionResponse({})
     setRequestState(0)
-    props.closeMetagenomeModal()
+    dispatch(closeMetagenomeModal())
   }
 
   const getRows = () => {
@@ -168,10 +173,10 @@ const MetagenomeModal = (props) => {
   const modalBody = () => {
     const { status, statusText, data } = submissionResponse
 
-    if (props.error || requestState === 4) {
+    if (modalState.error || requestState === 4) {
       return (
-        <Alert color="danger">
-          {props.error && <>Search failed: {props.error}</>}
+        <Alert color="danger" fade={false}>
+          {modalState.error && <>Search failed: {modalState.error}</>}
           {requestState === 4 && (
             <>Submission failed: {submissionResponse && `${status}: ${statusText}. ${data}`}</>
           )}
@@ -179,7 +184,7 @@ const MetagenomeModal = (props) => {
       )
     }
 
-    if (props.isLoading || requestState === 2) {
+    if (modalState.isLoading || requestState === 2) {
       return (
         <div style={loadingstyle}>
           <AnimateHelix />
@@ -193,10 +198,10 @@ const MetagenomeModal = (props) => {
           <>
             <p>
               Metagenome files for
-              {props.sample_ids.length === 1 ? (
-                <> sample {props.sample_ids[0]}</>
+              {sample_ids.length === 1 ? (
+                <> sample {sample_ids[0]}</>
               ) : (
-                <> {props.sample_ids.length} samples</>
+                <> {sample_ids.length} samples</>
               )}
             </p>
             <table role="table" className="table table-bordered table-striped">
@@ -220,12 +225,15 @@ const MetagenomeModal = (props) => {
                 <InfoBox key={v}>{v}</InfoBox>
               ))}
             </div>
-            <p>
-              for{' '}
-              {props.sample_ids.length !== 1 ? `${props.sample_ids.length} samples:` : 'sample:'}
-            </p>
-            <p style={{ marginLeft: '2em', padding: '1em', border: '1px solid #ccc' }}>
-              {join(props.sample_ids, ', ')}
+            <p>for {sample_ids.length !== 1 ? `${sample_ids.length} samples:` : 'sample:'}</p>
+            <p
+              style={{
+                marginLeft: '2em',
+                padding: '1em',
+                border: '1px solid #ccc',
+              }}
+            >
+              {join(sample_ids, ', ')}
             </p>
           </div>
         )
@@ -235,7 +243,7 @@ const MetagenomeModal = (props) => {
         const { request_id, timestamp, contact } = submissionResponse.data
 
         return (
-          <Alert color="success">
+          <Alert color="success" fade={false}>
             <h4>Thank you for your data request</h4>
             <p>
               Your request id is <strong>{request_id}</strong>, lodged at {timestamp}
@@ -250,7 +258,7 @@ const MetagenomeModal = (props) => {
   }
 
   const modalFooter = () => {
-    if (requestState > 2 || props.error) {
+    if (requestState > 2 || modalState.error) {
       return (
         <Button type="button" onClick={closeModal} color="primary">
           Close
@@ -260,9 +268,9 @@ const MetagenomeModal = (props) => {
 
     const n_selected = filter(values(selected)).length
     const sample_msg =
-      props.sample_ids.length === 1
-        ? 'sample ' + props.sample_ids[0]
-        : props.sample_ids.length.toString() + ' samples'
+      sample_ids.length === 1
+        ? 'sample ' + sample_ids[0]
+        : sample_ids.length.toString() + ' samples'
 
     if (requestState === 0) {
       return (
@@ -306,7 +314,7 @@ const MetagenomeModal = (props) => {
 
   return (
     <Modal
-      isOpen={props.isOpen}
+      isOpen={isOpen}
       scrollable={true}
       fade={true}
       data-tut="reactour__MetagenomeDataRequestModal"
@@ -319,7 +327,13 @@ const MetagenomeModal = (props) => {
       >
         Metagenome data request
       </ModalHeader>
-      <ModalBody style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <ModalBody
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
         {modalBody()}
       </ModalBody>
       <ModalFooter>{modalFooter()}</ModalFooter>
@@ -343,24 +357,4 @@ const MetagenomeModal = (props) => {
   )
 }
 
-function mapStateToProps(state) {
-  const { isOpen, isLoading, sample_ids, error } = state.searchPage.metagenomeModal
-  return {
-    isOpen,
-    isLoading,
-    sample_ids,
-    error,
-    describeSearch: () => describeSearch(state),
-  }
-}
-
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      closeMetagenomeModal,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(MetagenomeModal as any)
+export default MetagenomeModal as any

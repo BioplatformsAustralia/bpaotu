@@ -1627,7 +1627,12 @@ def track(request, event, args=None):
     """Tracks an event in Mixpanel if enabled."""
     if mp:
         try:
-            email = request.ckan_data['email']
+            ckan_data = getattr(request, 'ckan_data', None)
+            email = ckan_data.get('email') if ckan_data else None
+            if not email:
+                logger.debug("Skipping Mixpanel event without a user email: %s", event)
+                return
+
             ident = hash_ckan_email(email)
             logger.debug(
                 "Tracking event: hash id=%s, event=%s, args=%s",

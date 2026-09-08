@@ -1,10 +1,14 @@
 import { get as _get, isNumber, join, last, reject } from 'lodash'
 import { executeSubmitToGalaxy, executeWorkflowOnGalaxy, getGalaxySubmission } from 'api'
-import { ErrorList, GalaxySubmission, searchPageInitialState } from './types'
+import { ErrorList, GalaxySubmission, searchPageInitialState, type SearchPageState } from './types'
 
 import { createActions, handleActions } from 'redux-actions'
+import type { Reducer, AnyAction } from 'redux'
+
 import { changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
+
+type GalaxyState = SearchPageState['galaxy']
 
 const GALAXY_SUBMISSION_POLL_FREQUENCY_MS = 5000
 
@@ -23,7 +27,7 @@ export const {
   'GALAXY_SUBMISSION_UPDATE_STARTED',
   'GALAXY_SUBMISSION_UPDATE_ENDED',
 
-  'CLEAR_GALAXY_ALERT'
+  'CLEAR_GALAXY_ALERT',
 )
 
 export const submitToGalaxy = () => (dispatch, getState) => {
@@ -64,7 +68,7 @@ export const workflowOnGalaxy = () => (dispatch, getState) => {
         submitToGalaxyEnded({
           ...data,
           isWorkflowSubmission: true,
-        })
+        }),
       )
       dispatch(autoUpdateGalaxySubmission())
     })
@@ -85,7 +89,7 @@ export const autoUpdateGalaxySubmission = () => (dispatch, getState) => {
       if (!newLastSubmission.finished) {
         setTimeout(
           () => dispatch(autoUpdateGalaxySubmission()),
-          GALAXY_SUBMISSION_POLL_FREQUENCY_MS
+          GALAXY_SUBMISSION_POLL_FREQUENCY_MS,
         )
       }
     })
@@ -104,16 +108,16 @@ function resetPasswordAlert() {
     'An account has been created for you on Galaxy Australia.' +
       `Please <a target="_blank" href="${linkToReset}" className="alert-link">reset your password</a>, ` +
       'using the same email address you have registered with the Bioplatforms Data Portal.',
-    'success'
+    'success',
   )
   return GALAXY_ALERT_USER_CREATED
 }
 
 const GALAXY_ALERT_IN_PROGRESS = alert(
-  'Submission to Galaxy in Progress... Depending on your selection, this may take up to several minutes. Please leave the window open during the transfer as it will contain a direct link to your data in Galaxy Australia when completed.'
+  'Submission to Galaxy in Progress... Depending on your selection, this may take up to several minutes. Please leave the window open during the transfer as it will contain a direct link to your data in Galaxy Australia when completed.',
 )
 const GALAXY_ALERT_IN_PROGRESS_EMAIL = alert(
-  'Submission to Galaxy in Progress... You can close this window. You’ll be sent an email when the job is finished with a link to the plot.'
+  'Submission to Galaxy in Progress... You can close this window. You’ll be sent an email when the job is finished with a link to the plot.',
 )
 const GALAXY_ALERT_ERROR = alert('An error occured while submiting to Galaxy.', 'danger')
 
@@ -123,15 +127,15 @@ function gettingStartedAlert(showWorkflowGuide) {
     : 'Galaxy Australia - Quick Start Guide.pdf'
   const url = join(
     [window.otu_search_config.static_base_url, 'bpaotu', 'rdc', encodeURIComponent(pdf)],
-    '/'
+    '/',
   )
   return alert(
     `If you are new to Galaxy Australia, please see this <a target="_blank" href="${url}">Getting started guide</a>`,
-    'success'
+    'success',
   )
 }
 
-export default handleActions(
+const submitToGalaxyReducer: Reducer<GalaxyState, AnyAction> = handleActions<GalaxyState, any>(
   {
     [submitToGalaxyStarted as any]: (state, action) => ({
       ...state,
@@ -168,8 +172,8 @@ export default handleActions(
     },
     [galaxySubmissionUpdateEnded as any]: {
       next: (state, action: any) => {
-        const lastSubmission = last(state.submissions)
-        const newLastSubmissionState = ((submission) => {
+        const lastSubmission = last(state.submissions) as GalaxySubmission | undefined
+        const newLastSubmissionState = ((submission: GalaxySubmission) => {
           const { state: status, error, history_id } = action.payload.data.submission
           const newState = {
             ...submission,
@@ -191,11 +195,11 @@ export default handleActions(
             'Successfully submitted to Galaxy.' +
               ` File uploaded to your <a target="_blank" href="${linkToHistory}" className="alert-link">` +
               'Galaxy history.</a>',
-            'success'
+            'success',
           )
           newAlerts = reject(state.alerts, GALAXY_ALERT_IN_PROGRESS)
           newAlerts.push(
-            newLastSubmissionState['succeeded'] ? GALAXY_ALERT_SUCCESS : GALAXY_ALERT_ERROR
+            newLastSubmissionState['succeeded'] ? GALAXY_ALERT_SUCCESS : GALAXY_ALERT_ERROR,
           )
         }
         return {
@@ -203,7 +207,7 @@ export default handleActions(
           submissions: changeElementAtIndex(
             state.submissions,
             state.submissions.length - 1,
-            (_) => newLastSubmissionState
+            (_) => newLastSubmissionState,
           ),
           alerts: newAlerts,
         }
@@ -219,7 +223,7 @@ export default handleActions(
               finished: true,
               succeeded: false,
               error: action.error,
-            })
+            }),
           ),
           alerts: [GALAXY_ALERT_ERROR],
         }
@@ -236,5 +240,7 @@ export default handleActions(
       }
     },
   },
-  searchPageInitialState.galaxy
+  searchPageInitialState.galaxy,
 )
+
+export default submitToGalaxyReducer

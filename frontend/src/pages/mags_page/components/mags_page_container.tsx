@@ -1,23 +1,22 @@
 import React from 'react'
-import { useHistory } from 'react-router-dom'
-import { Container, Row, NavLink } from 'reactstrap'
+import { useNavigate } from 'react-router-dom'
+import { Container, Row } from 'reactstrap'
 
 const MagsPageContainer = ({ children }) => {
-  const history = useHistory()
+  const navigate = useNavigate()
 
   return (
-    <Container fluid={true}>
-      <Row>
+    <Container fluid>
+      <Row className="mt-1 mb-2">
         <div>
-          <NavLink
-            href="#"
-            onClick={(e) => {
-              e.preventDefault()
-              history.go(-1) // go back 1
-            }}
+          <button
+            //
+            type="button"
+            className="btn btn-link p-0 text-decoration-none"
+            onClick={() => navigate(-1)}
           >
             Back
-          </NavLink>
+          </button>
         </div>
       </Row>
 

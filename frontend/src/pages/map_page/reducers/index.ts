@@ -1,12 +1,16 @@
 import { map, partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
+import type { Reducer } from 'redux'
+import type { AnyAction } from 'redux'
 import { executeSampleSitesSearch } from 'api'
 import { handleSimpleAPIResponse } from 'reducers/utils'
 import { EmptyOTUQuery } from 'search'
 
+import { mapPageInitialState, type MapPageState } from './types'
+
 export const { samplesMapFetchSamplesStarted, samplesMapFetchSamplesEnded } = createActions(
   'SAMPLES_MAP_FETCH_SAMPLES_STARTED',
-  'SAMPLES_MAP_FETCH_SAMPLES_ENDED'
+  'SAMPLES_MAP_FETCH_SAMPLES_ENDED',
 )
 
 export const fetchSampleMapSamples = () => (dispatch) => {
@@ -17,20 +21,14 @@ export const fetchSampleMapSamples = () => (dispatch) => {
     // can't filter on taxonomy source either. This means richness and abundance
     // will probably be meaningless.
     // See https://github.com/BioplatformsAustralia/bpaotu/issues/214
-    EmptyOTUQuery
+    EmptyOTUQuery,
   )
 
   dispatch(samplesMapFetchSamplesStarted())
   handleSimpleAPIResponse(dispatch, fetchAllSamples, samplesMapFetchSamplesEnded)
 }
 
-const initialState = {
-  isLoading: false,
-  samples: [],
-  sample_otus: [],
-}
-
-export default handleActions(
+const samplesMapReducer: Reducer<MapPageState, AnyAction> = handleActions<MapPageState, any>(
   {
     [samplesMapFetchSamplesStarted as any]: (state, action) => ({
       ...state,
@@ -50,5 +48,7 @@ export default handleActions(
       sample_otus: action.payload.data.sample_otus,
     }),
   },
-  initialState
+  mapPageInitialState,
 )
+
+export default samplesMapReducer

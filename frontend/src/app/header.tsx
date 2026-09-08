@@ -1,15 +1,23 @@
 import React, { useState } from 'react'
 import { join } from 'lodash'
 
-import { useSelector } from 'react-redux'
-import { Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap'
-import { NavLink as RRNavLink } from 'react-router-dom'
+import {
+  Collapse,
+  Nav,
+  Navbar,
+  NavbarBrand,
+  NavbarToggler,
+  NavItem,
+  NavLink as RSNavLink,
+} from 'reactstrap'
+import { NavLink } from 'react-router-dom'
 
+import { useAppSelector } from 'hooks/redux'
 import MainTutorial from 'components/tutorials/main_tutorial'
 import UserProfile from 'components/user_profile'
 
 const Header = () => {
-  const { auth } = useSelector((state: any) => ({
+  const { auth } = useAppSelector((state) => ({
     auth: state.auth,
   }))
 
@@ -38,12 +46,11 @@ const Header = () => {
         <Nav tabs className="navbar-nav">
           <NavItem>
             <NavLink
-              style={navLinkStyle}
-              activeClassName="active"
-              tag={RRNavLink}
-              data-tut="tabHighlighterAmplicon"
               to="/"
-              exact={true}
+              end
+              data-tut="tabHighlighterAmplicon"
+              style={navLinkStyle}
+              className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
             >
               {/*<Octicon name="beaker" />*/}
               Amplicon
@@ -52,11 +59,10 @@ const Header = () => {
 
           <NavItem>
             <NavLink
-              style={navLinkStyle}
-              activeClassName="active"
-              tag={RRNavLink}
-              data-tut="tabHighlighterMetagenome"
               to="/metagenome"
+              data-tut="tabHighlighterMetagenome"
+              style={navLinkStyle}
+              className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
             >
               {/*<Octicon name="list-unordered" />*/}
               Metagenome
@@ -64,7 +70,11 @@ const Header = () => {
           </NavItem>
 
           <NavItem>
-            <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/contextual">
+            <NavLink
+              to="/contextual"
+              style={navLinkStyle}
+              className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+            >
               {/*<Octicon name="file" />*/}
               Contextual
             </NavLink>
@@ -72,7 +82,11 @@ const Header = () => {
 
           {magsAvailable && (
             <NavItem>
-              <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/mags">
+              <NavLink
+                to="/mags"
+                style={navLinkStyle}
+                className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+              >
                 {/*<Octicon name="file" />*/}
                 MAGs
               </NavLink>
@@ -80,34 +94,38 @@ const Header = () => {
           )}
 
           <NavItem>
-            <NavLink style={navLinkStyle} activeClassName="active" tag={RRNavLink} to="/map">
+            <NavLink
+              to="/map"
+              style={navLinkStyle}
+              className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+            >
               {/*<Octicon name="globe" />*/}
               Map
             </NavLink>
           </NavItem>
         </Nav>
-        <Nav className="ml-auto" navbar={true}>
+        <Nav className="ms-auto" navbar={true}>
           <NavItem>
-            <NavLink>
+            <RSNavLink>
               <MainTutorial />
-            </NavLink>
+            </RSNavLink>
           </NavItem>
 
           <NavItem>
-            <NavLink href="mailto:help@bioplatforms.com?subject=Australian%20Microbiome%20Help">
+            <RSNavLink href="mailto:help@bioplatforms.com?subject=Australian%20Microbiome%20Help">
               Help
-            </NavLink>
+            </RSNavLink>
           </NavItem>
 
           <NavItem>
-            <NavLink
+            <RSNavLink
               target="_am"
               href={
                 window.otu_search_config.ckan_base_url + 'organization/about/australian-microbiome'
               }
             >
               Australian Microbiome Home
-            </NavLink>
+            </RSNavLink>
           </NavItem>
 
           <NavItem>

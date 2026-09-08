@@ -1,15 +1,25 @@
 import React, { useCallback } from 'react'
-import Plot from 'react-plotly.js'
+import Plot from './plot'
 import { plotly_chart_config } from './plotly_chart'
 import { find, filter as lodashFilter } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 
-import { selectEnvironment } from '../../reducers/contextual'
+type Props = {
+  taxonomyGraphdata: any
+  width: number
+  height: number
+  filter: string
+}
 
-const StackChartTaxonomy = (props) => {
-  const { taxonomy, contextualFilters, environment, taxonomyGraphdata, width, height, filter } =
-    props
+const StackChartTaxonomy = ({ taxonomyGraphdata, width, height, filter }: Props) => {
+  const taxonomy = useAppSelector((state: RootState) => state.searchPage.filters.taxonomy)
+  const contextualFilters = useAppSelector(
+    (state: RootState) => state.searchPage.filters.contextual.filters,
+  )
+  const environment = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.environment,
+  )
 
   const getSelectedTaxonomy = useCallback((taxonomy: any) => {
     for (const [name, taxa] of Object.entries(taxonomy)) {
@@ -59,7 +69,7 @@ const StackChartTaxonomy = (props) => {
         const taxa = selectedTaxa
           ? find(
               selectedTaxonomy[selectedTaxa]['options'],
-              (option) => option.id === parseInt(taxa_id)
+              (option) => option.id === parseInt(taxa_id),
             )
           : undefined
         if (taxa) {
@@ -92,7 +102,7 @@ const StackChartTaxonomy = (props) => {
           const textdisplay = taxonomyEntry['name']
             .split('')
             .map(
-              (_: any, index: number) => taxonomyEntry['name'] + '<BR>' + taxonomyEntry['y'][index]
+              (_: any, index: number) => taxonomyEntry['name'] + '<BR>' + taxonomyEntry['y'][index],
             )
 
           taxonomyEntry['text'] = textdisplay
@@ -112,7 +122,7 @@ const StackChartTaxonomy = (props) => {
       }
       return chart_data
     },
-    [getSelectedTaxonomy]
+    [getSelectedTaxonomy],
   )
 
   const title = 'Taxonomy vs AM Environment Plot'
@@ -161,21 +171,4 @@ const StackChartTaxonomy = (props) => {
   )
 }
 
-const mapStateToProps = (state) => {
-  return {
-    taxonomy: state.searchPage.filters.taxonomy,
-    contextualFilters: state.searchPage.filters.contextual.filters,
-    environment: state.contextualDataDefinitions.environment,
-  }
-}
-
-const mapDispatchToProps = (dispatch: any) => {
-  return bindActionCreators(
-    {
-      selectEnvironment,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(StackChartTaxonomy)
+export default StackChartTaxonomy

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { isEmpty } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import { Alert } from 'reactstrap'
 
 import AnimateHelix from 'components/animate_helix'
@@ -21,26 +21,36 @@ const chartEnabled = (state) => {
 }
 
 const GraphDashboard = (props) => {
-  const {
-    chartEnabled,
-    selectedEnvironment,
-    optionsEnvironment,
-    optionscontextualFilter,
-    contextualGraphdata,
-    taxonomyGraphdata,
-    fetchContextualDataForGraph,
-    fetchTaxonomyDataForGraph,
-    showTabbedGraph,
-    selectedTab,
-    selectTab,
-    scrollToSelected,
-    selectToScroll,
-  } = props
+  const dispatch = useAppDispatch()
+  const { showTabbedGraph, selectedTab, selectTab, scrollToSelected, selectToScroll } = props
+  const selectedEnvironment = useAppSelector(
+    (state: RootState) => state.searchPage.filters.contextual.selectedEnvironment,
+  )
+  const optionsEnvironment = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.environment,
+  )
+  const optionscontextualFilter = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.filters,
+  )
+  const contextualGraphdata = useAppSelector(
+    (state: RootState) => state.contextualDataForGraph.graphdata,
+  )
+  const taxonomyGraphdata = useAppSelector(
+    (state: RootState) => state.taxonomyDataForGraph.graphdata,
+  )
+  const chartEnabled = useAppSelector((state: RootState) => {
+    return (
+      !isEmpty(state.taxonomyDataForGraph.graphdata) &&
+      !state.taxonomyDataForGraph.isLoading &&
+      !state.contextualDataForGraph.isLoading &&
+      !state.searchPage.filters.taxonomyLoading
+    )
+  })
 
   useEffect(() => {
-    fetchContextualDataForGraph()
-    fetchTaxonomyDataForGraph()
-  }, [fetchContextualDataForGraph, fetchTaxonomyDataForGraph])
+    dispatch(fetchContextualDataForGraph())
+    dispatch(fetchTaxonomyDataForGraph())
+  }, [dispatch])
 
   const loadingstyle = {
     display: 'flex',
@@ -54,7 +64,9 @@ const GraphDashboard = (props) => {
       {chartEnabled ? (
         <div>
           {isEmpty(contextualGraphdata) ? (
-            <Alert color="warning">No matching samples</Alert>
+            <Alert color="warning" fade={false}>
+              No matching samples
+            </Alert>
           ) : showTabbedGraph ? (
             <GraphTabbed
               selectedEnvironment={selectedEnvironment}
@@ -89,25 +101,4 @@ const GraphDashboard = (props) => {
   )
 }
 
-const mapStateToProps = (state) => {
-  return {
-    selectedEnvironment: state.searchPage.filters.contextual.selectedEnvironment,
-    chartEnabled: chartEnabled(state),
-    optionsEnvironment: state.contextualDataDefinitions.environment,
-    optionscontextualFilter: state.contextualDataDefinitions.filters,
-    contextualGraphdata: state.contextualDataForGraph.graphdata,
-    taxonomyGraphdata: state.taxonomyDataForGraph.graphdata,
-  }
-}
-
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(
-    {
-      fetchContextualDataForGraph,
-      fetchTaxonomyDataForGraph,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(GraphDashboard)
+export default GraphDashboard

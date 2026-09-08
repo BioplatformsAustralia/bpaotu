@@ -1,6 +1,8 @@
 import { taxonomy_keys } from 'app/constants'
 import { OperatorAndValue } from 'search'
 
+export type Error = string
+
 export interface LoadableValues {
   isLoading: boolean
   options: any[]
@@ -46,7 +48,7 @@ export interface Alert {
   text: string
 }
 
-export interface PageState {
+export interface SearchPageState {
   filters: {
     selectedAmplicon: OperatorAndValue
     taxonomy: {
@@ -169,6 +171,7 @@ export interface PageState {
     pageSize: number
     rowsCount: number
     sorted: any[]
+    lastSearchParams: string | null
   }
 }
 
@@ -178,8 +181,14 @@ export interface SampleMarker {
   lng: number
 }
 
-export const EmptyOperatorAndValue: OperatorAndValue = { value: '', operator: 'is' }
-export const EmptyLoadableValues: LoadableValues = { isLoading: null, options: [] }
+export const EmptyOperatorAndValue: OperatorAndValue = {
+  value: '',
+  operator: 'is',
+}
+export const EmptyLoadableValues: LoadableValues = {
+  isLoading: null,
+  options: [],
+}
 export const EmptySelectableLoadableValues: SelectableLoadableValues = {
   selected: EmptyOperatorAndValue,
   isDisabled: true,
@@ -187,7 +196,7 @@ export const EmptySelectableLoadableValues: SelectableLoadableValues = {
   options: [],
 }
 
-export const searchPageInitialState: PageState = {
+export const searchPageInitialState: SearchPageState = {
   filters: {
     selectedAmplicon: EmptyOperatorAndValue,
     taxonomy: Object.fromEntries(taxonomy_keys.map((k) => [k, EmptySelectableLoadableValues])),
@@ -304,8 +313,11 @@ export const searchPageInitialState: PageState = {
     pageSize: 100,
     rowsCount: 0,
     sorted: [],
+    lastSearchParams: null,
   },
 }
+
+export type SearchResultsState = typeof searchPageInitialState.results
 
 export class ErrorList extends Error {
   public msgs: string[]

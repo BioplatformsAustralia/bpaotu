@@ -7,7 +7,7 @@ import { changeTablePropertiesMags, searchMags } from 'pages/mags_page/reducers/
 
 import { SearchResultsTable } from 'pages/mags_page/components/'
 
-export const MagsPage = (props) => {
+export const MagsPage = () => {
   const { page } = useAnalytics()
   const dispatch = useDispatch()
 
@@ -30,11 +30,21 @@ export const MagsPage = (props) => {
     const hasData = results && Array.isArray(results.data) && results.data.length > 0
     const alreadyInitialised = hasLoaded || hasFilters || hasData
 
+    const nonSampleFiltered = (results.filtered || []).filter((f) => f.id !== 'sample_id')
+
     // on mount: don't change filters if data exists or they have been set (but do reset to page 0)
-    let args = { ...results, page: 0 }
+    // but always remove any transient sample_id filter left behind by a sample route.
+    let args = { ...results, page: 0, filtered: nonSampleFiltered }
     if (!alreadyInitialised) {
       args = { ...args, filtered: [] }
     }
+
+    // console.log('[MagsPage] mount/init', {
+    //   alreadyInitialised,
+    //   incomingFiltered: results.filtered,
+    //   outgoingFiltered: args.filtered,
+    //   results,
+    // })
 
     // on mount: always update/refetch data
     dispatch(changeTablePropertiesMags(args))
@@ -50,7 +60,7 @@ export const MagsPage = (props) => {
         <Col sm={12}>
           <div>
             <Card>
-              <CardHeader>Metagenome-Assembled Genomes</CardHeader>
+              <CardHeader tag="h5">Metagenome-Assembled Genomes</CardHeader>
               <CardBody>
                 <SearchResultsTable />
               </CardBody>

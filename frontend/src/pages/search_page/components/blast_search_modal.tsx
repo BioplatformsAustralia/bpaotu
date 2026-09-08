@@ -1,9 +1,8 @@
 import React, { useContext, useEffect } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
 import { Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
 
-// import { Tutorial, AMBLink, stepsStyle } from 'components/tutorial'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+
 import { TourContext } from 'providers/tour_provider'
 import BlastSearchCard from './blast_search_card'
 
@@ -12,8 +11,10 @@ import './blast_search_modal.css'
 
 import SearchFilters from './search_filters'
 
-const BlastModal = (props) => {
-  const { isOpen, isLoading, rowsCount, closeBlastModal, fetchBlastModalSamples } = props
+const BlastModal = () => {
+  const dispatch = useAppDispatch()
+
+  const { isOpen } = useAppSelector((state) => state.searchPage.blastSearchModal)
 
   const codeStyle = {
     fontFamily: 'monospace',
@@ -53,9 +54,9 @@ const BlastModal = (props) => {
 
   useEffect(() => {
     if (isOpen) {
-      fetchBlastModalSamples()
+      dispatch(fetchBlastModalSamples())
     }
-  }, [fetchBlastModalSamples, isOpen])
+  }, [isOpen, dispatch])
 
   // const steps = [
   //   {
@@ -85,7 +86,7 @@ const BlastModal = (props) => {
       contentClassName="modalContentStyle"
     >
       <ModalHeader
-        toggle={closeBlastModal}
+        toggle={() => dispatch(closeBlastModal())}
         data-tut="reactour__CloseBlastModal"
         id="CloseBlastModal"
       >
@@ -106,11 +107,13 @@ const BlastModal = (props) => {
           map showing hit locations and sequence similarities.
         </p>
         <p>
-          Note that the figure is sorted to plot the highest scoring points last, so any symbols
-          occurring at the same location will only be visible as the highest scoring alignment
-          value.
+          The figure is sorted to plot the highest scoring points last, so any symbols occurring at
+          the same location will only be visible as the highest scoring alignment value.
         </p>
-        <BlastSearchCard isLoading={isLoading} rowsCount={rowsCount} />
+        <p className="text-muted small pb-2">
+          Note: characters not matching AGCT will be stripped from the search query
+        </p>
+        <BlastSearchCard />
       </ModalBody>
       <ModalFooter>
         <SearchFilters handleSearchFilterClick={fetchBlastModalSamples} />
@@ -119,23 +122,4 @@ const BlastModal = (props) => {
   )
 }
 
-const mapStateToProps = (state) => {
-  const { isOpen, isLoading, rowsCount } = state.searchPage.blastSearchModal
-  return {
-    isOpen,
-    isLoading,
-    rowsCount,
-  }
-}
-
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(
-    {
-      closeBlastModal,
-      fetchBlastModalSamples,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(BlastModal)
+export default BlastModal

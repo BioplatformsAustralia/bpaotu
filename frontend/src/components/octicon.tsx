@@ -6,17 +6,24 @@ const style = {
   paddingTop: 0,
 }
 
-export default (props) => {
-  const Sizes = {
-    small: 12,
-    medium: 16,
-    large: 32,
-    larger: 48,
-  }
-  const width = Sizes[props.size] || 20
+const Sizes = {
+  small: 12,
+  medium: 16,
+  default: 20,
+  large: 32,
+  larger: 48,
+}
+
+type OcticonProps = {
+  size?: keyof typeof Sizes
+  name: keyof typeof octicons
+}
+
+const Octicon = ({ size = 'default', name }: OcticonProps) => {
+  const width = Sizes[size]
 
   const options = { width, height: width }
-  return (
-    <div style={style} dangerouslySetInnerHTML={{ __html: octicons[props.name].toSVG(options) }} />
-  )
+  return <div style={style} dangerouslySetInnerHTML={{ __html: octicons[name].toSVG(options) }} />
 }
+
+export default Octicon

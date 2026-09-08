@@ -3,11 +3,15 @@ import { createActions, handleActions, handleAction } from 'redux-actions'
 
 import { clearAllTaxonomyFilters } from './taxonomy'
 import { EmptyOperatorAndValue } from './types'
+import { RootState } from 'app/store'
+import type { Reducer } from 'redux'
+import type { AnyAction } from 'redux'
+import type { OperatorAndValue } from 'search'
 
 export const { setMetagenomeMode, selectAmplicon, selectAmpliconOperator } = createActions(
   'SET_METAGENOME_MODE',
   'SELECT_AMPLICON',
-  'SELECT_AMPLICON_OPERATOR'
+  'SELECT_AMPLICON_OPERATOR',
 )
 
 function lookupAmplicon(values, ampliconName) {
@@ -21,9 +25,7 @@ export const getDefaultAmplicon = (values) =>
 export const getDefaultMetagenomeAmplicon = (values) =>
   lookupAmplicon(values, window.otu_search_config.metaxa_amplicon)
 
-export function getAmpliconFilter(state) {
-  return state.searchPage.filters.selectedAmplicon
-}
+export const getAmpliconFilter = (state: RootState) => state.searchPage.filters.selectedAmplicon
 
 export function isMetagenomeSearch(state) {
   return Boolean(state.searchPage.filters.metagenomeMode)
@@ -32,10 +34,13 @@ export function isMetagenomeSearch(state) {
 export const metagenomeModeReducer = handleAction(
   setMetagenomeMode,
   (state, action: any) => action.payload,
-  ''
+  '',
 )
 
-export const selectedAmpliconReducer = handleActions(
+export const selectedAmpliconReducer: Reducer<OperatorAndValue, AnyAction> = handleActions<
+  OperatorAndValue,
+  any
+>(
   {
     [clearAllTaxonomyFilters as any]: (state, action: any) => {
       return EmptyOperatorAndValue
@@ -51,5 +56,5 @@ export const selectedAmpliconReducer = handleActions(
       operator: action.payload,
     }),
   },
-  EmptyOperatorAndValue
+  EmptyOperatorAndValue,
 )

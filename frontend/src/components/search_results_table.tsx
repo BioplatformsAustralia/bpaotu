@@ -1,28 +1,59 @@
 import React, { useMemo } from 'react'
 import { get as _get, isEmpty, map, reject } from 'lodash'
-import { Alert, UncontrolledTooltip } from 'reactstrap'
+import { Alert, Button, UncontrolledTooltip } from 'reactstrap'
 import ReactTable from 'react-table'
 import 'react-table/react-table.css'
 
 import Octicon from 'components/octicon'
 
-const sample_link = (props) => (
+export interface SearchResultsTablePresentationProps {
+  cellFunc?: (cellProps: any) => React.ReactNode
+  cellFuncRunId?: (cellProps: any) => React.ReactNode
+  kronaFunc?: ((cellProps: any) => React.ReactNode) | null
+  // Legacy snake_case aliases kept for compatibility with older callers.
+  cell_func?: (cellProps: any) => React.ReactNode
+  cell_func_run_id?: (cellProps: any) => React.ReactNode
+  krona_func?: ((cellProps: any) => React.ReactNode) | null
+  metagenome?: boolean
+  contextual?: boolean
+}
+
+export interface SearchResultsTableProps extends SearchResultsTablePresentationProps {
+  extraColumns?: any[]
+  results: any
+  changeTableProperties: (payload: any) => void
+  search?: (payload?: any) => void
+}
+
+const SampleLink = ({ value }: any) => (
   <div>
-    <a href={bpaIDToCKANURL(props.value)} target="_blank" rel="noopener noreferrer">
-      {props.value}
+    <a href={bpaIdToCkanUrl(value)} target="_blank" rel="noopener noreferrer">
+      {value}
     </a>
   </div>
 )
 
-const sample_link_run_id = (props) => (
+const SampleLinkRunId = ({ value }: any) => (
   <div>
-    <a href={runIDToSandpiperURL(props.value)} target="_blank" rel="noopener noreferrer">
-      {props.value}
+    <a href={runIdToSandpiperUrl(value)} target="_blank" rel="noopener noreferrer">
+      {value}
     </a>
   </div>
 )
 
-const bpaIDToCKANURL = (bpaId) => {
+const KronaButton = (cell_props: any, openKronaModal?: (sampleId: any) => void) => (
+  <Button
+    onClick={() => {
+      if (openKronaModal) {
+        openKronaModal(cell_props.row.sample_id)
+      }
+    }}
+  >
+    {cell_props.value}
+  </Button>
+)
+
+const bpaIdToCkanUrl = (bpaId) => {
   if (bpaId.startsWith('SAMN')) {
     return `https://www.ncbi.nlm.nih.gov/biosample/?term=${bpaId}`
   } else {
@@ -30,7 +61,7 @@ const bpaIDToCKANURL = (bpaId) => {
   }
 }
 
-const runIDToSandpiperURL = (runId) => {
+const runIdToSandpiperUrl = (runId) => {
   const base_url = 'https://sandpiper.qut.edu.au/run'
   return `${base_url}/${runId}`
 }
@@ -41,7 +72,7 @@ const mapDefinitions = (fields) => {
     (c) => ({
       name: c.name,
       displayName: c.displayName,
-    })
+    }),
   )
 }
 
@@ -68,11 +99,14 @@ export const fieldsToColumns = (fields, contextualDataDefinitions) => {
   }
 }
 
-export const SearchResultsTable = (props) => {
+export const SearchResultsTable = (props: SearchResultsTableProps) => {
   const {
-    cell_func = sample_link,
-    cell_func_run_id = sample_link_run_id,
-    krona_func = null,
+    cellFunc: cellFuncProp = SampleLink,
+    cellFuncRunId: cellFuncRunIdProp = SampleLinkRunId,
+    kronaFunc: kronaFuncProp = KronaButton,
+    cell_func: legacyCellFunc,
+    cell_func_run_id: legacyCellFuncRunId,
+    krona_func: legacyKronaFunc,
     metagenome = false,
     contextual = false,
     extraColumns = [],
@@ -81,6 +115,10 @@ export const SearchResultsTable = (props) => {
     search,
   } = props
 
+  const cellFunc = legacyCellFunc ?? cellFuncProp
+  const cellFuncRunId = legacyCellFuncRunId ?? cellFuncRunIdProp
+  const kronaFunc = legacyKronaFunc ?? kronaFuncProp
+
   const defaultColumns = useMemo(
     () => [
       {
@@ -88,7 +126,7 @@ export const SearchResultsTable = (props) => {
         Header: () => <div>Sample ID</div>,
         accessor: 'sample_id',
         sortable: true,
-        Cell: cell_func,
+        Cell: cellFunc,
       },
       {
         Header: 'Environment',
@@ -96,7 +134,7 @@ export const SearchResultsTable = (props) => {
         accessor: 'environment',
       },
     ],
-    [cell_func]
+    [cellFunc],
   )
 
   const kronaColumn = useMemo(
@@ -114,9 +152,9 @@ export const SearchResultsTable = (props) => {
       ),
       accessor: 'sample_id',
       sortable: true,
-      Cell: krona_func,
+      Cell: kronaFunc,
     }),
-    [krona_func]
+    [kronaFunc],
   )
 
   const runIdColumn = useMemo(
@@ -141,9 +179,9 @@ export const SearchResultsTable = (props) => {
       ),
       accessor: 'run_id',
       sortable: true,
-      Cell: cell_func_run_id,
+      Cell: cellFuncRunId,
     }),
-    [cell_func_run_id]
+    [cellFuncRunId],
   )
 
   const columns = useMemo(() => {
@@ -201,7 +239,7 @@ export const SearchResultsTable = (props) => {
 
   return (
     <>
-      <Alert color="secondary" className="text-center">
+      <Alert color="secondary" className="text-center" fade={false}>
         <h6 className="alert-heading">
           {results.cleared
             ? 'Please use the search button to start your search'
@@ -230,7 +268,7 @@ export const SearchResultsTable = (props) => {
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
         noDataText={results.cleared ? 'No search performed yet' : 'No rows found'}
-        getTheadProps={(thead) => ({
+        getTheadProps={() => ({
           // fix the header not aligning with cells, including the column separators
           style: {
             paddingLeft: 0,
@@ -239,7 +277,7 @@ export const SearchResultsTable = (props) => {
             paddingBottom: '8px',
           },
         })}
-        getTdProps={(cellInfo) => ({
+        getTdProps={() => ({
           style: {
             textAlign: 'center',
           },

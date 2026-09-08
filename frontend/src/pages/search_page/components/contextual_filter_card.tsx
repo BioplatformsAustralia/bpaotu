@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { filter, find } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import {
   Button,
   Card,
@@ -40,15 +40,11 @@ import {
 import {
   checkSampleIntegrityWarningFilter,
   uncheckSampleIntegrityWarningFilter,
-  addSampleIntegrityWarningFilter,
-  removeSampleIntegrityWarningFilter,
   changeSampleIntegrityWarningFilterOperator,
   changeSampleIntegrityWarningFilterValue,
   changeSampleIntegrityWarningFilterValue2,
   changeSampleIntegrityWarningFilterValues,
-  clearSampleIntegrityWarningFilters,
   selectSampleIntegrityWarningFilter,
-  selectSampleIntegrityWarningFiltersMode,
 } from '../reducers/sample_integrity_warning'
 
 export const ContextualFilterInfo =
@@ -58,66 +54,116 @@ const ContextualFilterLinkButton = ({ title, url, tooltip }) => {
   const id = `id-${uuid()}`
 
   return (
-    <>
-      <Button
-        size="sm"
-        color="secondary"
-        style={{ cursor: 'pointer', margin: '-15px 2px', padding: '3px 10px' }}
-        href={url}
-        target="_blank"
+    <Button
+      size="sm"
+      color="secondary"
+      style={{
+        cursor: 'pointer',
+        margin: '0px 2px',
+        paddingTop: '3px',
+        paddingBottom: '0px',
+      }}
+      href={url}
+      target="_blank"
+    >
+      <Octicon name="link" />
+      <span
+        style={{
+          paddingLeft: 4,
+          paddingRight: 4,
+        }}
       >
-        <Octicon name="link" />
-        <span style={{ paddingLeft: 4, paddingRight: 4 }}>{title}</span>
-        <Badge color="secondary" id={id}>
-          <Octicon name="info" />
-        </Badge>
-        <UncontrolledTooltip target={id} placement="auto">
-          {tooltip}
-        </UncontrolledTooltip>
-      </Button>
-    </>
+        {title}
+      </span>
+      <Badge color="secondary" id={id}>
+        <Octicon name="info" />
+      </Badge>
+      <UncontrolledTooltip target={id} placement="auto">
+        {tooltip}
+      </UncontrolledTooltip>
+    </Button>
   )
 }
 
-const ContextualFilterCard = (props) => {
-  const {
-    addContextualFilter,
-    changeContextualFilterOperator,
-    changeContextualFilterValue,
-    changeContextualFilterValue2,
-    changeContextualFilterValues,
-    changeSampleIntegrityWarningFilterOperator,
-    changeSampleIntegrityWarningFilterValue,
-    changeSampleIntegrityWarningFilterValue2,
-    changeSampleIntegrityWarningFilterValues,
-    checkSampleIntegrityWarningFilter,
-    clearContextualFilters,
-    contextualFilterOptions,
-    contextualFilters,
-    contextualFiltersMode,
-    dataDefinitions,
-    definitions_url,
-    fetchContextualDataDefinitions,
-    optionsLoading,
-    removeContextualFilter,
-    sampleIntegrityWarningFilterOptions,
-    sampleIntegrityWarningFilters,
-    scientific_manual_url,
-    selectContextualFilter,
-    selectContextualFiltersMode,
-    selectSampleIntegrityWarningFilter,
-    uncheckSampleIntegrityWarningFilter,
-  } = props
+const ContextualFilterCard = () => {
+  const dispatch = useAppDispatch()
+  const contextualFilters = useAppSelector(
+    (state: RootState) => state.searchPage.filters.contextual.filters,
+  )
+  const contextualFiltersMode = useAppSelector(
+    (state: RootState) => state.searchPage.filters.contextual.filtersMode,
+  )
+  const sampleIntegrityWarningFilters = useAppSelector(
+    (state: RootState) => state.searchPage.filters.sampleIntegrityWarning.filters,
+  )
+  const dataDefinitions = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.filters,
+  )
+  const optionsLoading = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.isLoading,
+  )
+  const definitions_url = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.definitions_url,
+  )
+  const scientific_manual_url = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.scientific_manual_url,
+  )
+  const contextualFilterOptions = useAppSelector((state: RootState) =>
+    getFilterOptions(
+      state.contextualDataDefinitions.filters.filter(
+        (x) => x.name !== 'sample_integrity_warnings_id',
+      ),
+      state.searchPage.filters.contextual.selectedEnvironment,
+    ),
+  )
+  const sampleIntegrityWarningFilterOptions = useAppSelector((state: RootState) =>
+    getFilterOptions(
+      state.contextualDataDefinitions.filters.filter(
+        (x) => x.name === 'sample_integrity_warnings_id',
+      ),
+      state.searchPage.filters.contextual.selectedEnvironment,
+    ),
+  )
+
+  const selectContextualFilterAction = (index: number, filterName: string) =>
+    dispatch(selectContextualFilter(index, filterName))
+  const removeContextualFilterAction = (index: number) => dispatch(removeContextualFilter(index))
+  const changeContextualFilterOperatorAction = (index: number, operator: string) =>
+    dispatch(changeContextualFilterOperator(index, operator))
+  const changeContextualFilterValueAction = (index: number, value: any) =>
+    dispatch(changeContextualFilterValue(index, value))
+  const changeContextualFilterValue2Action = (index: number, value2: any) =>
+    dispatch(changeContextualFilterValue2(index, value2))
+  const changeContextualFilterValuesAction = (index: number, values: any[]) =>
+    dispatch(changeContextualFilterValues(index, values))
+  const changeSampleIntegrityWarningFilterOperatorAction = (index: number, operator: string) =>
+    dispatch(changeSampleIntegrityWarningFilterOperator(index, operator))
+  const changeSampleIntegrityWarningFilterValueAction = (index: number, value: any) =>
+    dispatch(changeSampleIntegrityWarningFilterValue(index, value))
+  const changeSampleIntegrityWarningFilterValue2Action = (index: number, value2: any) =>
+    dispatch(changeSampleIntegrityWarningFilterValue2(index, value2))
+  const changeSampleIntegrityWarningFilterValuesAction = (index: number, values: any[]) =>
+    dispatch(changeSampleIntegrityWarningFilterValues(index, values))
+  const checkSampleIntegrityWarningFilterAction = () =>
+    dispatch(checkSampleIntegrityWarningFilter())
+  const uncheckSampleIntegrityWarningFilterAction = () =>
+    dispatch(uncheckSampleIntegrityWarningFilter())
+  const clearContextualFiltersAction = () => dispatch(clearContextualFilters())
+  const selectSampleIntegrityWarningFilterAction = (index: number, filterName: string) =>
+    dispatch(selectSampleIntegrityWarningFilter(index, filterName))
+  const addContextualFilterAction = () => dispatch(addContextualFilter())
 
   useEffect(() => {
-    fetchContextualDataDefinitions()
-  }, [fetchContextualDataDefinitions])
+    dispatch(fetchContextualDataDefinitions())
+  }, [dispatch])
 
   return (
     <Card>
       <CardHeader tag="h5">
         <Row>
-          <Col>Contextual Filters</Col>
+          <Col>
+            <span style={{ lineHeight: '2rem' }}>Contextual Filters</span>
+          </Col>
           <Col className="text-right" xs="auto">
             <ContextualFilterLinkButton
               title="Download metadata description"
@@ -158,26 +204,26 @@ const ContextualFilterCard = (props) => {
 
         <Row>
           <Col sm={12}>
-            <Alert color="secondary">
+            <Alert color="secondary" fade={false}>
               <FormGroup check>
                 <Label sm={12} check color="primary">
                   <Input
                     type="checkbox"
                     checked={
                       sampleIntegrityWarningFilters.find(
-                        (fltr) => fltr.name === 'sample_integrity_warnings_id'
+                        (fltr) => fltr.name === 'sample_integrity_warnings_id',
                       )
                         ? false
                         : true
                     }
                     onChange={(evt) =>
                       evt.target.checked
-                        ? uncheckSampleIntegrityWarningFilter()
-                        : checkSampleIntegrityWarningFilter()
+                        ? uncheckSampleIntegrityWarningFilterAction()
+                        : checkSampleIntegrityWarningFilterAction()
                     }
                   />
                   {sampleIntegrityWarningFilters.find(
-                    (fltr) => fltr.name === 'sample_integrity_warnings_id'
+                    (fltr) => fltr.name === 'sample_integrity_warnings_id',
                   )
                     ? 'Check to show all data including samples with integrity warnings'
                     : 'Uncheck to remove samples with integrity warnings'}
@@ -193,11 +239,11 @@ const ContextualFilterCard = (props) => {
                   options={sampleIntegrityWarningFilterOptions}
                   optionsLoading={optionsLoading}
                   remove={null}
-                  select={selectSampleIntegrityWarningFilter}
-                  changeOperator={changeSampleIntegrityWarningFilterOperator}
-                  changeValue={changeSampleIntegrityWarningFilterValue}
-                  changeValue2={changeSampleIntegrityWarningFilterValue2}
-                  changeValues={changeSampleIntegrityWarningFilterValues}
+                  select={selectSampleIntegrityWarningFilterAction}
+                  changeOperator={changeSampleIntegrityWarningFilterOperatorAction}
+                  changeValue={changeSampleIntegrityWarningFilterValueAction}
+                  changeValue2={changeSampleIntegrityWarningFilterValue2Action}
+                  changeValues={changeSampleIntegrityWarningFilterValuesAction}
                 />
               ))}
             </Alert>
@@ -207,7 +253,7 @@ const ContextualFilterCard = (props) => {
         {contextualFilters.length >= 2 && (
           <Row>
             <Col sm={12}>
-              <Alert color="secondary">
+              <Alert color="secondary" fade={false}>
                 <Form inline={true}>
                   Samples must match &nbsp;
                   <Input
@@ -236,21 +282,21 @@ const ContextualFilterCard = (props) => {
               dataDefinition={find(dataDefinitions, (dd) => dd.name === fltr.name)}
               options={contextualFilterOptions}
               optionsLoading={optionsLoading}
-              remove={removeContextualFilter}
-              select={selectContextualFilter}
-              changeOperator={changeContextualFilterOperator}
-              changeValue={changeContextualFilterValue}
-              changeValue2={changeContextualFilterValue2}
-              changeValues={changeContextualFilterValues}
+              remove={removeContextualFilterAction}
+              select={selectContextualFilterAction}
+              changeOperator={changeContextualFilterOperatorAction}
+              changeValue={changeContextualFilterValueAction}
+              changeValue2={changeContextualFilterValue2Action}
+              changeValues={changeContextualFilterValuesAction}
             />
           )
         })}
       </CardBody>
       <CardFooter className="text-center">
-        <Button color="success" onClick={addContextualFilter}>
+        <Button color="success" onClick={addContextualFilterAction}>
           Add
         </Button>
-        <Button color="warning" onClick={clearContextualFilters}>
+        <Button color="warning" onClick={clearContextualFiltersAction}>
           Clear
         </Button>
       </CardFooter>
@@ -261,61 +307,4 @@ const ContextualFilterCard = (props) => {
 const getFilterOptions = (filters, selectedEnvironment) =>
   filter(filters, doesFilterMatchEnvironment(selectedEnvironment))
 
-const mapStateToProps = (state) => {
-  return {
-    contextualFilters: state.searchPage.filters.contextual.filters,
-    contextualFiltersMode: state.searchPage.filters.contextual.filtersMode,
-    sampleIntegrityWarningFilters: state.searchPage.filters.sampleIntegrityWarning.filters,
-    sampleIntegrityWarningFiltersMode: state.searchPage.filters.sampleIntegrityWarning.filtersMode,
-    dataDefinitions: state.contextualDataDefinitions.filters,
-    definitions: state.contextualDataDefinitions.values,
-    contextualFilterOptions: getFilterOptions(
-      state.contextualDataDefinitions.filters.filter(
-        (x) => x.name !== 'sample_integrity_warnings_id'
-      ),
-      state.searchPage.filters.contextual.selectedEnvironment
-    ),
-    sampleIntegrityWarningFilterOptions: getFilterOptions(
-      state.contextualDataDefinitions.filters.filter(
-        (x) => x.name === 'sample_integrity_warnings_id'
-      ),
-      state.searchPage.filters.contextual.selectedEnvironment
-    ),
-    optionsLoading: state.contextualDataDefinitions.isLoading,
-    definitions_url: state.contextualDataDefinitions.definitions_url,
-    scientific_manual_url: state.contextualDataDefinitions.scientific_manual_url,
-  }
-}
-
-const mapDispatchToProps = (dispatch: any) => {
-  return bindActionCreators(
-    {
-      fetchContextualDataDefinitions,
-
-      selectContextualFiltersMode,
-      addContextualFilter,
-      removeContextualFilter,
-      selectContextualFilter,
-      changeContextualFilterOperator,
-      changeContextualFilterValue,
-      changeContextualFilterValue2,
-      changeContextualFilterValues,
-      clearContextualFilters,
-
-      selectSampleIntegrityWarningFiltersMode,
-      checkSampleIntegrityWarningFilter,
-      uncheckSampleIntegrityWarningFilter,
-      addSampleIntegrityWarningFilter,
-      removeSampleIntegrityWarningFilter,
-      selectSampleIntegrityWarningFilter,
-      changeSampleIntegrityWarningFilterOperator,
-      changeSampleIntegrityWarningFilterValue,
-      changeSampleIntegrityWarningFilterValue2,
-      changeSampleIntegrityWarningFilterValues,
-      clearSampleIntegrityWarningFilters,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(ContextualFilterCard)
+export default ContextualFilterCard

@@ -218,6 +218,19 @@ npm run container:add -- <package>@<version-or-tag>
 
 Commit both `frontend/package.json` and `frontend/yarn.lock` after running these commands.
 
+To update the current locally running instance
+
+```
+docker compose build frontend
+docker compose up -d --force-recreate frontend
+```
+
+Check with this:
+
+```
+docker compose exec frontend sh -lc 'cd /frontend && node -p "require(\"lodash/package.json\").version"'
+```
+
 ### KronaTools
 
 KronaTools is used for some visualisations. In production, KronaTools is installed to the /app directory in the container during the production build. This doesn't work in the development container as /app is mounted to the code directory. To get around this, install KronaTools directly in the code directory to ./krona (this path is included in the .gitignore file, so it's not committed to the repository). It will then be accessible at /app/krona by the development container.

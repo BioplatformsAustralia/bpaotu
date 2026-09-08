@@ -2,31 +2,44 @@ import React from 'react'
 import { Button } from 'reactstrap'
 import Octicon from 'components/octicon'
 
-export const ExportDataButton = (props) => {
-  const id = props.id
+type ExportDataButtonProps = {
+  id?: string
+  size?: 'sm' | 'md' | 'lg'
+  disabled?: boolean
+  onClick: () => void
+  octicon?: string
+  text: string
+}
+
+export const ExportDataButton = ({
+  id,
+  size,
+  disabled,
+  onClick,
+  text,
+  octicon,
+}: ExportDataButtonProps) => {
   const dataTut = id ? `reactour__${id}` : null
 
   return (
     <Button
       id={id}
       data-tut={dataTut}
-      size={props.size}
+      size={size}
       style={{ marginLeft: 6, marginRight: 6 }}
       outline={true}
       color="primary"
-      disabled={props.disabled}
-      onClick={props.onClick}
-      title={props.disabled ? 'Select Amplicon to ' + props.text : ''}
+      disabled={disabled}
+      onClick={onClick}
+      title={disabled ? `Select Amplicon to ${text}` : ''}
     >
-      {props.octicon ? (
+      {octicon && (
         <span>
-          <Octicon name={props.octicon} />
+          <Octicon name={octicon} />
           &nbsp;
         </span>
-      ) : (
-        ''
       )}
-      {props.text}
+      {text}
     </Button>
   )
 }

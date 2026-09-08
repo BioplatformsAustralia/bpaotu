@@ -1,5 +1,4 @@
 import React, { useContext } from 'react'
-import { withRouter } from 'react-router-dom'
 
 import Octicon from 'components/octicon'
 import { Tutorial, TutorialBadge, stepsStyle } from 'components/tutorial'
@@ -82,7 +81,7 @@ const graphTourSteps = (props, isMainTourOpen) => {
     },
     {
       selector: '[data-tut="reactour__graph_view"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
+      content: () => {
         return (
           <div>
             <h4>Graph View Selection</h4>
@@ -118,7 +117,7 @@ const graphTourSteps = (props, isMainTourOpen) => {
           </div>
         )
       },
-      action: (node) => {
+      action: () => {
         activateSelectedElement('reactour__graph_menu_tabbed')
         activateSelectedElement('reactour__graph_taxonomy')
       },
@@ -185,7 +184,7 @@ const graphTourSteps = (props, isMainTourOpen) => {
           </div>
         )
       },
-      action: (node) => {
+      action: () => {
         activateSelectedElement('reactour__graph_amplicon')
       },
       style: stepsStyle,
@@ -215,7 +214,7 @@ const graphTourSteps = (props, isMainTourOpen) => {
           </div>
         )
       },
-      action: (node) => {
+      action: () => {
         activateSelectedElement('reactour__graph_amplicon')
       },
       style: stepsStyle,
@@ -244,7 +243,7 @@ const graphTourSteps = (props, isMainTourOpen) => {
           </div>
         )
       },
-      action: (node) => {
+      action: () => {
         activateSelectedElement('reactour__graph_taxonomy')
       },
       style: stepsStyle,
@@ -260,7 +259,7 @@ const graphTourSteps = (props, isMainTourOpen) => {
           </div>
         )
       },
-      action: (node) => {
+      action: () => {
         activateSelectedElement('reactour__graph_environment')
       },
       style: stepsStyle,
@@ -280,7 +279,7 @@ const graphTourSteps = (props, isMainTourOpen) => {
           </div>
         )
       },
-      action: (node) => {
+      action: () => {
         activateSelectedElement('reactour__graph_contextual')
       },
       style: stepsStyle,
@@ -412,7 +411,7 @@ const graphTourSteps = (props, isMainTourOpen) => {
     },
     {
       selector: '[data-tut="reactour__graph_view"]',
-      content: ({ goTo }: { goTo: (step: number) => void }) => {
+      content: () => {
         return (
           <div>
             <h4>Traits Selection</h4>
@@ -427,7 +426,7 @@ const graphTourSteps = (props, isMainTourOpen) => {
           </div>
         )
       },
-      action: (node) => {
+      action: () => {
         activateSelectedElement('reactour__graph_traits')
       },
       style: stepsStyle,
@@ -451,7 +450,7 @@ const graphTourSteps = (props, isMainTourOpen) => {
           </div>
         )
       },
-      action: (node) => {
+      action: () => {
         activateSelectedElement('reactour__graph_taxonomy_am_environment')
       },
       style: stepsStyle,
@@ -526,4 +525,4 @@ const GraphTutorial = (props) => {
   )
 }
 
-export default withRouter(GraphTutorial)
+export default GraphTutorial

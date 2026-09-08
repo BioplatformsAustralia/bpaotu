@@ -27,19 +27,19 @@ const TaxGTDBToggle = ({ expanded, setExpanded }) => {
 const TaxGTDBValue = ({ expanded, value }) => {
   if (!value) return null
 
-  const ranks = value.split(';')
+  const ranks = value.split(';').filter((rank: string): boolean => !rank.trim().endsWith('__'))
 
   return (
     <div className="tax-gtdb-value">
       <div className="tax-gtdb-content">
         {expanded ? (
           <ul className="tax-gtdb-list">
-            {ranks.map((r, i) => (
+            {ranks.map((r: string, i: number) => (
               <li key={i}>{r}</li>
             ))}
           </ul>
         ) : (
-          <span>{value}</span>
+          <span>{ranks.join(';')}</span>
         )}
       </div>
     </div>

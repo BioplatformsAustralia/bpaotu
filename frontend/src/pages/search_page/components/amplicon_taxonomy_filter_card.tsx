@@ -1,6 +1,4 @@
 import React, { useEffect, useRef } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
 import {
   Button,
   Card,
@@ -13,6 +11,8 @@ import {
 } from 'reactstrap'
 
 import Octicon from 'components/octicon'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+
 import { fetchReferenceData } from 'reducers/reference_data/reference_data'
 import { fetchTraits } from 'reducers/reference_data/traits'
 
@@ -28,6 +28,7 @@ import TraitFilter from './trait_filter'
 import AmpliconFilter from './amplicon_filter'
 import TaxonomySearchModal from './taxonomy_search_modal'
 import { TaxonomySelector, TaxonomyDropDowns } from './taxonomy_filters'
+import { type OperatorAndValue } from 'search'
 
 export const AmpliconFilterInfo =
   'Abundance matrices are derived from sequencing using one of 5 amplicons targeting Bacteria, Archaea, ' +
@@ -55,29 +56,61 @@ const TaxonomySourceInfo =
   'wang=rdp_bayesian. Further information on taxonomy assignment can be found ' +
   'at: https://github.com/AusMicrobiome/amplicon/tree/master/docs'
 
-const TaxonomyFilterCard = (props) => {
-  const prevAmplicon = useRef({ ...EmptyOperatorAndValue })
+const TaxonomyFilterCard = ({ metagenomeMode }: { metagenomeMode: boolean }) => {
+  const dispatch = useAppDispatch()
 
-  const { mismatch, valueAmplicon, valueR1, nameR1 } = props.mismatchState
-  const {
-    amplicons,
-    clearSearchResults,
-    fetchReferenceData,
-    fetchTraits,
-    metagenomeMode,
-    openTaxonomySearchModal,
-    selectTrait,
-    selectedAmplicon,
-    setMetagenomeMode,
-    updateTaxonomy,
-  } = props
+  const prevAmplicon = useRef<OperatorAndValue>({ ...EmptyOperatorAndValue })
+
+  const amplicons = useAppSelector((state) => state.referenceData.amplicons)
+
+  const selectedAmplicon = useAppSelector(getAmpliconFilter)
+
+  const mismatchState = useAppSelector((state) => {
+    let mismatch = false
+    let valueAmplicon
+    let valueR1
+    let nameR1
+
+    try {
+      const optionsAmplicons = state.referenceData.amplicons.values
+      const optionsTaxonomyR1 = state.searchPage.filters.taxonomy.r1
+
+      const textAmplicon = optionsAmplicons.find((x) => x.id === selectedAmplicon.value)
+
+      const textR1 = optionsTaxonomyR1.options.find(
+        (x) => x.id === optionsTaxonomyR1.selected.value,
+      )
+
+      if (textAmplicon && textR1) {
+        valueAmplicon = textAmplicon.value
+        valueR1 = textR1.value
+        nameR1 = state.referenceData.ranks.rankLabels.r1
+
+        const matchAmplicon = valueAmplicon.split('_').map((x) => x.toLowerCase().substring(0, 4))
+
+        const matchR1 = valueR1.split('__')[1].toLowerCase().substring(0, 4)
+
+        mismatch = matchAmplicon.indexOf(matchR1) === -1
+      }
+    } catch {
+      mismatch = false
+    }
+
+    return {
+      mismatch,
+      valueAmplicon,
+      valueR1,
+      nameR1,
+    }
+  })
 
   useEffect(() => {
     prevAmplicon.current = { ...EmptyOperatorAndValue }
-    setMetagenomeMode(metagenomeMode)
-    clearSearchResults()
-    fetchReferenceData()
-  }, [clearSearchResults, fetchReferenceData, metagenomeMode, setMetagenomeMode])
+
+    dispatch(setMetagenomeMode(metagenomeMode))
+    dispatch(clearSearchResults())
+    dispatch(fetchReferenceData())
+  }, [dispatch, metagenomeMode])
 
   // (re)fetch taxonomy and traits when the amplicon selection becomes available or changes
   useEffect(() => {
@@ -88,22 +121,25 @@ const TaxonomyFilterCard = (props) => {
         prevAmplicon.current.operator !== selectedAmplicon.operator)
     ) {
       prevAmplicon.current = { ...selectedAmplicon }
-      fetchTraits()
-      selectTrait('')
-      updateTaxonomy()
+
+      dispatch(fetchTraits())
+      dispatch(selectTrait(''))
+      dispatch(updateTaxonomyDropDowns(''))
     }
-  }, [amplicons.values, fetchTraits, selectTrait, selectedAmplicon, updateTaxonomy])
+  }, [dispatch, amplicons.values, selectedAmplicon])
 
   const clearFilters = () => {
-    props.clearAllTaxonomyFilters()
+    dispatch(clearAllTaxonomyFilters())
     prevAmplicon.current = { ...EmptyOperatorAndValue }
   }
 
   return (
     <Card>
-      <CardHeader tag="h5">Filter by amplicon, taxonomy and traits</CardHeader>
+      <CardHeader tag="h5">
+        <span style={{ lineHeight: '2rem' }}>Filter by amplicon, taxonomy and traits</span>
+      </CardHeader>
       <CardBody className="filters">
-        <AmpliconFilter info={AmpliconFilterInfo} metagenomeMode={props.metagenomeMode} />
+        <AmpliconFilter />
         <hr />
         <h5 className="text-center">
           Taxonomy{' '}
@@ -127,25 +163,23 @@ const TaxonomyFilterCard = (props) => {
                   paddingTop: '0.15rem',
                   paddingBottom: '0.15rem',
                 }}
-                onClick={openTaxonomySearchModal}
+                onClick={() => dispatch(openTaxonomySearchModal())}
               >
                 search for a taxonomy
               </Button>
             </p>
-            {mismatch && (
+            {mismatchState.mismatch && (
               <p className="text-center" style={{ fontSize: '13px' }}>
-                Note: potential mismatch between Amplicon ({valueAmplicon}) and {nameR1} ({valueR1})
+                Note: potential mismatch between Amplicon ({mismatchState.valueAmplicon}) and{' '}
+                {mismatchState.nameR1} ({mismatchState.valueR1})
               </p>
             )}
           </Col>
         </Row>
 
-        {props.selectedAmplicon.value !== '' && (
+        {selectedAmplicon.value !== '' && (
           <>
-            <TaxonomySelector
-              info={TaxonomySourceInfo}
-              placeholder="Select database and method&hellip;"
-            />
+            <TaxonomySelector info={TaxonomySourceInfo} />
             {TaxonomyDropDowns}
             <hr />
             <TraitFilter info={TraitFilterInfo} />
@@ -162,58 +196,4 @@ const TaxonomyFilterCard = (props) => {
   )
 }
 
-function mapStateToProps(state, ownProps) {
-  // check for mismatch between Amplicon and R1 (i.e. Kingdom/Domain)
-  // the split on "__" means that metaxa will always have an error caught and mismatch to be false
-  let mismatch, valueAmplicon, valueR1, nameR1
-  try {
-    const optionsAmplicons = state.referenceData.amplicons.values
-    const optionsTaxonomyR1 = state.searchPage.filters.taxonomy.r1
-    const textAmplicon = optionsAmplicons.find(
-      (x) => x.id === state.searchPage.filters.selectedAmplicon.value
-    )
-    const textR1 = optionsTaxonomyR1.options.find((x) => x.id === optionsTaxonomyR1.selected.value)
-
-    if (textAmplicon === undefined || textR1 === undefined) {
-      // skip
-      mismatch = false
-    } else {
-      valueAmplicon = textAmplicon.value
-      valueR1 = textR1.value
-      nameR1 = state.referenceData.ranks.rankLabels.r1
-      const matchAmplicon = valueAmplicon.split('_').map((x) => x.toLowerCase().substring(0, 4))
-      const matchR1 = valueR1.split('__')[1].toLowerCase().substring(0, 4)
-      mismatch = matchAmplicon.indexOf(matchR1) === -1
-    }
-  } catch (err) {
-    mismatch = false
-  }
-
-  return {
-    amplicons: state.referenceData.amplicons,
-    traits: state.referenceData.traits,
-    mismatchState: { mismatch: mismatch, valueAmplicon, valueR1, nameR1: nameR1 },
-    selectedAmplicon: getAmpliconFilter(state),
-  }
-}
-
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      fetchReferenceData,
-      updateTaxonomy: updateTaxonomyDropDowns(''),
-      fetchTraits,
-      setMetagenomeMode,
-      clearSearchResults,
-      selectTrait,
-      clearAllTaxonomyFilters,
-      openTaxonomySearchModal,
-    },
-    dispatch
-  )
-}
-
-export const AmpliconTaxonomyFilterCard = connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(TaxonomyFilterCard)
+export const AmpliconTaxonomyFilterCard = TaxonomyFilterCard

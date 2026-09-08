@@ -8,20 +8,14 @@ import * as ReactDOM from 'react-dom'
 
 import { Provider } from 'react-redux'
 import { BrowserRouter as Router } from 'react-router-dom'
-import { applyMiddleware, compose, createStore } from 'redux'
-import thunk from 'redux-thunk'
 
 import App from 'app'
-import reducers from 'reducers'
+import { store } from 'app/store'
 
 import Analytics from 'analytics'
 import { AnalyticsProvider } from 'use-analytics'
 import { TourProvider } from 'providers/tour_provider'
 import mixpanelPlugin from '@analytics/mixpanel'
-
-const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose
-
-export const store = createStore(reducers, composeEnhancers(applyMiddleware(thunk)))
 
 axios
   .get(window.otu_search_config.base_url + '/private/api/v1/config')
@@ -61,15 +55,16 @@ axios
           </TourProvider>
         </AnalyticsProvider>
       </Provider>,
-      document.getElementById('root')
+      document.getElementById('root'),
     )
   })
   .catch((error) => {
     console.log('Error fetching app config')
 
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.NODE_ENV === 'development') {
+      console.error(error)
       const message =
-        '<h1>NODE_ENV === development only message</h1><p>perhaps taxonomy or spatial cache is still warming</p>'
+        '<h1>NODE_ENV === development only message</h1><p>Error fetching app config</p><p>Perhaps taxonomy or spatial cache is still warming</p>'
       document.write(message)
     }
   })

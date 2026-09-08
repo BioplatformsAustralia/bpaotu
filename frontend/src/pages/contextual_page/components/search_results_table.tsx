@@ -1,26 +1,26 @@
 import React, { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+
+import { useAppSelector, useAppDispatch } from 'hooks/redux'
 
 import 'react-table/react-table.css'
 import { fieldsToColumns, SearchResultsTable } from 'components/search_results_table'
 import { changeTableProperties, search } from '../reducers/search'
 
 const ContextualSearchResultsTable = () => {
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
 
-  const { results, extraColumns } = useSelector((state: any) => ({
+  const { results, extraColumns } = useAppSelector((state) => ({
     results: state.contextualPage.results,
     extraColumns: fieldsToColumns(
       state.contextualPage.selectColumns.columns,
-      state.contextualDataDefinitions
+      state.contextualDataDefinitions,
     ),
   }))
 
   // search once on initial mount
   useEffect(() => {
     dispatch(search())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [dispatch])
 
   return (
     <SearchResultsTable

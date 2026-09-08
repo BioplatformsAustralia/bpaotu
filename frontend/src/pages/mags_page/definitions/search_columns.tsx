@@ -1,22 +1,18 @@
 import React, { useCallback } from 'react'
-import { NavLink as RRNavLink } from 'react-router-dom'
-import { NavLink } from 'reactstrap'
+import { NavLink } from 'react-router-dom'
+import { type CellInfo } from 'react-table'
 import md5 from 'blueimp-md5'
 
 import { UncontrolledTooltip } from 'reactstrap'
 import Octicon from 'components/octicon'
 
-const mag_inspect_link = (props) => (
-  <NavLink to={`/mags/mag/${props.value}`} tag={RRNavLink}>
-    {props.value}
-  </NavLink>
-)
+const MagInspectLink = ({ value }: CellInfo) => {
+  return <NavLink to={`/mags/mag/${value}`}>{value}</NavLink>
+}
 
-const sample_inspect_link = (props) => (
-  <NavLink to={`/mags/sample/${props.value}`} tag={RRNavLink}>
-    {props.value}
-  </NavLink>
-)
+const SampleInspectLink = ({ value }: CellInfo) => {
+  return <NavLink to={`/mags/sample/${value}`}>{value}</NavLink>
+}
 
 const InputSearch = ({ filter, onChange, width = 150 }) => {
   // Safe string value for controlled input: empty string if no filter yet.
@@ -51,7 +47,7 @@ const InputNumberRange: React.FC<{
       if (!next.min && !next.max) return onChange(undefined) // tells react-table to clear
       onChange(next)
     },
-    [current, onChange]
+    [current, onChange],
   )
 
   const handleMaxChange = useCallback(
@@ -60,7 +56,7 @@ const InputNumberRange: React.FC<{
       if (!next.min && !next.max) return onChange(undefined) // tells react-table to clear
       onChange(next)
     },
-    [current, onChange]
+    [current, onChange],
   )
 
   const DECIMAL_PATTERN = '^-?\\d*\\.?\\d*$'
@@ -98,7 +94,15 @@ const HeaderInfo = ({ accessor }) => {
         textAlign: 'center',
       }}
     >
-      <div>{label}</div>
+      <div
+        style={{
+          whiteSpace: 'normal',
+          overflowWrap: 'normal',
+          paddingRight: infoText ? 20 : 0,
+        }}
+      >
+        {label}
+      </div>
       <div style={{ fontSize: 13, fontWeight: 'normal', color: '#626267' }}>
         {units || <>&nbsp;</>}
       </div>
@@ -124,6 +128,16 @@ const HeaderInfo = ({ accessor }) => {
       )}
     </div>
   )
+}
+
+const TaxGTDBRankCell = ({ value }: CellInfo) => {
+  const rank = typeof value === 'string' ? value : ''
+
+  if (rank.trim().endsWith('__')) {
+    return null
+  }
+
+  return <span>{rank}</span>
 }
 
 export const searchColumnsLookup = {
@@ -231,7 +245,7 @@ export const searchColumnsLookup = {
     infoText: 'GC percentage for the MAG',
   },
   num_contigs: {
-    label: '# Contigs',
+    label: 'Contigs',
     units: 'num',
     infoText: 'Number of contigs in the MAG ',
   },
@@ -264,7 +278,7 @@ const searchColumnsBase = [
   {
     accessor: 'mag_id',
     Header: <HeaderInfo accessor="mag_id" />,
-    Cell: mag_inspect_link,
+    Cell: MagInspectLink,
     filterable: true,
     sortable: true,
     minWidth: 210,
@@ -275,7 +289,7 @@ const searchColumnsBase = [
   {
     accessor: 'sample_id',
     Header: <HeaderInfo accessor="sample_id" />,
-    Cell: sample_inspect_link,
+    Cell: SampleInspectLink,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -292,6 +306,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_domain',
     Header: <HeaderInfo accessor="tax_gtdb_domain" />,
+    Cell: TaxGTDBRankCell,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -300,6 +315,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_phylum',
     Header: <HeaderInfo accessor="tax_gtdb_phylum" />,
+    Cell: TaxGTDBRankCell,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -308,6 +324,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_class',
     Header: <HeaderInfo accessor="tax_gtdb_class" />,
+    Cell: TaxGTDBRankCell,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -316,6 +333,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_order',
     Header: <HeaderInfo accessor="tax_gtdb_order" />,
+    Cell: TaxGTDBRankCell,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -324,6 +342,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_family',
     Header: <HeaderInfo accessor="tax_gtdb_family" />,
+    Cell: TaxGTDBRankCell,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -332,6 +351,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_genus',
     Header: <HeaderInfo accessor="tax_gtdb_genus" />,
+    Cell: TaxGTDBRankCell,
     width: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -340,6 +360,7 @@ const searchColumnsBase = [
   {
     accessor: 'tax_gtdb_species',
     Header: <HeaderInfo accessor="tax_gtdb_species" />,
+    Cell: TaxGTDBRankCell,
     minWidth: 150,
     Filter: ({ filter, onChange }) => (
       <InputSearch filter={filter} onChange={onChange} width={150} />
@@ -358,18 +379,18 @@ const searchColumnsBase = [
     accessor: 'completeness_checkm',
     Header: <HeaderInfo accessor="completeness_checkm" />,
     sortable: true,
-    minWidth: 180,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={180} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
     accessor: 'contamination_checkm',
     Header: <HeaderInfo accessor="contamination_checkm" />,
     sortable: true,
-    minWidth: 180,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={180} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
@@ -385,27 +406,27 @@ const searchColumnsBase = [
     accessor: 'completeness_checkm2',
     Header: <HeaderInfo accessor="completeness_checkm2" />,
     sortable: true,
-    minWidth: 250,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={250} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
     Header: <HeaderInfo accessor="contamination_checkm2" />,
     sortable: true,
     accessor: 'contamination_checkm2',
-    minWidth: 250,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={250} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
     accessor: 'contig_n50_checkm2',
     Header: <HeaderInfo accessor="contig_n50_checkm2" />,
     sortable: true,
-    minWidth: 240,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={240} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
@@ -448,27 +469,27 @@ const searchColumnsBase = [
     accessor: 'strain_het',
     Header: <HeaderInfo accessor="strain_het" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
     accessor: 'coverage',
     Header: <HeaderInfo accessor="coverage" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   {
     accessor: 'tpm',
     Header: <HeaderInfo accessor="tpm" />,
     sortable: true,
-    minWidth: 150,
+    minWidth: 140,
     Filter: ({ filter, onChange }) => (
-      <InputNumberRange filter={filter} onChange={onChange} width={150} />
+      <InputNumberRange filter={filter} onChange={onChange} width={140} />
     ),
   },
   // NOTE: last column needs a bit more minWidth than the width of the Input

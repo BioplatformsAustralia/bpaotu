@@ -1,17 +1,18 @@
 import React from 'react'
-import { useSelector } from 'react-redux'
 import { Card, CardBody, CardHeader } from 'reactstrap'
 import { isEmpty, map, reject } from 'lodash'
+
+import { useAppSelector } from 'hooks/redux'
 
 import { EmptyOTUQuery } from 'search'
 import { ExportDataButton } from 'components/export_data_button'
 import ContextualSearchResultsTable from './search_results_table'
 
-const SearchResultsCard = (props) => {
-  const { extraColumns, sorting } = useSelector((state: any) => ({
+const SearchResultsCard = () => {
+  const { extraColumns, sorting } = useAppSelector((state) => ({
     extraColumns: reject(
       map(state.contextualPage.selectColumns.columns, (c) => c.name),
-      (c) => isEmpty(c)
+      (c) => isEmpty(c),
     ),
     sorting: state.contextualPage.results.sorted,
   }))

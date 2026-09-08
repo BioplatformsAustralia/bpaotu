@@ -39,12 +39,12 @@ class LatLngCoordinatesControl extends MapControl {
 
       _onMouseMove: function (e) {
         this._pos = e.latlng.wrap()
-        var lngValue = this.options.wrapLng ? e.latlng.wrap().lng : e.latlng.lng
-        var latValue = e.latlng.lat
-        var lng
-        var lat
-        var value
-        var prefixAndValue
+        let lngValue = this.options.wrapLng ? e.latlng.wrap().lng : e.latlng.lng
+        let latValue = e.latlng.lat
+        let lng
+        let lat
+        let value
+        let prefixAndValue
 
         if (this.options.formatter) {
           prefixAndValue = this.options.formatter(lngValue, latValue)

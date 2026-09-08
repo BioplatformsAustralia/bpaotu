@@ -3,7 +3,7 @@ import RegisterButton from 'components/register_button'
 import * as React from 'react'
 import { Alert, Container } from 'reactstrap'
 
-export default (props) => {
+const LoginRequiredPage = () => {
   return (
     <Container fluid={true}>
       <Alert color="danger" className="text-center">
@@ -34,3 +34,5 @@ export default (props) => {
     </Container>
   )
 }
+
+export default LoginRequiredPage

@@ -1,13 +1,18 @@
 import { map, zipObject } from 'lodash'
 import { createActions, handleAction, handleActions } from 'redux-actions'
+import { type Reducer, type AnyAction } from 'redux'
 
 import { getReferenceData } from 'api'
 import { taxonomy_keys } from 'app/constants'
 import { handleSimpleAPIResponse } from 'reducers/utils'
+import { referenceDataInitialState, ReferenceDataState } from './types'
+
+type RanksState = ReferenceDataState['ranks']
+type AmpliconsState = ReferenceDataState['amplicons']
 
 export const { fetchReferenceDataEnded, selectTaxonomySource } = createActions(
   'FETCH_REFERENCE_DATA_ENDED',
-  'SELECT_TAXONOMY_SOURCE'
+  'SELECT_TAXONOMY_SOURCE',
 )
 
 export function fetchReferenceData() {
@@ -16,18 +21,7 @@ export function fetchReferenceData() {
   }
 }
 
-const initialAmpliconsState = {
-  isLoading: true,
-  values: [],
-  error: false,
-}
-
-const initialRanksState = {
-  rankLabelsLookup: {},
-  rankLabels: {},
-}
-
-export const ranksReducer = handleActions(
+export const ranksReducer: Reducer<RanksState, AnyAction> = handleActions<RanksState, any>(
   {
     [fetchReferenceDataEnded as any]: {
       next: (state, action: any) => ({
@@ -53,10 +47,13 @@ export const ranksReducer = handleActions(
       }
     },
   },
-  initialRanksState
+  referenceDataInitialState.ranks,
 )
 
-export const ampliconsReducer = handleAction(
+export const ampliconsReducer: Reducer<AmpliconsState, AnyAction> = handleAction<
+  AmpliconsState,
+  any
+>(
   fetchReferenceDataEnded,
   {
     next: (state, action: any) => ({
@@ -77,5 +74,5 @@ export const ampliconsReducer = handleAction(
       }
     },
   },
-  initialAmpliconsState
+  referenceDataInitialState.amplicons,
 )

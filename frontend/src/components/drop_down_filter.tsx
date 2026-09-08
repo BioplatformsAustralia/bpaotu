@@ -6,53 +6,65 @@ import Select from 'react-select'
 import { FilterHeader } from 'components/filter_header'
 import { OperatorAndValue } from 'search'
 
-interface Props {
+const CouldNotLoadValues = "Couldn't load values!"
+
+interface DropDownFilterProps {
   label: string
-  info: string
+  info?: string
+  isDisabled: boolean
+  selectBoxOnly?: boolean
+  optionsLoadingError: boolean
   selected: OperatorAndValue
   optionsLoading: boolean
-  options: OperatorAndValue[]
+  options: OptionIdAndValue[]
   selectValue: (id: string) => void
   selectOperator: (id: string) => void
-  onChange: (id: string) => void
+  onChange?: () => void
 }
 
-const DropDownFilter = (props) => {
-  const {
-    label,
-    isDisabled,
-    selected,
-    selectBoxOnly,
-    optionsLoadingError,
-    optionsLoading,
-    options,
-  } = props
+type OptionIdAndValue = {
+  id: string
+  value: string
+}
 
+const DropDownFilter = ({
+  label,
+  info,
+  isDisabled,
+  selected,
+  selectBoxOnly,
+  optionsLoadingError,
+  optionsLoading,
+  options,
+  selectValue,
+  selectOperator,
+  onChange,
+}: DropDownFilterProps) => {
+  const renderOption = (option: OptionIdAndValue) => ({
+    value: option.id,
+    label: option.value,
+  })
   const renderOptions = () => {
     if (optionsLoadingError) {
-      return [{ value: '', label: "Couldn't load values!" }]
+      return [{ value: '', label: CouldNotLoadValues }]
     }
 
     return [{ value: '', label: '---' }, ...options.map(renderOption)]
   }
 
-  const renderOption = (option) => ({ value: option.id, label: option.value })
-
   const onValueChange = (evt) => {
-    const id = evt.value
-    props.selectValue(id)
+    selectValue(evt.value)
 
-    if (props.onChange) {
-      props.onChange()
+    if (onChange) {
+      onChange()
     }
   }
 
   const onOperatorChange = (evt) => {
-    const value = evt.target.value
-    props.selectOperator(value)
+    selectOperator(evt.target.value)
 
-    if (props.onChange) {
-      props.onChange()
+    if (onChange) {
+      onChange()
     }
   }
 
@@ -63,12 +75,12 @@ const DropDownFilter = (props) => {
   const SelectBox = () => {
     return (
       <Select
-        placeholder={optionsLoadingError ? optionsLoadingError : '---'}
+        placeholder={optionsLoadingError ? CouldNotLoadValues : '---'}
         isSearchable={true}
         isLoading={optionsLoading}
         options={renderOptions()}
         isDisabled={isDisabled || optionsLoadingError}
-        value={map(options, renderOption).filter((option) => option.value === props.selected.value)}
+        value={map(options, renderOption).filter((option) => option.value === selected.value)}
         onChange={onValueChange}
       />
     )
@@ -79,12 +91,13 @@ const DropDownFilter = (props) => {
   }
 
   return (
-    <FormGroup row={true}>
-      <FilterHeader label={props.label} info={props.info} />
+    <FormGroup className="form-group" row={true} noMargin>
+      <FilterHeader label={label} info={info} />
       <Col sm={3}>
         <Input
           type="select"
           name="operator"
+          className="form-control"
           disabled={isDisabled}
           value={selected.operator}
           onChange={onOperatorChange}

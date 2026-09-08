@@ -1,6 +1,4 @@
-import * as React from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import React, { useEffect } from 'react'
 import {
   Alert,
   Button,
@@ -15,8 +13,9 @@ import {
   UncontrolledTooltip,
 } from 'reactstrap'
 import Octicon from 'components/octicon'
-
 import AnimateHelix from 'components/animate_helix'
+
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
 
 import {
   clearBlastAlert,
@@ -26,6 +25,7 @@ import {
   cancelBlast,
 } from '../reducers/blast_search_modal'
 import { getAmpliconFilter } from '../reducers/amplicon'
+import { search, hasSearchChanged } from '../reducers/search'
 
 const blastStatusMapping = {
   init: 'Initialising',
@@ -42,27 +42,48 @@ const blastStatusMapping = {
   complete: 'Complete',
 }
 
-const BlastSearchCard = (props) => {
+const BlastSearchCard = () => {
+  const dispatch = useAppDispatch()
+
   const {
     alerts,
     blastParams,
-    blastStatus,
+    status: blastStatus,
     imageSrc,
-    isAmpliconSelected,
-    isLoading,
-    isSearchDisabled,
     isSubmitting,
-    rowsCount,
     sequenceValue,
+  } = useAppSelector((state) => state.searchPage.blastSearchModal)
 
-    cancelBlast,
-    clearBlastAlert,
-    handleBlastParameters,
-    handleBlastSequence,
-    runBlast,
-  } = props
+  const searchChanged = useAppSelector((state) => hasSearchChanged(state))
+
+  useEffect(() => {
+    if (searchChanged) {
+      dispatch(search())
+    }
+  }, [dispatch, searchChanged])
+
+  const isAmpliconSelected = useAppSelector((state) => getAmpliconFilter(state).value)
+
+  const isSearchDisabled = useAppSelector((state) => {
+    const blast = state.searchPage.blastSearchModal
+
+    return getAmpliconFilter(state).value === '' || blast.sequenceValue === '' || blast.isSubmitting
+  })
+
+  const isLoading = useAppSelector((state) => state.searchPage.results.isLoading)
+
+  const rowsCount = useAppSelector((state) => state.searchPage.results.rowsCount)
 
   const wrapText = (text) => ({ __html: text })
+
+  const handleParameterChange = (param: string, value: string) => {
+    dispatch(
+      handleBlastParameters({
+        param,
+        value,
+      }),
+    )
+  }
 
   const parentContainerStyle = {
     display: 'flex',
@@ -107,12 +128,7 @@ const BlastSearchCard = (props) => {
               type="select"
               name="qcov_hsp_perc"
               value={blastParams['qcov_hsp_perc']}
-              onChange={(evt) =>
-                handleBlastParameters({
-                  param: 'qcov_hsp_perc',
-                  value: evt.target.value,
-                })
-              }
+              onChange={(evt) => handleParameterChange('qcov_hsp_perc', evt.target.value)}
             >
               <option value="10">10</option>
               <option value="20">20</option>
@@ -141,12 +157,7 @@ const BlastSearchCard = (props) => {
               type="select"
               name="perc_identity"
               value={blastParams['perc_identity']}
-              onChange={(evt) =>
-                handleBlastParameters({
-                  param: 'perc_identity',
-                  value: evt.target.value,
-                })
-              }
+              onChange={(evt) => handleParameterChange('perc_identity', evt.target.value)}
             >
               <option value="90">90</option>
               <option value="91">91</option>
@@ -168,15 +179,16 @@ const BlastSearchCard = (props) => {
           placeholder="Enter sequence here to run BLAST search against the selected amplicon and taxonomy/contextual filters"
           value={sequenceValue}
           disabled={!isAmpliconSelected}
-          onChange={(evt) => handleBlastSequence(evt.target.value)}
+          onChange={(evt) => dispatch(handleBlastSequence(evt.target.value))}
         />
         <div className="pt-2">
           {alerts.map((alert, idx) => (
             <Alert
               key={idx}
               color={alert.color}
+              fade={false}
               className="text-center"
-              toggle={() => clearBlastAlert(idx)}
+              toggle={() => dispatch(clearBlastAlert(idx))}
             >
               <div dangerouslySetInnerHTML={wrapText(alert.text)} />
             </Alert>
@@ -210,12 +222,16 @@ const BlastSearchCard = (props) => {
           <div>No Sample OTUs found for these search parameters</div>
         ) : (
           <>
-            <Button color="warning" disabled={isSearchDisabled} onClick={runBlast}>
+            <Button
+              color="warning"
+              disabled={isSearchDisabled}
+              onClick={() => dispatch(runBlast())}
+            >
               Run BLAST
             </Button>
             {isSubmitting && (
               <div className="text-center" style={{ marginTop: 8 }}>
-                <Button onClick={cancelBlast} size="sm">
+                <Button onClick={() => dispatch(cancelBlast())} size="sm">
                   Cancel
                 </Button>
               </div>
@@ -227,36 +243,4 @@ const BlastSearchCard = (props) => {
   )
 }
 
-const mapStateToProps = (state, props) => {
-  const selectedAmplicon = getAmpliconFilter(state)
-
-  return {
-    alerts: state.searchPage.blastSearchModal.alerts,
-    blastParams: state.searchPage.blastSearchModal.blastParams,
-    blastStatus: state.searchPage.blastSearchModal.status,
-    imageSrc: state.searchPage.blastSearchModal.imageSrc,
-    isAmpliconSelected: selectedAmplicon.value,
-    isSubmitting: state.searchPage.blastSearchModal.isSubmitting,
-    sequenceValue: state.searchPage.blastSearchModal.sequenceValue,
-
-    isSearchDisabled:
-      selectedAmplicon.value === '' ||
-      state.searchPage.blastSearchModal.sequenceValue === '' ||
-      state.searchPage.blastSearchModal.isSubmitting,
-  }
-}
-
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(
-    {
-      cancelBlast,
-      clearBlastAlert,
-      handleBlastParameters,
-      handleBlastSequence,
-      runBlast,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(BlastSearchCard)
+export default BlastSearchCard

@@ -1,21 +1,27 @@
 import axios from 'axios'
+
 import { createActions, handleActions } from 'redux-actions'
+import type { ThunkAction } from 'redux-thunk'
+import type { Reducer } from 'redux'
+import type { AnyAction } from 'redux'
 
 import { oauthCheckAuth } from 'api'
 
 import { handleSimpleAPIResponse } from 'reducers/utils'
+import { RootState } from 'app/store'
 
 const { oauthCheckAuthStarted, oauthCheckAuthEnded } = createActions(
   'OAUTH_CHECK_AUTH_STARTED',
-  'OAUTH_CHECK_AUTH_ENDED'
+  'OAUTH_CHECK_AUTH_ENDED',
 )
 
 export { oauthCheckAuthStarted, oauthCheckAuthEnded }
 
-export const doOauthCheckAuth = () => (dispatch, getState) => {
-  dispatch(oauthCheckAuthStarted())
-  handleSimpleAPIResponse(dispatch, oauthCheckAuth, oauthCheckAuthEnded)
-}
+export const doOauthCheckAuth =
+  (): ThunkAction<void, RootState, unknown, AnyAction> => (dispatch) => {
+    dispatch(oauthCheckAuthStarted())
+    handleSimpleAPIResponse(dispatch, oauthCheckAuth, oauthCheckAuthEnded)
+  }
 
 export type AuthenticationState = {
   isAuthenticated: boolean
@@ -31,9 +37,12 @@ const initialState: AuthenticationState = {
   organisations: null, // even if authenticated, need to check if user has access to this data product
 }
 
-export default handleActions<AuthenticationState>(
+const authReducer: Reducer<AuthenticationState, AnyAction> = handleActions<
+  AuthenticationState,
+  any
+>(
   {
-    [oauthCheckAuthStarted as any]: (state: any, action: any) => {
+    [oauthCheckAuthStarted as any]: (state, action) => {
       return {
         ...state,
         isLoginInProgress: true,
@@ -52,9 +61,7 @@ export default handleActions<AuthenticationState>(
         }
 
         // Set default headers for authenticated requests
-        axios.defaults.headers = {
-          'X-BPAOTU-Auth': 'oauth',
-        }
+        axios.defaults.headers.common['X-BPAOTU-Auth'] = 'oauth'
 
         return {
           isAuthenticated: true,
@@ -71,5 +78,7 @@ export default handleActions<AuthenticationState>(
       },
     },
   },
-  initialState
+  initialState,
 )
+
+export default authReducer

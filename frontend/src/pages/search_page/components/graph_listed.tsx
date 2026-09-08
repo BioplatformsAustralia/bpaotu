@@ -218,7 +218,7 @@ const GraphListed = (props) => {
                   applyEnvironmentFilter(selectedEnvironment, graphName) ? (
                     find(
                       optionscontextualFilter,
-                      (dd) => dd.name === graphName && dd.type === 'ontology'
+                      (dd) => dd.name === graphName && dd.type === 'ontology',
                     ) ? (
                       <PieChartContextual
                         key={'pie' + graphName}
@@ -238,19 +238,15 @@ const GraphListed = (props) => {
                         key={'hist' + graphName}
                         width={chartWidth}
                         height={chartHeight}
-                        selectTab={(e) => {
-                          selectTab(e)
-                        }}
-                        selectToScroll={(e) => {
-                          selectToScroll(e)
-                        }}
+                        selectTab={(e) => selectTab(e)}
+                        selectToScroll={(e) => selectToScroll(e)}
                         filter={graphName}
                         contextualGraphdata={contextualGraphdata}
                       />
                     )
                   ) : (
                     ''
-                  )
+                  ),
                 )}
               </CardBody>
             </Card>

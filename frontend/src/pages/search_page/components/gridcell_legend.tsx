@@ -9,22 +9,22 @@ export class GridCellConstants {
     d > 0.9
       ? '#800026'
       : d > 0.8
-      ? '#BD0026'
-      : d > 0.7
-      ? '#E31A1C'
-      : d > 0.6
-      ? '#FC4E2A'
-      : d > 0.5
-      ? '#FD8D3C'
-      : d > 0.4
-      ? '#FEB24C'
-      : d > 0.3
-      ? '#FED976'
-      : d > 0.2
-      ? '#FFEDA0'
-      : d > 0.0
-      ? '#FFFFCC'
-      : '#9ECAE1'
+        ? '#BD0026'
+        : d > 0.7
+          ? '#E31A1C'
+          : d > 0.6
+            ? '#FC4E2A'
+            : d > 0.5
+              ? '#FD8D3C'
+              : d > 0.4
+                ? '#FEB24C'
+                : d > 0.3
+                  ? '#FED976'
+                  : d > 0.2
+                    ? '#FFEDA0'
+                    : d > 0.0
+                      ? '#FFFFCC'
+                      : '#9ECAE1'
 }
 
 class GridCellLegendControl extends MapControl {
@@ -46,7 +46,7 @@ class GridCellLegendControl extends MapControl {
             GridCellConstants.outlineOpacity +
             '; stroke-width:1; stroke-linecap:round; stroke-linejoin:round"></rect>' +
             '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="11" fill="#ffffff">Gridcell</text>' +
-            '</svg>'
+            '</svg>',
         )
 
         for (let i = 0; i < levels.length; i++) {
@@ -68,7 +68,7 @@ class GridCellLegendControl extends MapControl {
               '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="11" fill="black">' +
               (to ? from + '-' + to : (from > 0 ? '>' : '<') + from) +
               '</text>' +
-              '</svg>'
+              '</svg>',
           )
         }
         div.innerHTML = labels.join('')

@@ -1,0 +1,35 @@
+.graph-tabs {
+  display: flex;
+  padding-left: 2rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.graph-tab {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-bottom: 1px solid #dee2e6;
+  background: transparent;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  margin-bottom: -1px;
+  color: inherit;
+  border-radius: 0.25rem 0.25rem 0 0;
+}
+
+.graph-tab-tooltip {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.graph-tab:hover {
+  border-color: #e9ecef #e9ecef #dee2e6;
+}
+
+.graph-tab.active {
+  background: white;
+  border-color: #dee2e6 #dee2e6 white;
+  font-weight: normal;
+}

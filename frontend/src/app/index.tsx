@@ -1,12 +1,12 @@
 import React, { useEffect, useCallback } from 'react'
-import { connect } from 'react-redux'
-import { Link, withRouter } from 'react-router-dom'
-import { bindActionCreators } from 'redux'
+import { Link } from 'react-router-dom'
 
 import CookieConsent, { getCookieConsentValue } from 'react-cookie-consent'
 import { apiCookieConsentAccepted, apiCookieConsentDeclined } from 'api'
 import { pluginsList, triggerHashedIdentify } from 'app/analytics'
 import { useAnalytics } from 'use-analytics'
+
+import { useAppSelector, useAppDispatch } from 'hooks/redux'
 
 import Header from './header'
 import Footer from './footer'
@@ -18,10 +18,11 @@ import LoginRequiredPage from 'pages/login_required_page'
 
 import { doOauthCheckAuth } from 'reducers/auth'
 
-const App = (props) => {
-  const { identify, page, plugins } = useAnalytics()
+const App = () => {
+  const dispatch = useAppDispatch()
+  const auth = useAppSelector((state) => state.auth)
 
-  const { auth, doOauthCheckAuth } = props
+  const { identify, page, plugins } = useAnalytics()
 
   const enableCookies = useCallback(() => {
     plugins.enable(pluginsList)
@@ -36,8 +37,8 @@ const App = (props) => {
   }, [identify, plugins, auth])
 
   useEffect(() => {
-    doOauthCheckAuth()
-  }, [doOauthCheckAuth])
+    dispatch(doOauthCheckAuth())
+  }, [dispatch])
 
   useEffect(() => {
     // important to note that cookie stores a string value of true or false
@@ -113,19 +114,4 @@ const App = (props) => {
   )
 }
 
-function mapStateToProps(state) {
-  return {
-    auth: state.auth,
-  }
-}
-
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      doOauthCheckAuth,
-    },
-    dispatch
-  )
-}
-
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(App) as any)
+export default App

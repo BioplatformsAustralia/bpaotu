@@ -1,8 +1,14 @@
 import { createActions, handleActions } from 'redux-actions'
+import type { Reducer } from 'redux'
+import type { AnyAction } from 'redux'
+
 import { executeBlastOtuSearch, executeBlast, executeCancelBlast, getBlastSubmission } from 'api'
 import { handleSimpleAPIResponse, changeElementAtIndex, removeElementAtIndex } from 'reducers/utils'
 import { describeSearch } from './search'
 import { BlastSubmission, ErrorList, searchPageInitialState } from './types'
+import type { SearchPageState } from 'pages/search_page/reducers/types'
+
+type BlastSearchCardState = SearchPageState['blastSearchModal']
 
 import {
   filter,
@@ -45,7 +51,7 @@ export const {
   'BLAST_SUBMISSION_UPDATE_STARTED',
   'BLAST_SUBMISSION_UPDATE_ENDED',
   'CANCEL_BLAST_STARTED',
-  'CANCEL_BLAST_ENDED'
+  'CANCEL_BLAST_ENDED',
 )
 
 const BLAST_SUBMISSION_POLL_FREQUENCY_MS = 5000
@@ -58,7 +64,7 @@ export const fetchBlastModalSamples = () => (dispatch, getState) => {
   handleSimpleAPIResponse(
     dispatch,
     partial(executeBlastOtuSearch, filters),
-    blastSearchModalFetchSamplesEnded
+    blastSearchModalFetchSamplesEnded,
   )
 }
 
@@ -140,11 +146,14 @@ function alert(text, color = 'primary') {
 }
 
 const BLAST_ALERT_IN_PROGRESS = alert(
-  'BLAST search is in progress, and may take several minutes. Do not close your browser - this status will update once the search is complete.'
+  'BLAST search is in progress, and may take several minutes. Do not close your browser - this status will update once the search is complete.',
 )
 const BLAST_ALERT_ERROR = alert('An error occured while running BLAST.', 'danger')
 
-export default handleActions(
+const blastSearchCardReducer: Reducer<BlastSearchCardState, AnyAction> = handleActions<
+  BlastSearchCardState,
+  any
+>(
   {
     [openBlastModal as any]: (state, action) => ({
       ...state,
@@ -180,13 +189,16 @@ export default handleActions(
       ...state,
       sequenceValue: join(
         filter(upperCase(action.payload), (ch) => includes('GATC', ch)),
-        ''
+        '',
       ),
     }),
     [handleBlastParameters as any]: (state, action: any) => {
       return {
         ...state,
-        blastParams: { ...state.blastParams, [action.payload.param]: action.payload.value },
+        blastParams: {
+          ...state.blastParams,
+          [action.payload.param]: action.payload.value,
+        },
       }
     },
     [runBlastStarted as any]: (state, action: any) => ({
@@ -227,8 +239,8 @@ export default handleActions(
       next: (state, action: any) => {
         const actionSubmission = action.payload.data.submission
         const actionSubmissionState = actionSubmission.state
-        const lastSubmission = last(state.submissions)
-        const newLastSubmissionState = ((submission) => {
+        const lastSubmission = last(state.submissions) as BlastSubmission | undefined
+        const newLastSubmissionState = ((submission: BlastSubmission) => {
           const { state: status, error } = action.payload.data.submission
           const newState = {
             ...submission,
@@ -276,7 +288,7 @@ export default handleActions(
           const BLAST_ALERT_SUCCESS = alert(alertContent, 'success')
           newAlerts = reject([state.alerts, BLAST_ALERT_IN_PROGRESS])
           newAlerts.push(
-            newLastSubmissionState['succeeded'] ? BLAST_ALERT_SUCCESS : BLAST_ALERT_ERROR
+            newLastSubmissionState['succeeded'] ? BLAST_ALERT_SUCCESS : BLAST_ALERT_ERROR,
           )
         }
 
@@ -285,7 +297,7 @@ export default handleActions(
           submissions: changeElementAtIndex(
             state.submissions,
             state.submissions.length - 1,
-            (_) => newLastSubmissionState
+            (_) => newLastSubmissionState,
           ),
           alerts: newAlerts,
           isSubmitting: isSubmitting,
@@ -307,7 +319,7 @@ export default handleActions(
               finished: true,
               succeeded: false,
               error: action.error,
-            })
+            }),
           ),
           alerts: [BLAST_ALERT_ERROR],
           imageSrc: '',
@@ -328,5 +340,7 @@ export default handleActions(
       status: 'cancelled',
     }),
   },
-  searchPageInitialState.blastSearchModal
+  searchPageInitialState.blastSearchModal,
 )
+
+export default blastSearchCardReducer

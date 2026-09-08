@@ -1,12 +1,19 @@
 import { map, reject, isEmpty, partial } from 'lodash'
 import { createActions, handleActions } from 'redux-actions'
+import { type Reducer, type AnyAction } from 'redux'
+
 import { getTaxonomyDataForGraph } from 'api'
 import { handleSimpleAPIResponse } from 'reducers/utils'
 import { describeSearch } from 'pages/search_page/reducers/search'
 
+export interface TaxonomyDataForGraphState {
+  isLoading: boolean
+  graphdata: Record<string, unknown>
+}
+
 const { fetchTaxonomyDataForGraphStarted, fetchTaxonomyDataForGraphEnded } = createActions(
   'FETCH_TAXONOMY_DATA_FOR_GRAPH_STARTED',
-  'FETCH_TAXONOMY_DATA_FOR_GRAPH_ENDED'
+  'FETCH_TAXONOMY_DATA_FOR_GRAPH_ENDED',
 )
 
 export const fetchTaxonomyDataForGraph = () => (dispatch, getState) => {
@@ -16,23 +23,26 @@ export const fetchTaxonomyDataForGraph = () => (dispatch, getState) => {
     ...state.contextualPage.results,
     columns: reject(
       map(state.contextualPage.selectColumns.columns, (c) => c.name),
-      (name) => isEmpty(name)
+      (name) => isEmpty(name),
     ),
   }
   dispatch(fetchTaxonomyDataForGraphStarted())
   handleSimpleAPIResponse(
     dispatch,
     partial(getTaxonomyDataForGraph, filters, options),
-    fetchTaxonomyDataForGraphEnded
+    fetchTaxonomyDataForGraphEnded,
   )
 }
 
-const initialState = {
+const initialState: TaxonomyDataForGraphState = {
   isLoading: false,
   graphdata: {},
 }
 
-export default handleActions(
+const taxonomyDataForGraphReducer: Reducer<TaxonomyDataForGraphState, AnyAction> = handleActions<
+  TaxonomyDataForGraphState,
+  any
+>(
   {
     [fetchTaxonomyDataForGraphStarted as any]: (state, action) => ({
       ...initialState,
@@ -45,5 +55,7 @@ export default handleActions(
       }
     },
   },
-  initialState
+  initialState,
 )
+
+export default taxonomyDataForGraphReducer

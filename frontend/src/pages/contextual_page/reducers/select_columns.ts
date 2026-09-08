@@ -16,7 +16,7 @@ export const {
   },
   'ADD_COLUMN',
   'REMOVE_COLUMN',
-  'CLEAR_COLUMNS'
+  'CLEAR_COLUMNS',
 )
 
 const EmptyColumn = {
@@ -24,20 +24,34 @@ const EmptyColumn = {
   value: '',
 }
 
-const columnsReducer = handleActions(
+export type Column = {
+  name: string
+  value: string
+}
+
+export type ColumnsState = Column[]
+
+const columnsReducer = handleActions<ColumnsState>(
   {
-    [addColumn as any]: (state: any, action) => [...state, EmptyColumn],
-    [removeColumn as any]: (state: any, action) => removeElementAtIndex(state, action.payload),
-    [clearColumns as any]: (state: any, action) => [],
-    [selectColumn as any]: (state: any, action: any) =>
-      changeElementAtIndex(state, action.payload.index, (filter) => ({
+    [addColumn as any]: (state) => [...state, EmptyColumn],
+
+    [removeColumn as any]: (state, action: any) => removeElementAtIndex(state, action.payload),
+
+    [clearColumns as any]: () => [],
+
+    [selectColumn as any]: (state, action: any) =>
+      changeElementAtIndex(state, action.payload.index, () => ({
         ...EmptyColumn,
         name: action.payload.value,
       })),
   },
-  []
+  [],
 )
 
-export default combineReducers({
+export type SelectColumnsState = {
+  columns: ColumnsState
+}
+
+export default combineReducers<SelectColumnsState>({
   columns: columnsReducer,
 })

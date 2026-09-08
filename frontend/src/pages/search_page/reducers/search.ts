@@ -1,17 +1,24 @@
 import { find, get as _get, isEmpty, map, reject, uniq } from 'lodash'
 import { createActions, handleActions, createAction } from 'redux-actions'
 
+import { createSearchHash } from './utils'
+
 import { taxonomy_keys } from 'app/constants'
 
 import { executeSearch } from 'api'
 import { getAmpliconFilter, isMetagenomeSearch } from '../reducers/amplicon'
 import { submitToGalaxyEnded, submitToGalaxyStarted } from './submit_to_galaxy'
 import { ErrorList, searchPageInitialState, EmptyOperatorAndValue } from './types'
+import type { Reducer } from 'redux'
+import type { AnyAction } from 'redux'
+import type { SearchPageState } from './types'
+
+type SearchResultsState = SearchPageState['results']
 
 export const { changeTableProperties, searchStarted, searchEnded } = createActions(
   'CHANGE_TABLE_PROPERTIES',
   'SEARCH_STARTED',
-  'SEARCH_ENDED'
+  'SEARCH_ENDED',
 )
 export const clearSearchResults = createAction('CLEAR_SEARCH_RESULTS')
 
@@ -45,7 +52,7 @@ function marshallContextualFilters(filtersState, dataDefinitions) {
         operator: filter.operator,
         ...values,
       }
-    }
+    },
   )
 
   return filters
@@ -68,7 +75,7 @@ export const describeSearch = (state) => {
   const haveAmplicon = selectedAmplicon.value !== ''
   const selectedTrait = haveAmplicon ? stateFilters.selectedTrait : EmptyOperatorAndValue
   const selectedTaxonomies = map(taxonomy_keys, (taxonomy) =>
-    haveAmplicon ? stateFilters.taxonomy[taxonomy].selected : EmptyOperatorAndValue
+    haveAmplicon ? stateFilters.taxonomy[taxonomy].selected : EmptyOperatorAndValue,
   )
 
   return {
@@ -78,26 +85,35 @@ export const describeSearch = (state) => {
     contextual_filters: marshallContextual(stateFilters.contextual, contextualDataDefinitions),
     sample_integrity_warnings_filter: marshallContextual(
       stateFilters.sampleIntegrityWarning,
-      contextualDataDefinitions
+      contextualDataDefinitions,
     ),
     metagenome_only: isMetagenomeSearch(state),
   }
 }
 
-export const search = (track) => (dispatch, getState) => {
+export const getSearchHash = (state) => createSearchHash(describeSearch(state))
+
+export const hasSearchChanged = (state) => {
+  const curr = getSearchHash(state)
+  const prev = state.searchPage.results.lastSearchParams
+  return curr !== prev
+}
+
+export const search = () => (dispatch, getState) => {
   const state = getState()
 
   dispatch(searchStarted())
 
   const filters = describeSearch(state)
+  const searchHash = createSearchHash(filters)
 
   const contextualColumns = reject(
     map(filters.contextual_filters.filters, (f) => f.field),
-    (name) => isEmpty(name)
+    (name) => isEmpty(name),
   )
   const sampleIntegrityWarningsColumns = reject(
     map(filters.sample_integrity_warnings_filter.filters, (f) => f.field),
-    (name) => isEmpty(name)
+    (name) => isEmpty(name),
   )
 
   const options = {
@@ -111,14 +127,22 @@ export const search = (track) => (dispatch, getState) => {
         dispatch(searchEnded(new ErrorList(...data.data.errors)))
         return
       }
-      dispatch(searchEnded(data))
+      dispatch(
+        searchEnded({
+          ...data,
+          lastSearchParams: searchHash,
+        }),
+      )
     })
     .catch((error) => {
       dispatch(searchEnded(new ErrorList('Unhandled server-side error!')))
     })
 }
 
-export default handleActions(
+const searchResultsReducer: Reducer<SearchResultsState, AnyAction> = handleActions<
+  SearchResultsState,
+  any
+>(
   {
     [changeTableProperties as any]: (state, action: any) => {
       const { page, pageSize, sorted } = action.payload
@@ -153,6 +177,7 @@ export default handleActions(
           rowsCount,
           pages,
           page: newPage,
+          lastSearchParams: action.payload.lastSearchParams,
         }
       },
       throw: (state, action: any) => ({
@@ -173,5 +198,7 @@ export default handleActions(
       }),
     },
   },
-  searchPageInitialState.results
+  searchPageInitialState.results,
 )
+
+export default searchResultsReducer

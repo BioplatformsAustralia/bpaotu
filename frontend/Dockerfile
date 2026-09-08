@@ -13,30 +13,27 @@
 
 
 # a. Base dependencies layer
-FROM node:16-alpine AS deps
+FROM node:22-alpine AS base
 WORKDIR /frontend
 
-# Copy dependency manifests ONLY (for cache) and install dependencies
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
 
-
 # b. Development (with hot reloading assets)
-FROM node:16-alpine AS dev
-WORKDIR /frontend
+FROM base AS dev
 
 ENV NODE_ENV=development
 ENV HOST=0.0.0.0
 ENV PORT=3000
 ENV CHOKIDAR_USEPOLLING=true
-
-# Copy installed dependencies from deps stage (cached)
-COPY --from=deps /frontend/node_modules ./node_modules
+ENV NODE_OPTIONS=--openssl-legacy-provider
 
 # Copy application source required for dev server
 COPY src ./src
 COPY public ./public
+COPY index.html ./index.html
+COPY vite.config.ts ./vite.config.ts
 COPY package.json ./package.json
 COPY tsconfig.json ./tsconfig.json
 
@@ -46,19 +43,18 @@ CMD ["yarn", "start"]
 
 
 # c. Production (build app)
-FROM node:16-alpine AS build
-WORKDIR /frontend
+FROM base AS build
 
 # Prevent running lifecycle scripts during install (e.g. postinstall)
 # No build scripts required at this stage - just install dependencies for production
 ENV NODE_ENV=production
-
-# Copy installed dependencies from deps stage (cached)
-COPY --from=deps /frontend/node_modules ./node_modules
+ENV NODE_OPTIONS=--openssl-legacy-provider
 
 # Copy application source required for build
 COPY src ./src
 COPY public ./public
+COPY index.html ./index.html
+COPY vite.config.ts ./vite.config.ts
 COPY package.json ./package.json
 COPY tsconfig.json ./tsconfig.json
 

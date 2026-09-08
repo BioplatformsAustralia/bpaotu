@@ -1,14 +1,18 @@
 import React, { useEffect } from 'react'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
 import { Alert, Button, Modal, ModalBody, ModalHeader, ModalFooter } from 'reactstrap'
 import SanitizedHTML from 'react-sanitized-html'
+
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
 
 import AnimateHelix, { loadingstyle } from 'components/animate_helix'
 
 import { runKronaRequest, closeKronaModal } from '../reducers/krona_modal'
 
-const ErrorOverlay = ({ errors }) => {
+type ErrorOverlayProps = {
+  errors: string[]
+}
+
+const ErrorOverlay = ({ errors }: ErrorOverlayProps) => {
   const loadingstyle = {
     display: 'flex',
     height: '100%',
@@ -24,7 +28,7 @@ const ErrorOverlay = ({ errors }) => {
 
   return (
     <div style={loadingstyle}>
-      <Alert color="danger">
+      <Alert color="danger" fade={false}>
         <h4 className="alert-heading">Error</h4>
         <ul>
           {errors.map((err, idx) => (
@@ -39,14 +43,17 @@ const ErrorOverlay = ({ errors }) => {
   )
 }
 
-const KronaModal = (props) => {
-  const { isLoading, isOpen, runKronaRequest, sample_id, html, error } = props
+const KronaModal = () => {
+  const dispatch = useAppDispatch()
+  const { isOpen, isLoading, sample_id, html, error } = useAppSelector(
+    (state) => state.searchPage.kronaModal,
+  )
 
   useEffect(() => {
     if (isOpen) {
-      runKronaRequest(sample_id)
+      dispatch(runKronaRequest(sample_id))
     }
-  }, [isOpen, runKronaRequest, sample_id])
+  }, [isOpen, dispatch, sample_id])
 
   const downloadHtmlFile = () => {
     const blob = new Blob([html], { type: 'text/html' })
@@ -59,7 +66,7 @@ const KronaModal = (props) => {
   }
 
   const closeModal = () => {
-    props.closeKronaModal()
+    dispatch(closeKronaModal())
   }
 
   const modalBody = () => {
@@ -112,11 +119,23 @@ const KronaModal = (props) => {
         {isLoading || error ? (
           <div></div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'row' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              flexDirection: 'row',
+            }}
+          >
             <div style={{ marginRight: '10px' }}>
               <Button onClick={downloadHtmlFile}>Download</Button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                flexDirection: 'column',
+              }}
+            >
               <p style={{ margin: '0', fontSize: '0.8rem' }}>
                 <em>How to cite:</em>
               </p>
@@ -152,7 +171,7 @@ const KronaModal = (props) => {
 
   return (
     <Modal
-      isOpen={props.isOpen}
+      isOpen={isOpen}
       scrollable={true}
       fade={true}
       data-tut="reactour__KronaPlotModal"
@@ -165,7 +184,13 @@ const KronaModal = (props) => {
       >
         Krona Plot (Sample ID: {sample_id})
       </ModalHeader>
-      <ModalBody style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <ModalBody
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
         {modalBody()}
       </ModalBody>
       <ModalFooter>{modalFooter()}</ModalFooter>
@@ -173,26 +198,4 @@ const KronaModal = (props) => {
   )
 }
 
-const mapStateToProps = (state) => {
-  const { isOpen, isLoading, sample_id, html, error } = state.searchPage.kronaModal
-
-  return {
-    isOpen,
-    isLoading,
-    sample_id,
-    html,
-    error,
-  }
-}
-
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(
-    {
-      runKronaRequest,
-      closeKronaModal,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(KronaModal as any)
+export default KronaModal

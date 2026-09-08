@@ -2,31 +2,47 @@ import * as React from 'react'
 import { Button, UncontrolledTooltip } from 'reactstrap'
 import Octicon from 'components/octicon'
 
-export default (props) => {
-  const id = props.id
+type SearchButtonProps = {
+  id?: string
+  size?: 'sm' | 'md' | 'lg'
+  isDisabled?: boolean
+  onClick: () => void
+  octicon?: string
+  text: string
+  tooltip?: string
+}
+
+export default ({ id, size, isDisabled, onClick, octicon, text }: SearchButtonProps) => {
   const dataTut = id ? `reactour__${id}` : null
 
   return (
     <Button
       id={id}
       data-tut={dataTut}
-      block={true}
+      block
       color="primary"
-      size={props.size}
-      disabled={props.isDisabled}
-      onClick={props.onClick}
+      size={size}
+      disabled={isDisabled}
+      onClick={onClick}
     >
-      {props.octicon && (
+      {octicon && (
         <span style={{ marginRight: 8 }}>
-          <Octicon name={props.octicon} />
+          <Octicon name={octicon} />
         </span>
       )}
-      <span>{props.text}</span>
+      <span>{text}</span>
     </Button>
   )
 }
 
-export const DisabledButton = ({ id, size, octicon, text, tooltip, onClick }) => {
+export const DisabledButton = ({
+  id,
+  size,
+  octicon,
+  text,
+  tooltip,
+  onClick,
+}: SearchButtonProps) => {
   return (
     <>
       <Button

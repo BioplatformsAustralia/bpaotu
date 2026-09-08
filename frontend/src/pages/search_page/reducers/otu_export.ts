@@ -24,7 +24,7 @@ export const {
   'OTU_EXPORT_SUBMISSION_UPDATE_ENDED',
   'CANCEL_OTU_EXPORT_STARTED',
   'CANCEL_OTU_EXPORT_ENDED',
-  'CLEAR_OTU_EXPORT_ALERT'
+  'CLEAR_OTU_EXPORT_ALERT',
 )
 
 const SUBMISSION_POLL_FREQUENCY_MS = 2000
@@ -106,9 +106,9 @@ export const autoUpdateOtuExportSubmission = () => (dispatch, getState) => {
         dispatch(
           otuExportSubmissionUpdateEnded(
             new Error(
-              'Server-side error. It is possible that the result set is too large. Please run a search with fewer samples.'
-            )
-          )
+              'Server-side error. It is possible that the result set is too large. Please run a search with fewer samples.',
+            ),
+          ),
         )
       } else {
         dispatch(otuExportSubmissionUpdateEnded(new Error('Unhandled server-side error!')))
@@ -151,8 +151,8 @@ export default handleActions(
       next: (state, action: any) => {
         const actionSubmission = action.payload.data.submission
         const actionSubmissionState = actionSubmission.state
-        const lastSubmission = last(state.submissions)
-        const newLastSubmissionState = ((submission) => {
+        const lastSubmission = last(state.submissions) as OtuExportSubmission | undefined
+        const newLastSubmissionState = ((submission: OtuExportSubmission) => {
           const { state: status, error } = action.payload.data.submission
           const newState = {
             ...submission,
@@ -189,7 +189,7 @@ export default handleActions(
           submissions: changeElementAtIndex(
             state.submissions,
             state.submissions.length - 1,
-            (_) => newLastSubmissionState
+            (_) => newLastSubmissionState,
           ),
           isLoading: isLoading,
           isFinished: isFinished,
@@ -211,7 +211,7 @@ export default handleActions(
               finished: true,
               succeeded: false,
               error: action.error,
-            })
+            }),
           ),
           isLoading: false,
           isFinished: false,
@@ -245,5 +245,5 @@ export default handleActions(
       }
     },
   },
-  searchPageInitialState.otuExport
+  searchPageInitialState.otuExport,
 )

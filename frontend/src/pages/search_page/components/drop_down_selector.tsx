@@ -12,7 +12,6 @@ const DropDownSelector = (props) => {
     placeholder,
     options,
     selected,
-    selectOperator,
     selectValue,
     onChange,
     isDisabled,
@@ -21,18 +20,13 @@ const DropDownSelector = (props) => {
     getDefaultOption,
   } = props
 
-  // Default operator
-  useEffect(() => {
-    selectOperator('is')
-  }, [selectOperator])
-
-  // If selected value is empty and options are available, select default option
+  // If selected value is empty and options are available, select a default option.
   useEffect(() => {
     if (selected.value === '' && options.length) {
       selectValue(getDefaultOption(options))
       onChange()
     }
-  }, [selected.value, options, selectValue, onChange, getDefaultOption])
+  }, [selected.value, options.length, selectValue, onChange, getDefaultOption])
 
   const renderOption = (option) => ({
     value: option.id,
@@ -57,7 +51,7 @@ const DropDownSelector = (props) => {
   }
 
   return (
-    <FormGroup row>
+    <FormGroup className="form-group" row={true} noMargin>
       <FilterHeader label={label} info={info} />
       <Col sm={9}>
         <Select

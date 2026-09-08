@@ -1,4 +1,3 @@
-
 export const sampleColumnsLookup = {
   'Sample ID': {
     label: 'Sample ID',

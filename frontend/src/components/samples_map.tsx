@@ -2,8 +2,9 @@ import React, { useState } from 'react'
 import { first, join, keys, map, find } from 'lodash'
 import { Nav, NavItem, NavLink, TabContent, TabPane, UncontrolledTooltip, Alert } from 'reactstrap'
 
-import * as L from 'leaflet'
-import * as MiniMap from 'leaflet-minimap'
+import L from 'leaflet'
+import MiniMap from 'leaflet-minimap'
+
 import {
   Map,
   Marker,
@@ -27,8 +28,8 @@ import GridCellSizer from 'pages/search_page/components/gridcell_sizer'
 import Octicon from 'components/octicon'
 import AnimateHelix from 'components/animate_helix'
 
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import type { RootState } from 'app/store'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
 import {
   removeContextualFilter,
   changeContextualFilterOperator,
@@ -60,6 +61,8 @@ import 'react-leaflet-fullscreen/dist/styles.css'
 import 'react-leaflet-markercluster/dist/styles.min.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 
+import { ArcGIS, tileLayer } from 'app/map'
+
 // Initial Viewport is Australia
 const MapInitialViewport = {
   lat: -25.27,
@@ -67,32 +70,27 @@ const MapInitialViewport = {
   zoom: 4,
 }
 
-const ArcGIS = {
-  url: '//server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  attribution:
-    '&copy; i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-}
-
-//generating the map
-const tileLayer = {
-  url: '//cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
-  attribution:
-    '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
-  subdomains: 'abcd',
-  maxZoom: 17,
-  minZoom: 10.75,
-}
-
 const buildThumbnailUrl = (packageId, resourceId) =>
   join(
-    [window.otu_search_config.base_url.replace(/\/$/, ''), 'private/site-image-thumbnail', packageId, resourceId],
-    '/'
+    [
+      window.otu_search_config.base_url.replace(/\/$/, ''),
+      'private/site-image-thumbnail',
+      packageId,
+      resourceId,
+    ],
+    '/',
   )
 
 const buildResourceUrl = (packageId, resourceId) =>
   join(
-    [window.otu_search_config.ckan_base_url.replace(/\/$/, ''), 'dataset', packageId, 'resource', resourceId],
-    '/'
+    [
+      window.otu_search_config.ckan_base_url.replace(/\/$/, ''),
+      'dataset',
+      packageId,
+      'resource',
+      resourceId,
+    ],
+    '/',
   )
 
 const BPAImage = ({ packageId, resourceId }) => {
@@ -223,6 +221,35 @@ export const MarkerPopup = (props) => {
   )
 }
 
+const SamplesMapContainer = (props: any) => {
+  const dispatch = useAppDispatch()
+  const filters = useAppSelector((state: RootState) => state.searchPage.filters)
+  const dataDefinitions = useAppSelector(
+    (state: RootState) => state.contextualDataDefinitions.filters,
+  )
+
+  const contextualActions = {
+    selectContextualFilter: (index: number, filterName: string) =>
+      dispatch(selectContextualFilter(index, filterName)),
+    removeContextualFilter: (index: number) => dispatch(removeContextualFilter(index)),
+    changeContextualFilterOperator: (index: number, operator: string) =>
+      dispatch(changeContextualFilterOperator(index, operator)),
+    changeContextualFilterValue: (index: number, value: any) =>
+      dispatch(changeContextualFilterValue(index, value)),
+    changeContextualFilterValue2: (index: number, value2: any) =>
+      dispatch(changeContextualFilterValue2(index, value2)),
+  }
+
+  return (
+    <SamplesMap
+      {...props}
+      {...contextualActions}
+      filters={filters}
+      dataDefinitions={dataDefinitions}
+    />
+  )
+}
+
 // tslint:disable-next-line:max-classes-per-file
 class SamplesMap extends React.Component<any> {
   public leafletMap
@@ -273,7 +300,7 @@ class SamplesMap extends React.Component<any> {
 
   public findFilterIndex = (data, name) => {
     let index = 0
-    for (var i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
       index = data[i].name === name ? i : data.length
     }
     return index
@@ -281,7 +308,7 @@ class SamplesMap extends React.Component<any> {
 
   public findFilterValueIndex = (data, name, value, value2) => {
     let index = -1
-    for (var i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
       if (data[i].name === name && data[i].value === value && data[i].value2 === value2) {
         return i
       }
@@ -292,7 +319,14 @@ class SamplesMap extends React.Component<any> {
   handleZoomstart = (map, maxZoom, defaultZoom, position) => {
     const currentZoom = this.leafletMap ? this.leafletMap.leafletElement.getZoom() : 4
     const v = 1 / Math.pow(2, Math.max(0, Math.min(maxZoom - currentZoom, 12)))
-    return { maxZoom, currentZoom, defaultZoom, v, intensity: v * 1000, position }
+    return {
+      maxZoom,
+      currentZoom,
+      defaultZoom,
+      v,
+      intensity: v * 1000,
+      position,
+    }
   }
 
   initDrawElement = () => {
@@ -309,14 +343,14 @@ class SamplesMap extends React.Component<any> {
     }
 
     // Add rectangle for selected latitude/longitude filter
-    var rectangle: [number, number][] = []
+    let rectangle: [number, number][] = []
     const lat = find(
       this.props.filters.contextual.filters,
-      (latlng) => latlng.name === this.lat_filter
+      (latlng) => latlng.name === this.lat_filter,
     )
     const lng = find(
       this.props.filters.contextual.filters,
-      (latlng) => latlng.name === this.lng_filter
+      (latlng) => latlng.name === this.lng_filter,
     )
     if (lat && lng) {
       rectangle = [
@@ -348,14 +382,14 @@ class SamplesMap extends React.Component<any> {
         this.props.filters.contextual.filters,
         this.lat_filter,
         lat_value,
-        lat_value2
+        lat_value2,
       )
       this.props.removeContextualFilter(index_lat)
       const index_lng = this.findFilterValueIndex(
         this.props.filters.contextual.filters,
         this.lng_filter,
         lng_value,
-        lng_value2
+        lng_value2,
       )
       this.props.removeContextualFilter(index_lng)
     })
@@ -394,7 +428,7 @@ class SamplesMap extends React.Component<any> {
     if (this.samplePoints && !this.featureCollectionData) {
       let cellAggregatedData = aggregateSamplesByCell(
         this.siteAggregatedData,
-        this.state.gridcellSize
+        this.state.gridcellSize,
       )
       this.featureCollectionData = this.makeFeatureCollection(cellAggregatedData)
     }
@@ -499,14 +533,14 @@ class SamplesMap extends React.Component<any> {
       <div style={{ height: '100%' }}>
         <div className="text-center" style={{ margin: '-12px 0px' }}>
           {this.props.isLoading || this.state.isLoading ? (
-            <Alert color="info">
+            <Alert color="info" fade={false}>
               Processing...
               {this.state.isLoading &&
                 ` Gridcell calculation may take a while depending on the number of sample locations. `}
               {` Please wait. Once completed, map will automatically refresh.`}
             </Alert>
           ) : (
-            <Alert color="success">
+            <Alert color="success" fade={false}>
               Showing {this.props.sample_otus.length} samples in {this.props.markers.length} sample
               locations{' '}
               <span id="tipShowSample">
@@ -581,11 +615,11 @@ class SamplesMap extends React.Component<any> {
             {selectedRectangleBounds}
           </FeatureGroup>
           <LayersControl>
-            <LayersControl.BaseLayer name="Base">
-              <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
-            </LayersControl.BaseLayer>
-            <LayersControl.BaseLayer name="OSM" checked>
+            <LayersControl.BaseLayer name="Basemap" checked>
               <TileLayer url={tileLayer.url} attribution={tileLayer.attribution} />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Satellite">
+              <TileLayer url={ArcGIS.url} attribution={ArcGIS.attribution} />
             </LayersControl.BaseLayer>
             <LayersControl.Overlay name="Sites" checked>
               <MarkerClusterGroup>
@@ -617,17 +651,20 @@ class SamplesMap extends React.Component<any> {
     this.props.fetchSamples()
   }
 
+  // There is no react-leaflet wrapper for the MiniMap plugin, so we initialise
+  // the Leaflet control directly once we have access to the underlying Leaflet
+  // map instance via the react-leaflet ref.
   public setUpMiniMap = () => {
-    // There is no port of the MiniMap plugin to React so we use the JS plugin directly and wire it up manually using a `ref` to the L.Map object
     const layer = new L.TileLayer(ArcGIS.url, {
       minZoom: 0,
       maxZoom: 13,
       attribution: ArcGIS.attribution,
     })
+
     new MiniMap(layer, { toggleDisplay: true }).addTo(this.leafletMap.leafletElement)
   }
 
-  public handleClick = (e) => {
+  public handleClick = () => {
     // const { lat, lng } = e.latlng;
     // const maxZoom = e.sourceTarget._layersMaxZoom
     // const minZoom = e.sourceTarget._layersMinZoom
@@ -650,7 +687,7 @@ class SamplesMap extends React.Component<any> {
    * @param {*} e
    */
   public handleGridLayerClick = (e) => {
-    var layer = e.target
+    let layer = e.target
     let popup = layer.getPopup()
     let popupContent =
       strongHeader('Sites per grid cell', layer.feature.properties.sites.length) +
@@ -659,11 +696,11 @@ class SamplesMap extends React.Component<any> {
       '<br />' +
       strongHeader(
         "Std Richness per grid cell <span style='fontSize:16px' title='Std Richness per grid cell = Richness per grid cell / Sites per grid cell'>&#9432;</span>",
-        layer.feature.properties.stdCellRichness
+        layer.feature.properties.stdCellRichness,
       ) +
       strongHeader(
         "Std Abundance per grid cell <span style='fontSize:16px' title='Std Abundance per grid cell = Abundance per grid cell / Sites per grid cell'>&#9432;</span>",
-        layer.feature.properties.stdCellAbundance
+        layer.feature.properties.stdCellAbundance,
       ) +
       '<br />' +
       strongHeader('Max Sites per grid cell', layer.feature.properties.maxSites) +
@@ -672,28 +709,28 @@ class SamplesMap extends React.Component<any> {
       '<br />' +
       strongHeader(
         "Wtd Sites per grid cell <span style='fontSize:16px' title='Wtd Sites per grid cell = Sites per grid cell / Max Sites per grid cell'>&#9432;</span>",
-        layer.feature.properties.weightedSites
+        layer.feature.properties.weightedSites,
       ) +
       strongHeader(
         "Wtd Richness per grid cell <span style='fontSize:16px' title='Wtd Richness per grid cell = Std Richness per grid cell / Max Std Richness per grid cell'>&#9432;</span>",
-        layer.feature.properties.weightedRichness
+        layer.feature.properties.weightedRichness,
       ) +
       strongHeader(
         "Wtd Abundance per grid cell <span style='fontSize:16px' title='Wtd Abundance per grid cell = Std Abundance per grid cell / Max Std Abundance per grid cell'>&#9432;</span>",
-        layer.feature.properties.weightedAbundance
+        layer.feature.properties.weightedAbundance,
       ) +
       '<br />' +
       strongHeader(
         'Longitude',
         layer.feature.properties.coordinates[0][0] +
           ' to ' +
-          layer.feature.properties.coordinates[2][0]
+          layer.feature.properties.coordinates[2][0],
       ) +
       strongHeader(
         'Latitude',
         layer.feature.properties.coordinates[0][1] +
           ' to ' +
-          layer.feature.properties.coordinates[2][1]
+          layer.feature.properties.coordinates[2][1],
       ) +
       '<br />'
     //list all sites within the cell.properties
@@ -762,24 +799,4 @@ class SamplesMap extends React.Component<any> {
   }
 }
 
-const mapStateToProps = (state) => {
-  return {
-    filters: state.searchPage.filters,
-    dataDefinitions: state.contextualDataDefinitions.filters,
-  }
-}
-
-const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators(
-    {
-      selectContextualFilter,
-      removeContextualFilter,
-      changeContextualFilterOperator,
-      changeContextualFilterValue,
-      changeContextualFilterValue2,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(SamplesMap)
+export default SamplesMapContainer

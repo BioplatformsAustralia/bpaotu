@@ -1,10 +1,13 @@
-import { searchPageInitialState } from './types'
-
 import { createActions, handleActions } from 'redux-actions'
+import type { Reducer, AnyAction } from 'redux'
+
+import { searchPageInitialState, type SearchPageState } from './types'
+
+type TipsState = SearchPageState['tips']
 
 export const { showPhinchTipAction, clearTipsAction } = createActions(
   'SHOW_PHINCH_TIP_ACTION',
-  'CLEAR_TIPS_ACTION'
+  'CLEAR_TIPS_ACTION',
 )
 
 export const showPhinchTip = () => (dispatch, getState) => {
@@ -21,10 +24,10 @@ function alert(text, color = 'primary') {
 
 const TIP_PHINCH = alert(
   'Tip: Visit <a target="_other" href="http://phinch.org/">phinch.org</a> to visualise your BIOM file.',
-  'success'
+  'success',
 )
 
-export default handleActions(
+const tipsReducer: Reducer<TipsState, AnyAction> = handleActions<TipsState, any>(
   {
     [clearTipsAction as any]: (state, action) => ({
       ...state,
@@ -43,5 +46,7 @@ export default handleActions(
       }),
     },
   },
-  searchPageInitialState.tips
+  searchPageInitialState.tips,
 )
+
+export default tipsReducer

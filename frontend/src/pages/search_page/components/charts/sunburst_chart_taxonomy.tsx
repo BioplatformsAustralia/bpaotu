@@ -1,21 +1,25 @@
 import React, { useCallback } from 'react'
-import Plot from 'react-plotly.js'
+import Plot from './plot'
 import { plotly_chart_config } from './plotly_chart'
 import { find, isUndefined, sum, startCase } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
+import type { RootState } from 'app/store'
 import { createAction } from 'redux-actions'
 
 import { taxonomy_ranks } from 'app/constants'
 import { fetchContextualDataForGraph } from 'reducers/contextual_data_graph'
 import { fetchTaxonomyDataForGraph } from 'reducers/taxonomy_data_graph'
 
-import { selectEnvironment } from '../../reducers/contextual'
 import { updateTaxonomyDropDowns } from '../../reducers/taxonomy'
 
 const make_id = (name: string, tx_id: string | number) => `${name}_${tx_id}`
 
 const SunBurstChartTaxonomy = (props: any) => {
+  const dispatch = useAppDispatch()
+  const taxonomy = useAppSelector((state: RootState) => state.searchPage.filters.taxonomy)
+  const rankLabels = useAppSelector((state: RootState) => state.referenceData.ranks.rankLabels)
+  const chartTaxonomy = props.taxonomy || taxonomy
+
   const loadTaxonomyData = useCallback(
     (sunburst_data, parentId, taxonomy, taxa, taxa_label, taxonomyGraphData) => {
       let selectedTaxonomy = taxonomy.selected.value
@@ -46,20 +50,20 @@ const SunBurstChartTaxonomy = (props: any) => {
       }
       return selectedTaxonomy
     },
-    []
+    [],
   )
 
   const onSelectTaxonomy = useCallback(
     (taxa: string, value: any) => {
-      const found = find(props.taxonomy[taxa].options, (obj) => String(obj.value) === String(value))
+      const found = find(taxonomy[taxa].options, (obj) => String(obj.value) === String(value))
       if (found && found.id !== undefined) {
-        props.selectTaxonomyValue(taxa, found.id)
-        props.updateTaxonomyDropDown(taxa)
-        props.fetchContextualDataForGraph()
-        props.fetchTaxonomyDataForGraph()
+        dispatch(createAction('SELECT_' + taxa.toUpperCase())(found.id))
+        dispatch(updateTaxonomyDropDowns(taxa))
+        dispatch(fetchContextualDataForGraph())
+        dispatch(fetchTaxonomyDataForGraph())
       }
     },
-    [props]
+    [dispatch, taxonomy],
   )
 
   const get_clickable_rank = useCallback(
@@ -68,35 +72,42 @@ const SunBurstChartTaxonomy = (props: any) => {
       const rank = Array.isArray(cd) ? cd[0] : cd // cd will be 1-element array for pie chart
       return isUndefined(e.nextLevel) &&
         e.points[0].label !== e.points[0].root &&
-        props.taxonomy[rank].selected.value === ''
+        chartTaxonomy[rank].selected.value === ''
         ? rank
         : null
     },
-    [props.taxonomy]
+    [chartTaxonomy],
   )
 
   const generateGraphData = useCallback(() => {
-    let sunburst_data = { labels: [], parents: [], text: [], ids: [], values: [], customdata: [] }
+    let sunburst_data = {
+      labels: [],
+      parents: [],
+      text: [],
+      ids: [],
+      values: [],
+      customdata: [],
+    }
     if (props.taxonomyGraphdata && props.taxonomyGraphdata.taxonomy) {
       let parentId = ''
       for (const taxa of taxonomy_ranks) {
-        const taxa_label = props.rankLabels[taxa]
+        const taxa_label = rankLabels[taxa] || ''
         if (!taxa_label) {
           break // Reached the last rank for the current taxonomy
         }
         const selectedTaxonomy = loadTaxonomyData(
           sunburst_data,
           parentId,
-          props.taxonomy[taxa],
+          chartTaxonomy[taxa],
           taxa,
           taxa_label,
-          props.taxonomyGraphdata.taxonomy
+          props.taxonomyGraphdata.taxonomy,
         )
         parentId = make_id(taxa, selectedTaxonomy)
       }
     }
     return sunburst_data
-  }, [props.taxonomyGraphdata, props.rankLabels, props.taxonomy, loadTaxonomyData])
+  }, [props.taxonomyGraphdata, taxonomy, loadTaxonomyData, rankLabels])
 
   const title = startCase(props.filter) + ' Plot'
   const graphData = generateGraphData()
@@ -180,24 +191,4 @@ const SunBurstChartTaxonomy = (props: any) => {
   )
 }
 
-const mapStateToProps = (state) => {
-  return {
-    taxonomy: state.searchPage.filters.taxonomy,
-    rankLabels: state.referenceData.ranks.rankLabels,
-  }
-}
-
-const mapDispatchToProps = (dispatch: any) => {
-  return bindActionCreators(
-    {
-      selectEnvironment,
-      selectTaxonomyValue: (taxa, id) => createAction('SELECT_' + taxa.toUpperCase())(id),
-      updateTaxonomyDropDown: (taxa) => updateTaxonomyDropDowns(taxa)(),
-      fetchContextualDataForGraph,
-      fetchTaxonomyDataForGraph,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(SunBurstChartTaxonomy)
+export default SunBurstChartTaxonomy

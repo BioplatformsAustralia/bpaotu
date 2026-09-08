@@ -1,52 +1,45 @@
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { isEmpty, noop } from 'lodash'
-import { connect } from 'react-redux'
-import { bindActionCreators } from 'redux'
+
+import { useAppDispatch, useAppSelector } from 'hooks/redux'
 
 import { useAnalytics } from 'use-analytics'
+import type { RootState } from 'app/store'
 import SamplesMap from 'components/samples_map'
 import { fetchSampleMapSamples } from './reducers'
 
-const MapPage = (props) => {
+const MapPage = () => {
   const { page } = useAnalytics()
+  const dispatch = useAppDispatch()
+  const { isLoading, markers, sample_otus, abundance_matrix } = useAppSelector(
+    (state: RootState) => ({
+      isLoading: state.mapPage.isLoading,
+      markers: state.mapPage.samples,
+      sample_otus: state.mapPage.sample_otus,
+      abundance_matrix: state.mapPage.abundance_matrix,
+    }),
+  )
 
   // track page visit only on first render
   useEffect(() => {
     page()
   }, [page])
 
+  const fetchSamples = useCallback(() => dispatch(fetchSampleMapSamples()), [dispatch])
+  const handleFetchSamples = isEmpty(markers) ? fetchSamples : noop
   const mapContainerHeight = window.innerHeight - 220 * 2 + 'px'
-  const fetchSamples = isEmpty(props.markers) ? props.fetchSamples : noop
 
   return (
     <div style={{ height: mapContainerHeight }}>
       <SamplesMap
-        fetchSamples={fetchSamples}
-        isLoading={props.isLoading}
-        markers={props.markers}
-        sample_otus={props.sample_otus}
-        abundance_matrix={props.abundance_matrix}
+        fetchSamples={handleFetchSamples}
+        isLoading={isLoading}
+        markers={markers}
+        sample_otus={sample_otus}
+        abundance_matrix={abundance_matrix}
       />
     </div>
   )
 }
 
-function mapStateToProps(state) {
-  return {
-    isLoading: state.mapPage.isLoading,
-    markers: state.mapPage.samples,
-    sample_otus: state.mapPage.sample_otus,
-    abundance_matrix: state.mapPage.abundance_matrix,
-  }
-}
-
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators(
-    {
-      fetchSamples: fetchSampleMapSamples,
-    },
-    dispatch
-  )
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(MapPage)
+export default MapPage

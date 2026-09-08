@@ -17,7 +17,7 @@ export function simpleDispatch(dispatch, action) {
 export function removeElementWithValue(arr, value) {
   if (value === undefined) return
 
-  for (var i in arr) {
+  for (let i in arr) {
     if (
       arr[i]['name'] === value.name &&
       arr[i]['operator'] === value.operator &&

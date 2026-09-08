@@ -42,7 +42,7 @@ function aggregateSampleOtusBySite(sample_Otus) {
       sample_Otus[i][1],
       sample_Otus[i][2],
       parseInt(sample_Otus[i][3]),
-      parseInt(sample_Otus[i][4])
+      parseInt(sample_Otus[i][4]),
     )
     if (isNaN(sampleOtus.abundance)) {
       // No Abundance_20k for sample OTU
@@ -67,7 +67,7 @@ class SampleOtus {
     longitude: number,
     sampleId: string,
     richness: number,
-    abundance: number
+    abundance: number,
   ) {
     this.latitude = latitude
     this.longitude = longitude
@@ -127,7 +127,7 @@ function aggregateSamplesByCell(siteAggs, detailLevel) {
   }
 
   // Create polygon if site exists
-  var polyFeatures: { [index: string]: any } = {}
+  let polyFeatures: { [index: string]: any } = {}
   for (let x = 0; x < xCellCnt; x++) {
     for (let y = 0; y < yCellCnt; y++) {
       const x1 = min[0] + x * detailLevel
