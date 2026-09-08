@@ -15,6 +15,7 @@ from authlib.integrations.requests_client import OAuth2Session
 from urllib.parse import urlencode
 
 import logging
+import time
 import requests
 
 logger = logging.getLogger('bpaotu')
@@ -31,6 +32,48 @@ def get_oauth_session():
     )
 
 
+def refresh_oauth_token_if_needed(request):
+    """
+    Refresh the stored OAuth access token when it is close to expiry.
+    Returns True when the current token is usable or has been successfully refreshed.
+    Returns False when no usable token exists.
+    """
+    token = request.session.get('oauth_token')
+    if not token:
+        return False
+
+    expires_at = token.get('expires_at')
+    if expires_at and time.time() < expires_at - 60:
+        return True
+
+    refresh_token_value = token.get('refresh_token')
+    if not refresh_token_value:
+        logger.warning('No OAuth refresh token available for current session')
+        return False
+
+    try:
+        session = get_oauth_session()
+        refreshed_token = session.refresh_token(
+            f"https://{settings.OAUTH_DOMAIN}/oauth/token",
+            refresh_token=refresh_token_value,
+        )
+        request.session['oauth_token'] = refreshed_token
+        request.session.modified = True
+        request.session.save()
+        return True
+    except Exception:
+        logger.exception('Failed to refresh OAuth access token')
+        request.session.pop('oauth_token', None)
+        request.session.pop('oauth_user_info', None)
+        request.session.modified = True
+        request.session.save()
+        try:
+            logout(request)
+        except Exception:
+            pass
+        return False
+
+
 @require_http_methods(["GET"])
 def login_view(request):
     """
@@ -40,7 +83,7 @@ def login_view(request):
     
     authorization_url, state = session.create_authorization_url(
         f"https://{settings.OAUTH_DOMAIN}/authorize",
-        scope='openid profile email',
+        scope='openid profile email offline_access',
     )
     
     # Store state in session for CSRF protection
@@ -170,7 +213,13 @@ def user_info_view(request):
             {"error": "Unauthorized"},
             status=401
         )
-    
+
+    if not refresh_oauth_token_if_needed(request):
+        return JsonResponse(
+            {"error": "Unauthorized"},
+            status=401
+        )
+
     token = request.session.get('oauth_token')
     if not token:
         # User is logged in but no token - return basic info
@@ -181,7 +230,7 @@ def user_info_view(request):
             'email': request.user.email,
             'name': request.user.get_full_name() or request.user.username,
         })
-    
+
     try:
         # Get fresh user info from Auth0
         headers = {'Authorization': f"Bearer {token['access_token']}"}
@@ -218,7 +267,13 @@ def check_auth_view(request):
         return JsonResponse({
             'authenticated': False,
         }, status=401)
-    
+
+    if not refresh_oauth_token_if_needed(request):
+        logout(request)
+        return JsonResponse({
+            'authenticated': False,
+        }, status=401)
+
     try:
         user_info = request.session.get('oauth_user_info', {})
         # keys:
