@@ -30,8 +30,13 @@ ENV \
   DJANGO_SETTINGS_MODULE=bpaotu.settings \
   PYTHONUNBUFFERED=1
 
+# debug build issues
+RUN apt-get update || true && \
+  apt-cache policy
+
 # Runtime deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get -o Acquire::Check-Valid-Until=false update && \
+  apt-get install -y --no-install-recommends \
   gettext \
   libpcre3 \
   libpq5 \
