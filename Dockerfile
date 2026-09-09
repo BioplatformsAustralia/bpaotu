@@ -2,7 +2,7 @@
 # Base images
 # ===========================
 
-FROM python:3.11-slim-bullseye AS base
+FROM python:3.11-slim-bookworm AS base
 LABEL maintainer=https://github.com/BioplatformsAustralia/bpaotu
 
 # Create user + dirs
@@ -30,13 +30,21 @@ ENV \
   DJANGO_SETTINGS_MODULE=bpaotu.settings \
   PYTHONUNBUFFERED=1
 
+# debug build issues
+RUN echo "=== sources.list ===" && \
+  cat /etc/apt/sources.list && \
+  echo "=== sources.list.d ===" && \
+  grep -R . /etc/apt/sources.list.d || true
+
+RUN apt-cache policy
+  
 # Runtime deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN rm -rf /var/lib/apt/lists/* && \
+  apt-get -o Acquire::Check-Valid-Until=false update && \
+  apt-get install -y --no-install-recommends \
   gettext \
   libpcre3 \
   libpq5 \
-  gdal-bin \
-  libgeos-3.9.0 \
   libproj-dev \
   mime-support \
   unixodbc \
