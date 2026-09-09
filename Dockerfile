@@ -31,11 +31,16 @@ ENV \
   PYTHONUNBUFFERED=1
 
 # debug build issues
-RUN apt-get update || true && \
-  apt-cache policy
+RUN echo "=== sources.list ===" && \
+  cat /etc/apt/sources.list && \
+  echo "=== sources.list.d ===" && \
+  grep -R . /etc/apt/sources.list.d || true
 
+RUN apt-cache policy
+  
 # Runtime deps
-RUN apt-get -o Acquire::Check-Valid-Until=false update && \
+RUN rm -rf /var/lib/apt/lists/* && \
+  apt-get -o Acquire::Check-Valid-Until=false update && \
   apt-get install -y --no-install-recommends \
   gettext \
   libpcre3 \
