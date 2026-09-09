@@ -12,7 +12,7 @@ jobs:
           # https://circleci.com/docs/guides/execution-managed/building-docker-images/
           version: docker24
           # https://circleci.com/docs/reference/glossary/#docker-layer-caching
-          docker_layer_caching: false
+          docker_layer_caching: true
       - attach_workspace:
           at: /home/circleci/project
       - run: |

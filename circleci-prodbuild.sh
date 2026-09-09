@@ -5,8 +5,12 @@ set -e
 echo "GIT BRANCH is: '${GIT_BRANCH}'"
 echo "BUILD VERSION is: '${BUILD_VERSION}'"
 
+# check for stale docker images
+docker run --rm python:3.11-slim-bullseye date -u
+docker run --rm python:3.11-slim-bullseye cat /etc/os-release
+
 # build and push the runserver image
-docker-compose -f docker-compose-build.yml build prod
+docker-compose -f docker-compose-build.yml build --no-cache prod
 
 # tag the prod image with latest, prod, and the build version; only push prod derived images
 docker tag bioplatformsaustralia/${PROJECT_NAME}:prod \
@@ -19,14 +23,14 @@ docker push bioplatformsaustralia/${PROJECT_NAME}:latest
 docker push bioplatformsaustralia/${PROJECT_NAME}:${BUILD_VERSION}
 
 # build and push the worker image
-docker-compose -f docker-compose-build.yml build worker
+docker-compose -f docker-compose-build.yml build --no-cache worker
 
 docker tag bioplatformsaustralia/${PROJECT_NAME}-worker:latest bioplatformsaustralia/${PROJECT_NAME}-worker:${BUILD_VERSION}
 docker push bioplatformsaustralia/${PROJECT_NAME}-worker
 docker push bioplatformsaustralia/${PROJECT_NAME}-worker:${BUILD_VERSION}
 
 # build and push the frontend image
-docker-compose -f docker-compose-build.yml build frontend
+docker-compose -f docker-compose-build.yml build --no-cache frontend
 
 # tag the prod image with latest, prod, and the build version; only push prod derived images
 docker tag bioplatformsaustralia/${PROJECT_NAME}:frontend \
