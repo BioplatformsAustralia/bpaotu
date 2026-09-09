@@ -5,14 +5,14 @@ orbs:
 jobs:
   build:
     docker:
-      - image: 'cimg/base:stable'
+      - image: "cimg/base:stable"
     steps:
       - checkout
       - setup_remote_docker:
           # https://circleci.com/docs/guides/execution-managed/building-docker-images/
           version: docker24
           # https://circleci.com/docs/reference/glossary/#docker-layer-caching
-          docker_layer_caching: true
+          docker_layer_caching: false
       - attach_workspace:
           at: /home/circleci/project
       - run: |
