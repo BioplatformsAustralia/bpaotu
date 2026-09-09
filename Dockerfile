@@ -2,7 +2,7 @@
 # Base images
 # ===========================
 
-FROM python:3.11-slim-bullseye AS base
+FROM python:3.11-slim-bookworm AS base
 LABEL maintainer=https://github.com/BioplatformsAustralia/bpaotu
 
 # Create user + dirs
@@ -45,8 +45,6 @@ RUN rm -rf /var/lib/apt/lists/* && \
   gettext \
   libpcre3 \
   libpq5 \
-  gdal-bin \
-  libgeos-3.9.0 \
   libproj-dev \
   mime-support \
   unixodbc \
