@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   git \
   ncbi-blast+ \
   gdal-bin \
-  libgeos-3.11.1 \
+  libgeos-dev \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*;
 
 # uid and gid must match runserver Dockerfile
