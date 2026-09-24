@@ -241,7 +241,7 @@ class DataImporter:
         ('store_cond', SampleStorageMethod),
     ])
 
-    def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True):
+    def __init__(self, import_base, revision_date, has_sql_context=False, force_fetch=True, manually_build_materialized_view=False):
         # Prevent xlrd from using defusedxml
         # https://stackoverflow.com/a/65131301
         #
@@ -265,6 +265,7 @@ class DataImporter:
         self._revision_date = revision_date
         self._has_sql_context = has_sql_context
         self._force_fetch = force_fetch
+        self._manually_build_materialized_view = manually_build_materialized_view
 
     def prep(self):
         # These are used exclusively for reporting back to CSIRO on the state of the ingest
@@ -316,7 +317,12 @@ class DataImporter:
             self._run_phase(self.load_taxonomies, "Taxonomies", "Loading taxonomies", phase_timings)
             self._run_phase(self.load_otu_abundance, "OTU abundance tables", "Loading OTU abundance tables", phase_timings)
             self._run_phase(self.load_taxonomy_otu, "taxonomy_otu_export", "Building taxonomy_otu_export", phase_timings)
-            self._run_phase(self.refresh_otu_sample_otu, "refresh_materialized_view", "Refreshing OTUSampleOTU", phase_timings)
+
+            if self._manually_build_materialized_view:
+                self._run_phase(self.build_materialized_view, "build_materialized_view", "Building OTUSampleOTU", phase_timings)
+            else:
+                self._run_phase(self.refresh_otu_sample_otu, "refresh_materialized_view", "Refreshing OTUSampleOTU", phase_timings)
+
             self._run_phase(self.complete, "Finalising", "Finalising import", phase_timings)
             self._run_phase(self.update_from_ckan, "CKAN update", "Updating from CKAN", phase_timings)
 
@@ -1018,6 +1024,95 @@ class DataImporter:
 
     def refresh_otu_sample_otu(self):
         refresh_materialized_view(self._session, str(OTUSampleOTU.__table__))
+
+    def build_materialized_view(self):
+        table_name = f"{SCHEMA}.otu_sample_otu"
+        source_ids = [row[0] for row in self._session.query(TaxonomySource.id).order_by(TaxonomySource.id)]
+
+        with self._engine.begin() as conn:
+            conn.execute(text(f"DROP MATERIALIZED VIEW IF EXISTS {table_name}"))
+            conn.execute(text(f"DROP TABLE IF EXISTS {table_name}"))
+            conn.execute(text(
+                f"CREATE TABLE {table_name} AS "
+                "SELECT "
+                "sample_otu.sample_id, "
+                "count(sample_otu.otu_id) AS richness, "
+                "sum(sample_otu.count) AS count, "
+                "count(sample_otu.count_20k) AS richness_20k, "
+                "sum(sample_otu.count_20k) AS sum_count_20k, "
+                "taxonomy.taxonomy_source_id, "
+                "taxonomy.r1_id, taxonomy.r2_id, taxonomy.r3_id, taxonomy.r4_id, "
+                "taxonomy.r5_id, taxonomy.r6_id, taxonomy.r7_id, taxonomy.r8_id, "
+                "taxonomy.amplicon_id, taxonomy.traits "
+                "FROM otu.sample_otu AS sample_otu "
+                "JOIN otu.otu AS otu ON otu.id = sample_otu.otu_id "
+                "JOIN otu.taxonomy_otu AS taxonomy_otu "
+                "ON taxonomy_otu.otu_id = otu.id "
+                "JOIN otu.taxonomy AS taxonomy "
+                "ON taxonomy.id = taxonomy_otu.taxonomy_id "
+                "WHERE false "
+                "GROUP BY sample_otu.sample_id, taxonomy.taxonomy_source_id, "
+                "taxonomy.r1_id, taxonomy.r2_id, taxonomy.r3_id, taxonomy.r4_id, "
+                "taxonomy.r5_id, taxonomy.r6_id, taxonomy.r7_id, taxonomy.r8_id, "
+                "taxonomy.amplicon_id, taxonomy.traits"
+            ))
+
+        aggregate_columns = (
+            "sample_id, richness, count, richness_20k, sum_count_20k, "
+            "taxonomy_source_id, r1_id, r2_id, r3_id, r4_id, r5_id, r6_id, "
+            "r7_id, r8_id, amplicon_id, traits"
+        )
+        for source_id in source_ids:
+            logger.info("Building otu_sample_otu for taxonomy source %s", source_id)
+            with self._engine.begin() as conn:
+                conn.execute(text(
+                    f"INSERT INTO {table_name} ({aggregate_columns}) "
+                    "SELECT "
+                    "sample_otu.sample_id, "
+                    "count(sample_otu.otu_id), "
+                    "sum(sample_otu.count), "
+                    "count(sample_otu.count_20k), "
+                    "sum(sample_otu.count_20k), "
+                    "taxonomy.taxonomy_source_id, "
+                    "taxonomy.r1_id, taxonomy.r2_id, taxonomy.r3_id, taxonomy.r4_id, "
+                    "taxonomy.r5_id, taxonomy.r6_id, taxonomy.r7_id, taxonomy.r8_id, "
+                    "taxonomy.amplicon_id, taxonomy.traits "
+                    "FROM otu.sample_otu AS sample_otu "
+                    "JOIN otu.otu AS otu ON otu.id = sample_otu.otu_id "
+                    "JOIN otu.taxonomy_otu AS taxonomy_otu "
+                    "ON taxonomy_otu.otu_id = otu.id "
+                    "JOIN otu.taxonomy AS taxonomy "
+                    "ON taxonomy.id = taxonomy_otu.taxonomy_id "
+                    "WHERE taxonomy.taxonomy_source_id = :source_id "
+                    "GROUP BY sample_otu.sample_id, taxonomy.taxonomy_source_id, "
+                    "taxonomy.r1_id, taxonomy.r2_id, taxonomy.r3_id, taxonomy.r4_id, "
+                    "taxonomy.r5_id, taxonomy.r6_id, taxonomy.r7_id, taxonomy.r8_id, "
+                    "taxonomy.amplicon_id, taxonomy.traits"
+                ), {"source_id": source_id})
+        indexes = [
+            ("otu_sample_otu_index_taxonomy_source_id_idx", "taxonomy_source_id"),
+            ("otu_sample_otu_index_r1_id_idx", "r1_id"),
+            ("otu_sample_otu_index_r2_id_idx", "r2_id"),
+            ("otu_sample_otu_index_r3_id_idx", "r3_id"),
+            ("otu_sample_otu_index_r4_id_idx", "r4_id"),
+            ("otu_sample_otu_index_r5_id_idx", "r5_id"),
+            ("otu_sample_otu_index_r6_id_idx", "r6_id"),
+            ("otu_sample_otu_index_r7_id_idx", "r7_id"),
+            ("otu_sample_otu_index_r8_id_idx", "r8_id"),
+            ("otu_sample_otu_index_sample_id_idx", "sample_id"),
+            ("otu_sample_otu_index_amplicon_id_idx", "amplicon_id"),
+        ]
+        with self._engine.begin() as conn:
+            for index_name, column_name in indexes:
+                logger.info("Creating index %s", index_name)
+                conn.execute(text(
+                    f"CREATE INDEX {index_name} ON {table_name} ({column_name})"
+                ))
+            logger.info("Creating index otu_sample_otu_index_traits_idx")
+            conn.execute(text(
+                f"CREATE INDEX otu_sample_otu_index_traits_idx ON {table_name} "
+                "USING gin (traits)"
+            ))
 
     def update_from_ckan(self):
         update_from_ckan()
