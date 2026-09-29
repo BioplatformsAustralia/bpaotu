@@ -16,6 +16,9 @@ def require_oauth(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not settings.ENABLE_AUTH:
+            # Match the local auth endpoints so downstream views can use the
+            # same user context as they do after OAuth authentication.
+            request.ckan_data = {"email": settings.CKAN_DEVELOPMENT_USER_EMAIL}
             return view_func(request, *args, **kwargs)
 
         # 1. Must be logged into Django
