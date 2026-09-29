@@ -21,6 +21,8 @@ data/
 .env_local
 .env_prod
 
+.venv
+
 node_modules
 yarn-error.log
 bpaotu/bpaotu/frontend/dist
