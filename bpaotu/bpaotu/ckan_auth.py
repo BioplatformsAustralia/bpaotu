@@ -35,6 +35,10 @@ def require_CKAN_auth(func):  # noqa N802
             except OTUVerificationError:
                 logger.exception('OTU Verification Failed')
                 return HttpResponseForbidden(FORBIDDEN_RESPONSE_MSG)
+        else:
+            # Keep downstream views working when CKAN auth is disabled, as
+            # they do when the development auth endpoint is used.
+            request.ckan_data = {'email': settings.CKAN_DEVELOPMENT_USER_EMAIL}
 
         return func(request, *args, **kwargs)
 

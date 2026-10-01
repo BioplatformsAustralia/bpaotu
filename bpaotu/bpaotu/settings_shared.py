@@ -47,6 +47,7 @@ EMAIL_SUBJECT_PREFIX = env.get("DJANGO_EMAIL_SUBJECT_PREFIX", '[Bioplatforms OTU
 EMAIL_BACKEND = env.get('BPAOTU_EMAIL_BACKEND', "anymail.backends.amazon_ses.EmailBackend")
 DEFAULT_FROM_EMAIL = 'noreply@yourdomain.com'
 EMAIL_HOST = env.get('BPAOTU_EMAIL_HOST', 'localhost')
+EMAIL_PORT = env.get('BPAOTU_EMAIL_PORT', 25)
 
 ANYMAIL = {
     "AMAZON_SES_MESSAGE_TAG_NAME": "Type",
@@ -66,7 +67,7 @@ BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
 
 OTU_EXPORT_PATH = env.get('otu_export_path', '/data/otu-export/')
 OTU_EXPORT_URL = env.get('otu_export_url', STATIC_URL)
-OTU_EXPORT_EMAIL = env.get('metagenome_request_email', 'root-noreply@amotu.it.csiro.au') # 'am-data-requests@bioplatforms.com'
+OTU_EXPORT_EMAIL = env.get('metagenome_request_email', 'am-data-requests@bioplatforms.com')
 
 
 ## ckan config

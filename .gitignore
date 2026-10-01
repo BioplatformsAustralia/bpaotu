@@ -19,6 +19,8 @@ data/
 
 .env
 .env_local
+.env_local.legacy
+.env_local.new
 
 node_modules
 yarn-error.log
