@@ -309,7 +309,7 @@ def dev_only_oauth_check_auth(request):
 
     response = {
         "authenticated": True,
-        "email": settings.CKAN_DEVELOPMENT_USER_EMAIL,
+        "email": settings.OAUTH_DEVELOPMENT_USER_EMAIL,
         "organisations": organisations,
         'auth_mode': 'local',
     }
@@ -321,8 +321,8 @@ def dev_only_oauth_user_info(request):
     response = {
         "id": 1,
         "auth_mode": "local",
-        "username": settings.CKAN_DEVELOPMENT_USER_EMAIL,
-        "email": settings.CKAN_DEVELOPMENT_USER_EMAIL,
+        "username": settings.OAUTH_DEVELOPMENT_USER_EMAIL,
+        "email": settings.OAUTH_DEVELOPMENT_USER_EMAIL,
         "name": "Development User",
         "picture": "https://cdn.auth0.com/avatars/du.png",
         "sub": "auth0|dev", # Auth0 unique ID

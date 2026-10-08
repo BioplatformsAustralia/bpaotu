@@ -73,24 +73,6 @@ class OTUError(Exception):
     def __init__(self, *errors):
         self.errors = errors
 
-class HttpResponseNoContent(HttpResponse):
-    """
-    Special HTTP response with no content, just headers.
-    The content operations are ignored.
-    """
-
-    def __init__(self, content="", mimetype=None, status=None, content_type=None):
-        super().__init__(status=204)
-
-        if "content-type" in self._headers:
-            del self._headers["content-type"]
-
-    def _set_content(self, value):
-        pass
-
-    def _get_content(self, value):
-        pass
-
 
 # --------------------------------------------------------------------------- #
 # Inital page load endpoints ------------------------------------------------ #
@@ -1547,7 +1529,7 @@ def cookie_consent_declined(request):
     else:
         logger.info("No MIXPANEL_TOKEN")
 
-    return HttpResponseNoContent()
+    return HttpResponse(status=204, content=b'')
 
 @require_oauth
 @require_GET
@@ -1558,7 +1540,7 @@ def cookie_consent_accepted(request):
     else:
         logger.info("No MIXPANEL_TOKEN")
 
-    return HttpResponseNoContent()
+    return HttpResponse(status=204, content=b'')
 
 
 # --------------------------------------------------------------------------- #
