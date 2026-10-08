@@ -235,8 +235,8 @@ BPAOTU_SCIENTIFIC_MANUAL_URL = "https://research.csiro.au/ambsm/"
 
 BPAOTU_MAP_CENTRE_LONGITUDE = 133.775
 
-# email to use in development when CKAN auth integration is enabled
-CKAN_DEVELOPMENT_USER_EMAIL = env.get('ckan_devel_user_email', 'dev@bioplatforms.com')
+# email to use in development when OAuth integration is enabled
+OAUTH_DEVELOPMENT_USER_EMAIL = env.get('oauth_development_user_email', 'dev@example.org')
 
 
 GALAXY_BASE_URL = env.get('galaxy_base_url', 'https://galaxy-aust-dev.genome.edu.au')
