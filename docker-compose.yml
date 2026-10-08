@@ -73,6 +73,8 @@ services:
       # bind mount the frontend source code for development to allow hot reloading of changes to the React app
       - ./frontend/src:/frontend/src
       - ./frontend/public:/frontend/public
+      # Keep Vite's proxy configuration in sync with the host checkout.
+      - ./frontend/vite.config.ts:/frontend/vite.config.ts
     tmpfs:
       - /node_modules
 

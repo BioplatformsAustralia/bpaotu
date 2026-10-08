@@ -72,6 +72,9 @@ services:
       - UPSTREAM_URL=${UPSTREAM_URL:-http://runserver:9000}
     depends_on:
       - runserver
+    volumes:
+      # Share generated downloads with nginx; only read access is required.
+      - ./data/prod:/data:ro
     tmpfs:
       - /tmp
 

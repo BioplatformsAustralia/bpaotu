@@ -67,19 +67,19 @@ location /static/bpa-logos/ {
 }
 
 # BLAST results (alias to saved files)
-location /blast-results/ {
+location /download/blast-results/ {
     if ($maintenance_bypass = 0) {
         return 503;
     }
-    alias /app/data/dev/blast-output/;
+    alias /data/blast-output/;
 }
 
 # OTU export (alias to saved files)
-location /otu-export/ {
+location /download/otu-export/ {
     if ($maintenance_bypass = 0) {
         return 503;
     }
-    alias /app/data/dev/otu-export/;
+    alias /data/otu-export/;
 }
 
 # pass-through for MAG downloads

@@ -69,10 +69,10 @@ ADMINS = [("alert", email.strip()) for email in alert_emails]
 ## TASK SPECIFIC CONFIG
 
 BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
-BLAST_RESULTS_URL = env.get('blast_results_url', STATIC_URL)
+BLAST_RESULTS_URL = env.get('blast_results_url', '/download/blast-results')
 
 OTU_EXPORT_PATH = env.get('otu_export_path', '/data/otu-export/')
-OTU_EXPORT_URL = env.get('otu_export_url', STATIC_URL)
+OTU_EXPORT_URL = env.get('otu_export_url', '/download/otu-export')
 
 
 ## CKAN CONFIG

@@ -32,6 +32,16 @@ export default defineConfig({
         target: 'http://runserver:8080',
         changeOrigin: true,
       },
+      '/download/blast-results': {
+        target: 'http://runserver:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/download\/blast-results/, '/static'),
+      },
+      '/download/otu-export': {
+        target: 'http://runserver:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/download\/otu-export/, '/static'),
+      },
     },
   },
 
