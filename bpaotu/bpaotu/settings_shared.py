@@ -47,7 +47,7 @@ MEDIA_URL = ''
 
 ## EMAIL CONFIG
 
-EMAIL_SUBJECT_PREFIX = env.get("EMAIL_SUBJECT_PREFIX", '[Australian Microbiome]')
+EMAIL_SUBJECT_PREFIX = env.get("EMAIL_SUBJECT_PREFIX", '[eDNA Explorer]')
 
 # From env vars, with defaults
 MAIL_SERVER_HOST = env.get("MAIL_SERVER_HOST", "localhost")
