@@ -117,6 +117,9 @@ function _django_migrate {
 
 
 function _django_collectstatic {
+    info "skipping collectstatic"
+    return 0
+
     info "running collectstatic"
     set -x
     django-admin collectstatic --noinput --settings="${DJANGO_SETTINGS_MODULE}" 2>&1 | tee "${LOG_DIRECTORY}"/uwsgi-collectstatic.log
