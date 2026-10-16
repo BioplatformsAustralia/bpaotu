@@ -15,32 +15,27 @@ env = EnvConfig()
 
 ## BASIC CONFIG
 
-# Default SSL on and forced, turn off if necessary
 PRODUCTION = env.get("production", False)
 DEBUG = env.get("debug", not PRODUCTION)
-SSL_ENABLED = PRODUCTION # FIXME?  used?
-SSL_FORCE = PRODUCTION # FIXME?  used?
 
-TIME_ZONE = env.get("time_zone", 'Australia/Perth')
-
-# VERSION = env.get("bpa_version", os.environ.get("GIT_TAG", "UNKNOWN_VERSION"))
 VERSION = __version__
-BPA_VERSION = VERSION
-
+TIME_ZONE = env.get("time_zone", 'Australia/Canberra')
 SECRET_KEY = env.get("secret_key", "change-it")
 
 SCRIPT_NAME = env.get("script_name", os.environ.get("HTTP_SCRIPT_NAME", ""))
 BASE_URL = SCRIPT_NAME
-
 WEBAPP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# ensure STATIC_URL always has a single slash between script name and static, and doesn't end with double slash if script name is "/"
 STATIC_ROOT = env.get('static_root', os.path.join(WEBAPP_ROOT, 'static'))
 STATIC_URL = posixpath.join("/", SCRIPT_NAME.strip("/"), "static") + "/"
+# SCRIPT_NAME: Contributes to URL prefix handling and the default session cookie name.
+# BASE_URL:    Returned to the frontend and used when constructing application URLs.
+# WEBAPP_ROOT: The root directory of the webapp, used to build template, logging, static, and media paths.
+# STATIC_ROOT: The directory where static files are collected to, used by the webserver to serve static files.
+# STATIC_URL:  The URL prefix for static files, used by the webserver to serve static files. Used by the {% static %} template tag, URL configuration, and frontend config;
+#              /static/ must continue matching the nginx route in nginx.conf, and must not end with a double slash.
 
-
-# URL that handles the media served from MEDIA_ROOT. Make sure to use a
-# trailing slash.
+# Not used, but they remain conventional Django settings for future/default file storage
+# URL that handles the media served from MEDIA_ROOT. Make sure to use a trailing slash.
 MEDIA_ROOT = env.get('media_root', os.path.join(WEBAPP_ROOT, 'static', 'media'))
 MEDIA_URL = ''
 
