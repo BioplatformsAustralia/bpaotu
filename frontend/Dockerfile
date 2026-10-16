@@ -27,7 +27,6 @@ ENV NODE_ENV=development
 ENV HOST=0.0.0.0
 ENV PORT=3000
 ENV CHOKIDAR_USEPOLLING=true
-ENV NODE_OPTIONS=--openssl-legacy-provider
 
 # Copy application source required for dev server
 COPY src ./src
@@ -48,7 +47,6 @@ FROM base AS build
 # Prevent running lifecycle scripts during install (e.g. postinstall)
 # No build scripts required at this stage - just install dependencies for production
 ENV NODE_ENV=production
-ENV NODE_OPTIONS=--openssl-legacy-provider
 
 # Copy application source required for build
 COPY src ./src

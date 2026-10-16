@@ -9,7 +9,7 @@ class BpaotuConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
 
     def ready(self):
-        # See settings.STATICFILES_DIRS
+        # Ensure generated download directories exist before tasks write to them.
         with suppress(FileExistsError, PermissionError):
             os.mkdir(settings.BLAST_RESULTS_PATH)
             os.mkdir(settings.OTU_EXPORT_PATH)

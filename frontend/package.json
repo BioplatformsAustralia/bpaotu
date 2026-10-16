@@ -2,7 +2,6 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://data.bioplatforms.com/",
   "engines": {
     "node": ">=22.0.0"
   },
@@ -70,21 +69,6 @@
     "container:add": "npm run container:yarn -- add",
     "eslint": "eslint src",
     "prettier": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\""
-  },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   },
   "resolutions": {
     "@types/react": "17.0.93",

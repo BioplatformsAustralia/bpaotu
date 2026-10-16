@@ -82,4 +82,15 @@ urlpatterns = [
         name='download_mag'
     ),
 
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
+
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+# Debug-only file serving for generated downloads; production nginx has aliases.
+urlpatterns += static(
+    settings.BLAST_RESULTS_URL.rstrip("/") + "/",
+    document_root=settings.BLAST_RESULTS_PATH,
+)
+urlpatterns += static(
+    settings.OTU_EXPORT_URL.rstrip("/") + "/",
+    document_root=settings.OTU_EXPORT_PATH,
+)

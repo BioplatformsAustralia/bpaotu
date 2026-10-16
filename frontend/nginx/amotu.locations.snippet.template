@@ -41,14 +41,6 @@ location /private {
 }
 
 # static assets - react bundle
-location /static/ {
-    if ($maintenance_bypass = 0) {
-        return 503;
-    }
-
-    root /usr/share/nginx/html;
-}
-
 location /static/bpaotu/ {
     if ($maintenance_bypass = 0) {
         return 503;

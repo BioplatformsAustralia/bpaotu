@@ -105,26 +105,6 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-STATICFILES_DIRS = [
-    # FIXME. This is almost certainly wrong, and should be handled by MEDIA_ROOT
-    # and MEDIA_URL instead. In particular, `django-admin collectstatic` will
-    # copy anything in BLAST_RESULTS_PATH to STATIC_ROOT during the docker
-    # container startup, which is probably not what is intended, and even
-    # requires a mkdir() in bpaotu.apps.BpaotuConfig() to prevent collectstatic
-    # from crashing. It's probably here as an easy way to serve the blast output
-    # during development without having to add a special case to urlpatterns.
-    # See
-    # https://docs.djangoproject.com/en/2.2/ref/contrib/staticfiles/#static-file-development-view
-    # Since it's not obviously breaking anything in production, I'm leaving it
-    # alone for now. (DH, Nov 2022)
-    #
-    # Oct 2025 Update:
-    # Neither this nor BpaotuConfig seem to be creating the directory
-    # on development when rebuilding containers (OTU_EXPORT_PATH not being created)
-    BLAST_RESULTS_PATH,
-    OTU_EXPORT_PATH,
-]
-
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
 MIDDLEWARE = (
