@@ -63,12 +63,24 @@ ADMINS = [("alert", email.strip()) for email in alert_emails]
 
 ## TASK SPECIFIC CONFIG
 
-BLAST_RESULTS_PATH = env.get('blast_results_path', '/data/blast-output/')
+# PATH
+# - is the mounted directory where the files will be stored
+# - it must be readable by the frontend container and writable by the celeryworker container
+#   and must end with a slash below
+# URL
+# - is the URL prefix that will be used to serve the files
+# - it must be accessible by the frontend container, match the nginx route in nginx.conf
+#   and must not end with a slash below to prevent a double slash
+#
+# Storing the files under /data/download/ is a convention that allows the
+# nginx config to serve them directly without going through Django
+# and also keeps them tidy and separate from the rest of the webapp files
+
 BLAST_RESULTS_URL = env.get('blast_results_url', '/download/blast-results')
+BLAST_RESULTS_PATH = env.get('blast_results_path', f'/data/{BLAST_RESULTS_URL.strip("/")}').rstrip('/') + '/'
 
-OTU_EXPORT_PATH = env.get('otu_export_path', '/data/otu-export/')
 OTU_EXPORT_URL = env.get('otu_export_url', '/download/otu-export')
-
+OTU_EXPORT_PATH = env.get('blast_results_path', f'/data/{OTU_EXPORT_URL.strip("/")}').rstrip('/') + '/'
 
 ## CKAN CONFIG
 
