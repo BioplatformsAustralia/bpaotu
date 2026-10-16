@@ -191,10 +191,17 @@ function _aloe() {
     exec django-admin harvest --with-xunit --xunit-file="${WRITABLE_DIRECTORY}"/tests.xml --verbosity=3 "$@"
 }
 
-
+# show config and wait for services to become available
 trap exit SIGHUP SIGINT SIGTERM
 defaults
-env | grep -iv PASS | sort
+
+echo "Environment variables:"
+if [[ "${DEVELOPMENT:-0}" == "1" ]]; then
+  env | sort
+else
+  env | cut -d= -f1 | sort
+fi
+
 wait_for_services
 
 # prod uwsgi entrypoint
