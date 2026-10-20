@@ -20,7 +20,7 @@ celery==5.6.3
 uwsgi==2.0.31
 
 ## CKAN related
-git+https://github.com/BioplatformsAustralia/bpa-ingest.git
+git+https://github.com/drollins/bpa-ingest.git@6.9.8.dev1
 git+https://github.com/BioplatformsAustralia/ckanapi.git@streaming-uploads
 
 ## Operational
