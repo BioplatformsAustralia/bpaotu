@@ -25,11 +25,18 @@ def send_email(subject, content, to, from_prefix=None):
     else:
         _, envelope_from = parseaddr(settings.MAIL_FROM)
 
+    # Handle multiple recipients if `to` is a comma-separated string
+    # (will still work if `to` is a list of email addresses)
+    if isinstance(to, str):
+        recipients = [addr.strip() for addr in to.split(",") if addr.strip()]
+    else:
+        recipients = to
+
     msg = EmailMessage()
     msg.set_content(content)
     msg["Subject"] = subject
     msg["From"] = from_header
-    msg["To"] = to
+    msg["To"] = ", ".join(recipients)
 
     try:
         with smtplib.SMTP(
@@ -39,7 +46,7 @@ def send_email(subject, content, to, from_prefix=None):
             server.send_message(
                 msg,
                 from_addr=envelope_from,
-                to_addrs=[to],
+                to_addrs=recipients,
             )
 
         logger.debug(
