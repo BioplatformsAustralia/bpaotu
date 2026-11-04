@@ -481,7 +481,7 @@ const MainTutorial = () => {
           setIsMainTourOpen(true)
           track('otu_tutorial_main_open')
         }}
-        tooltip="Get a tour of the available features in the BPA-OTU data portal"
+        tooltip="Get a tour of the available features in the eDNA Explorer data portal"
       />
     </>
   )

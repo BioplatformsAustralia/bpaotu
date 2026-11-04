@@ -1200,7 +1200,7 @@ class DataImporter:
 
         try:
             if success:
-                subject = f"[BPA-OTU] Data Ingest Completed Successfully - {total_time/60:.1f} minutes"
+                subject = f"Data Ingest Completed Successfully - {total_time/60:.1f} minutes"
                 message = f"""
 Data ingest completed successfully
 
@@ -1213,7 +1213,7 @@ Import directory: {self._import_base}
 Revision date: {self._revision_date}
                 """
             else:
-                subject = "[BPA-OTU] Data Ingest Failed"
+                subject = "Data Ingest Failed"
                 message = f"""
 Data ingest FAILED!
 

@@ -521,7 +521,7 @@ const ComparisonTutorial = (props) => {
           setIsComparisonTourOpen(true)
           track('otu_tutorial_comparison_open')
         }}
-        tooltip="This tutorial helps to use interactive sample comparison feature in the BPA-OTU data portal"
+        tooltip="This tutorial helps to use interactive sample comparison feature in the eDNA Explorer data portal"
       />
     </>
   )

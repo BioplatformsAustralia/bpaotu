@@ -519,7 +519,7 @@ const GraphTutorial = (props) => {
           setIsGraphTourOpen(true)
           track('otu_tutorial_graph_open')
         }}
-        tooltip="This tutorial helps to use interactive graph feature in the BPA-OTU data portal"
+        tooltip="This tutorial helps to use interactive graph feature in the eDNA Explorer data portal"
       />
     </>
   )
